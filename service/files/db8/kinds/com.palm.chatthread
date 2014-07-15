@@ -1,0 +1,15 @@
+{
+    "id": "com.palm.chatthread:1",
+    "owner": "org.webosports.service.messaging",
+    "sync": true,
+    "indexes": [
+        {
+            "name": "byperson",
+            "props": [{"name": "personId"}]
+        },
+        {
+            "name": "byunread",
+            "props": [{"name": "unreadCount"}]
+        },
+    ],
+}
