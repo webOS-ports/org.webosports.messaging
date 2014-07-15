@@ -1,0 +1,10 @@
+{
+    "id": "org.webosports.app.messaging",
+    "version": "0.0.1",
+    "vendor": "WebOS Ports",
+    "type": "web",
+    "main": "index.html",
+    "title": "Messaging",
+    "icon": "icon.png",
+    "uiRevision": 2
+}
