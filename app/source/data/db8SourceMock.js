@@ -94,9 +94,11 @@ enyo.kind({
     dataArray: {
         "com.palm.chatthread:1": [
             { _id: "0", displayName: "Test", summary: "Test has called you ...",
-                timestamp: 0, replyAddress: "0144334456", replyService: "sms", personId: "", unreadCount: 0},
+                timestamp: 1408101740, replyAddress: "0144334456", replyService: "sms", personId: "", unreadCount: 0},
             { _id: "1", displayName: "Test", summary: "Test has called you ...",
-                timestamp: 0, replyAddress: "0144334456", replyService: "sms", personId: "", unreadCount: 0}
+                timestamp: 1409610140, replyAddress: "0144334456", replyService: "sms", personId: "", unreadCount: 0},
+            { _id: "3", displayName: "Test3", summary: "Test 3 has called you ...",
+                timestamp: 1409610140, replyAddress: "1234334456", replyService: "sms", personId: "", unreadCount: 0}
         ],
         "com.palm.message:1": {
             "0": [
