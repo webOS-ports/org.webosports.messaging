@@ -20,7 +20,7 @@ enyo.kind({
                     onActivate: "paneChange",
                     components: [
                         { name: "conversations", content: "Conversations", index: 0, active: true },
-                        { name: "buddys", content: "Buddys", index: 1 }
+                        { name: "buddies", content: "Buddies", index: 1 }
                     ]
                 }
             ]
@@ -44,10 +44,38 @@ enyo.kind({
                         touch: true
                     },
                     components: [
-                        { kind: "ThreadItem", classes: "thread-item" }
-                    ]
+                        {
+                            components:[
+                                { name:"threadItemGroupHeader", content:"Unknown date", classes:"thread-item-groupheader"},
+                                { name:"threadItem", kind: "ThreadItem", classes: "thread-item" }
+                            ],
+                            bindings: [
+                                { from: ".model", to: ".$.threadItem.model",
+                                    transform: function(model, dir, bind){
+                                        if (!model) {return null};
+                                        var col = model.owner;
+                                        var currentDate = model.get?model.get("timestamp"):model.timestamp;
+                                        var prevModel = col.at(col.indexOf(model)-1);
+                                        if (prevModel&&prevModel!=model){
+                                            var prevDate = prevModel.get?prevModel.get("timestamp"):prevModel.timestamp;
+                                        }
+                                        this.$.threadItemGroupHeader.setShowing(col.indexOf(model)==0||(prevDate!=null&&prevDate!=currentDate));
+                                        this.$.threadItemGroupHeader.setContent(new Date(currentDate*1000).toGMTString());
+                                        return model;
+                                    }
+                                },
+                                /*{ from: ".model", to: ".null",
+                                    transform: function(val, dir, bind){
+                                        console.log("Collection", val, dir, bind);
+                                        return val;
+                                    }
+                                },*/
+                            ]
+                        }
+                    ],
+
                 }
-            ]
+            ],
         },
         {
             name: "BottomToolbar",
