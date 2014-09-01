@@ -60,6 +60,12 @@ ContactsUI CSS
 .threads-list .gal-message {
     font-size:16px;
 }
+.threads-list .thread-item-groupheader {
+    padding:10px;
+    color:gray;
+    font-weight:bold;
+    border-top:2px solid gray;
+}
 .threads-list .thread-item {
     padding:0 14px;
     min-height: 68px;
@@ -81,7 +87,7 @@ ContactsUI CSS
 .threads-list .thread-item.last {
     border-bottom:0;
 }
-.threads-list .thread-item.selected {
+.threads-list .thread-item.selected, .selected>.thread-item {
     background-color:#d1e5f5;
     border-color:#B3d9f2
 }
