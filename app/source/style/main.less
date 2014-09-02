@@ -3,16 +3,39 @@
     This way, you can minify your application, and just remove the "source" folder for production
 */
 
-//handle smaller screens:
-@media all and (max-width: 800px) {
-    .app-panels > * {
-        min-width: 100%;
-        max-width: 100%;
-    }
+.app-panels > * {
+  width:320px;
+  background-color: #EAEAEA;
+  box-shadow: -6px -4px 3px 1px rgba(0,0,0,0.4);
+}
 
-    .threads-list .thread-item .name {
-        max-width: 100%;
-    }
+@media all and (max-width: 800px) {
+  .app-panels > * {
+    min-width: 100%;
+  }
+  .thread-item .info{
+    width:85%;
+  }
+
+  .thread-item-container {
+    width:100%;
+    min-width:100%;
+  }
+
+}
+
+@media all and (min-width: 800px) {
+  .app-panels > * {
+    min-width: auto!important;
+  }
+  .thread-item .info{
+    width:240px;
+  }
+  .thread-item-container{
+    width:320px;
+    min-width:320px;
+    max-width:320px;
+  }
 }
 
 /****************
@@ -92,6 +115,7 @@ ContactsUI CSS
     background-color: white;
     margin: 5px;
     position: relative;
+    text-align: left;
 }
 .threads-list .thread-item div {
     vertical-align:middle;
@@ -112,7 +136,7 @@ ContactsUI CSS
 .threads-list .thread-item > .icon {
     height:50px;
     width:50px;
-    margin:20px;
+    margin:0px;
     position: absolute;
 }
 .threads-list .thread-item > .icon .mask {

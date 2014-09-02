@@ -3,8 +3,6 @@
 enyo.kind({
     name: "ThreadList",
     kind: "FittableRows",
-    style: "text-align:center;",
-    fit: true,
     events: {
         onSelected: ""
     },
@@ -27,27 +25,27 @@ enyo.kind({
         },
         {
             name: "main",
-            description: "All",
             kind: "FittableRows",
-            classes: "threads-list",
             fit: true,
             components: [
                 {
                     name: "realThreadList",
-                    classes: "threads-list",
                     kind: "enyo.DataList",
                     ontap: "selectThread",
                     fit: true,
                     collection: GlobalThreadCollection,
+                    classes: "threads-list",
                     scrollerOptions: {
                         horizontal: "hidden",
                         touch: true
                     },
+
                     components: [
                         {
+                            classes: "thread-item-container",
                             components:[
                                 { name:"threadItemGroupHeader", content:"Unknown date", classes:"thread-item-groupheader"},
-                                { name:"threadItem", kind: "ThreadItem", classes: "thread-item" }
+                                { name:"threadItem", kind: "ThreadItem" }
                             ],
                             bindings: [
                                 { from: ".model", to: ".$.threadItem.model",
@@ -97,5 +95,6 @@ enyo.kind({
         }
 
         this.doSelected({thread: inSender.selected()});
-    }
+    },
+
 });

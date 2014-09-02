@@ -12,11 +12,18 @@ enyo.kind({
             draggable: false,
             classes: "app-panels",
             fit: true,
-            narrowFit: true, //collapses to one panel only if width < 800px
+            narrowFit: false, //collapses to one panel only if width < 800px
             components: [
-                { name: "threadList", kind: "ThreadList", onSelected: "showThread", fit: true },
+                {
+                    kind:"FittableColumns",
+                    style:"width:100%; max-width:320px;",
+                    components:[
+                        { name: "threadList", kind: "ThreadList", onSelected: "showThread", style:"width:100%; width:100%;"},
+                    ]
+                },
                 {
                     kind: "enyo.Panels",
+                    arrangerKind:"CardArranger",
                     fit: true,
                     name: "threadPanel",
                     draggable: false,
@@ -31,7 +38,7 @@ enyo.kind({
                                 }
                             ]
                         },
-                        { name: "threadView", kind: "ThreadView", fit: true }
+                        { name: "threadView", kind: "ThreadView"}
                     ]
                 }
             ]

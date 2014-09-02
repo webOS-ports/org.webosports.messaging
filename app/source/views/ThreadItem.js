@@ -1,7 +1,6 @@
 enyo.kind({
     name: "ThreadItem",
-    layoutKind:"FittableColumnsLayout",
-    style:"width:100%;",
+    classes: "thread-item enyo-children-inline",
     bindings: [
         { from: ".model.unreadCount", to: ".$.unreadCount.content" },
         { from: ".model.unreadCount", to: ".$.unreadCount.showing", transform: function(val, dir, bind){return (val!=0);} },
@@ -10,7 +9,7 @@ enyo.kind({
     ],
     components: [
         {
-            fit:true,
+            classes:"info",
             components:[
                 {
                     classes:"enyo-children-inline",
@@ -34,6 +33,6 @@ enyo.kind({
                 {classes:"img"}
             ]
         }
-
     ]
-});
+    }
+);
