@@ -1,6 +1,7 @@
 enyo.kind({
     name: "ThreadItem",
-    kind:"FittableColumns",
+    layoutKind:"FittableColumnsLayout",
+    style:"width:100%;",
     bindings: [
         { from: ".model.unreadCount", to: ".$.unreadCount.content" },
         { from: ".model.unreadCount", to: ".$.unreadCount.showing", transform: function(val, dir, bind){return (val!=0);} },
@@ -22,7 +23,7 @@ enyo.kind({
 
                     ]
                 },
-                { name: "summary", content: "Summary", classes: "summary" },
+                { name: "summary", content: "Summary", classes: "summary"},
 
             ]
         },
