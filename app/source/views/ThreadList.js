@@ -34,7 +34,7 @@ enyo.kind({
             components: [
                 {
                     name: "realThreadList",
-                    classes: "contacts-list",
+                    classes: "threads-list",
                     kind: "enyo.DataList",
                     ontap: "selectThread",
                     fit: true,
@@ -54,13 +54,13 @@ enyo.kind({
                                     transform: function(model, dir, bind){
                                         if (!model) {return null};
                                         var col = model.owner;
-                                        var currentDate = model.get?model.get("timestamp"):model.timestamp;
+                                        var currentDate = new moment(1000*(model.get?model.get("timestamp"):model.timestamp)).calendar();
                                         var prevModel = col.at(col.indexOf(model)-1);
                                         if (prevModel&&prevModel!=model){
-                                            var prevDate = prevModel.get?prevModel.get("timestamp"):prevModel.timestamp;
+                                            var prevDate = new moment(1000*(prevModel.get?prevModel.get("timestamp"):prevModel.timestamp)).calendar();
                                         }
                                         this.$.threadItemGroupHeader.setShowing(col.indexOf(model)==0||(prevDate!=null&&prevDate!=currentDate));
-                                        this.$.threadItemGroupHeader.setContent(new Date(currentDate*1000).toGMTString());
+                                        this.$.threadItemGroupHeader.setContent(currentDate);
                                         return model;
                                     }
                                 },
