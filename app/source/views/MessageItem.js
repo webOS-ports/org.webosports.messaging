@@ -1,6 +1,6 @@
 enyo.kind({
     name: "MessageItem",
-    kind:"FittableRows",
+    //kind:"FittableRows",
     bindings: [
         { from: ".model.folder", to: ".classes", transform: function(val, dir, bind){
                 return "thread-item folder " + val;
@@ -14,7 +14,12 @@ enyo.kind({
         },
     ],
     components: [
-        { name: "messageText", content: "Message text", classes: "message-text", fit:true},
-        { name: "timeStamp", content: "Timestamp", classes: "message-timestamp" },
+        { name: "messageText", content: "Message text", classes: "message-text", allowHtml:true, fit:true},
+        {
+            classes:"message-timestamp-container",
+            components:[
+                { name: "timeStamp", content: "Timestamp", classes: "message-timestamp" },
+            ]
+        }
     ]
 });

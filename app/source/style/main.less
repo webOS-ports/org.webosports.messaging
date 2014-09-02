@@ -38,6 +38,9 @@
   }
 }
 
+.onyx-radiobutton.onyx-tabbutton {
+  font-size: 14px;
+}
 /****************
 
 ContactsUI CSS
@@ -81,11 +84,27 @@ ContactsUI CSS
 .threads-list .thread-item.folder.inbox{
   background-color:rgba(67,100,200,0.3);
   margin-right:50px;
+
+  background: -moz-linear-gradient(left,  rgba(140,199,216,1) 0%, rgba(140,199,216,1) 1%, rgba(125,185,232,0) 100%); /* FF3.6+ */
+  background: -webkit-gradient(linear, left top, right top, color-stop(0%,rgba(140,199,216,1)), color-stop(1%,rgba(140,199,216,1)), color-stop(100%,rgba(125,185,232,0))); /* Chrome,Safari4+ */
+  background: -webkit-linear-gradient(left,  rgba(140,199,216,1) 0%,rgba(140,199,216,1) 1%,rgba(125,185,232,0) 100%); /* Chrome10+,Safari5.1+ */
+  background: -o-linear-gradient(left,  rgba(140,199,216,1) 0%,rgba(140,199,216,1) 1%,rgba(125,185,232,0) 100%); /* Opera 11.10+ */
+  background: -ms-linear-gradient(left,  rgba(140,199,216,1) 0%,rgba(140,199,216,1) 1%,rgba(125,185,232,0) 100%); /* IE10+ */
+  background: linear-gradient(to right,  rgba(140,199,216,1) 0%,rgba(140,199,216,1) 1%,rgba(125,185,232,0) 100%); /* W3C */
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#8cc7d8', endColorstr='#007db9e8',GradientType=1 ); /* IE6-9 */
 }
 
 .threads-list .thread-item.folder.sent{
   background-color:#abd56e;
   margin-left:50px;
+  background: -moz-linear-gradient(left,  rgba(255,255,255,0.2) 0%, rgba(150,219,142,1) 100%); /* FF3.6+ */
+  background: -webkit-gradient(linear, left top, right top, color-stop(0%,rgba(255,255,255,0.2)), color-stop(100%,rgba(150,219,142,1))); /* Chrome,Safari4+ */
+  background: -webkit-linear-gradient(left,  rgba(255,255,255,0.2) 0%,rgba(150,219,142,1) 100%); /* Chrome10+,Safari5.1+ */
+  background: -o-linear-gradient(left,  rgba(255,255,255,0.2) 0%,rgba(150,219,142,1) 100%); /* Opera 11.10+ */
+  background: -ms-linear-gradient(left,  rgba(255,255,255,0.2) 0%,rgba(150,219,142,1) 100%); /* IE10+ */
+  background: linear-gradient(to right,  rgba(255,255,255,0.2) 0%,rgba(150,219,142,1) 100%); /* W3C */
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#33ffffff', endColorstr='#96db8e',GradientType=1 ); /* IE6-9 */
+
 }
 
 /* items */
@@ -189,10 +208,10 @@ ContactsUI CSS
   font-weight:bold;
   border-radius:20px;
   width:25px;
-  height:20px;
+  height:23px;
   background-color:#ccc;
   text-align:center;
-  padding-top:5px;
+  padding-top:2px;
   margin-left:5px;
 }
 
@@ -203,14 +222,22 @@ ContactsUI CSS
 }
 
 .threads-list .thread-item .message-text{
-
+  height:auto;
 }
 
 .threads-list .thread-item .message-timestamp{
-  float: right;
+  //float: right;
   vertical-align: bottom;
   font-size: 0.8rem;
   color: #444;
+  position:absolute;
+  bottom:7px;
+  right:7px;
+}
+
+.threads-list .thread-item .message-timestamp-container {
+  position: relative;
+  height: 30px;
 }
 
 /* Details */
@@ -379,6 +406,8 @@ Contacts App CSS
 
 body {
     background: transparent;
+    font-family:'Segoe UI','Helvetica Neue', 'Nimbus Sans L', pt-sans-n4, pt-sans, Prelude, Prelude Medium, Segoe UI, Arial, Helvetica, Sans-Serif;
+    -webkit-font-smoothing: antialiased;
 }
 
 /*.leftpane {
