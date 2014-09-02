@@ -6,6 +6,15 @@ enyo.kind({
     },
     components: [
         {
+            name: "topToolbar",
+            kind:"onyx.Toolbar",
+            layoutKind:"FittableColumnsLayout",
+            components:[
+                {name:"imStatus", style:"width:14px;", components:[{classes:"im-status", kind:"onyx.Icon"}]},
+                {name:"headerText", content:"Name name", fit:true}
+            ]
+        },
+        {
             name: "messageList",
             classes: "threads-list",
             kind: "enyo.DataList",
@@ -21,18 +30,25 @@ enyo.kind({
         },
         {
             name: "bottomToolbar",
-            kind: "onyx.Toolbar",
+            kind:"FittableColumns",
             components: [
                 {
                     kind: "onyx.InputDecorator",
-                    style: "width: 100%;",
-                    flex: true,
+                    fit:true,
+                    //style: "width: 100%;",
+                    //flex: true,
                     alwaysLooksFocused: true,
+                    layoutKind:"FittableColumnsLayout",
                     components: [
                         {
                             kind: "onyx.TextArea",
-                            style: "width: 100%;",
-                            placeholder: "Type a new message ..."
+                            fit:true,
+                            placeholder: "Type a new message ...",
+                            classes:"enyo-selectable"
+                        },
+                        {
+                            kind:"onyx.Icon",
+                            style:"width:25px; height:25px; border:1px solid red;",
                         }
                     ]
                 }
@@ -51,7 +67,7 @@ enyo.kind({
         this.$.messageList.collection = this.$.messageCollection;
     },
     threadChanged: function() {
-        console.log("Thread is " + this.thread);
+        this.log("Thread is ", this.thread);
 
         this.$.messageCollection.destroyAllLocal();
         this.$.messageCollection.removeAll();
@@ -60,6 +76,8 @@ enyo.kind({
 
         this.$.messageCollection.threadId = this.thread.attributes._id;
         this.$.messageCollection.fetch({strategy: "merge", success: enyo.bind(this, "messageListChanged")});
+
+        this.$.headerText.setContent(this.thread.get("displayName")||"");
     },
     messageListChanged: function() {
         this.$.messageList.refresh();

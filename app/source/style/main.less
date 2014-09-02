@@ -50,6 +50,19 @@ ContactsUI CSS
     height:40px;
 }
 
+.threads-list .thread-item.folder {
+  background-color:lightgray;
+}
+
+.threads-list .thread-item.folder.inbox{
+  background-color:rgba(67,100,200,0.3);
+  margin-right:50px;
+}
+
+.threads-list .thread-item.folder.sent{
+  background-color:#abd56e;
+  margin-left:50px;
+}
 
 /* items */
 .threads-list .no-srch-results-msg {
@@ -60,14 +73,21 @@ ContactsUI CSS
 .threads-list .gal-message {
     font-size:16px;
 }
+.threads-list .thread-item-groupheader {
+    padding:10px;
+    color:gray;
+    font-weight:bold;
+    border-top:2px solid gray;
+}
+
 .threads-list .thread-item {
-    padding:0 14px;
-    min-height: 68px;
+    padding:7px;
+    min-height: 50px;
     border-width:1px 0;
     border-style:solid none solid none;
     border-top-color:rgba(255,255,255,0.5);
     border-bottom-color:rgba(0,0,0,0.1);
-    border-radius: 10px;
+    border-radius: 5px;
     background-color: white;
     margin: 5px;
     position: relative;
@@ -81,20 +101,20 @@ ContactsUI CSS
 .threads-list .thread-item.last {
     border-bottom:0;
 }
-.threads-list .thread-item.selected {
+.threads-list .thread-item.selected, .selected>.thread-item {
     background-color:#d1e5f5;
     border-color:#B3d9f2
 }
 .threads-list .thread-item .content {
     height:100%;
 }
-.threads-list .thread-item .icon {
+.threads-list .thread-item > .icon {
     height:50px;
     margin:10px 15px 10px 0;
     width:50px;
     position: absolute;
 }
-.threads-list .thread-item .icon .mask {
+.threads-list .thread-item > .icon .mask {
     position:absolute;
     top:0;
     left:0;
@@ -102,7 +122,7 @@ ContactsUI CSS
     width:100%;
     background:url(../../assets/bg_icon_mask.png) no-repeat 0 0;
 }
-.threads-list .thread-item .icon .img {
+.threads-list .thread-item > .icon .img {
     border-radius: 3px;
     height:100%;
     width:100%;
@@ -119,24 +139,37 @@ ContactsUI CSS
     max-width: 160px;
     text-align: left;
     font-weight: bold;
-    padding-top: 10px;
+    //padding-top: 10px;
     // position: absolute;
     // top: 25px;
     // left: 80px;
 }
 .threads-list .thread-item .summary {
     color: #333333;
-    font-size: 14px;
+    font-size: 0.85rem;
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
     max-width: 160px;
     text-align: left;
+    margin-top:3px;
     // position: absolute;
     // top: 25px;
     // left: 80px;
 }
 
+.threads-list .thread-item .unreadcount {
+  color: #555;
+  font-size: 0.9rem;
+  font-weight:bold;
+  border-radius:20px;
+  width:25px;
+  height:20px;
+  background-color:#ccc;
+  text-align:center;
+  padding-top:5px;
+  margin-left:5px;
+}
 
 /** Favorites list **/
 .threads-list .header.favorites {
@@ -252,11 +285,12 @@ ContactsUI CSS
 }
 
 .im-status {
-    height: 28px;
+    height: 20px;
+    width:20px;
     background: url(../../assets/status-away.png) no-repeat 0 0;
-    position: absolute;
-    left: 0px;
-    top: 0px;
+    //position: absolute;
+    //left: 0px;
+    //top: 0px;
 }
 .edit-contact.button {
     background:none;
