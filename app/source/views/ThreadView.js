@@ -10,7 +10,8 @@ enyo.kind({
             kind:"onyx.Toolbar",
             layoutKind:"FittableColumnsLayout",
             components:[
-                {name:"headerText", content:"Name name"}
+                {name:"imStatus", style:"width:14px;", components:[{classes:"im-status", kind:"onyx.Icon"}]},
+                {name:"headerText", content:"Name name", fit:true}
             ]
         },
         {
