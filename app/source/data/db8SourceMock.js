@@ -107,7 +107,10 @@ enyo.kind({
                   from: { addr: "+491234567890" }, localTimestamp: 1408101740, messageText: "This is a small SMS test message 1 from Someone",
                   networkMsgId: 0, priority: 0, serviceName: "sms", smsType: 0, status: "successful", timestamp: 0 },
                 { _id: "1", _kind: "com.palm.smsmessage:1", conversations: ["1"], folder: "sent",
-                  from: { addr: "+491234567890" }, localTimestamp: 1408601740, messageText: "This is a small SMS test message 2 TO Someone",
+                  from: { addr: "+491234567890" }, localTimestamp: 1408601740, messageText: "This is a extremely large " +
+                    "SMS test message 2 TO Someone. Like I said, this is a <i>extremely</i> large message " +
+                    "that also has some HTML formatting in it. <b><u>Just because we can!</u></b> Plus, we " +
+                    "need to <span style='color:maroon;'>check support for auto-expansion</span> of message.",
                   networkMsgId: 0, priority: 0, serviceName: "sms", smsType: 0, status: "successful", timestamp: 0 },
                 { _id: "4", _kind: "com.palm.smsmessage:1", conversations: ["1"], folder: "inbox",
                     from: { addr: "+491234567890" }, localTimestamp: 1408601740, messageText: "This is a small SMS test message 5, also from Someone",
