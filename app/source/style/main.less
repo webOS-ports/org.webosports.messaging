@@ -50,6 +50,19 @@ ContactsUI CSS
     height:40px;
 }
 
+.threads-list .thread-item.folder {
+  background-color:lightgray;
+}
+
+.threads-list .thread-item.folder.inbox{
+  background-color:#6677aa;
+  margin-right:50px;
+}
+
+.threads-list .thread-item.folder.sent{
+  background-color:#abd56e;
+  margin-left:50px;
+}
 
 /* items */
 .threads-list .no-srch-results-msg {
@@ -66,8 +79,9 @@ ContactsUI CSS
     font-weight:bold;
     border-top:2px solid gray;
 }
+
 .threads-list .thread-item {
-    padding:0 14px;
+    padding:7px 14px;
     min-height: 68px;
     border-width:1px 0;
     border-style:solid none solid none;
@@ -125,7 +139,7 @@ ContactsUI CSS
     max-width: 160px;
     text-align: left;
     font-weight: bold;
-    padding-top: 10px;
+    //padding-top: 10px;
     // position: absolute;
     // top: 25px;
     // left: 80px;

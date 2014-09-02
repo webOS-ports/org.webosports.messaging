@@ -48,7 +48,7 @@ enyo.kind({
         GlobalThreadCollection.fetch({strategy: "merge"});
     },
     showThread: function (inSender, inEvent) {
-        console.log("showThread " + inEvent.thread);
+        console.log("showThread ", inEvent.thread);
 
         this.$.threadView.setThread(inEvent.thread);
 
