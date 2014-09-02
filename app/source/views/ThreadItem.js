@@ -15,8 +15,12 @@ enyo.kind({
             ]
         },
         {
-            kind:"onyx.Icon",
-            style:"width:50px; height:50px; border:1px solid red; vertical-align:text-top;",
+            classes:"icon",
+            components:[
+                {classes:"mask"},
+                {classes:"img"}
+            ]
+//            style:"width:50px; height:50px; border:1px solid red; ",
         }
 
     ]
