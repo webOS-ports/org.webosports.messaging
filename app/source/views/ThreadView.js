@@ -37,6 +37,7 @@ enyo.kind({
                     fit:true,
                     alwaysLooksFocused: true,
                     layoutKind:"FittableColumnsLayout",
+                    style:"padding:0px",
                     components: [
                         {
                             name:"messageTextArea",
@@ -44,19 +45,25 @@ enyo.kind({
                             fit:true,
                             placeholder: "Type a new message ...",
                             classes:"enyo-selectable",
-                            onkeyup:"messageTextAreaChanged"
+                            onkeyup:"messageTextAreaChanged",
+                            style:"padding:8px;"
                         },
                         {
-                            name:"sendMessageIcon",
-                            kind:"onyx.IconButton",
-                            classes:"sendmessage",
-                            showing:false,
-                            ontap:"sendMessage"
-                        },
-                        {
-                            name:"attachItemIcon",
-                            kind:"onyx.IconButton",
-                            classes:"attachitem",
+                            style:"background-color:rgba(200,200,200,0.5); padding:12px; margin-right:1px; border-radius; 0px 3px 3px 0px",
+                            components:[
+                                {
+                                    name:"sendMessageIcon",
+                                    kind:"onyx.IconButton",
+                                    classes:"sendmessage",
+                                    showing:false,
+                                    ontap:"sendMessage"
+                                },
+                                {
+                                    name:"attachItemIcon",
+                                    kind:"onyx.IconButton",
+                                    classes:"attachitem",
+                                }
+                            ]
                         }
                     ]
                 }
