@@ -78,7 +78,6 @@ enyo.kind({
         this.inherited(arguments);
 
         this.log("==========> Telling global list to fetch threads...");
-        GlobalThreadCollection.fetch({strategy: "merge"});
     },
     showThread: function (inSender, inEvent) {
         console.log("showThread ", inEvent.thread);
@@ -96,7 +95,7 @@ enyo.kind({
         }
     },
     paneChange: function(inSender, inEvent){
-        console.log("paneChange", inSender, inEvent);
+        //console.log("paneChange", inSender, inEvent);
         inEvent&&inEvent.originator&&inEvent.originator.active?this.$.viewPanel.setIndex(inEvent.originator.index||0):null;
     },
     goBack: function () {

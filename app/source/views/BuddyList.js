@@ -6,13 +6,16 @@ enyo.kind({
     events: {
         onSelected: ""
     },
+    bindings:[
+        {from:".app.$.globalBuddyCollection.isFetching", to:".globalBuddyCollectionFetching"},
+        {from:".app.$.globalBuddyCollection", to:".globalBuddyCollection"}
+    ],
     components: [
         {
             name: "realBuddyList",
             kind: "enyo.DataList",
             ontap: "selectThread",
             fit: true,
-            collection: GlobalThreadCollection,
             classes: "threads-list",
             scrollerOptions: {
                 horizontal: "hidden",
@@ -83,6 +86,7 @@ enyo.kind({
     create: function () {
         this.inherited(arguments);
         this.log("==========> Created buddy list");
+        this.$.realBuddyList.set("collection", this.globalBuddyCollection);
     },
 
     selectThread: function (inSender, inEvent) {
@@ -91,6 +95,12 @@ enyo.kind({
         }
 
         this.doSelected({thread: inSender.selected()});
+    },
+
+    globalBuddyCollectionFetchingChanged: function(){
+        if (this.globalBuddyCollectionFetching==false){
+            this.$.realBuddyList.set("collection", this.globalBuddyCollection, true);
+        }
     },
 
 });

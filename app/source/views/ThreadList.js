@@ -6,6 +6,10 @@ enyo.kind({
     events: {
         onSelected: ""
     },
+    bindings:[
+        {from:".app.$.globalThreadCollection.isFetching", to:".globalThreadCollectionFetching"},
+        {from:".app.$.globalThreadCollection", to:".globalThreadCollection"}
+    ],
     components: [
         {
             name: "main",
@@ -17,7 +21,6 @@ enyo.kind({
                     kind: "enyo.DataList",
                     ontap: "selectThread",
                     fit: true,
-                    collection: GlobalThreadCollection,
                     classes: "threads-list",
                     scrollerOptions: {
                         horizontal: "hidden",
@@ -71,8 +74,14 @@ enyo.kind({
    create: function () {
         this.inherited(arguments);
         this.log("==========> Created thread list");
-    },
+       this.$.realThreadList.set("collection", this.globalThreadCollection, true);
+   },
 
+    globalThreadCollectionFetchingChanged: function(){
+        if (this.globalThreadCollectionFetching==false){
+            this.$.realThreadList.set("collection", this.globalThreadCollection, true);
+        }
+    },
     selectThread: function (inSender, inEvent) {
         if (!inSender.selected()) {
             inSender.select(inEvent.index);

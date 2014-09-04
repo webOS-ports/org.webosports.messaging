@@ -26,4 +26,4 @@ enyo.kind({
     //best is to not store this collection... might break things. urgs.
 });
 
-var GlobalThreadCollection = new ThreadCollection({instanceAllRecords: false});
+//var GlobalThreadCollection = new ThreadCollection({instanceAllRecords: false});
