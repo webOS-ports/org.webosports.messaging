@@ -347,13 +347,30 @@ ContactsUI CSS
 }
 
 .im-status {
-    height: 20px;
-    width:20px;
-    background: url(../../assets/status-away.png) no-repeat 0 0;
-    //position: absolute;
-    //left: 0px;
-    //top: 0px;
+  height: 20px;
+  width:20px;
+  background: url(../../assets/status-blank.png) no-repeat 0 0;
+  background-size: cover;
 }
+
+.im-status.away{
+    background: url(../../assets/status-away.png) no-repeat 0 0;
+}
+.im-status.offline{
+  background: url(../../assets/status-offline.png) no-repeat 0 0;
+}
+.im-status.available{
+  background: url(../../assets/status-available.png) no-repeat 0 0;
+}
+.im-status.button{
+  background: url(../../assets/status-button.png) no-repeat 0 0;
+  background-size: cover;
+}
+
+.im-status.unknown{
+  background: url(../../assets/status-offline.png) no-repeat 0 0;
+}
+
 .edit-contact.button {
     background:none;
     border-image:none;
