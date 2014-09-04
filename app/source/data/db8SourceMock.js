@@ -8,6 +8,7 @@ enyo.kind({
         console.log(rec);
 
         if (rec instanceof enyo.Model) {
+            /* not sure if this if part even gets called or works properly.... */
             console.log("rec is instanceof enyo.Model");
             for (i = 0; i < this.dataArray.length; i += 1) {
                 console.log("Model rec " + this.dataArray[i]);

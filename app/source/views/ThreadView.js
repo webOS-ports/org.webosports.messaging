@@ -106,13 +106,12 @@ enyo.kind({
         var messageText = this.$.messageTextArea.getValue();
         var localTimestamp = new moment();
 
-        var message = {_kind: "com.palm.smsmessage:1", conversations: ["0"], folder: "inbox",
+        var message = {_kind: "com.palm.smsmessage:1", conversations: ["0"], folder: "outbox",
             from: { addr: "+491234567890" }, localTimestamp: localTimestamp.format("X"), messageText: messageText,
             networkMsgId: 0, priority: 0, serviceName: "sms", smsType: 0, status: "", timestamp: 0 };
         var message = new MessageModel(message);
         console.log("submitting", message, message.dbKind, message.get("dbKind"));
         var rec = this.$.messageCollection.at(this.$.messageCollection.add(message));
-        console.log(rec, rec.store);
         rec.commit({threadId:this.$.messageCollection.threadId});
         this.messageListChanged();
     }
