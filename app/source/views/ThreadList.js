@@ -8,22 +8,6 @@ enyo.kind({
     },
     components: [
         {
-            name: "toolbar",
-            kind: "onyx.Toolbar",
-            components: [
-                {
-                    name: "tabs",
-                    kind: "onyx.RadioGroup",
-                    controlClasses: "onyx-tabbutton",
-                    onActivate: "paneChange",
-                    components: [
-                        { name: "conversations", content: "Conversations", index: 0, active: true },
-                        { name: "buddies", content: "Buddies", index: 1 }
-                    ]
-                }
-            ]
-        },
-        {
             name: "main",
             kind: "FittableRows",
             fit: true,
