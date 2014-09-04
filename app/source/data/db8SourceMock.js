@@ -9,8 +9,8 @@ enyo.kind({
 
         if (rec instanceof enyo.Model) {
             console.log("rec is instanceof enyo.Model");
-            for (i = 0; i < this.dataArray.length(); i += 1) {
-                console.log("rec " + this.dataArray[i]);
+            for (i = 0; i < this.dataArray.length; i += 1) {
+                console.log("Model rec " + this.dataArray[i]);
                 if (this.dataArray[i]._id === rec.attributes[rec.primaryKey]) {
                     opts.success([this.dataArray[i]]);
                     return;
@@ -24,7 +24,7 @@ enyo.kind({
 
             if (dbkind === "com.palm.message:1") {
                 threadId = rec.get("threadId");
-                console.log("threadId: " + threadId);
+                console.log("Collection threadId: " + threadId);
                 opts.success(this.dataArray[dbkind][threadId]);
             }
             else if (dbkind === "com.palm.chatthread:1") {
@@ -42,19 +42,33 @@ enyo.kind({
 
     commit: function(rec, opts) {
         var i;
-        console.log("Storing ", rec);
+        console.log("Storing ", rec, (rec instanceof enyo.Model), rec.get("dbKind") );
 
         if (rec instanceof enyo.Model) {
-            for (i = 0; i < this.dataArray.length(); i += 1) {
-                if (this.dataArray[i]._id === rec.attributes[rec.primaryKey]) {
-                    this.dataArray[i] = rec.attributes;
-                    opts.success({returnValue: true});
-                    return;
+            dbkind = rec.get("dbKind")||rec.dbKind;
+
+            if (dbkind === "com.palm.message:1") {
+                threadId = rec.get("threadId")||opts.threadId;
+                console.log("threadId: ", threadId);
+                //opts.success(this.dataArray[dbkind][threadId]);
+                var dataArray = this.dataArray["com.palm.message:1"][threadId];
+                console.log("dataArray says", dataArray);
+                for (i = 0; i < dataArray.length; i += 1) {
+                    if (dataArray[i]._id === rec.attributes[rec.primaryKey]) {
+                        dataArray[i] = rec.attributes;
+                        opts.success({returnValue: true});
+                        return;
+                    }
                 }
+                dataArray.push(rec.attributes);
+                console.log("SUCCESSWITHCOMMITT", this.dataArray);
+                opts.success({returnValue: true});
+
+            }
+            else {
+                opts.success([]);
             }
 
-            this.dataArray.push(rec.attributes);
-            opts.success({returnValue: true});
         } else {
             console.log("Can't store collection... still makes me headaches.");
             opts.fail();

@@ -35,20 +35,28 @@ enyo.kind({
                 {
                     kind: "onyx.InputDecorator",
                     fit:true,
-                    //style: "width: 100%;",
-                    //flex: true,
                     alwaysLooksFocused: true,
                     layoutKind:"FittableColumnsLayout",
                     components: [
                         {
+                            name:"messageTextArea",
                             kind: "onyx.TextArea",
                             fit:true,
                             placeholder: "Type a new message ...",
-                            classes:"enyo-selectable"
+                            classes:"enyo-selectable",
+                            onkeyup:"messageTextAreaChanged"
                         },
                         {
-                            kind:"onyx.Icon",
-                            style:"width:25px; height:25px; border:1px solid red;",
+                            name:"sendMessageIcon",
+                            kind:"onyx.IconButton",
+                            classes:"sendmessage",
+                            showing:false,
+                            ontap:"sendMessage"
+                        },
+                        {
+                            name:"attachItemIcon",
+                            kind:"onyx.IconButton",
+                            classes:"attachitem",
                         }
                     ]
                 }
@@ -81,5 +89,31 @@ enyo.kind({
     },
     messageListChanged: function() {
         this.$.messageList.refresh();
+    },
+    messageTextAreaChanged: function(s,e){
+        //console.log("messageTextAreaChanged", s, e);
+        if (s.getValue()!=""){
+            this.$.attachItemIcon.hide();
+            this.$.sendMessageIcon.show();
+        }else{
+            this.$.attachItemIcon.show();
+            this.$.sendMessageIcon.hide();
+        }
+    },
+    sendMessage:function(s,e){
+        console.log("do send message", s, e);
+
+        var messageText = this.$.messageTextArea.getValue();
+        var localTimestamp = new moment();
+
+        var message = {_kind: "com.palm.smsmessage:1", conversations: ["0"], folder: "inbox",
+            from: { addr: "+491234567890" }, localTimestamp: localTimestamp.format("X"), messageText: messageText,
+            networkMsgId: 0, priority: 0, serviceName: "sms", smsType: 0, status: "", timestamp: 0 };
+        var message = new MessageModel(message);
+        console.log("submitting", message, message.dbKind, message.get("dbKind"));
+        var rec = this.$.messageCollection.at(this.$.messageCollection.add(message));
+        console.log(rec, rec.store);
+        rec.commit({threadId:this.$.messageCollection.threadId});
+        this.messageListChanged();
     }
 });
