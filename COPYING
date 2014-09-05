@@ -50,3 +50,8 @@ app/assets/status-away.png
 app/assets/status-blank.png
 app/assets/status-button.png
 app/assets/status-offline.png
+
+This files are licensed under the terms of the Apache-2.0 and are copied from
+https://github.com/webOS-ports/core-apps/blob/master/com.palm.app.email/images/:
+
+app/assets/header-send-icon.png

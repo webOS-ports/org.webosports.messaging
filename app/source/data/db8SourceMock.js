@@ -8,9 +8,10 @@ enyo.kind({
         console.log(rec);
 
         if (rec instanceof enyo.Model) {
+            /* not sure if this if part even gets called or works properly.... */
             console.log("rec is instanceof enyo.Model");
-            for (i = 0; i < this.dataArray.length(); i += 1) {
-                console.log("rec " + this.dataArray[i]);
+            for (i = 0; i < this.dataArray.length; i += 1) {
+                console.log("Model rec " + this.dataArray[i]);
                 if (this.dataArray[i]._id === rec.attributes[rec.primaryKey]) {
                     opts.success([this.dataArray[i]]);
                     return;
@@ -24,7 +25,7 @@ enyo.kind({
 
             if (dbkind === "com.palm.message:1") {
                 threadId = rec.get("threadId");
-                console.log("threadId: " + threadId);
+                console.log("Collection threadId: " + threadId);
                 opts.success(this.dataArray[dbkind][threadId]);
             }
             else if (dbkind === "com.palm.chatthread:1") {
@@ -42,19 +43,33 @@ enyo.kind({
 
     commit: function(rec, opts) {
         var i;
-        console.log("Storing ", rec);
+        console.log("Storing ", rec, (rec instanceof enyo.Model), rec.get("dbKind") );
 
         if (rec instanceof enyo.Model) {
-            for (i = 0; i < this.dataArray.length(); i += 1) {
-                if (this.dataArray[i]._id === rec.attributes[rec.primaryKey]) {
-                    this.dataArray[i] = rec.attributes;
-                    opts.success({returnValue: true});
-                    return;
+            dbkind = rec.get("dbKind")||rec.dbKind;
+
+            if (dbkind === "com.palm.message:1") {
+                threadId = rec.get("threadId")||opts.threadId;
+                console.log("threadId: ", threadId);
+                //opts.success(this.dataArray[dbkind][threadId]);
+                var dataArray = this.dataArray["com.palm.message:1"][threadId];
+                console.log("dataArray says", dataArray);
+                for (i = 0; i < dataArray.length; i += 1) {
+                    if (dataArray[i]._id === rec.attributes[rec.primaryKey]) {
+                        dataArray[i] = rec.attributes;
+                        opts.success({returnValue: true});
+                        return;
+                    }
                 }
+                dataArray.push(rec.attributes);
+                console.log("SUCCESSWITHCOMMITT", this.dataArray);
+                opts.success({returnValue: true});
+
+            }
+            else {
+                opts.success([]);
             }
 
-            this.dataArray.push(rec.attributes);
-            opts.success({returnValue: true});
         } else {
             console.log("Can't store collection... still makes me headaches.");
             opts.fail();
@@ -93,23 +108,27 @@ enyo.kind({
 
     dataArray: {
         "com.palm.chatthread:1": [
-            { _id: "0", displayName: "Test", summary: "Test has called you ...",
+            { _id: "0", displayName: "Person1 WithReallySuperLongName", summary: "Summary of message from Person 1",
                 timestamp: 1408101740, replyAddress: "0144334456", replyService: "sms", personId: "", unreadCount: 2},
-            { _id: "1", displayName: "Test2", summary: "Test2 has called you ...",
+            { _id: "1", displayName: "Person 2", summary: "Summary of message from Person 2",
                 timestamp: 1409610140, replyAddress: "0144334456", replyService: "sms", personId: "", unreadCount: 0},
-            { _id: "2", displayName: "Test3", summary: "Test3 has called you ...",
+            { _id: "2", displayName: "Person 3", summary: "Summary of messages from Person 3, for whom there are no messages " +
+                "in thread. But we have a really long summary in any case to see if ellipsis works",
                 timestamp: 1409610140, replyAddress: "1234334456", replyService: "sms", personId: "", unreadCount: 0}
         ],
         "com.palm.message:1": {
             "0": [
                 { _id: "0", _kind: "com.palm.smsmessage:1", conversations: ["0"], folder: "inbox", 
-                  from: { addr: "+491234567890" }, localTimestamp: 0, messageText: "This is a small SMS test message 1 from test",
+                  from: { addr: "+491234567890" }, localTimestamp: 1408101740, messageText: "This is a small SMS test message 1 from Someone",
                   networkMsgId: 0, priority: 0, serviceName: "sms", smsType: 0, status: "successful", timestamp: 0 },
                 { _id: "1", _kind: "com.palm.smsmessage:1", conversations: ["1"], folder: "sent",
-                  from: { addr: "+491234567890" }, localTimestamp: 0, messageText: "This is a small SMS test message 2 TO test",
+                  from: { addr: "+491234567890" }, localTimestamp: 1408601740, messageText: "This is a extremely large " +
+                    "SMS test message 2 TO Someone. Like I said, this is a <i>extremely</i> large message " +
+                    "that also has some HTML formatting in it. <b><u>Just because we can!</u></b> Plus, we " +
+                    "need to <span style='color:maroon;'>check support for auto-expansion</span> of message.",
                   networkMsgId: 0, priority: 0, serviceName: "sms", smsType: 0, status: "successful", timestamp: 0 },
                 { _id: "4", _kind: "com.palm.smsmessage:1", conversations: ["1"], folder: "inbox",
-                    from: { addr: "+491234567890" }, localTimestamp: 0, messageText: "This is a small SMS test message 5, also from test",
+                    from: { addr: "+491234567890" }, localTimestamp: 1408601740, messageText: "This is a small SMS test message 5, also from Someone",
                     networkMsgId: 0, priority: 0, serviceName: "sms", smsType: 0, status: "successful", timestamp: 0 }
             ],
             "1": [

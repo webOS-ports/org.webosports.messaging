@@ -3,18 +3,44 @@
     This way, you can minify your application, and just remove the "source" folder for production
 */
 
-//handle smaller screens:
-@media all and (max-width: 800px) {
-    .app-panels > * {
-        min-width: 100%;
-        max-width: 100%;
-    }
-
-    .threads-list .thread-item .name {
-        max-width: 100%;
-    }
+.app-panels > * {
+  width:320px;
+  background-color: #EAEAEA;
+  box-shadow: -6px -4px 3px 1px rgba(0,0,0,0.4);
 }
 
+@media all and (max-width: 800px) {
+  .app-panels > * {
+    min-width: 100%;
+  }
+  .thread-item .info{
+    width:85%;
+  }
+
+  .thread-item-container {
+    width:100%;
+    min-width:100%;
+  }
+
+}
+
+@media all and (min-width: 800px) {
+  .app-panels > * {
+    min-width: auto!important;
+  }
+  .thread-item .info{
+    width:240px;
+  }
+  .thread-item-container{
+    width:320px;
+    min-width:320px;
+    max-width:320px;
+  }
+}
+
+.onyx-radiobutton.onyx-tabbutton {
+  font-size: 14px;
+}
 /****************
 
 ContactsUI CSS
@@ -23,6 +49,7 @@ ContactsUI CSS
 .threads-list {
     background-color:#e4e4e2;
 }
+
 .threads-list .contacts-search {
     /* margin:0 0 -3px; /* blend shadow from bg_search.png */
     /* border-image:url(../../assets/bg_search.png) 0 15 repeat;
@@ -57,10 +84,30 @@ ContactsUI CSS
 .threads-list .thread-item.folder.inbox{
   background-color:rgba(67,100,200,0.3);
   margin-right:50px;
+
+  background: -moz-linear-gradient(left,  rgba(140,199,216,1) 0%, rgba(140,199,216,1) 1%, rgba(125,185,232,0) 100%); /* FF3.6+ */
+  background: -webkit-gradient(linear, left top, right top, color-stop(0%,rgba(140,199,216,1)), color-stop(1%,rgba(140,199,216,1)), color-stop(100%,rgba(125,185,232,0))); /* Chrome,Safari4+ */
+  background: -webkit-linear-gradient(left,  rgba(140,199,216,1) 0%,rgba(140,199,216,1) 1%,rgba(125,185,232,0) 100%); /* Chrome10+,Safari5.1+ */
+  background: -o-linear-gradient(left,  rgba(140,199,216,1) 0%,rgba(140,199,216,1) 1%,rgba(125,185,232,0) 100%); /* Opera 11.10+ */
+  background: -ms-linear-gradient(left,  rgba(140,199,216,1) 0%,rgba(140,199,216,1) 1%,rgba(125,185,232,0) 100%); /* IE10+ */
+  background: linear-gradient(to right,  rgba(140,199,216,1) 0%,rgba(140,199,216,1) 1%,rgba(125,185,232,0) 100%); /* W3C */
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#8cc7d8', endColorstr='#007db9e8',GradientType=1 ); /* IE6-9 */
 }
 
 .threads-list .thread-item.folder.sent{
   background-color:#abd56e;
+  margin-left:50px;
+  background: -moz-linear-gradient(left,  rgba(255,255,255,0.2) 0%, rgba(150,219,142,1) 100%); /* FF3.6+ */
+  background: -webkit-gradient(linear, left top, right top, color-stop(0%,rgba(255,255,255,0.2)), color-stop(100%,rgba(150,219,142,1))); /* Chrome,Safari4+ */
+  background: -webkit-linear-gradient(left,  rgba(255,255,255,0.2) 0%,rgba(150,219,142,1) 100%); /* Chrome10+,Safari5.1+ */
+  background: -o-linear-gradient(left,  rgba(255,255,255,0.2) 0%,rgba(150,219,142,1) 100%); /* Opera 11.10+ */
+  background: -ms-linear-gradient(left,  rgba(255,255,255,0.2) 0%,rgba(150,219,142,1) 100%); /* IE10+ */
+  background: linear-gradient(to right,  rgba(255,255,255,0.2) 0%,rgba(150,219,142,1) 100%); /* W3C */
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#33ffffff', endColorstr='#96db8e',GradientType=1 ); /* IE6-9 */
+}
+
+.threads-list .thread-item.folder.outbox{
+  background-color:lightyellow;
   margin-left:50px;
 }
 
@@ -91,6 +138,7 @@ ContactsUI CSS
     background-color: white;
     margin: 5px;
     position: relative;
+    text-align: left;
 }
 .threads-list .thread-item div {
     vertical-align:middle;
@@ -110,8 +158,8 @@ ContactsUI CSS
 }
 .threads-list .thread-item > .icon {
     height:50px;
-    margin:10px 15px 10px 0;
     width:50px;
+    margin:0px;
     position: absolute;
 }
 .threads-list .thread-item > .icon .mask {
@@ -136,26 +184,26 @@ ContactsUI CSS
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
-    max-width: 160px;
+    max-width: 80%;
     text-align: left;
     font-weight: bold;
-    //padding-top: 10px;
-    // position: absolute;
-    // top: 25px;
-    // left: 80px;
+    margin-bottom:5px;
 }
 .threads-list .thread-item .summary {
     color: #333333;
-    font-size: 0.85rem;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-    max-width: 160px;
+    font-size: 0.8rem;
     text-align: left;
-    margin-top:3px;
-    // position: absolute;
-    // top: 25px;
-    // left: 80px;
+    display: block;
+    display: -webkit-box;
+    max-width: 100%;
+    height: 32px;
+    margin: 0 auto;
+    line-height: 1.3;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: inherit;
 }
 
 .threads-list .thread-item .unreadcount {
@@ -164,10 +212,10 @@ ContactsUI CSS
   font-weight:bold;
   border-radius:20px;
   width:25px;
-  height:20px;
+  height:23px;
   background-color:#ccc;
   text-align:center;
-  padding-top:5px;
+  padding-top:2px;
   margin-left:5px;
 }
 
@@ -175,6 +223,25 @@ ContactsUI CSS
 .threads-list .header.favorites {
     background:none;
     border-bottom-color:rgba(0,0,0,0.30);
+}
+
+.threads-list .thread-item .message-text{
+  height:auto;
+}
+
+.threads-list .thread-item .message-timestamp{
+  //float: right;
+  vertical-align: bottom;
+  font-size: 0.8rem;
+  color: #444;
+  position:absolute;
+  bottom:7px;
+  right:7px;
+}
+
+.threads-list .thread-item .message-timestamp-container {
+  position: relative;
+  height: 30px;
 }
 
 
@@ -285,13 +352,45 @@ ContactsUI CSS
 }
 
 .im-status {
-    height: 20px;
-    width:20px;
-    background: url(../../assets/status-away.png) no-repeat 0 0;
-    //position: absolute;
-    //left: 0px;
-    //top: 0px;
+  height: 20px;
+  width:20px;
+  background: url(../../assets/status-blank.png) no-repeat 0 0;
+  background-size: cover;
 }
+
+.im-status.status-busy, .im-status.status-away{
+    background: url(../../assets/status-away.png) no-repeat 0 0;
+}
+.im-status.status-offline{
+  background: url(../../assets/status-offline.png) no-repeat 0 0;
+}
+.im-status.status-available{
+  background: url(../../assets/status-available.png) no-repeat 0 0;
+}
+.im-status.button{
+  background: url(../../assets/status-button.png) no-repeat 0 0;
+  background-size: cover;
+}
+
+.im-status.status-unknown, .im-status.unknown{
+  background: url(../../assets/status-offline.png) no-repeat 0 0;
+}
+
+.details .sendmessage{
+  background: url(../../assets/header-send-icon.png) no-repeat 0 0;
+  height:30px;
+  width:30px;
+  margin-right:10px;
+}
+
+.details .attachitem{
+  background: url(../../assets/menu-icon-attach.png) no-repeat 0 0;
+  height:30px;
+  width:30px;
+  margin-right:10px;
+}
+
+
 .edit-contact.button {
     background:none;
     border-image:none;
@@ -344,6 +443,8 @@ Contacts App CSS
 
 body {
     background: transparent;
+    font-family:'Segoe UI','Helvetica Neue', 'Nimbus Sans L', pt-sans-n4, pt-sans, Prelude, Prelude Medium, Segoe UI, Arial, Helvetica, Sans-Serif;
+    -webkit-font-smoothing: antialiased;
 }
 
 /*.leftpane {
@@ -397,7 +498,7 @@ img {
 
 .icon {
     height: 50px;
-    margin: 10px 15px 10px 0;
+    margin: 10px 15px 10px 10px;
     width: 50px;
     position: relative;
 }

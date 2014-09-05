@@ -8,7 +8,18 @@
 enyo.kind({
     name: "messaging.Application",
     kind: "enyo.Application",
-    view: "messaging.MainView"
+    view: "messaging.MainView",
+
+    create: function(){
+        this.inherited(arguments);
+        this.$.globalThreadCollection.fetch({strategy: "merge"});
+        //this.$.globalBuddyCollection.fetch({strategy: "merge"});
+    },
+
+    components:[
+        { name:"globalThreadCollection", kind:"ThreadCollection", instanceAllRecords:false},
+        { name:"globalBuddyCollection", kind:"Collection", instanceAllRecords:false}
+    ]
 });
 
 enyo.ready(function () {

@@ -1,6 +1,8 @@
 enyo.depends(
     "ThreadItem.js",
     "ThreadList.js",
+    "BuddyList.js",
+    "BuddyItem.js",
     "ThreadView.js",
     "MessageItem.js",
     "views.js"
