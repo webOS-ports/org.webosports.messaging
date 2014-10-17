@@ -1,0 +1,22 @@
+{
+	"id": "org.webosports.service.messaging",
+	"description": "webOS Ports messaging service. Assigns messages to chat threads.",
+	"engine": "node",
+	"activityTimeout": 30,
+	"commandTimeout": 60,
+	"services": [
+		{
+			"name": "org.webosports.service.messaging",
+			"description": "webOS Ports messaging service. Assigns messages to chat threads.",
+			"globalized": false,
+			"privatebus": true,
+			"commands": [
+				{
+					"name": "assingMessages",
+					"assistant": "AssingMessages",
+					"public": false
+				}
+			]
+		}
+	]
+}
