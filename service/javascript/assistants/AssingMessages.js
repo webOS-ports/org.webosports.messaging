@@ -2,11 +2,11 @@
 
 var messageQuery = {
 	from: "com.palm.message:1",
-		where: [
-			{ "op": ">", "prop": "_rev", "val": 0 }, //val will be changed in code.
-			{"prop": "conversations", "op": "=", "val": null}, //only messages without conversations are of interest
-			{"prop": "flags.visible", "op": "=", "val": true} //only visible ones.
-		]
+	where: [
+		{ "op": ">", "prop": "_rev", "val": 0 }, //val will be changed in code.
+		{"prop": "conversations", "op": "=", "val": null}, //only messages without conversations are of interest
+		{"prop": "flags.visible", "op": "=", "val": true} //only visible ones.
+	]
 };
 
 //can't use Foundations.Activity, because it does not allow immideate activities.
@@ -46,30 +46,115 @@ function debug (msg) {
 var AssingMessages = function () { "use strict"; };
 
 AssingMessages.prototype.processMessage = function (msg) {
-	var future = new Future();
-	if (!msg.from || !msg.from.addr) {
-		console.error("Need msg.from.addr field. Message " + JSON.stringify(msg) + " skipped.");
-		//can only work on imcomming messages?
-		future.result = {returnValue: false};
-		return future;
+	if (msg.folder === "outbox") {
+		if (!msg.to || !msg.to.length) {
+			console.error("Need address field. Message " + JSON.stringify(msg) + " skipped.");
+			return new Future({returnValue: false});
+		}
+
+		//one message can be associated with multiple chattreads if it has multiple recievers.
+		innerFuture = new Future({}); //inner future with dummy result
+		msg.to.forEach(function (addrObj) {
+			//enque a lot of "processOneMessageAndAddress" functions and let each of them nest one result
+			innerFuture.then(this, function processOneMessageAndAddress() {
+				innerFuture.nest(this.processMessage(msg, addrObj.addr));
+			});
+		});
+
+		return innerFuture;
+	} else {
+		if (!msg.from || !msg.from.addr) {
+			console.error("Need address field. Message " + JSON.stringify(msg) + " skipped.");
+			return new Future({returnValue: false});
+		}
+		return processMessageAndAddress(msg, msg.from.addr);
+	}
+}
+
+AssingMessages.prototype.processMessageAndAddress = function (msg, address) {
+	var future = new Future(), name = "", normalizedAddress;
+	if (!msg.serviceName) {
+		console.warn("No service name in message, assuming sms.");
+		msg.serviceName = "sms";
 	}
 
 	//find person from address / phone number:
 	if (msg.serviceName === "sms" || msg.serviceName === "mms") {
-		future.nest(Contacts.Person.findByPhone(msg.from.addr, {
-			includeMatchingItem: true,
-			returnAllMatches: true
+		future.nest(Contacts.Person.findByPhone(address, {
+			includeMatchingItem: false,
+			returnAllMatches: false,
 		}));
+		normalizedAddress = Contacts.PhoneNumber.normalizePhoneNumber(address);
 	} else {
-		future.nest(Contacts.Person.findByIM(msg.from.addr, msg.serviceName, {
-			includeMatchingItem: true,
-			returnAllMatches: true
+		future.nest(Contacts.Person.findByIM(address, msg.serviceName, {
+			includeMatchingItem: false,
+			returnAllMatches: false
 		}));
+		normalizedAddress = Contacts.IMAddress.normalizeIm(address);
 	}
 
 	future.then(function personCB() {
+		var result = checkResult(future), query = { from: "com.palm.chatthread:1"};
+		if (result && !(result.returnValue === false)) { //result is person
+			//TODO: if multiple persons => try to find person by configured account <=> contacts or similar.
+			query.where = [ { op: "=", prop: "personId", val: result.getId() } ];
+			name = result.getDisplayName();
+		} else {
+			console.error("No person found " + JSON.stringify(msg) + ".");
+			name = normalizedAddress;
+			query.where = [ { op: "=", prop: "normalizedAddress", val: normalizedAddress } ];
+		}
 
+		future.nest(DB.find(query));
 	});
+
+	future.then(function chatthreadCB() {
+		var result = checkResult(future), chatthread = { unreadCount: 0, flags: {}};
+		if (result.returnValue === true && result.results && result.results.length > 0) {
+			if (result.results.length > 1) {
+				//multiple threads. What to do? Probably something not right? :-/
+				console.warn("Multiple chatthreads found. Will only use first one.");
+			}
+			chatthread = result.results[0];
+		}
+
+		chatthread.displayName = name;
+		if (!chatthread.flags) {
+			chatthread.flags = {};
+		}
+		chatthread.flags.visible = true; //have new message.
+		chatthread.normalizedAddress = normalizedAddress;
+		chatthread.replyAddress = address;
+		chatthread.replyService = msg.serviceName;
+		chatthread.summary = msg.messageText;
+		chatthread.timestamp = msg.localTimestamp || Date.now();
+		if (msg.folder === "inbox" && (!msg.flags || (!msg.flags.read && msg.flags.visible))) {
+			chatthread.unreadCount += 1;
+		}
+
+		future.nest(DB.merge(chatthread));
+	});
+
+	future.then(function chatthredMergeCB() {
+		var result = checkResult(future);
+		if (result.returnValue === true && result.results && result.results.length > 0) {
+			if (!msg.conversations) {
+				msg.conversations = [];
+			}
+			msg.conversations.push(result.results[0].id);
+
+			future.nest(DB.merge(msg));
+		} else {
+			console.error("Could not store chatthread: ", result);
+			future.result = { returnValue: false msg: "Chatthread error"};
+		}
+	});
+
+	future.then(function msgMergeCB() {
+		var result = checkResult(future);
+		console.log("Message stored: ", result);
+		future.result = {returnValue: true};
+	})
 
 	return future;
 };
