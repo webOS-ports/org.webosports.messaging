@@ -11,6 +11,9 @@ var DB = Foundations.Data.DB;
 var Future = Foundations.Control.Future;
 var PalmCall = Foundations.Comm.PalmCall;
 
+var servicePath = fs.realpathSync(".");
+var checkResult = require(servicePath + "/javascript/utils/checkResult.js");
+
 process.on("uncaughtException", function (e) {
 	"use strict";
 	console.error("Uncaought error:" + e.stack);
