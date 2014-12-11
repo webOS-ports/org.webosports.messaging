@@ -1,15 +1,23 @@
 {
-    "id": "com.palm.chatthread:1",
-    "owner": "org.webosports.service.messaging",
-    "sync": true,
-    "indexes": [
-        {
-            "name": "byperson",
-            "props": [{"name": "personId"}]
-        },
-        {
-            "name": "byunread",
-            "props": [{"name": "unreadCount"}]
-        },
-    ],
+	"id": "com.palm.chatthread:1",
+	"owner": "org.webosports.service.messaging",
+	"sync": false,
+	"indexes": [
+		{
+			"name": "byperson",
+			"props": [{"name": "personId"}]
+		},
+		{
+			"name": "byunread",
+			"props": [{"name": "unreadCount"}]
+		},
+		{
+			"name": "bynormalizedaddress",
+			"props": [{"name": "normalizedAddress"}]
+		},
+		{
+			"name": "bynormalizedaddressandservice",
+			"props": [{"name": "normalizedAddress"}, {"name": "replyService"}]
+		}
+	],
 }

@@ -1,14 +1,15 @@
 {
-    "id": "com.palm.message:1",
-    "owner": "org.webosports.service.messaging",
-    "indexes": [
-        {
-            "name": "bytime",
-            "props": [{"name": "localTimestamp"}]
-        },
-        {
-            "name": "byfolder",
-            "props": [{"name": "folder"}]
-        },
-    ],
+	"id": "com.palm.message:1",
+	"owner": "org.webosports.service.messaging",
+	"sync": true,
+	"indexes": [
+		{
+			"name": "bytime",
+			"props": [{"name": "localTimestamp"}]
+		},
+		{
+			"name": "byfolder",
+			"props": [{"name": "folder"}]
+		},
+	],
 }
