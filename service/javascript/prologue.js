@@ -1,5 +1,5 @@
 /*exported Contacts, Globalization, DB, Future, PalmCall */
-/*global IMPORTS, console, process */
+/*global IMPORTS, console, process, require:true */
 
 // Load the Foundations library and create
 // short-hand references to some of its components.
@@ -10,6 +10,12 @@ var Globalization = IMPORTS.globalization.Globalization;
 var DB = Foundations.Data.DB;
 var Future = Foundations.Control.Future;
 var PalmCall = Foundations.Comm.PalmCall;
+
+//now add some node.js imports:
+if (typeof require === "undefined") {
+	require = IMPORTS.require;
+}
+var fs = require("fs"); //required for own node modules and current vCard converter.
 
 var servicePath = fs.realpathSync(".");
 var checkResult = require(servicePath + "/javascript/utils/checkResult.js");

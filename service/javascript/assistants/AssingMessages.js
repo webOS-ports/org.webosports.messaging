@@ -1,4 +1,4 @@
-/*global Future, console, DB, PalmCall, Contacts */
+/*global Future, console, DB, PalmCall, Contacts, checkResult */
 
 var messageQuery = {
 	from: "com.palm.message:1",
@@ -53,11 +53,11 @@ AssingMessages.prototype.processMessage = function (msg) {
 		}
 
 		//one message can be associated with multiple chattreads if it has multiple recievers.
-		innerFuture = new Future({}); //inner future with dummy result
+		var innerFuture = new Future({}); //inner future with dummy result
 		msg.to.forEach(function (addrObj) {
 			//enque a lot of "processOneMessageAndAddress" functions and let each of them nest one result
 			innerFuture.then(this, function processOneMessageAndAddress() {
-				innerFuture.nest(this.processMessage(msg, addrObj.addr));
+				innerFuture.nest(this.processMessageAndAddress(msg, addrObj.addr));
 			});
 		});
 
@@ -67,9 +67,9 @@ AssingMessages.prototype.processMessage = function (msg) {
 			console.error("Need address field. Message " + JSON.stringify(msg) + " skipped.");
 			return new Future({returnValue: false});
 		}
-		return processMessageAndAddress(msg, msg.from.addr);
+		return this.processMessageAndAddress(msg, msg.from.addr);
 	}
-}
+};
 
 AssingMessages.prototype.processMessageAndAddress = function (msg, address) {
 	var future = new Future(), name = "", normalizedAddress;
@@ -95,7 +95,7 @@ AssingMessages.prototype.processMessageAndAddress = function (msg, address) {
 
 	future.then(function personCB() {
 		var result = checkResult(future), query = { from: "com.palm.chatthread:1"};
-		if (result && !(result.returnValue === false)) { //result is person
+		if (result && (result.returnValue === undefined || result.returnValue)) { //result is person
 			//TODO: if multiple persons => try to find person by configured account <=> contacts or similar.
 			query.where = [ { op: "=", prop: "personId", val: result.getId() } ];
 			name = result.getDisplayName();
@@ -146,7 +146,7 @@ AssingMessages.prototype.processMessageAndAddress = function (msg, address) {
 			future.nest(DB.merge(msg));
 		} else {
 			console.error("Could not store chatthread: ", result);
-			future.result = { returnValue: false msg: "Chatthread error"};
+			future.result = { returnValue: false, msg: "Chatthread error"};
 		}
 	});
 
@@ -154,7 +154,7 @@ AssingMessages.prototype.processMessageAndAddress = function (msg, address) {
 		var result = checkResult(future);
 		console.log("Message stored: ", result);
 		future.result = {returnValue: true};
-	})
+	});
 
 	return future;
 };
@@ -183,7 +183,7 @@ AssingMessages.prototype.run = function (outerFuture) {
 				innerFuture.then(this, function processOneMessage() {
 					innerFuture.nest(this.processMessage(msg));
 				});
-			});
+			}, this);
 
 			future.nest(innerFuture);
 		} else {

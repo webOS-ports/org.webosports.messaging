@@ -1,3 +1,4 @@
+/*jslint node: true */
 /**
  * helper to check result of futures with catching exceptions
  * because futures can "transport" exceptions to waiting
