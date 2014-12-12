@@ -1,0 +1,14 @@
+{
+	"role": {
+	"allowedNames": ["org.webosports.service.messaging"],
+		"type": "regular",
+		"exeName": "js"
+	},
+	"permissions": [
+		{
+			"inbound": ["*"],
+			"outbound": ["*"],
+			"service": "org.webosports.service.messaging"
+		}
+	]
+}
