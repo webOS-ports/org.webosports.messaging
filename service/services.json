@@ -12,8 +12,8 @@
 			"privatebus": true,
 			"commands": [
 				{
-					"name": "assingMessages",
-					"assistant": "AssingMessages",
+					"name": "assignMessages",
+					"assistant": "AssignMessages",
 					"public": false
 				}
 			]

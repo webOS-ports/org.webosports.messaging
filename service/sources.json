@@ -21,6 +21,6 @@
 		"source": "javascript/prologue.js"
 	},
 	{
-		"source": "javascript/assistants/AssingMessages.js"
+		"source": "javascript/assistants/AssignMessages.js"
 	}
 ]

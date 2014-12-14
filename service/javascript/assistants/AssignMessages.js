@@ -1,4 +1,4 @@
-/*global Future, console, DB, PalmCall, Contacts, checkResult */
+/*global Future, console, DB, PalmCall, Contacts, checkResult, Log */
 
 var messageQuery = {
 	from: "com.palm.message:1",
@@ -27,7 +27,7 @@ var activity = {
 		params: { query: messageQuery }
 	},
 	callback: {
-		method: "palm://org.webosports.service.messaging/assingMessagesToThread",
+		method: "palm://org.webosports.service.messaging/assignMessages",
 		params: { lastCheckedRev: 0 } //set to same rev as above in code.
 	}
 };
@@ -39,22 +39,20 @@ function setRev (newRev) {
 	messageQuery.where[0].val = newRev;
 }
 
-function debug (msg) {
-	console.log(msg);
-}
+var AssignMessages = function () { "use strict"; };
 
-var AssingMessages = function () { "use strict"; };
-
-AssingMessages.prototype.processMessage = function (msg) {
+AssignMessages.prototype.processMessage = function (msg) {
+	Log.debug("Processing message ", msg);
 	if (msg.folder === "outbox") {
 		if (!msg.to || !msg.to.length) {
-			console.error("Need address field. Message " + JSON.stringify(msg) + " skipped.");
+			Log.log("Need address field. Message ", msg, " skipped.");
 			return new Future({returnValue: false});
 		}
 
 		//one message can be associated with multiple chattreads if it has multiple recievers.
 		var innerFuture = new Future({}); //inner future with dummy result
 		msg.to.forEach(function (addrObj) {
+			Log.debug("Found address: ", addrObj);
 			//enque a lot of "processOneMessageAndAddress" functions and let each of them nest one result
 			innerFuture.then(this, function processOneMessageAndAddress() {
 				innerFuture.nest(this.processMessageAndAddress(msg, addrObj.addr));
@@ -64,14 +62,15 @@ AssingMessages.prototype.processMessage = function (msg) {
 		return innerFuture;
 	} else {
 		if (!msg.from || !msg.from.addr) {
-			console.error("Need address field. Message " + JSON.stringify(msg) + " skipped.");
+			Log.log("Need address field. Message ", msg, " skipped.");
 			return new Future({returnValue: false});
 		}
+		Log.debug("Found address: ", msg.from);
 		return this.processMessageAndAddress(msg, msg.from.addr);
 	}
 };
 
-AssingMessages.prototype.processMessageAndAddress = function (msg, address) {
+AssignMessages.prototype.processMessageAndAddress = function (msg, address) {
 	var future = new Future(), name = "", normalizedAddress;
 	if (!msg.serviceName) {
 		console.warn("No service name in message, assuming sms.");
@@ -159,7 +158,7 @@ AssingMessages.prototype.processMessageAndAddress = function (msg, address) {
 	return future;
 };
 
-AssingMessages.prototype.run = function (outerFuture) {
+AssignMessages.prototype.run = function (outerFuture) {
 	"use strict";
 	var args = this.controller.args,
 		future = new Future(),
@@ -172,6 +171,7 @@ AssingMessages.prototype.run = function (outerFuture) {
 	future.then(this, function gotMessages() {
 		var result = future.result,
 			innerFuture;
+		Log.debug("Got messages from db: ", result);
 
 		if (result.returnValue) {
 			innerFuture = new Future({}); //inner future with dummy result
@@ -203,7 +203,7 @@ AssingMessages.prototype.run = function (outerFuture) {
 
 	future.then(this, function processingFinished() {
 		var result = future.result;
-		debug("Activity restored: " + JSON.stringify(result));
+		Log.debug("Activity restored: " + JSON.stringify(result));
 		outerFuture.result = {};
 	});
 	return outerFuture;
