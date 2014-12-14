@@ -9,7 +9,7 @@ var Globalization = IMPORTS.globalization.Globalization;
 
 var DB = Foundations.Data.DB;
 var Future = Foundations.Control.Future;
-var PalmCall = Foundations.Comm.PalmCall;
+var PalmCall = Foundations.Comms.PalmCall;
 
 //now add some node.js imports:
 if (typeof require === "undefined") {
@@ -19,6 +19,7 @@ var fs = require("fs"); //required for own node modules and current vCard conver
 
 var servicePath = fs.realpathSync(".");
 var checkResult = require(servicePath + "/javascript/utils/checkResult.js");
+var Log = require(servicePath + "/javascript/utils/Log.js");
 
 process.on("uncaughtException", function (e) {
 	"use strict";
