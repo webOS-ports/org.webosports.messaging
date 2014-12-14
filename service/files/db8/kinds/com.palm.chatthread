@@ -19,5 +19,5 @@
 			"name": "bynormalizedaddressandservice",
 			"props": [{"name": "normalizedAddress"}, {"name": "replyService"}]
 		}
-	],
+	]
 }

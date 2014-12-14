@@ -1,22 +1,22 @@
 [
-    {
-        "type": "db.kind",
-        "object": "com.palm.message:1",
-        "caller": "org.webosports.*",
-        "operations": {
-            "extend": "allow",
-            "read": "allow"
-        }
-    },
-    {
-        "type": "db.kind",
-        "object": "com.palm.message:1",
-        "caller": "org.webosports.app.messaging",
-        "operations": {
-            "create": "allow",
-            "delete": "allow",
-            "read": "allow",
-            "update": "allow"
-        }
-    },
+	{
+		"type": "db.kind",
+		"object": "com.palm.message:1",
+		"caller": "org.webosports.*",
+		"operations": {
+			"extend": "allow",
+			"read": "allow"
+		}
+	},
+	{
+		"type": "db.kind",
+		"object": "com.palm.message:1",
+		"caller": "org.webosports.app.messaging",
+		"operations": {
+			"create": "allow",
+			"delete": "allow",
+			"read": "allow",
+			"update": "allow"
+		}
+	}
 ]

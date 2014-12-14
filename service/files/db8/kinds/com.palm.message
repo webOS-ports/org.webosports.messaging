@@ -11,5 +11,14 @@
 			"name": "byfolder",
 			"props": [{"name": "folder"}]
 		},
-	],
+		{
+			"name": "revConversationVisible",
+			"props": [
+				{"name":"_rev"},
+				{"name":"conversations"},
+				{"name":"flags"},
+				{"name":"flags.visible"}
+			]
+		}
+	]
 }
