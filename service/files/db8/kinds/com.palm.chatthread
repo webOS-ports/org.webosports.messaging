@@ -1,23 +1,40 @@
 {
-	"id": "com.palm.chatthread:1",
+	"id":"com.palm.chatthread:1",
 	"owner": "org.webosports.service.messaging",
-	"sync": false,
 	"indexes": [
 		{
-			"name": "byperson",
-			"props": [{"name": "personId"}]
-		},
-		{
-			"name": "byunread",
-			"props": [{"name": "unreadCount"}]
-		},
-		{
-			"name": "bynormalizedaddress",
-			"props": [{"name": "normalizedAddress"}]
-		},
-		{
-			"name": "bynormalizedaddressandservice",
-			"props": [{"name": "normalizedAddress"}, {"name": "replyService"}]
+			"name":"byperson",
+			"props":[{"name":"personId"}]
+		}, {
+			"name":"bygroupchat",
+			"props":[{"name":"groupChatId"}]
+		}, {
+			"name":"bytimestamp",
+			"props": [
+				{"default":true,"name":"flags.visible"},
+				{"name":"timestamp"}
+			]
+		}, {
+			"name":"fortypedownsearch",
+			"props": [
+				{"default":true,"name":"flags.visible"},
+				{"collate":"primary","default":"","name":"displayName","tokenize":"all"},
+				{"name":"timestamp"}
+			]
+		}, {
+			"name":"byunread",
+			"props":[{"name":"unreadCount"}]
+		}, {
+			"name":"byNormalizedAddress",
+			"props":[{"name":"normalizedAddress"}]
+		}, {
+			"name":"personIdAndUnreadCountRevSet",
+			"props": [
+				{"name":"personId"},
+				{"name":"unreadCountRevSet"}
+			]
 		}
-	]
+	],
+	"revSets":[{"name":"unreadCountRevSet","props":[{"name":"unreadCount"}]}],
+	"sync":false
 }

@@ -5,20 +5,44 @@
 	"indexes": [
 		{
 			"name": "bytime",
-			"props": [{"name": "localTimestamp"}]
-		},
-		{
-			"name": "byfolder",
-			"props": [{"name": "folder"}]
-		},
-		{
-			"name": "revConversationVisible",
+			"props":[{"name":"localTimestamp"}]
+		}, {
+			"name":"byfolder",
+			"props":[{"name":"folder"}]
+		}, {
+			"name":"bychat",
 			"props": [
-				{"name":"_rev"},
-				{"name":"conversations"},
-				{"name":"flags"},
-				{"name":"flags.visible"}
+				{"default":null,"name":"conversations"},
+				{"default":true,"name":"flags.visible"},
+				{"name":"localTimestamp"}
 			]
+		}, {
+			"name":"forChatThreading",
+			"props": [
+				{"default":null,"name":"conversations"},
+				{"default":true,"name":"flags.visible"},
+				{"name":"_rev"}
+			]
+		}, {
+			"name":"conversationsbyfolder",
+			"props": [
+				{"name":"conversations"},
+				{"name":"folder"}
+			]
+		}, {
+			"name":"bynewincoming",
+			"props": [
+				{"name":"folder"},
+				{"name":"_rev"}
+			]
+		}, {
+			"name":"readFlagChanges",
+			"props": [{"name":"readRevSet"}]
+		}, {
+			"incDel":true,
+			"name":"deleted",
+			"props":[{"name":"_del"},{"name":"_rev"}]
 		}
-	]
+	],
+	"revSets":[{"name":"readRevSet","props":[{"name":"flags.read"}]}]
 }
