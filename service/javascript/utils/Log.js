@@ -97,7 +97,7 @@ var logBase = function () {
 };
 
 exports.log                     = logBase;
-exports.debug                   = logBase;
+exports.debug                   = dummy;
 exports.log_icalDebug           = logBase;
 exports.log_calDavDebug         = logBase;
 exports.log_calDavParsingDebug  = dummy;
