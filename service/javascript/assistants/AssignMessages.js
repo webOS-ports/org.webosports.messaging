@@ -59,7 +59,7 @@ AssignMessages.prototype.processMessage = function (msg) {
 			innerFuture.then(this, function processOneMessageAndAddress() {
 				innerFuture.nest(this.processMessageAndAddress(msg, addrObj.addr));
 			});
-		});
+		}, this);
 
 		return innerFuture;
 	} else {
@@ -100,9 +100,10 @@ AssignMessages.prototype.processMessageAndAddress = function (msg, address) {
 			//TODO: if multiple persons => try to find person by configured account <=> contacts or similar.
 			query.where = [ { op: "=", prop: "personId", val: result.getId() } ];
 			name = result.getDisplayName();
+			Log.debug("Person ", name, " found for ", address);
 		} else {
-			console.error("No person found " + JSON.stringify(msg) + ".");
-			name = normalizedAddress;
+			Log.debug("No person found for ", address);
+			name = address;
 			query.where = [ { op: "=", prop: "normalizedAddress", val: normalizedAddress } ];
 		}
 
@@ -110,7 +111,10 @@ AssignMessages.prototype.processMessageAndAddress = function (msg, address) {
 	});
 
 	future.then(function chatthreadCB() {
-		var result = checkResult(future), chatthread = { unreadCount: 0, flags: {}};
+		var result = checkResult(future), chatthread = { unreadCount: 0, flags: {}, _kind: "com.palm.chatthread:1"};
+
+		Log.debug("Get chatthread result: ", result);
+
 		if (result.returnValue === true && result.results && result.results.length > 0) {
 			if (result.results.length > 1) {
 				//multiple threads. What to do? Probably something not right? :-/
@@ -133,18 +137,23 @@ AssignMessages.prototype.processMessageAndAddress = function (msg, address) {
 			chatthread.unreadCount += 1;
 		}
 
-		future.nest(DB.merge(chatthread));
+		Log.debug("Result chatthread to write into db: ", chatthread);
+		future.nest(DB.merge([chatthread]));
 	});
 
 	future.then(function chatthredMergeCB() {
 		var result = checkResult(future);
+
+		Log.debug("Result from chatthread merge: ", result);
+
 		if (result.returnValue === true && result.results && result.results.length > 0) {
 			if (!msg.conversations) {
 				msg.conversations = [];
 			}
 			msg.conversations.push(result.results[0].id);
 
-			future.nest(DB.merge(msg));
+			Log.debug("Modified message to go into db: ", msg);
+			future.nest(DB.merge([msg]));
 		} else {
 			console.error("Could not store chatthread: ", result);
 			future.result = { returnValue: false, msg: "Chatthread error"};
@@ -153,13 +162,17 @@ AssignMessages.prototype.processMessageAndAddress = function (msg, address) {
 
 	future.then(function msgMergeCB() {
 		var result = checkResult(future);
-		console.log("Message stored: ", result);
+		Log.debug("Message stored: ", result);
 		if (result.returnValue) {
 			if (result.rev > newRev) {
 				newRev = result.rev;
 			}
+			//update rev to store msg again, if assigned to multiple conversations, i.e. multiple recepients.
+			msg._rev = result.results[0].rev;
+			future.result = {returnValue: true};
+		} else {
+			future.result = result; //propagate errors.
 		}
-		future.result = {returnValue: true};
 	});
 
 	return future;
