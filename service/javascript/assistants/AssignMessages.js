@@ -40,6 +40,7 @@ function setRev (newRev) {
 }
 
 var newRev = 0;
+var numProcessed = 0;
 
 var AssignMessages = function () { "use strict"; };
 
@@ -78,6 +79,7 @@ AssignMessages.prototype.processMessageAndAddress = function (msg, address) {
 		console.warn("No service name in message, assuming sms.");
 		msg.serviceName = "sms";
 	}
+	numProcessed += 1;
 
 	//find person from address / phone number:
 	if (msg.serviceName === "sms" || msg.serviceName === "mms") {
@@ -164,8 +166,8 @@ AssignMessages.prototype.processMessageAndAddress = function (msg, address) {
 		var result = checkResult(future);
 		Log.debug("Message stored: ", result);
 		if (result.returnValue) {
-			if (result.rev > newRev) {
-				newRev = result.rev;
+			if (result.results[0].rev > newRev) {
+				newRev = result.results[0].rev;
 			}
 			//update rev to store msg again, if assigned to multiple conversations, i.e. multiple recepients.
 			msg._rev = result.results[0].rev;
@@ -184,6 +186,8 @@ AssignMessages.prototype.run = function (outerFuture) {
 		future = new Future(),
 		rev = args.lastCheckedRev || 0;
 
+	Log.debug("Running from activity: ", args.$activity);
+	
 	setRev(rev);
 	future.nest(DB.find(messageQuery, false, false));
 
@@ -212,23 +216,50 @@ AssignMessages.prototype.run = function (outerFuture) {
 
 	future.then(this, function processingFinished() {
 		var result = future.result;
+		Log.log("Processed ", numProcessed, " messages and adresses. New rev: ", newRev, " result: ", result);
 		outerFuture.result = result;
 	});
 	return outerFuture;
 };
 
 AssignMessages.prototype.complete = function (activityObject) {
-	var restart = false;
-	Log.debug("Completing ", activityObject);
-	if (activityObject.name === activity.name) {
-		Log.debug("Need to restart.");
+	Log.debug("Completing ", activityObject.name, " with id: ", activityObject._activityId);
+	var future = PalmCall.call("palm://com.palm.activitymanager", "getDetails", {"activityName": activity.name, current: false, internal: false});
+
+	future.then(this, function getDetailsCB() {
+		var result = checkResult(future);
 		setRev(newRev);
 		activityObject.setTrigger("fired",
 								  "palm://com.palm.db/watch",
 								  { query: messageQuery });
+		Log.debug("Rev: ", newRev, " query: ", messageQuery);
 		activityObject.setCallback("palm://org.webosports.service.messaging/assignMessages",
-								   { lastCheckedRev: 0 });
-		restart = true;
-	}
-	activityObject.complete(restart);
+								   { lastCheckedRev: newRev });
+		if (result.returnValue === false) {
+			Log.debug("Could not get activity, re-creating it: ", result);
+			future.nest(PalmCall.call("palm://com.palm.activitymanager", "create", {activity: activity, start: true, replace: true}));
+		} else {
+			if (activityObject._activityId === result.activity.activityId) {
+				Log.debug("Need to restart.");
+				future.nest(PalmCall.call("palm://com.palm.activitymanager", "complete", {
+					activityId: result.activity.activityId,
+					restart: true,
+					trigger: activity.trigger,
+					callback: activity.callback
+				}));
+			} else {
+				Log.debug("Different activity, finish it");
+				future.nest(activityObject.complete());
+			}
+			future.result = {returnValue: true};
+		}
+	});
+
+	future.then(this, function checkActivityCB() {
+		var result = checkResult(future);
+		Log.debug("result: ", result);
+		future.result = result;
+	});
+
+	return future;
 };
