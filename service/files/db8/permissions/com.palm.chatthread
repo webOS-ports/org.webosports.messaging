@@ -1,7 +1,7 @@
 [
     {
         "type": "db.kind",
-        "object": "com.palm.message:1",
+        "object": "com.palm.chatthread:1",
         "caller": "org.webosports.*",
         "operations": {
             "extend": "allow",
@@ -10,7 +10,7 @@
     },
     {
         "type": "db.kind",
-        "object": "com.palm.message:1",
+        "object": "com.palm.chatthread:1",
         "caller": "org.webosports.app.messaging",
         "operations": {
             "create": "allow",

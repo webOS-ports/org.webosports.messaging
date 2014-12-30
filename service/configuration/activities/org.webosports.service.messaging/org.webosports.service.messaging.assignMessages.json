@@ -1,0 +1,34 @@
+{
+	"activity": {
+		"name": "chatthreader-message-watch",
+		"description": "Assings new messages to chat threads",
+		"callback": {
+			"method": "palm://org.webosports.service.messaging/assignMessages",
+			"params": { "lastCheckedRev": 0 }
+		},
+		"type": {
+			"immediate": true,
+			"priority": "normal",
+			"persist": true,
+			"explicit": true,
+			"power": true,
+			"powerDebounce": true
+		},
+		"trigger": {
+			"key": "fired",
+			"method": "palm://com.palm.db/watch",
+			"params": { 
+				"query": {
+					"from": "com.palm.message:1",
+					"where": [
+						{ "op": ">", "prop": "_rev", "val": 0 },
+						{"prop": "conversations", "op": "=", "val": null},
+						{"prop": "flags.visible", "op": "=", "val": true}
+					]
+				}
+			}
+		}
+	},
+	"start":   true,
+	"replace": true
+}
