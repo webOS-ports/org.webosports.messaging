@@ -7,7 +7,7 @@ enyo.kind({
         onSelected: ""
     },
     bindings:[
-        {from:".app.$.globalThreadCollection.isFetching", to:".globalThreadCollectionFetching"},
+        {from:".app.$.globalThreadCollection.status", to:".globalThreadCollectionStatus"},
         {from:".app.$.globalThreadCollection", to:".globalThreadCollection"}
     ],
     components: [
@@ -38,9 +38,10 @@ enyo.kind({
                                 { from: ".model", to: ".$.threadItem.model",
                                     transform: function(model, dir, bind){
                                         if (!model) {return null};
-                                        var col = model.owner;
+                                        var col = this.repeater.collection;
+                                        console.log("model", model, this, bind.owner);
                                         var currentDate = new moment(1000*(model.get?model.get("timestamp"):model.timestamp)).calendar();
-                                        var prevModel = col.at(col.indexOf(model)-1);
+                                        var prevModel = col.at(this.index-1);
                                         if (prevModel&&prevModel!=model){
                                             var prevDate = new moment(1000*(prevModel.get?prevModel.get("timestamp"):prevModel.timestamp)).calendar();
                                         }
@@ -74,13 +75,16 @@ enyo.kind({
    create: function () {
         this.inherited(arguments);
         this.log("==========> Created thread list");
-       this.$.realThreadList.set("collection", this.globalThreadCollection, true);
+        this.$.realThreadList.set("collection", this.globalThreadCollection, true);
    },
 
-    globalThreadCollectionFetchingChanged: function(){
+    globalThreadCollectionStatusChanged: function(){
+        console.log("changed", this.globalThreadCollection, this.globalThreadCollectionStatus);
+        this.$.realThreadList.set("collection", this.globalThreadCollection, true);
+        /*
         if (this.globalThreadCollectionFetching==false){
             this.$.realThreadList.set("collection", this.globalThreadCollection, true);
-        }
+        }*/
     },
     selectThread: function (inSender, inEvent) {
         if (!inSender.selected()) {

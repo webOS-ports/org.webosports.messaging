@@ -79,18 +79,17 @@ enyo.kind({
         this.inherited(arguments);
         this.log("==========> Created thread view");
 
-        this.$.messageList.collection = this.$.messageCollection;
+        this.$.messageList.set("collection", this.$.messageCollection);
     },
     threadChanged: function() {
-        this.log("Thread is ", this.thread);
+        this.log("Thread is ", this.thread, this.$.messageCollection);
 
-        this.$.messageCollection.destroyAllLocal();
-        this.$.messageCollection.removeAll();
+        this.$.messageCollection.empty();
 
         this.$.messageList.refresh();
 
         this.$.messageCollection.threadId = this.thread.attributes._id;
-        this.$.messageCollection.fetch({strategy: "merge", success: enyo.bind(this, "messageListChanged")});
+        this.$.messageCollection.fetch({merge: true, success: enyo.bindSafely(this, "messageListChanged")});
 
         this.$.headerText.setContent(this.thread.get("displayName")||"");
     },

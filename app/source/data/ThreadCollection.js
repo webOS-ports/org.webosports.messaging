@@ -2,12 +2,10 @@ enyo.kind({
     name: "ThreadCollection",
     kind: "enyo.Collection",
     model: "ThreadModel",
-    defaultSource: "db8",
+    source: "db8",
     dbKind: "com.palm.chatthread:1",
 
-    didFetch: function (rec, opts, res) {
-        this.inherited(arguments);
-
+    fetched: function (opts, res, source) {
         var compare = function (a,b) {
             var recA=a.attributes?a.raw():a;
             var recB=b.attributes?b.raw():b;
@@ -18,9 +16,11 @@ enyo.kind({
             return 0;
         };
 
-        if (this.records&&this.records.length!=0){
-            this.records.sort(compare);
+        if (this.models&&this.models.length!=0){
+            this.models.sort(compare);
         }
+
+        this.inherited(arguments);
 
     }
     //best is to not store this collection... might break things. urgs.

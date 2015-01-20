@@ -23,13 +23,16 @@ enyo.kind({
 });
 
 enyo.ready(function () {
+    console.log("enyo", enyo, enyo.store);
     if (window.PalmSystem) {
         window.PalmSystem.stageReady();
         //load contacts from db8:
-        enyo.store.addSources({db8: "db8Source"});
+        new db8Source({name:"db8"});
+        //enyo.store.addSources({db8: "db8Source"});
     } else {
         //use mocking source:
-        enyo.store.addSources({db8: "db8SourceMock"});
+        new db8SourceMock({name:"db8"});
+        //enyo.store.addSources({db8: "db8SourceMock"});
     }
     new messaging.Application({name: "app"});
 });

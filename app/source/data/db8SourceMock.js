@@ -5,7 +5,6 @@ enyo.kind({
     fetch: function(rec, opts) {
         var i;
         console.log("==> Fetch called...");
-        console.log(rec);
 
         if (rec instanceof enyo.Model) {
             /* not sure if this if part even gets called or works properly.... */
@@ -29,9 +28,11 @@ enyo.kind({
                 opts.success(this.dataArray[dbkind][threadId]);
             }
             else if (dbkind === "com.palm.chatthread:1") {
+                console.log("dbKind is com.palm.chatthread:1", opts, this.dataArray[dbkind]);
                 opts.success(this.dataArray[dbkind]);
             }
             else {
+                console.log("dbKind is none of above");
                 opts.success([]);
             }
         } else {
