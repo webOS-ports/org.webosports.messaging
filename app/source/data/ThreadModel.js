@@ -1,7 +1,7 @@
 enyo.kind({
     name: "ThreadModel",
     kind: "enyo.Model",
-    defaultSource: "db8",
+    source: "db8",
     dbKind: "com.palm.chatthread:1",
     primaryKey: "_id"
 });
