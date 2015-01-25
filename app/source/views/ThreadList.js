@@ -100,6 +100,7 @@ enyo.kind({
         var emptyThread = new ThreadModel();
         this.globalThreadCollection.add(emptyThread, 0);
         this.$.realThreadList.select(0);
+        console.log("createNewMessage", emptyThread, this.$.realThreadList.selected());
         this.doSelected({thread: this.$.realThreadList.selected()});
         /*
         this.$.threadPanel.createComponent({

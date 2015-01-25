@@ -47,6 +47,7 @@ enyo.kind({
     },
 
     commit: function(rec, opts) {
+        console.log("COMMITTING", rec, opts);
         var i;
         console.log("Storing ", rec, (rec instanceof enyo.Model), rec.get("dbKind") );
 
@@ -67,6 +68,21 @@ enyo.kind({
                     }
                 }
                 dataArray.push(rec.attributes);
+                console.log("SUCCESSWITHCOMMITT", this.dataArray);
+                opts.success({returnValue: true});
+
+            }
+            else if (dbkind === "com.palm.chatthread:1") {
+
+                var dataArray = this.dataArray["com.palm.chatthread:1"];
+                for (i = 0; i < dataArray.length; i += 1) {
+                    if (dataArray[i].personId === rec.get("personId")) {
+                        opts.success({returnValue: true});
+                        return;
+                    }
+                }
+                rec.set("_id", dataArray.length);
+                dataArray.push(rec.raw());
                 console.log("SUCCESSWITHCOMMITT", this.dataArray);
                 opts.success({returnValue: true});
 

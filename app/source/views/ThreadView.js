@@ -51,7 +51,8 @@ enyo.kind({
                             name:"contactsSearchList",
                             kind:"ContactsSearchList",
                             classes:"threads-contactslist",
-                            fit:true
+                            fit:true,
+                            onSelected:"newContactSelected"
                         }
 
                     ]
@@ -125,13 +126,18 @@ enyo.kind({
         this.log("Thread is ", this.thread, this.$.messageCollection);
 
         this.$.messageCollection.empty();
-
         this.$.messageList.refresh();
+        this.$.headerText.setContent(this.thread.get("displayName")||"a");
 
-        this.$.messageCollection.threadId = this.thread.attributes._id;
-        this.$.messageCollection.fetch({merge: true, success: enyo.bindSafely(this, "messageListChanged")});
+        var threadId = this.thread.get("_id");
+        if (threadId){
+            this.$.panels.setIndex(0);
+            this.$.messageCollection.threadId = threadId;
+            this.$.messageCollection.fetch({merge: true, success: enyo.bindSafely(this, "messageListChanged")});
 
-        this.$.headerText.setContent(this.thread.get("displayName")||"");
+        }else{
+            this.$.panels.setIndex(1);
+        }
     },
     messageListChanged: function() {
         this.$.messageList.refresh();
@@ -157,12 +163,32 @@ enyo.kind({
             networkMsgId: 0, priority: 0, serviceName: "sms", smsType: 0, status: "", timestamp: 0 };
         var message = new MessageModel(message);
         console.log("submitting", message, message.dbKind, message.get("dbKind"));
-        var rec = this.$.messageCollection.at(this.$.messageCollection.add(message));
-        rec.commit({threadId:this.$.messageCollection.threadId});
+
+        var rec = this.$.messageCollection.add(message)[0];
+        //var rec = this.$.messageCollection.at(messageIndex);
+
+        console.log("info", rec);
+        if (!this.$.messageCollection.threadId){
+            //cant do much
+        }else{
+            this.thread.set("summary", messageText);
+            rec.commit({threadId:this.$.messageCollection.threadId});
+        }
         this.messageListChanged();
     },
 
-    showContactsList: function(s,e){
+    newContactSelected: function(s,e){
+        console.log("contact selected", s, e, this.thread);
+        var personModel = e.person;
+        this.thread.set("displayName", personModel.get("displayName"));
+        this.thread.set("personId", personModel.get("_id"));
+        this.thread.set("replyAddress", personModel.get("primaryPhoneNumber").value);
+       // this.threadChanged();
+        this.thread.commit({success:enyo.bind(this, this.newThreadCreated)});
+    },
 
+    newThreadCreated: function(rec, opts){
+        console.log("new thread created", rec, opts);
+        this.set("thread", rec, true);
     }
 });
