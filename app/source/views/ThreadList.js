@@ -40,10 +40,10 @@ enyo.kind({
                                         if (!model) {return null};
                                         var col = this.repeater.collection;
                                         console.log("model", model, this, bind.owner);
-                                        var currentDate = new moment(1000*(model.get?model.get("timestamp"):model.timestamp)).calendar();
+                                        var currentDate = new moment(1000*(model.get?model.get("timestamp"):model.timestamp)).format("dddd, MMMM DD, YYYY");
                                         var prevModel = col.at(this.index-1);
                                         if (prevModel&&prevModel!=model){
-                                            var prevDate = new moment(1000*(prevModel.get?prevModel.get("timestamp"):prevModel.timestamp)).calendar();
+                                            var prevDate = new moment(1000*(prevModel.get?prevModel.get("timestamp"):prevModel.timestamp)).format("dddd, MMMM DD, YYYY");
                                         }
                                         this.$.threadItemGroupHeader.setShowing(col.indexOf(model)==0||(prevDate!=null&&prevDate!=currentDate));
                                         this.$.threadItemGroupHeader.setContent(currentDate);
