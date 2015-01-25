@@ -68,8 +68,18 @@ enyo.kind({
                     fit:true,
                     alwaysLooksFocused: true,
                     layoutKind:"FittableColumnsLayout",
-                    style:"padding:0px",
+                    style:"padding:0px; margin:1px;",
                     components: [
+                        {
+                            style:"background-color:rgba(200,200,200,0.5); padding:12px; margin-right:1px; border-radius; 0px 3px 3px 0px",
+                            components:[
+                                {
+                                    name:"attachItemIcon",
+                                    kind:"onyx.IconButton",
+                                    classes:"attachitem",
+                                },
+                            ]
+                        },
                         {
                             name:"messageTextArea",
                             kind: "onyx.TextArea",
@@ -86,14 +96,9 @@ enyo.kind({
                                     name:"sendMessageIcon",
                                     kind:"onyx.IconButton",
                                     classes:"sendmessage",
-                                    showing:false,
                                     ontap:"sendMessage"
                                 },
-                                {
-                                    name:"attachItemIcon",
-                                    kind:"onyx.IconButton",
-                                    classes:"attachitem",
-                                }
+
                             ]
                         }
                     ]
@@ -134,11 +139,11 @@ enyo.kind({
     messageTextAreaChanged: function(s,e){
         //console.log("messageTextAreaChanged", s, e);
         if (s.getValue()!=""){
-            this.$.attachItemIcon.hide();
+            //this.$.attachItemIcon.hide();
             this.$.sendMessageIcon.show();
         }else{
-            this.$.attachItemIcon.show();
-            this.$.sendMessageIcon.hide();
+            //this.$.attachItemIcon.show();
+            this.$.sendMessageIcon.show();
         }
     },
     sendMessage:function(s,e){
