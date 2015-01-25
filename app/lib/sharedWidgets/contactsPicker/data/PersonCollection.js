@@ -21,14 +21,12 @@ enyo.kind({
     model: "PersonModel",
 	source: "db8",
     dbKind: "com.palm.person:1",
-	parse:true,
     published: {
     	searchText: ""
     },
     searchTextChanged: function () {
     	var searchText = this.searchText.trim().toLowerCase();
     	var searchLength = searchText.length;
-		console.log("recs",app.$.globalPersonCollection);
 		this.empty();
     	this.add(app.$.globalPersonCollection.filter(function(item) {
     		var i, allSearchTerms, name;
@@ -42,7 +40,7 @@ enyo.kind({
     			console.error(err);
     		}
     		return false;
-    	}));
+    	}),{parse:true, merge:true});
     	this.log(this.get("length"), "records match", '"' + searchText + '"');
     }
 });

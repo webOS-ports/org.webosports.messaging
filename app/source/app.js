@@ -12,8 +12,8 @@ enyo.kind({
 
     create: function(){
         this.inherited(arguments);
-        this.$.globalPersonCollection.fetch({merge: true, parse:true, orderBy: "sortKey", success: function (collection, opts, records) {
-            console.log("loaded GlobalPersonCollection", this.length);
+        this.$.globalPersonCollection.fetch({merge: true, parse:true, orderBy: "sortKey", modelOptions:{parse:true}, success: function (collection, opts, records) {
+            console.log("loaded GlobalPersonCollection", collection, collection.length);
            // this.$.contactsSearchList.refilter();
         }});
 

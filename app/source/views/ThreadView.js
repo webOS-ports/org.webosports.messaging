@@ -5,7 +5,7 @@ enyo.kind({
         thread: ""
     },
     bindings:[
-        //{from:".app.$.globalPersonCollection", to:".$.contactsSearchList.collection"}
+        {from:".app.$.globalPersonCollection.status", to:".globalPersonCollectionStatus"}
     ],
     components: [
         {
@@ -44,27 +44,12 @@ enyo.kind({
                 },
                 {
                     name:"newThreadPanel",
+                    kind:"FittableRows",
                     components:[
-                        {
-                            kind:"onyx.Toolbar",
-                            layoutKind:"FittableColumnsLayout",
-                            components:[
-                                {
-                                    kind: "onyx.InputDecorator",
-                                    classes: "contacts-search enyo-fill",
-                                    components: [
-                                        // When our version of webkit supports type "search", we can get a "recent searches" dropdown for free
-                                        { name: "searchInput", kind: "onyx.Input", placeholder: "Search", classes:"enyo-no-stretch", onfocus:"showContactsList" /*, type: "search", attributes: {results:6, autosave:"contactsSearch"}, style: "font-size: 16px;"*/ },
-                                        { kind: "Image", src: "assets/search-input.png", style:"float:right;" }
-                                    ]
-                                },
-
-                            ]
-                        },
                         {
                             name:"contactsSearchList",
                             kind:"ContactsSearchList",
-                            style:"border:2px solid red;"
+                            fit:true
                         }
 
                     ]
@@ -124,7 +109,10 @@ enyo.kind({
         this.log("==========> Created thread view");
 
         this.$.messageList.set("collection", this.$.messageCollection);
-        // this.$.contactsSearchList.set("collection", this.$.)
+    },
+
+    globalPersonCollectionStatusChanged: function(){
+        this.$.contactsSearchList.refilter();
     },
     threadChanged: function() {
         this.log("Thread is ", this.thread, this.$.messageCollection);

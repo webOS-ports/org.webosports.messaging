@@ -23,6 +23,11 @@ enyo.kind({
 
         this.doSelected({person: inSender.selected()});
     },
+    refilter: function (inSender, inEvent) {
+        var searchText = this.collection.get("searchText");
+        // Forces refiltering without changing searchText.
+        this.collection.searchTextChanged(searchText, searchText, "searchText");
+    },
 
     components: [
     {
