@@ -71,7 +71,8 @@ enyo.kind({
                         return;
                     }
                 }
-                dataArray.push(rec.attributes);
+                rec.set("_id", dataArray.length);
+                dataArray.push(rec.raw());
                 console.log("SUCCESSWITHCOMMITT", this.dataArray);
                 opts.success({returnValue: true});
 
