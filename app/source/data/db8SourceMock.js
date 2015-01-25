@@ -59,6 +59,10 @@ enyo.kind({
                 console.log("threadId: ", threadId);
                 //opts.success(this.dataArray[dbkind][threadId]);
                 var dataArray = this.dataArray["com.palm.message:1"][threadId];
+                if (!dataArray) {
+                    dataArray = this.dataArray["com.palm.message:1"][threadId] = [];
+                }
+
                 console.log("dataArray says", dataArray);
                 for (i = 0; i < dataArray.length; i += 1) {
                     if (dataArray[i]._id === rec.attributes[rec.primaryKey]) {
