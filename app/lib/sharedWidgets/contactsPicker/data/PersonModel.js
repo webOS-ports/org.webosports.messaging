@@ -270,6 +270,9 @@ enyo.kind({
 
     primaryPhoneNumber: function(){
         var allPhoneNums = this.get("phoneNumbers");
+        if (!allPhoneNums){
+            return true;
+        }
         var preferredNum = allPhoneNums.length?allPhoneNums[0]:{};
         for (var a=0; a<allPhoneNums.length; a++){
             preferredNum = allPhoneNums[a].primary?allPhoneNums[a]:preferredNum;
