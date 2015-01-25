@@ -45,6 +45,7 @@ enyo.kind({
                                 { name: "buddyList", kind:"BuddyList", onSelected: "showThread"}
                             ]
                         }
+
                     ]
                 },
                 {
@@ -102,5 +103,58 @@ enyo.kind({
         if (enyo.Panels.isScreenNarrow()) {
             this.$.main.setIndex(0);
         }
-    }
+    },
+});
+
+
+
+
+enyo.kind({
+    name:"SelectContact",
+    kind:"onyx.Popup",
+    scrim:true,
+    modal:true,
+    //centered:true,
+    autoDismiss:false,
+    //floating:true,
+    style:"padding:0px; border-radius:0px; background-color:lightyellow;",
+    layoutKind:"FittableRowsLayout",
+    components:[
+        {
+            kind:"onyx.Toolbar",
+            components:[
+                {content:"New Message"}
+            ]
+        },
+        {
+            fit:true,
+            kind:"FittableRows",
+            components:[
+                {
+                    kind:"onyx.InputDecorator",
+                    classes:"enyo-children-inline",
+                    style:"width:100%;",
+                    components:[
+                        {content:"To: ", style:"color:black;"},
+                        {kind:"onyx.Input", fit:true}
+                    ]
+                },
+                {
+                    kind:"List",
+                    fit:true
+                },
+                {
+                    kind:"onyx.InputDecorator",
+                    style:"width:100%;",
+                    components:[
+                        {
+                            kind:"onyx.Input",
+                            placeholder:"send a message",
+
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
 });

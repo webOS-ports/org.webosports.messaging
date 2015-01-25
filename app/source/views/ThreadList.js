@@ -58,18 +58,19 @@ enyo.kind({
                                 },*/
                             ]
                         }
-                    ],
+                    ]
 
+                },
+
+                {
+                    name: "BottomToolbar",
+                    kind: "onyx.Toolbar",
+                    components: [
+                        { kind: "onyx.Button", content: "New", ontap:"createNewMessage"}
+                    ]
                 }
-            ],
-        },
-        {
-            name: "BottomToolbar",
-            kind: "onyx.Toolbar",
-            components: [
-                { kind: "onyx.Button", content: "New"}
             ]
-        },
+        }
     ],
 
    create: function () {
@@ -87,11 +88,27 @@ enyo.kind({
         }*/
     },
     selectThread: function (inSender, inEvent) {
+        console.log("selectThread", inSender, inEvent);
         if (!inSender.selected()) {
             inSender.select(inEvent.index);
         }
 
         this.doSelected({thread: inSender.selected()});
     },
+
+    createNewMessage: function(s,e){
+        var emptyThread = new ThreadModel();
+        this.globalThreadCollection.add(emptyThread, 0);
+        this.$.realThreadList.select(0);
+        this.doSelected({thread: this.$.realThreadList.selected()});
+        /*
+        this.$.threadPanel.createComponent({
+            name:"newMessagePopup",
+            kind:"SelectContact"
+        },{owner:this});
+        this.$.newMessagePopup.render();
+        this.$.newMessagePopup.show();*/
+    }
+
 
 });

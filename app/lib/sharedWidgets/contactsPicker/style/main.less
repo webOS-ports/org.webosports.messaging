@@ -1,0 +1,757 @@
+/*
+    Put anything you reference with "url()" in ../assets/
+    This way, you can minify your application, and just remove the "source" folder for production
+*/
+
+//handle smaller screens:
+@media all and (max-width: 800px) {
+    .app-panels > * {
+        min-width: 100%;
+        max-width: 100%;
+    }
+
+    .contacts-list .contacts-item .name {
+        max-width: 100%;
+    }
+}
+
+/****************
+
+ContactsUI CSS
+
+****************/
+.contacts-list {
+    background-color:#e4e4e2;
+}
+.contacts-list .contacts-search {
+    /* margin:0 0 -3px; /* blend shadow from bg_search.png */
+    /* border-image:url(../../assets/bg_search.png) 0 15 repeat;
+    border-width:0 15px;
+    height:44px;*/
+    width: 100%;
+}
+.contacts-list .contacts-search .onyx-input {
+    /* margin:0 0 -3px; /* blend shadow from bg_search.png */
+    /* border-image:url(../../assets/bg_search.png) 0 15 repeat;
+    border-width:0 15px;*/
+    height:32px;
+    float:left;
+    width:91%;
+}
+.contacts-list .contacts-search img {
+    /* margin:0 0 -3px; /* blend shadow from bg_search.png */
+    /* border-image:url(../../assets/bg_search.png) 0 15 repeat;
+    border-width:0 15px;*/
+    position: absolute;
+    right: 7px;
+    top: 12px;
+}
+.contacts-list .contacts-search.input .input-input {
+    margin:0 7px;
+    height:40px;
+}
+
+
+/* items */
+.contacts-list .no-srch-results-msg {
+    color:#666;
+    padding:13px 0;
+    min-height:0
+}
+.contacts-list .gal-message {
+    font-size:16px;
+}
+.contacts-list .contacts-item {
+    display: table;
+    table-layout: fixed;
+    width: 100%;
+    min-height: 68px;
+    border-width:1px 0;
+    border-style:solid none solid none;
+    border-top-color:rgba(255,255,255,0.5);
+    border-bottom-color:rgba(0,0,0,0.1);
+}
+.contacts-list .contacts-item.first {
+    border-top:0;
+}
+.contacts-list .contacts-item.last {
+    border-bottom:0;
+}
+.contacts-list .contacts-item.selected {
+    background-color:#d1e5f5;
+    border-color:#B3d9f2
+}
+.contacts-list .contacts-item > div {
+    display: table-cell;
+    vertical-align:middle;
+}
+.contacts-list .contacts-item .icon {
+    width: 78px;   /* 50+2*14 */
+}
+.contacts-list .contacts-item .icon .list-mask {
+    position: absolute;
+    top: 9px;
+    left: 14px;
+    height: 50px;
+    width: 50px;
+    background:url(../../assets/bg_icon_mask.png) no-repeat 0 0;
+}
+.contacts-list .contacts-item .icon .list-img {
+    position: absolute;
+    top: 9px;
+    left: 14px;
+    width: 50px;
+    height: 50px;
+    border-radius: 3px;
+    background-position:50% 50%;
+    background-repeat: no-repeat;
+    background-color:#f1f1f1;
+    background-image:url(../../assets/bg_icon_img.png);
+    background-size: cover;
+}
+.contacts-list .contacts-item .name {
+    padding-right: 15px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    text-align: left;
+}
+.contacts-list .contacts-item .favorite-cell {
+    width: 25px;
+    padding-right: 15px;
+}
+.contacts-list .contacts-item .favorite {
+    background:url(../../assets/bg_list_favorite.png) no-repeat right bottom;
+    height:25px;
+    width:25px;
+}
+
+
+/** Favorites list **/
+.contacts-list .header.favorites {
+    background:none;
+    border-bottom-color:rgba(0,0,0,0.30);
+}
+
+
+/* Details */
+.contacts-details {
+    padding:0 2px;
+}
+.contacts-details .header {
+    padding:5px 13px 10px 5px;
+    border-bottom:1px solid #d8d8d8;
+}
+.contacts-details .icon {
+    height:50px;
+    margin:0 10px 4px 2px;
+    width:50px;
+    position:relative;
+}
+.contacts-details .icon .img {
+    border-radius: 3px;
+    height:100%;
+    width:100%;
+    background-position:50% 50%;
+    background-repeat: no-repeat;
+    background-color:#f1f1f1;
+    background-image:url(../../assets/bg_icon_img.png)
+}
+.contacts-details .nameinfo {
+    font-size:20px;
+    margin:0 0 4px;
+}
+.contacts-details .nameinfo div {
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+.contacts-details .name {
+    color:#222;
+    font-weight:normal;
+/*    padding:0 0 0.5em; */
+    overflow:hidden;
+    text-overflow:ellipsis;
+    width:100%;
+    white-space: nowrap;
+}
+.contacts-details .position {
+    color:#888;
+}
+.contacts-details .group .scroller {
+    margin:-12px;
+}
+.contacts-details .group {
+    border-image:none;
+    border:0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+    border-top:1px solid rgba(255,255,255,0.2);
+    border-radius:0;
+    margin:0;
+}
+.contacts-details .group .contacts-item {
+    border-top-width:1px;
+    border-bottom-width:1px;
+}
+.contacts-details .group:first-child {
+    border-top-width:0;
+}
+.contacts-details .group:first-child .contacts-item.first {
+    border-top-width:0;
+}
+.contacts-details .group-inner {
+    margin:0;
+}
+.contacts-details .group .contacts-item {
+    color:#222;
+}
+.contacts-pointpickerlist .label {
+    color:#1879cd;
+    font-weight:normal;
+    text-transform: uppercase;
+    font-size:0.7rem;
+}
+.contacts-details .label {
+    color:#1879cd;
+    font-weight:normal;
+    text-transform: uppercase;
+    font-size:0.7rem;
+}
+.contacts-details .value {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.contacts-details .button-arrow {
+    height:42px;
+    width:32px;
+    background: url(../../assets/bg_details_input_skype.png) no-repeat 50% 50%
+}
+.contacts-details .button.action .button-icon {
+    margin:-6px -8px -10px
+}
+.contacts-details .contacts-actions .button {
+    margin:0 0 10px;
+}
+
+.im-status {
+    height: 28px;
+    background: url(../../assets/status-away.png) no-repeat 0 0;
+    position: absolute;
+    left: 0px;
+    top: 0px;
+}
+.edit-contact.button {
+    background:none;
+    border-image:none;
+}
+/* TODO: temporary styling to be replaced...all GAL styling TDB*/
+.contacts-GAL-message {
+    margin-top:10px;
+    margin-bottom:10px;
+    margin-left:14px;
+    color: #2d6c94;
+}
+.contacts-gal-person {
+    padding: 10px 10px;
+}
+.contacts-gal-person.selected {
+    background-color:#d1e5f5;
+    border-color:#B3d9f2
+}
+.contacts-gal-noresults {
+    color: gray;
+    text-align: center;
+}
+.contacts-gal-spinner {
+    margin:10px 14px 10px 0px;
+}
+
+.contactsui-peoplepicker {
+  width: 320px;
+  border-width: 24px;
+  border-image: url(../../assets/dialogbg.png) 24 stretch stretch;
+}
+
+.contactsui-peoplepicker-container {
+  margin: 0px;
+  height: 300px;
+}
+
+.contactsui-peoplepicker .iframe {
+  background-color: #ccc;
+}
+
+
+
+/****************
+
+Contacts App CSS
+
+****************/
+
+
+body {
+    background: transparent;
+}
+
+/*.leftpane {
+    background-color: #e4e4e2;
+}*/
+
+img {
+    vertical-align: middle;
+}
+
+/* add favorite styles to global enyo list */
+.contacts-list .favorites .item .favorite,
+.contacts-list .favorites .divider-alpha {
+    display: none;
+}
+
+.contacts-list .favorites .item {
+    border-width: 1px 0;
+}
+
+.contacts-list .favorites .item .icon {
+    height: 100px;
+    width: 100px;
+}
+
+.contacts-list .favorites .item .icon .img {
+    height: 100%;
+    width: 100%;
+    border-radius: 6px;
+}
+
+/* Global - copying all over the place, will clean up reduntant things */
+.favorite {
+    width: 34px;
+    height: 34px;
+    background: url(../../assets/bg_favorite.png) no-repeat 0 0;
+}
+
+/* Contact photos: icon to list is as avatar to detail */
+
+.icon {
+    height: 50px;
+    margin: 10px 15px 10px 0;
+    width: 50px;
+    position: relative;
+}
+
+.icon .img {
+    border-radius: 3px;
+    width: 100%;
+    height: 100%;
+}
+
+.avatar {
+    width: 222px;
+    position: relative;
+    height: 222px;
+}
+
+.avatar .img {
+    height: 196px;
+    width: 196px;
+    top: 13px;
+    position: absolute;
+    left: 13px;
+    background-color: #f1f1f1;
+    background-repeat: no-repeat;
+    background-position: 50% 50%;
+}
+
+.avatar .mask {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background: url(../../assets/bg_avatar_mask.png) no-repeat 0 0;
+}
+
+/* Edit */
+
+.edit-main {
+    max-width: 44rem; 
+    margin-left: auto; 
+    margin-right: auto; 
+    padding: 0.5rem 1rem;
+}
+
+.edit-main .edit-top-groupbox {
+    padding-top: 9px;
+}
+
+.edit-main .avatar {
+    width: 222px;
+    position: relative;
+    height: 222px;
+    margin: 0 8px 0 0;
+}
+
+.edit-main .onyx-groupbox {
+	margin-top: 0.5rem;
+	margin-bottom: 0.5rem;
+}
+
+.edit-main input {
+    width: 100%;
+    box-sizing: border-box;
+}
+.edit-main input:invalid {
+	color: red;
+}
+
+.edit-main textarea {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.flex-row {
+    display: -webkit-flex;
+    display: flex;
+    -webkit-flex-flow: row; 
+    flex-flow: row; 
+    -webkit-align-items: center;
+    align-items: center;
+}
+.flex-auto {
+    -webkit-flex: auto;
+    flex: auto;
+}
+.flex-none {
+    -webkit-flex: none;
+    flex: none;
+}
+
+/* Edit (Enyo 1) */
+.edit-toolbar .switch-account.button {
+    height: 38px;
+}
+
+.edit-toolbar .switch-account.button .listselector-arrow {
+    margin: -6px 0;
+}
+
+.edit-toolbar .switch-account.button img {
+    margin: -8px 0 -6px -4px;
+    padding: 0
+}
+
+.edit .avatar {
+    margin: 0 15px 0 0;
+}
+
+.edit .avatar .mask {
+    background: url(../../assets/bg_edit_mask.png) no-repeat 0 0;
+}
+
+.edit .avatar .change {
+    position: absolute;
+    bottom: 13px;
+    left: 13px
+}
+
+.edit .avatar .change .button-icon {
+    margin: -4px -8px -10px;
+}
+
+.edit .item {
+    /* border-bottom-color:#d8d8d8; */
+}
+
+.edit .item .input.birthday {
+    min-height: 49px;
+    font-size: 18px;
+}
+
+.edit .item .input.notes {
+    min-height: 49px;
+}
+
+.edit .field-button {
+    border: 12px;
+    float: left;
+    border-image: url(../../assets/bg_prefix.png) 12 repeat;
+}
+
+.edit .field-button-inner {
+    width: 32px;
+    height: 32px;
+    margin: -9px;
+}
+
+.edit .field-button .favorite {
+    background: url(../../assets/bg_edit_favorite.png) no-repeat 0 0;
+}
+
+.edit .field-button .favorite.true {
+    background-position: 0 -32px;
+}
+
+.edit .field-button .prefix {
+    background: url(../../assets/bg_edit_prefix.png) no-repeat 0 0;
+}
+
+.edit .editable-field-button {
+    height: 40px;
+    margin: -6px 0;
+}
+
+.edit .editable-label {
+    border: 12px;
+    margin: 0 0 0 13px;
+    border-image: url(../../assets/bg_prefix.png) 12 repeat;
+}
+
+.edit .label,
+.edit .editable-label .menucheckitem-caption {
+    color: #1879cd;
+    padding: 0;
+    font-weight: normal;
+    text-transform: uppercase;
+    font-size: 14px;
+}
+
+.edit .editable-label .listselector-label {
+    display: none;
+}
+
+.edit .item > .listselector {
+    margin: 0 0;
+    padding: 0 0;
+}
+
+.edit .new.input .swipeableitem {
+    background: url(../../assets/bg_field_new.png) no-repeat 0 50%;
+    padding-left: 25px;
+
+}
+
+.edit .input .swipeableitem {
+    border: 0;
+    min-height: 0;
+    padding: 0;
+}
+
+.edit .item.middle,
+.edit .item.last {
+    /*
+border-top:1px solid;
+border-top-color:rgba(255,255,255,0.5);
+*/
+}
+
+/* Details */
+.details {
+    background: url(../../assets/bg_body.png) 0 0 repeat;
+    padding: 4px;
+    border-left: 1px solid #a8a8a8;
+}
+
+.details .container {
+    border-style: solid;
+    border-image: url(../../assets/bg_details.png) 9 repeat;
+    border-width: 9px;
+    background-color: #fff;
+}
+
+.details .content {
+    margin: -3px;
+}
+
+.details .header {
+    padding: 5px 13px 10px 5px;
+    border-bottom: 1px solid #d8d8d8;
+}
+
+.details .avatar {
+    width: 222px;
+    position: relative;
+    height: 222px;
+    margin: 0 8px 0 0;
+}
+
+.details .nameinfo {
+    width: 100%;
+    overflow: hidden;
+}
+
+.details .buttonBar {
+    height: 42px;
+}
+
+.details .nameinfo .name, .details .nameinfo .nickname, .details .nameinfo .position {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 10px;
+}
+
+.details .name {
+    font-size: 34px;
+    color: #222;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: PreludeWGL-Light, "Prelude Light", Prelude, "Prelude Medium", "Segoe UI", Arial, Helvetica, sans-serif;
+    /* ugly webkit-only clamp to three lines */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical; 
+}
+
+.portrait .details .nameinfo .name {
+    font-size: 26px;
+    white-space: normal;
+}
+
+.details .nickname {
+    color: #555;
+    font-size: 0.9em;
+    white-space: nowrap;
+}
+
+.portrait .details .nameinfo .nickname {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+    white-space: nowrap;
+}
+
+.details .position {
+    color: #888;
+    font-size: 0.9em;
+    /* ugly webkit-only clamp to two lines */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical; 
+}
+
+.portrait .details .nameinfo .position {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+    white-space: nowrap;
+}
+
+.details .favorite {
+    float: right;
+    width: 34px;
+    height: 34px;
+    margin: 8px 8px 0 8px;
+}
+
+.onyx-icon-toggle.active.favorite {
+    background-position: bottom;
+}
+
+.details .profiles-button {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+}
+
+.details .profilesIndicator.active {
+    background-position: bottom;
+}
+
+
+.details .profiles {
+/*    background: #C7DAE9; */
+}
+
+.details .profiles .item {
+    border-top: 1px dashed #ccc;
+    border-bottom: 0;
+    height: 73px;
+    color: #222;
+    font-weight: normal;
+    padding: 0 14px;
+}
+
+.details .profiles .icon .img {
+    background-position: 50% 50%;
+    background-repeat: no-repeat;
+    background-color: #f1f1f1;
+    background-image: url(../../assets/bg_icon_img.png)
+}
+
+.details .group {
+    border-image: none;
+    border: 0;
+    border-bottom: 1px solid #d8d8d8;
+    border-radius: 0;
+    margin: 0;
+}
+
+.details .group-inner {
+    margin: 0;
+}
+
+.details .group .contacts-item {
+    padding: 0.5rem 0.7rem;
+    color: #222;
+    font-size: 0.9rem;
+    border-bottom: 1px solid #d8d8d8;
+}
+
+
+.details .label {
+    color: #1879cd;
+    font-weight: normal;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+}
+
+.details .value {
+    overflow: hidden;
+    margin: 0 0 0.2rem;
+    text-overflow: ellipsis;
+}
+
+.details .button-arrow {
+    height: 42px;
+    width: 32px;
+    background: url(../../assets/bg_details_input_skype.png) no-repeat 50% 50%
+}
+
+.details .button.action .button-icon {
+    margin: -6px -8px -10px
+}
+
+/* this isn't ideal */
+.details-toolbar .border {
+    border-left: 1px solid #A8A8A8;
+    float: left;
+    height: 100%;
+    left: -4px;
+    position: absolute;
+    width: 1px;
+}
+
+/* less than ideal stuff ends here */
+/* Preferences */
+.contacts-preferences {
+    padding: 6px 0;
+}
+
+.contacts-preferences .group {
+    margin: 18px 0 0 0;
+}
+
+.contacts-preferences .instructional {
+    padding: 18px 0 12px;
+    color: #333;
+    font-size: 0.9em;
+}
+
+.contacts-preferences .footnote {
+    padding: 12px 0 6px;
+    color: #666;
+    font-size: 0.8em;
+}
+
+.details-placeholder {
+    background: #F9f9f9 url(../../assets/defaultview-panel-tile.png) bottom left repeat-x;
+}
+

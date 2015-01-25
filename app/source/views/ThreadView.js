@@ -4,30 +4,74 @@ enyo.kind({
     published: {
         thread: ""
     },
+    bindings:[
+        //{from:".app.$.globalPersonCollection", to:".$.contactsSearchList.collection"}
+    ],
     components: [
         {
-            name: "topToolbar",
-            kind:"onyx.Toolbar",
-            layoutKind:"FittableColumnsLayout",
+            kind:"Panels",
+            fit:true,
             components:[
-                {name:"imStatus", style:"width:14px;", components:[{classes:"im-status unknown", kind:"onyx.Icon"}]},
-                {name:"headerText", content:"Name name", fit:true}
+                {
+                    name:"existingThreadPanel",
+                    components:[
+                        {
+                            name: "topToolbar",
+                            kind:"onyx.Toolbar",
+                            layoutKind:"FittableColumnsLayout",
+                            components:[
+                                {name:"imStatus", style:"width:14px;", components:[{classes:"im-status unknown", kind:"onyx.Icon"}]},
+                                {name:"headerText", content:"Name name", fit:true}
+                            ]
+                        },
+                        {
+                            name: "messageList",
+                            classes: "threads-list",
+                            kind: "enyo.DataList",
+                            fit: true,
+                            collection: null,
+                            scrollerOptions: {
+                                horizontal: "hidden",
+                                touch: true
+                            },
+                            components: [
+                                { kind: "MessageItem", classes: "thread-item" }
+                            ]
+                        },
+
+
+                    ]
+                },
+                {
+                    name:"newThreadPanel",
+                    components:[
+                        {
+                            kind:"onyx.Toolbar",
+                            layoutKind:"FittableColumnsLayout",
+                            components:[
+                                {
+                                    kind: "onyx.InputDecorator",
+                                    classes: "contacts-search enyo-fill",
+                                    components: [
+                                        // When our version of webkit supports type "search", we can get a "recent searches" dropdown for free
+                                        { name: "searchInput", kind: "onyx.Input", placeholder: "Search", classes:"enyo-no-stretch", onfocus:"showContactsList" /*, type: "search", attributes: {results:6, autosave:"contactsSearch"}, style: "font-size: 16px;"*/ },
+                                        { kind: "Image", src: "assets/search-input.png", style:"float:right;" }
+                                    ]
+                                },
+
+                            ]
+                        },
+                        {
+                            name:"contactsSearchList",
+                            kind:"ContactsSearchList",
+                            style:"border:2px solid red;"
+                        }
+
+                    ]
+                },
             ]
         },
-        {
-            name: "messageList",
-            classes: "threads-list",
-            kind: "enyo.DataList",
-            fit: true,
-            collection: null,
-            scrollerOptions: {
-                horizontal: "hidden",
-                touch: true
-            },
-            components: [
-                { kind: "MessageItem", classes: "thread-item" }
-            ]
-        },
+
         {
             name: "bottomToolbar",
             kind:"FittableColumns",
@@ -80,6 +124,7 @@ enyo.kind({
         this.log("==========> Created thread view");
 
         this.$.messageList.set("collection", this.$.messageCollection);
+        // this.$.contactsSearchList.set("collection", this.$.)
     },
     threadChanged: function() {
         this.log("Thread is ", this.thread, this.$.messageCollection);
@@ -120,5 +165,9 @@ enyo.kind({
         var rec = this.$.messageCollection.at(this.$.messageCollection.add(message));
         rec.commit({threadId:this.$.messageCollection.threadId});
         this.messageListChanged();
+    },
+
+    showContactsList: function(s,e){
+
     }
 });
