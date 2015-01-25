@@ -45,10 +45,12 @@ enyo.kind({
                 {
                     name:"newThreadPanel",
                     kind:"FittableRows",
+                    classes:"threads-contactslist",
                     components:[
                         {
                             name:"contactsSearchList",
                             kind:"ContactsSearchList",
+                            classes:"threads-contactslist",
                             fit:true
                         }
 

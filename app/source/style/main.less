@@ -869,3 +869,39 @@ border-top-color:rgba(255,255,255,0.5);
     background: #F9f9f9 url(../../assets/defaultview-panel-tile.png) bottom left repeat-x;
 }
 
+
+
+.threads-contactslist > .contacts-list .contacts-item {
+  min-height: 35px;
+}
+
+.threads-contactslist > .contacts-list .contacts-item .icon {
+  width: 78px;   /* 50+2*14 */
+  height:45px;
+}
+.threads-contactslist > .contacts-list .contacts-item .icon .list-mask {
+  position: absolute;
+  top: 2px;
+  left: 14px;
+  height: 40px;
+  width: 40px;
+  background:url(../../assets/bg_icon_mask.png) no-repeat 0 0;
+  background-size:40px;
+}
+.threads-contactslist > .contacts-list .contacts-item .icon .list-img {
+  position: absolute;
+  top: 2px;
+  left: 14px;
+  width: 40px;
+  height: 40px;
+  border-radius: 3px;
+  background-position:50% 50%;
+  background-repeat: no-repeat;
+  background-color:#f1f1f1;
+  background-image:url(../../assets/bg_icon_img.png);
+  background-size: cover;
+}
+
+.threads-contactslist > .contacts-list .contacts-item .name {
+  font-size: 18px;
+}
