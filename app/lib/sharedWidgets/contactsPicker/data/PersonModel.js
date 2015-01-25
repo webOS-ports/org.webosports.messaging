@@ -9,7 +9,8 @@ enyo.kind({
         listPhoto: ["photos", {cached: true}],
         displayPhoto: ["photos", {cached: true}],
         displayName: ["name", "nickname", "organization", "emails", "ims", "phoneNumbers", {cached: true}],
-        displayOrg: ["organization"]
+        displayOrg: ["organization"],
+        primaryPhoneNumber: ["phoneNumbers"]
     },
     defaults: {
         name: {},
@@ -265,6 +266,16 @@ enyo.kind({
         }
 
         return result;
+    },
+
+    primaryPhoneNumber: function(){
+        var allPhoneNums = this.get("phoneNumbers");
+        var preferredNum = allPhoneNums.length?allPhoneNums[0]:{};
+        for (var a=0; a<allPhoneNums.length; a++){
+            preferredNum = allPhoneNums[a].primary?allPhoneNums[a]:preferredNum;
+        }
+
+        return preferredNum;
     }
 
 });
