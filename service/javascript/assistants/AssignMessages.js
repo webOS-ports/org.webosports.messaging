@@ -1,3 +1,4 @@
+/*jslint nomen: true*/
 /*global Future, console, DB, PalmCall, Contacts, checkResult, Log */
 
 var messageQuery = {
@@ -33,7 +34,7 @@ var activity = {
 	}
 };
 
-function setRev (newRev) {
+function setRev(newRev) {
 	"use strict";
 	activity.trigger.params.query.where[0].val = newRev;
 	activity.callback.params.lastCheckedRev = newRev;
@@ -46,6 +47,7 @@ var numProcessed = 0;
 var AssignMessages = function () { "use strict"; };
 
 AssignMessages.prototype.processMessage = function (msg) {
+	"use strict";
 	var future = new Future(), innerFuture;
 	Log.debug("Processing message ", msg);
 	if (msg.folder === "outbox") {
@@ -89,6 +91,7 @@ AssignMessages.prototype.processMessage = function (msg) {
 };
 
 AssignMessages.prototype.processMessageAndAddress = function (msg, address) {
+	"use strict";
 	var future = new Future(), name = "", normalizedAddress;
 	if (!msg.serviceName) {
 		console.warn("No service name in message, assuming sms.");
@@ -100,7 +103,7 @@ AssignMessages.prototype.processMessageAndAddress = function (msg, address) {
 	if (msg.serviceName === "sms" || msg.serviceName === "mms") {
 		future.nest(Contacts.Person.findByPhone(address, {
 			includeMatchingItem: false,
-			returnAllMatches: false,
+			returnAllMatches: false
 		}));
 		normalizedAddress = Contacts.PhoneNumber.normalizePhoneNumber(address);
 	} else {
@@ -238,6 +241,7 @@ AssignMessages.prototype.run = function (outerFuture) {
 };
 
 AssignMessages.prototype.complete = function (activityObject) {
+	"use strict";
 	Log.debug("Completing ", activityObject.name, " with id: ", activityObject._activityId);
 	var future = PalmCall.call("palm://com.palm.activitymanager", "getDetails", {"activityName": activity.name, current: false, internal: false});
 
