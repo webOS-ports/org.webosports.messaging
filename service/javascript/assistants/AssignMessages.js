@@ -49,7 +49,7 @@ AssignMessages.prototype.processMessage = function (msg) {
 	var future = new Future(), innerFuture;
 	Log.debug("Processing message ", msg);
 	if (msg.folder === "outbox") {
-		if (!msg.to || !msg.to.length) {
+		if (!msg.to || (!msg.to.length && !msg.to.addr)) {
 			Log.log("Need address field. Message ", msg, " skipped.");
 			msg.flags.threadingError = true;
 			DB.merge([msg]).then(function msgStoreCB() {
@@ -58,16 +58,21 @@ AssignMessages.prototype.processMessage = function (msg) {
 			return future;
 		}
 
-		//one message can be associated with multiple chattreads if it has multiple recievers.
-		msg.to.forEach(function (addrObj) {
-			Log.debug("Found address: ", addrObj);
-			//enque a lot of "processOneMessageAndAddress" functions and let each of them nest one result
 		innerFuture = new Future({}); //inner future with dummy result
+		if (msg.to.length) {
+			//one message can be associated with multiple chattreads if it has multiple recievers.
+			msg.to.forEach(function (addrObj) {
+				Log.debug("Found address: ", addrObj);
+				//enque a lot of "processOneMessageAndAddress" functions and let each of them nest one result
+				innerFuture.then(this, function processOneMessageAndAddress() {
+					innerFuture.nest(this.processMessageAndAddress(msg, addrObj.addr));
+				});
+			}, this);
+		} else if (msg.to.addr) {
 			innerFuture.then(this, function processOneMessageAndAddress() {
-				innerFuture.nest(this.processMessageAndAddress(msg, addrObj.addr));
+				innerFuture.nest(this.processMessageAndAddress(msg, msg.to.addr));
 			});
-		}, this);
-
+		}
 		return innerFuture;
 	} else {
 		if (!msg.from || !msg.from.addr) {
