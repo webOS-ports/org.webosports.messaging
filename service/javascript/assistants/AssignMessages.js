@@ -264,7 +264,10 @@ AssignMessages.prototype.complete = function (activityObject) {
 				}));
 			} else {
 				Log.debug("Different activity, finish it");
-				future.nest(activityObject.complete());
+				activityObject.complete().then(function completeCB() {
+					Log.debug("Setting new rev in old activity.");
+					future.nest(PalmCall.call("palm://com.palm.activitymanager", "create", {activity: activity, start: true, replace: true}));
+				});
 			}
 			future.result = {returnValue: true};
 		}
