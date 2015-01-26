@@ -5,7 +5,8 @@ var messageQuery = {
 	where: [
 		{ "op": ">", "prop": "_rev", "val": 0 }, //val will be changed in code.
 		{"prop": "conversations", "op": "=", "val": null}, //only messages without conversations are of interest
-		{"prop": "flags.visible", "op": "=", "val": true} //only visible ones.
+		{"prop": "flags.visible", "op": "=", "val": true}, //only visible ones.
+		{"prop": "flags.threadingError", "op": "=", "val": null} //omit messages that failed before.
 	]
 };
 
@@ -45,18 +46,23 @@ var numProcessed = 0;
 var AssignMessages = function () { "use strict"; };
 
 AssignMessages.prototype.processMessage = function (msg) {
+	var future = new Future(), innerFuture;
 	Log.debug("Processing message ", msg);
 	if (msg.folder === "outbox") {
 		if (!msg.to || !msg.to.length) {
 			Log.log("Need address field. Message ", msg, " skipped.");
-			return new Future({returnValue: false});
+			msg.flags.threadingError = true;
+			DB.merge([msg]).then(function msgStoreCB() {
+				future.result = {returnValue: false};
+			});
+			return future;
 		}
 
 		//one message can be associated with multiple chattreads if it has multiple recievers.
-		var innerFuture = new Future({}); //inner future with dummy result
 		msg.to.forEach(function (addrObj) {
 			Log.debug("Found address: ", addrObj);
 			//enque a lot of "processOneMessageAndAddress" functions and let each of them nest one result
+		innerFuture = new Future({}); //inner future with dummy result
 			innerFuture.then(this, function processOneMessageAndAddress() {
 				innerFuture.nest(this.processMessageAndAddress(msg, addrObj.addr));
 			});
@@ -66,7 +72,11 @@ AssignMessages.prototype.processMessage = function (msg) {
 	} else {
 		if (!msg.from || !msg.from.addr) {
 			Log.log("Need address field. Message ", msg, " skipped.");
-			return new Future({returnValue: false});
+			msg.flags.threadingError = true;
+			DB.merge([msg]).then(function msgStoreCB() {
+				future.result = {returnValue: false};
+			});
+			return future;
 		}
 		Log.debug("Found address: ", msg.from);
 		return this.processMessageAndAddress(msg, msg.from.addr);

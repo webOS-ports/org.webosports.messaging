@@ -23,7 +23,8 @@
 					"where": [
 						{ "op": ">", "prop": "_rev", "val": 0 },
 						{"prop": "conversations", "op": "=", "val": null},
-						{"prop": "flags.visible", "op": "=", "val": true}
+						{"prop": "flags.visible", "op": "=", "val": true},
+						{"prop": "flags.threadingError", "op": "=", "val": null}
 					]
 				}
 			}
