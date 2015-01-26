@@ -175,7 +175,7 @@ enyo.kind({
                 enyo.log("message not sent - no threadId");
             }else{
                 this.thread.set("summary", messageText);
-                rec.commit({threadId:this.$.messageCollection.threadId});
+                rec.commit({threadId:this.$.messageCollection.threadId, success:enyo.bind(this, this.messageSent)});
             }
         }else{
             //TODO: no reply address, give warning to user.
@@ -197,5 +197,9 @@ enyo.kind({
     newThreadCreated: function(rec, opts){
         enyo.log("new thread created", rec, opts);
         this.set("thread", rec, true);
+    },
+
+    messageSent: function(a,b,c){
+        enyo.log("message SENT", a, b, c);
     }
 });
