@@ -1,3 +1,4 @@
+/*jslint nomen: true*/
 /*global Future, console, DB, PalmCall, Contacts, checkResult, Log */
 
 var messageQuery = {
@@ -5,7 +6,8 @@ var messageQuery = {
 	where: [
 		{ "op": ">", "prop": "_rev", "val": 0 }, //val will be changed in code.
 		{"prop": "conversations", "op": "=", "val": null}, //only messages without conversations are of interest
-		{"prop": "flags.visible", "op": "=", "val": true} //only visible ones.
+		{"prop": "flags.visible", "op": "=", "val": true}, //only visible ones.
+		{"prop": "flags.threadingError", "op": "=", "val": null} //omit messages that failed before.
 	]
 };
 
@@ -32,7 +34,7 @@ var activity = {
 	}
 };
 
-function setRev (newRev) {
+function setRev(newRev) {
 	"use strict";
 	activity.trigger.params.query.where[0].val = newRev;
 	activity.callback.params.lastCheckedRev = newRev;
@@ -45,28 +47,43 @@ var numProcessed = 0;
 var AssignMessages = function () { "use strict"; };
 
 AssignMessages.prototype.processMessage = function (msg) {
+	"use strict";
+	var future = new Future(), innerFuture;
 	Log.debug("Processing message ", msg);
 	if (msg.folder === "outbox") {
-		if (!msg.to || !msg.to.length) {
+		if (!msg.to || (!msg.to.length && !msg.to.addr)) {
 			Log.log("Need address field. Message ", msg, " skipped.");
-			return new Future({returnValue: false});
+			msg.flags.threadingError = true;
+			DB.merge([msg]).then(function msgStoreCB() {
+				future.result = {returnValue: false};
+			});
+			return future;
 		}
 
-		//one message can be associated with multiple chattreads if it has multiple recievers.
-		var innerFuture = new Future({}); //inner future with dummy result
-		msg.to.forEach(function (addrObj) {
-			Log.debug("Found address: ", addrObj);
-			//enque a lot of "processOneMessageAndAddress" functions and let each of them nest one result
+		innerFuture = new Future({}); //inner future with dummy result
+		if (msg.to.length) {
+			//one message can be associated with multiple chattreads if it has multiple recievers.
+			msg.to.forEach(function (addrObj) {
+				Log.debug("Found address: ", addrObj);
+				//enque a lot of "processOneMessageAndAddress" functions and let each of them nest one result
+				innerFuture.then(this, function processOneMessageAndAddress() {
+					innerFuture.nest(this.processMessageAndAddress(msg, addrObj.addr));
+				});
+			}, this);
+		} else if (msg.to.addr) {
 			innerFuture.then(this, function processOneMessageAndAddress() {
-				innerFuture.nest(this.processMessageAndAddress(msg, addrObj.addr));
+				innerFuture.nest(this.processMessageAndAddress(msg, msg.to.addr));
 			});
-		}, this);
-
+		}
 		return innerFuture;
 	} else {
 		if (!msg.from || !msg.from.addr) {
 			Log.log("Need address field. Message ", msg, " skipped.");
-			return new Future({returnValue: false});
+			msg.flags.threadingError = true;
+			DB.merge([msg]).then(function msgStoreCB() {
+				future.result = {returnValue: false};
+			});
+			return future;
 		}
 		Log.debug("Found address: ", msg.from);
 		return this.processMessageAndAddress(msg, msg.from.addr);
@@ -74,6 +91,7 @@ AssignMessages.prototype.processMessage = function (msg) {
 };
 
 AssignMessages.prototype.processMessageAndAddress = function (msg, address) {
+	"use strict";
 	var future = new Future(), name = "", normalizedAddress;
 	if (!msg.serviceName) {
 		console.warn("No service name in message, assuming sms.");
@@ -85,7 +103,7 @@ AssignMessages.prototype.processMessageAndAddress = function (msg, address) {
 	if (msg.serviceName === "sms" || msg.serviceName === "mms") {
 		future.nest(Contacts.Person.findByPhone(address, {
 			includeMatchingItem: false,
-			returnAllMatches: false,
+			returnAllMatches: false
 		}));
 		normalizedAddress = Contacts.PhoneNumber.normalizePhoneNumber(address);
 	} else {
@@ -223,6 +241,7 @@ AssignMessages.prototype.run = function (outerFuture) {
 };
 
 AssignMessages.prototype.complete = function (activityObject) {
+	"use strict";
 	Log.debug("Completing ", activityObject.name, " with id: ", activityObject._activityId);
 	var future = PalmCall.call("palm://com.palm.activitymanager", "getDetails", {"activityName": activity.name, current: false, internal: false});
 
@@ -249,7 +268,10 @@ AssignMessages.prototype.complete = function (activityObject) {
 				}));
 			} else {
 				Log.debug("Different activity, finish it");
-				future.nest(activityObject.complete());
+				activityObject.complete().then(function completeCB() {
+					Log.debug("Setting new rev in old activity.");
+					future.nest(PalmCall.call("palm://com.palm.activitymanager", "create", {activity: activity, start: true, replace: true}));
+				});
 			}
 			future.result = {returnValue: true};
 		}

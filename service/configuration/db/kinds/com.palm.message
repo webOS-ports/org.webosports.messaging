@@ -21,6 +21,7 @@
 			"props": [
 				{"default":null,"name":"conversations"},
 				{"default":true,"name":"flags.visible"},
+				{"default":null,"name":"flags.threadingError"},
 				{"name":"_rev"}
 			]
 		}, {
