@@ -153,36 +153,39 @@ enyo.kind({
         }
     },
     sendMessage:function(s,e){
-        console.log("do send message", s, e);
+        enyo.log("do send message", s, e);
 
         var messageText = this.$.messageTextArea.getValue();
         var localTimestamp = new moment();
 
         var toArray = [];
+        var message = {_kind: "com.palm.smsmessage:1", conversations: ["0"], folder: "outbox",
+            localTimestamp: localTimestamp.format("X"), messageText: messageText,
+            networkMsgId: 0, priority: 0, serviceName: "sms", smsType: 0, status: "", timestamp: 0, to: toArray };
+
         if (this.thread.get("replyAddress")){
             toArray.push({addr: this.thread.get("replyAddress")});
-            var message = {_kind: "com.palm.smsmessage:1", conversations: ["0"], folder: "outbox",
-                from: { addr: "+491234567890" }, localTimestamp: localTimestamp.format("X"), messageText: messageText,
-                networkMsgId: 0, priority: 0, serviceName: "sms", smsType: 0, status: "", timestamp: 0, to: toArray };
             var message = new MessageModel(message);
-            console.log("submitting message", message.raw(), message.dbKind);
+            message.set("to", toArray);
+            enyo.log("submitting message", message.raw(), message.dbKind);
 
             var rec = this.$.messageCollection.add(message)[0];
 
             if (!this.$.messageCollection.threadId){
-                //cant do much
+                enyo.log("message not sent - no threadId");
             }else{
                 this.thread.set("summary", messageText);
                 rec.commit({threadId:this.$.messageCollection.threadId});
             }
         }else{
             //TODO: no reply address, give warning to user.
+            enyo.log("message not sent - no reply address found", messageText)
         }
         this.messageListChanged();
     },
 
     newContactSelected: function(s,e){
-        console.log("contact selected", s, e, this.thread);
+        enyo.log("contact selected", s, e, this.thread);
         var personModel = e.person;
         this.thread.set("displayName", personModel.get("displayName"));
         this.thread.set("personId", personModel.get("_id"));
@@ -192,7 +195,7 @@ enyo.kind({
     },
 
     newThreadCreated: function(rec, opts){
-        console.log("new thread created", rec, opts);
+        enyo.log("new thread created", rec, opts);
         this.set("thread", rec, true);
     }
 });
