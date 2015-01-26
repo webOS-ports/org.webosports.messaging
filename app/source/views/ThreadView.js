@@ -158,21 +158,25 @@ enyo.kind({
         var messageText = this.$.messageTextArea.getValue();
         var localTimestamp = new moment();
 
-        var message = {_kind: "com.palm.smsmessage:1", conversations: ["0"], folder: "outbox",
-            from: { addr: "+491234567890" }, localTimestamp: localTimestamp.format("X"), messageText: messageText,
-            networkMsgId: 0, priority: 0, serviceName: "sms", smsType: 0, status: "", timestamp: 0 };
-        var message = new MessageModel(message);
-        console.log("submitting", message, message.dbKind, message.get("dbKind"));
+        var toArray = [];
+        if (this.thread.get("replyAddress")){
+            toArray.push(this.thread.get("replyAddress"));
+            var message = {_kind: "com.palm.smsmessage:1", conversations: ["0"], folder: "outbox",
+                from: { addr: "+491234567890" }, localTimestamp: localTimestamp.format("X"), messageText: messageText,
+                networkMsgId: 0, priority: 0, serviceName: "sms", smsType: 0, status: "", timestamp: 0, to: toArray };
+            var message = new MessageModel(message);
+            console.log("submitting message", message.raw(), message.dbKind);
 
-        var rec = this.$.messageCollection.add(message)[0];
-        //var rec = this.$.messageCollection.at(messageIndex);
+            var rec = this.$.messageCollection.add(message)[0];
 
-        console.log("info", rec);
-        if (!this.$.messageCollection.threadId){
-            //cant do much
+            if (!this.$.messageCollection.threadId){
+                //cant do much
+            }else{
+                this.thread.set("summary", messageText);
+                rec.commit({threadId:this.$.messageCollection.threadId});
+            }
         }else{
-            this.thread.set("summary", messageText);
-            rec.commit({threadId:this.$.messageCollection.threadId});
+            //TODO: no reply address, give warning to user.
         }
         this.messageListChanged();
     },
