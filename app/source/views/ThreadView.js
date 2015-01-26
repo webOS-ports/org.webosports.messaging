@@ -4,30 +4,62 @@ enyo.kind({
     published: {
         thread: ""
     },
+    bindings:[
+        {from:".app.$.globalPersonCollection.status", to:".globalPersonCollectionStatus"}
+    ],
     components: [
         {
-            name: "topToolbar",
-            kind:"onyx.Toolbar",
-            layoutKind:"FittableColumnsLayout",
+            kind:"Panels",
+            fit:true,
             components:[
-                {name:"imStatus", style:"width:14px;", components:[{classes:"im-status unknown", kind:"onyx.Icon"}]},
-                {name:"headerText", content:"Name name", fit:true}
+                {
+                    name:"existingThreadPanel",
+                    components:[
+                        {
+                            name: "topToolbar",
+                            kind:"onyx.Toolbar",
+                            layoutKind:"FittableColumnsLayout",
+                            components:[
+                                {name:"imStatus", style:"width:14px;", components:[{classes:"im-status unknown", kind:"onyx.Icon"}]},
+                                {name:"headerText", content:"Name name", fit:true}
+                            ]
+                        },
+                        {
+                            name: "messageList",
+                            classes: "threads-list",
+                            kind: "enyo.DataList",
+                            fit: true,
+                            collection: null,
+                            scrollerOptions: {
+                                horizontal: "hidden",
+                                touch: true
+                            },
+                            components: [
+                                { kind: "MessageItem", classes: "thread-item" }
+                            ]
+                        },
+
+
+                    ]
+                },
+                {
+                    name:"newThreadPanel",
+                    kind:"FittableRows",
+                    classes:"threads-contactslist",
+                    components:[
+                        {
+                            name:"contactsSearchList",
+                            kind:"ContactsSearchList",
+                            classes:"threads-contactslist",
+                            fit:true,
+                            onSelected:"newContactSelected"
+                        }
+
+                    ]
+                },
             ]
         },
-        {
-            name: "messageList",
-            classes: "threads-list",
-            kind: "enyo.DataList",
-            fit: true,
-            collection: null,
-            scrollerOptions: {
-                horizontal: "hidden",
-                touch: true
-            },
-            components: [
-                { kind: "MessageItem", classes: "thread-item" }
-            ]
-        },
+
         {
             name: "bottomToolbar",
             kind:"FittableColumns",
@@ -37,8 +69,18 @@ enyo.kind({
                     fit:true,
                     alwaysLooksFocused: true,
                     layoutKind:"FittableColumnsLayout",
-                    style:"padding:0px",
+                    style:"padding:0px; margin:1px;",
                     components: [
+                        {
+                            style:"background-color:rgba(200,200,200,0.5); padding:12px; margin-right:1px; border-radius; 0px 3px 3px 0px",
+                            components:[
+                                {
+                                    name:"attachItemIcon",
+                                    kind:"onyx.IconButton",
+                                    classes:"attachitem",
+                                },
+                            ]
+                        },
                         {
                             name:"messageTextArea",
                             kind: "onyx.TextArea",
@@ -55,14 +97,9 @@ enyo.kind({
                                     name:"sendMessageIcon",
                                     kind:"onyx.IconButton",
                                     classes:"sendmessage",
-                                    showing:false,
                                     ontap:"sendMessage"
                                 },
-                                {
-                                    name:"attachItemIcon",
-                                    kind:"onyx.IconButton",
-                                    classes:"attachitem",
-                                }
+
                             ]
                         }
                     ]
@@ -81,17 +118,26 @@ enyo.kind({
 
         this.$.messageList.set("collection", this.$.messageCollection);
     },
+
+    globalPersonCollectionStatusChanged: function(){
+        this.$.contactsSearchList.refilter();
+    },
     threadChanged: function() {
         this.log("Thread is ", this.thread, this.$.messageCollection);
 
         this.$.messageCollection.empty();
-
         this.$.messageList.refresh();
+        this.$.headerText.setContent(this.thread.get("displayName")||"a");
 
-        this.$.messageCollection.threadId = this.thread.attributes._id;
-        this.$.messageCollection.fetch({merge: true, success: enyo.bindSafely(this, "messageListChanged")});
+        var threadId = this.thread.get("_id");
+        if (threadId){
+            this.$.panels.setIndex(0);
+            this.$.messageCollection.threadId = threadId;
+            this.$.messageCollection.fetch({merge: true, success: enyo.bindSafely(this, "messageListChanged")});
 
-        this.$.headerText.setContent(this.thread.get("displayName")||"");
+        }else{
+            this.$.panels.setIndex(1);
+        }
     },
     messageListChanged: function() {
         this.$.messageList.refresh();
@@ -99,26 +145,61 @@ enyo.kind({
     messageTextAreaChanged: function(s,e){
         //console.log("messageTextAreaChanged", s, e);
         if (s.getValue()!=""){
-            this.$.attachItemIcon.hide();
+            //this.$.attachItemIcon.hide();
             this.$.sendMessageIcon.show();
         }else{
-            this.$.attachItemIcon.show();
-            this.$.sendMessageIcon.hide();
+            //this.$.attachItemIcon.show();
+            this.$.sendMessageIcon.show();
         }
     },
     sendMessage:function(s,e){
-        console.log("do send message", s, e);
+        enyo.log("do send message", s, e);
 
         var messageText = this.$.messageTextArea.getValue();
         var localTimestamp = new moment();
 
+        var toArray = [];
         var message = {_kind: "com.palm.smsmessage:1", conversations: ["0"], folder: "outbox",
-            from: { addr: "+491234567890" }, localTimestamp: localTimestamp.format("X"), messageText: messageText,
-            networkMsgId: 0, priority: 0, serviceName: "sms", smsType: 0, status: "", timestamp: 0 };
-        var message = new MessageModel(message);
-        console.log("submitting", message, message.dbKind, message.get("dbKind"));
-        var rec = this.$.messageCollection.at(this.$.messageCollection.add(message));
-        rec.commit({threadId:this.$.messageCollection.threadId});
+            localTimestamp: localTimestamp.format("X"), messageText: messageText,
+            networkMsgId: 0, priority: 0, serviceName: "sms", smsType: 0, status: "", timestamp: 0, to: toArray };
+
+        if (this.thread.get("replyAddress")){
+            toArray.push({addr: this.thread.get("replyAddress")});
+            message.to = toArray;
+            var message = new MessageModel(message);
+            enyo.log("submitting message", message.raw(), message.dbKind);
+
+            var rec = this.$.messageCollection.add(message)[0];
+
+            if (!this.$.messageCollection.threadId){
+                enyo.log("message not sent - no threadId");
+            }else{
+                this.thread.set("summary", messageText);
+                rec.commit({threadId:this.$.messageCollection.threadId, success:enyo.bind(this, this.messageSent)});
+            }
+        }else{
+            //TODO: no reply address, give warning to user.
+            enyo.log("message not sent - no reply address found", messageText)
+        }
         this.messageListChanged();
+    },
+
+    newContactSelected: function(s,e){
+        enyo.log("contact selected", s, e, this.thread);
+        var personModel = e.person;
+        this.thread.set("displayName", personModel.get("displayName"));
+        this.thread.set("personId", personModel.get("_id"));
+        this.thread.set("replyAddress", personModel.get("primaryPhoneNumber").value);
+       // this.threadChanged();
+        this.thread.commit({success:enyo.bind(this, this.newThreadCreated)});
+    },
+
+    newThreadCreated: function(rec, opts){
+        enyo.log("new thread created", rec, opts);
+        this.set("thread", rec, true);
+    },
+
+    messageSent: function(a,b,c){
+        enyo.log("message SENT", a, b, c);
     }
 });

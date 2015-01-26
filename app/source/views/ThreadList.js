@@ -40,10 +40,10 @@ enyo.kind({
                                         if (!model) {return null};
                                         var col = this.repeater.collection;
                                         console.log("model", model, this, bind.owner);
-                                        var currentDate = new moment(1000*(model.get?model.get("timestamp"):model.timestamp)).calendar();
+                                        var currentDate = new moment(1000*(model.get?model.get("timestamp"):model.timestamp)).format("dddd, MMMM DD, YYYY");
                                         var prevModel = col.at(this.index-1);
                                         if (prevModel&&prevModel!=model){
-                                            var prevDate = new moment(1000*(prevModel.get?prevModel.get("timestamp"):prevModel.timestamp)).calendar();
+                                            var prevDate = new moment(1000*(prevModel.get?prevModel.get("timestamp"):prevModel.timestamp)).format("dddd, MMMM DD, YYYY");
                                         }
                                         this.$.threadItemGroupHeader.setShowing(col.indexOf(model)==0||(prevDate!=null&&prevDate!=currentDate));
                                         this.$.threadItemGroupHeader.setContent(currentDate);
@@ -58,18 +58,19 @@ enyo.kind({
                                 },*/
                             ]
                         }
-                    ],
+                    ]
 
+                },
+
+                {
+                    name: "BottomToolbar",
+                    kind: "onyx.Toolbar",
+                    components: [
+                        { kind: "onyx.Button", content: "New", ontap:"createNewMessage"}
+                    ]
                 }
-            ],
-        },
-        {
-            name: "BottomToolbar",
-            kind: "onyx.Toolbar",
-            components: [
-                { kind: "onyx.Button", content: "New"}
             ]
-        },
+        }
     ],
 
    create: function () {
@@ -87,11 +88,28 @@ enyo.kind({
         }*/
     },
     selectThread: function (inSender, inEvent) {
+        console.log("selectThread", inSender, inEvent);
         if (!inSender.selected()) {
             inSender.select(inEvent.index);
         }
 
         this.doSelected({thread: inSender.selected()});
     },
+
+    createNewMessage: function(s,e){
+        var emptyThread = new ThreadModel();
+        this.globalThreadCollection.add(emptyThread, 0);
+        this.$.realThreadList.select(0);
+        console.log("createNewMessage", emptyThread, this.$.realThreadList.selected());
+        this.doSelected({thread: this.$.realThreadList.selected()});
+        /*
+        this.$.threadPanel.createComponent({
+            name:"newMessagePopup",
+            kind:"SelectContact"
+        },{owner:this});
+        this.$.newMessagePopup.render();
+        this.$.newMessagePopup.show();*/
+    }
+
 
 });

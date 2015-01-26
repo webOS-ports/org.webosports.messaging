@@ -45,6 +45,7 @@ enyo.kind({
                                 { name: "buddyList", kind:"BuddyList", onSelected: "showThread"}
                             ]
                         }
+
                     ]
                 },
                 {
@@ -102,5 +103,5 @@ enyo.kind({
         if (enyo.Panels.isScreenNarrow()) {
             this.$.main.setIndex(0);
         }
-    }
+    },
 });

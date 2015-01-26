@@ -3,5 +3,15 @@ enyo.kind({
     kind: "enyo.Model",
     source: "db8",
     dbKind: "com.palm.chatthread:1",
-    primaryKey: "_id"
+    primaryKey: "_id",
+    attributes:{
+        _id: null,
+        displayName: "",
+        summary: "",
+        timestamp: null,
+        replyAddress: "",
+        replyService: "sms",
+        personId: "",
+        unreadCount: 0
+    }
 });

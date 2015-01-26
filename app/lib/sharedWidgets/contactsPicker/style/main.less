@@ -3,245 +3,140 @@
     This way, you can minify your application, and just remove the "source" folder for production
 */
 
-.app-panels > * {
-  width:320px;
-  background-color: #EAEAEA;
-  box-shadow: -6px -4px 3px 1px rgba(0,0,0,0.4);
-}
-
+//handle smaller screens:
 @media all and (max-width: 800px) {
-  .app-panels > * {
-    min-width: 100%;
-  }
-  .thread-item .info{
-    width:85%;
-  }
+    .app-panels > * {
+        min-width: 100%;
+        max-width: 100%;
+    }
 
-  .thread-item-container {
-    width:100%;
-    min-width:100%;
-  }
-
+    .contacts-list .contacts-item .name {
+        max-width: 100%;
+    }
 }
 
-@media all and (min-width: 800px) {
-  .app-panels > * {
-    min-width: auto!important;
-  }
-  .thread-item .info{
-    width:240px;
-  }
-  .thread-item-container{
-    width:320px;
-    min-width:320px;
-    max-width:320px;
-  }
-}
-
-.onyx-radiobutton.onyx-tabbutton {
-  font-size: 14px;
-}
 /****************
 
 ContactsUI CSS
 
 ****************/
-.threads-list {
+.contacts-list {
     background-color:#e4e4e2;
 }
-
-.threads-list .contacts-search {
+.contacts-list .contacts-search {
     /* margin:0 0 -3px; /* blend shadow from bg_search.png */
     /* border-image:url(../../assets/bg_search.png) 0 15 repeat;
     border-width:0 15px;
     height:44px;*/
     width: 100%;
 }
-.threads-list .contacts-search .onyx-input {
+
+.contacts-list .contacts-search.onyx-input-decorator {
+    padding:6px;
+}
+
+.contacts-list .contacts-search .onyx-input {
     /* margin:0 0 -3px; /* blend shadow from bg_search.png */
     /* border-image:url(../../assets/bg_search.png) 0 15 repeat;
-    border-width:0 15px;
-    height:44px;*/
-    float:left;
+    border-width:0 15px;*/
+    height:32px;
+    /*float:left;*/
     width:91%;
+    vertical-align:baseline;
 }
-.threads-list .contacts-search img {
+.contacts-list .contacts-search img {
     /* margin:0 0 -3px; /* blend shadow from bg_search.png */
     /* border-image:url(../../assets/bg_search.png) 0 15 repeat;
-    border-width:0 15px;
-    height:44px;*/
-    float:right;
+    border-width:0 15px;*/
+    position: absolute;
+    right: 7px;
+    top: 12px;
 }
-.threads-list .contacts-search.input .input-input {
+.contacts-list .contacts-search.input .input-input {
     margin:0 7px;
     height:40px;
 }
 
-.threads-list .thread-item.folder {
-  background-color:lightgray;
-}
-
-.threads-list .thread-item.folder.inbox{
-  background-color:rgba(67,100,200,0.3);
-  margin-right:50px;
-
-  background: -moz-linear-gradient(left,  rgba(140,199,216,1) 0%, rgba(140,199,216,1) 1%, rgba(125,185,232,0) 100%); /* FF3.6+ */
-  background: -webkit-gradient(linear, left top, right top, color-stop(0%,rgba(140,199,216,1)), color-stop(1%,rgba(140,199,216,1)), color-stop(100%,rgba(125,185,232,0))); /* Chrome,Safari4+ */
-  background: -webkit-linear-gradient(left,  rgba(140,199,216,1) 0%,rgba(140,199,216,1) 1%,rgba(125,185,232,0) 100%); /* Chrome10+,Safari5.1+ */
-  background: -o-linear-gradient(left,  rgba(140,199,216,1) 0%,rgba(140,199,216,1) 1%,rgba(125,185,232,0) 100%); /* Opera 11.10+ */
-  background: -ms-linear-gradient(left,  rgba(140,199,216,1) 0%,rgba(140,199,216,1) 1%,rgba(125,185,232,0) 100%); /* IE10+ */
-  background: linear-gradient(to right,  rgba(140,199,216,1) 0%,rgba(140,199,216,1) 1%,rgba(125,185,232,0) 100%); /* W3C */
-  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#8cc7d8', endColorstr='#007db9e8',GradientType=1 ); /* IE6-9 */
-}
-
-.threads-list .thread-item.folder.sent{
-  background-color:#abd56e;
-  margin-left:50px;
-  background: -moz-linear-gradient(left,  rgba(255,255,255,0.2) 0%, rgba(150,219,142,1) 100%); /* FF3.6+ */
-  background: -webkit-gradient(linear, left top, right top, color-stop(0%,rgba(255,255,255,0.2)), color-stop(100%,rgba(150,219,142,1))); /* Chrome,Safari4+ */
-  background: -webkit-linear-gradient(left,  rgba(255,255,255,0.2) 0%,rgba(150,219,142,1) 100%); /* Chrome10+,Safari5.1+ */
-  background: -o-linear-gradient(left,  rgba(255,255,255,0.2) 0%,rgba(150,219,142,1) 100%); /* Opera 11.10+ */
-  background: -ms-linear-gradient(left,  rgba(255,255,255,0.2) 0%,rgba(150,219,142,1) 100%); /* IE10+ */
-  background: linear-gradient(to right,  rgba(255,255,255,0.2) 0%,rgba(150,219,142,1) 100%); /* W3C */
-  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#33ffffff', endColorstr='#96db8e',GradientType=1 ); /* IE6-9 */
-}
-
-.threads-list .thread-item.folder.outbox{
-  background-color:lightyellow;
-  margin-left:50px;
-}
 
 /* items */
-.threads-list .no-srch-results-msg {
+.contacts-list .no-srch-results-msg {
     color:#666;
     padding:13px 0;
     min-height:0
 }
-.threads-list .gal-message {
+.contacts-list .gal-message {
     font-size:16px;
 }
-.threads-list .thread-item-groupheader {
-    padding:10px;
-    color:gray;
-    font-weight:bold;
-    border-top:2px solid gray;
-}
-
-.threads-list .thread-item {
-    padding:7px;
-    min-height: 50px;
+.contacts-list .contacts-item {
+    display: table;
+    table-layout: fixed;
+    width: 100%;
+    min-height: 68px;
     border-width:1px 0;
     border-style:solid none solid none;
     border-top-color:rgba(255,255,255,0.5);
     border-bottom-color:rgba(0,0,0,0.1);
-    border-radius: 5px;
-    background-color: white;
-    margin: 5px;
-    position: relative;
-    text-align: left;
 }
-.threads-list .thread-item div {
-    vertical-align:middle;
-}
-.threads-list .thread-item.first {
+.contacts-list .contacts-item.first {
     border-top:0;
 }
-.threads-list .thread-item.last {
+.contacts-list .contacts-item.last {
     border-bottom:0;
 }
-.threads-list .thread-item.selected, .selected>.thread-item {
+.contacts-list .contacts-item.selected {
     background-color:#d1e5f5;
     border-color:#B3d9f2
 }
-.threads-list .thread-item .content {
-    height:100%;
+.contacts-list .contacts-item > div {
+    display: table-cell;
+    vertical-align:middle;
 }
-.threads-list .thread-item > .icon {
-    height:50px;
-    width:50px;
-    margin:0px;
+.contacts-list .contacts-item .icon {
+    width: 78px;   /* 50+2*14 */
+}
+.contacts-list .contacts-item .icon .list-mask {
     position: absolute;
-}
-.threads-list .thread-item > .icon .mask {
-    position:absolute;
-    top:0;
-    left:0;
-    height:100%;
-    width:100%;
+    top: 9px;
+    left: 14px;
+    height: 50px;
+    width: 50px;
     background:url(../../assets/bg_icon_mask.png) no-repeat 0 0;
 }
-.threads-list .thread-item > .icon .img {
+.contacts-list .contacts-item .icon .list-img {
+    position: absolute;
+    top: 9px;
+    left: 14px;
+    width: 50px;
+    height: 50px;
     border-radius: 3px;
-    height:100%;
-    width:100%;
     background-position:50% 50%;
     background-repeat: no-repeat;
     background-color:#f1f1f1;
     background-image:url(../../assets/bg_icon_img.png);
     background-size: cover;
 }
-.threads-list .thread-item .name {
+.contacts-list .contacts-item .name {
+    padding-right: 15px;
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
-    max-width: 80%;
     text-align: left;
-    font-weight: bold;
-    margin-bottom:5px;
 }
-.threads-list .thread-item .summary {
-    color: #333333;
-    font-size: 0.8rem;
-    text-align: left;
-    display: block;
-    display: -webkit-box;
-    max-width: 100%;
-    height: 32px;
-    margin: 0 auto;
-    line-height: 1.3;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: inherit;
+.contacts-list .contacts-item .favorite-cell {
+    width: 25px;
+    padding-right: 15px;
+}
+.contacts-list .contacts-item .favorite {
+    background:url(../../assets/bg_list_favorite.png) no-repeat right bottom;
+    height:25px;
+    width:25px;
 }
 
-.threads-list .thread-item .unreadcount {
-  color: #555;
-  font-size: 0.9rem;
-  font-weight:bold;
-  border-radius:20px;
-  width:25px;
-  height:23px;
-  background-color:#ccc;
-  text-align:center;
-  padding-top:2px;
-  margin-left:5px;
-}
 
 /** Favorites list **/
-.threads-list .header.favorites {
+.contacts-list .header.favorites {
     background:none;
     border-bottom-color:rgba(0,0,0,0.30);
-}
-
-.threads-list .thread-item .message-text{
-  height:auto;
-}
-
-.threads-list .thread-item .message-timestamp{
-  //float: right;
-  vertical-align: bottom;
-  font-size: 0.8rem;
-  color: #444;
-  position:absolute;
-  bottom:7px;
-  right:7px;
-}
-
-.threads-list .thread-item .message-timestamp-container {
-  position: relative;
-  height: 30px;
 }
 
 
@@ -258,14 +153,6 @@ ContactsUI CSS
     margin:0 10px 4px 2px;
     width:50px;
     position:relative;
-}
-.contacts-details .icon .mask {
-    position:absolute;
-    top:0;
-    left:0;
-    height:100%;
-    width:100%;
-    background:url(../../assets/bg_icon_mask.png) no-repeat 0 0;
 }
 .contacts-details .icon .img {
     border-radius: 3px;
@@ -307,20 +194,20 @@ ContactsUI CSS
     border-radius:0;
     margin:0;
 }
-.contacts-details .group .thread-item {
+.contacts-details .group .contacts-item {
     border-top-width:1px;
     border-bottom-width:1px;
 }
 .contacts-details .group:first-child {
     border-top-width:0;
 }
-.contacts-details .group:first-child .thread-item.first {
+.contacts-details .group:first-child .contacts-item.first {
     border-top-width:0;
 }
 .contacts-details .group-inner {
     margin:0;
 }
-.contacts-details .group .thread-item {
+.contacts-details .group .contacts-item {
     color:#222;
 }
 .contacts-pointpickerlist .label {
@@ -352,45 +239,12 @@ ContactsUI CSS
 }
 
 .im-status {
-  height: 20px;
-  width:20px;
-  background: url(../../assets/status-blank.png) no-repeat 0 0;
-  background-size: cover;
-}
-
-.im-status.status-busy, .im-status.status-away{
+    height: 28px;
     background: url(../../assets/status-away.png) no-repeat 0 0;
+    position: absolute;
+    left: 0px;
+    top: 0px;
 }
-.im-status.status-offline{
-  background: url(../../assets/status-offline.png) no-repeat 0 0;
-}
-.im-status.status-available{
-  background: url(../../assets/status-available.png) no-repeat 0 0;
-}
-.im-status.button{
-  background: url(../../assets/status-button.png) no-repeat 0 0;
-  background-size: cover;
-}
-
-.im-status.status-unknown, .im-status.unknown{
-  background: url(../../assets/status-offline.png) no-repeat 0 0;
-}
-
-.details .sendmessage{
-  background: url(../../assets/header-send-icon.png) no-repeat 0 0;
-  height:30px;
-  width:30px;
-  margin-right:10px;
-}
-
-.details .attachitem{
-  background: url(../../assets/menu-icon-attach.png) no-repeat 0 0;
-  height:30px;
-  width:30px;
-  margin-right:10px;
-}
-
-
 .edit-contact.button {
     background:none;
     border-image:none;
@@ -443,8 +297,6 @@ Contacts App CSS
 
 body {
     background: transparent;
-    font-family:'Segoe UI','Helvetica Neue', 'Nimbus Sans L', pt-sans-n4, pt-sans, Prelude, Prelude Medium, Segoe UI, Arial, Helvetica, Sans-Serif;
-    -webkit-font-smoothing: antialiased;
 }
 
 /*.leftpane {
@@ -456,25 +308,21 @@ img {
 }
 
 /* add favorite styles to global enyo list */
-.threads-list .favorites .item .favorite,
-.threads-list .favorites .divider-alpha {
+.contacts-list .favorites .item .favorite,
+.contacts-list .favorites .divider-alpha {
     display: none;
 }
 
-.threads-list .favorites .item {
+.contacts-list .favorites .item {
     border-width: 1px 0;
 }
 
-.threads-list .favorites .item .icon {
+.contacts-list .favorites .item .icon {
     height: 100px;
     width: 100px;
 }
 
-.threads-list .favorites .item .icon .mask {
-    background: url(../../assets/bg_favorites_icon_mask.png) no-repeat 0 0;
-}
-
-.threads-list .favorites .item .icon .img {
+.contacts-list .favorites .item .icon .img {
     height: 100%;
     width: 100%;
     border-radius: 6px;
@@ -488,23 +336,12 @@ img {
 }
 
 /* Contact photos: icon to list is as avatar to detail */
-.mask {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    width: 100%;
-}
 
 .icon {
     height: 50px;
-    margin: 10px 15px 10px 10px;
+    margin: 10px 15px 10px 0;
     width: 50px;
     position: relative;
-}
-
-.icon .mask {
-    background: url(../../assets/bg_icon_mask.png) no-repeat 0 0;
 }
 
 .icon .img {
@@ -531,10 +368,70 @@ img {
 }
 
 .avatar .mask {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
     background: url(../../assets/bg_avatar_mask.png) no-repeat 0 0;
 }
 
 /* Edit */
+
+.edit-main {
+    max-width: 44rem; 
+    margin-left: auto; 
+    margin-right: auto; 
+    padding: 0.5rem 1rem;
+}
+
+.edit-main .edit-top-groupbox {
+    padding-top: 9px;
+}
+
+.edit-main .avatar {
+    width: 222px;
+    position: relative;
+    height: 222px;
+    margin: 0 8px 0 0;
+}
+
+.edit-main .onyx-groupbox {
+	margin-top: 0.5rem;
+	margin-bottom: 0.5rem;
+}
+
+.edit-main input {
+    width: 100%;
+    box-sizing: border-box;
+}
+.edit-main input:invalid {
+	color: red;
+}
+
+.edit-main textarea {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.flex-row {
+    display: -webkit-flex;
+    display: flex;
+    -webkit-flex-flow: row; 
+    flex-flow: row; 
+    -webkit-align-items: center;
+    align-items: center;
+}
+.flex-auto {
+    -webkit-flex: auto;
+    flex: auto;
+}
+.flex-none {
+    -webkit-flex: none;
+    flex: none;
+}
+
+/* Edit (Enyo 1) */
 .edit-toolbar .switch-account.button {
     height: 38px;
 }
@@ -682,41 +579,31 @@ border-top-color:rgba(255,255,255,0.5);
     margin: 0 8px 0 0;
 }
 
-.details .avatar .img {
-    height: 196px;
-    width: 196px;
-    top: 13px;
-    position: absolute;
-    left: 13px;
-    background-color: #f1f1f1;
-    background-repeat: no-repeat;
-    background-position: 50% 50%;
-}
-
-.details .avatar .mask {
-    background: url(../../assets/bg_avatar_mask.png) no-repeat 0 0;
-}
-
 .details .nameinfo {
     width: 100%;
+    overflow: hidden;
 }
 
-.details .nameinfo div {
+.details .buttonBar {
+    height: 42px;
+}
+
+.details .nameinfo .name, .details .nameinfo .nickname, .details .nameinfo .position {
     overflow: hidden;
     text-overflow: ellipsis;
-    position: relative;
-    top: 50px;
-    padding-top: 5px;
+    margin-top: 10px;
 }
 
 .details .name {
     font-size: 34px;
     color: #222;
-    padding: 0 0 0.3em;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
     font-family: PreludeWGL-Light, "Prelude Light", Prelude, "Prelude Medium", "Segoe UI", Arial, Helvetica, sans-serif;
+    /* ugly webkit-only clamp to three lines */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical; 
 }
 
 .portrait .details .nameinfo .name {
@@ -727,6 +614,7 @@ border-top-color:rgba(255,255,255,0.5);
 .details .nickname {
     color: #555;
     font-size: 0.9em;
+    white-space: nowrap;
 }
 
 .portrait .details .nameinfo .nickname {
@@ -739,6 +627,10 @@ border-top-color:rgba(255,255,255,0.5);
 .details .position {
     color: #888;
     font-size: 0.9em;
+    /* ugly webkit-only clamp to two lines */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical; 
 }
 
 .portrait .details .nameinfo .position {
@@ -749,29 +641,29 @@ border-top-color:rgba(255,255,255,0.5);
 }
 
 .details .favorite {
+    float: right;
     width: 34px;
     height: 34px;
-    margin: 10px 0 0 10px;
-    /*background: url(../../assets/bg_details_favorite.png) no-repeat 0 0;*/
+    margin: 8px 8px 0 8px;
 }
 
-.details .favorite.true {
-    background-position: 0 -33px;
+.onyx-icon-toggle.active.favorite {
+    background-position: bottom;
 }
 
 .details .profiles-button {
-    padding: 3px 30px 3px 10px;
-    background: url(../../assets/btn_linked_profiles.png) no-repeat 95% 3px;
-    margin: 3px 0 0 0;
+    position: absolute;
+    right: 0;
+    bottom: 0;
 }
 
-.details .profiles-button.button-depressed {
-    background-position: 95% -17px;
-    background-color: rgba(255, 255, 255, 0.8);
+.details .profilesIndicator.active {
+    background-position: bottom;
 }
+
 
 .details .profiles {
-    background: #f4f4f4;
+/*    background: #C7DAE9; */
 }
 
 .details .profiles .item {
@@ -802,7 +694,7 @@ border-top-color:rgba(255,255,255,0.5);
     margin: 0;
 }
 
-.details .group .thread-item {
+.details .group .contacts-item {
     padding: 0.5rem 0.7rem;
     color: #222;
     font-size: 0.9rem;
@@ -869,39 +761,3 @@ border-top-color:rgba(255,255,255,0.5);
     background: #F9f9f9 url(../../assets/defaultview-panel-tile.png) bottom left repeat-x;
 }
 
-
-
-.threads-contactslist > .contacts-list .contacts-item {
-  min-height: 35px;
-}
-
-.threads-contactslist > .contacts-list .contacts-item .icon {
-  width: 78px;   /* 50+2*14 */
-  height:45px;
-}
-.threads-contactslist > .contacts-list .contacts-item .icon .list-mask {
-  position: absolute;
-  top: 2px;
-  left: 14px;
-  height: 40px;
-  width: 40px;
-  background:url(../../assets/bg_icon_mask.png) no-repeat 0 0;
-  background-size:40px;
-}
-.threads-contactslist > .contacts-list .contacts-item .icon .list-img {
-  position: absolute;
-  top: 2px;
-  left: 14px;
-  width: 40px;
-  height: 40px;
-  border-radius: 3px;
-  background-position:50% 50%;
-  background-repeat: no-repeat;
-  background-color:#f1f1f1;
-  background-image:url(../../assets/bg_icon_img.png);
-  background-size: cover;
-}
-
-.threads-contactslist > .contacts-list .contacts-item .name {
-  font-size: 18px;
-}

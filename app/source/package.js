@@ -6,6 +6,7 @@ enyo.depends(
     //"$lib/webos-lib",
     "$lib/enyo-webos",
     "$lib/momentjs",
+    "$lib/sharedWidgets",
     // CSS/LESS style files
     "style",
     // Model and data definitions
