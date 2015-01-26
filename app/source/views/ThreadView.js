@@ -164,7 +164,7 @@ enyo.kind({
             networkMsgId: 0, priority: 0, serviceName: "sms", smsType: 0, status: "", timestamp: 0, to: toArray };
 
         if (this.thread.get("replyAddress")){
-            toArray.push({addr: this.thread.get("replyAddress")});
+            toArray.push({address: this.thread.get("replyAddress"), addr: this.thread.get("replyAddress")});
             var message = new MessageModel(message);
             message.set("to", toArray);
             enyo.log("submitting message", message.raw(), message.dbKind);
