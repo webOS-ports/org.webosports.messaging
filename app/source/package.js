@@ -5,6 +5,7 @@ enyo.depends(
     //"Theme.less",    // uncomment this line, and follow the steps described in Theme.less
     //"$lib/webos-lib",
     "$lib/enyo-webos",
+    "$lib/webos-lib/source/BackGesture.js",
     "$lib/momentjs",
     "$lib/sharedWidgets",
     // CSS/LESS style files
