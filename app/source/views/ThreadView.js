@@ -8,6 +8,9 @@ enyo.kind({
     bindings:[
         {from:".app.$.globalPersonCollection.status", to:".globalPersonCollectionStatus"}
     ],
+    events: {
+        onDeleteThread:""
+    },
     components: [
         {
             kind:"Panels",
@@ -49,6 +52,10 @@ enyo.kind({
                     kind:"FittableRows",
                     classes:"threads-contactslist",
                     components:[
+                        {
+                            kind:"onyx.Toolbar",
+                            components:[{kind:"onyx.Button", content:"Cancel", ontap:"deleteThread"}, {content:"New Message"}]
+                        },
                         {
                             name:"contactsSearchList",
                             kind:"ContactsSearchList",
@@ -201,6 +208,10 @@ enyo.kind({
         this.set("thread", rec, true);
     },
 
+    deleteThread: function(s,e){
+        console.log("delete button");
+        this.doDeleteThread({thread:this.get("thread")});
+    },
     messageSent: function(a,b,c){
         enyo.log("message SENT", a, b, c);
         this.$.messageTextArea.setValue("");

@@ -4,7 +4,9 @@ enyo.kind({
     name: "ThreadList",
     kind: "FittableRows",
     events: {
-        onSelected: ""
+        onSelectThread: "",
+        onCreateThread:"",
+        onDeleteThread:""
     },
     bindings:[
         {from:".app.$.globalThreadCollection.status", to:".globalThreadCollectionStatus"},
@@ -49,13 +51,7 @@ enyo.kind({
                                         this.$.threadItemGroupHeader.setContent(currentDate);
                                         return model;
                                     }
-                                },
-                                /*{ from: ".model", to: ".null",
-                                    transform: function(val, dir, bind){
-                                        console.log("Collection", val, dir, bind);
-                                        return val;
-                                    }
-                                },*/
+                                }
                             ]
                         }
                     ]
@@ -66,7 +62,7 @@ enyo.kind({
                     name: "BottomToolbar",
                     kind: "onyx.Toolbar",
                     components: [
-                        { kind: "onyx.Button", content: "New", ontap:"createNewMessage"}
+                        { kind: "onyx.Button", content: "New", ontap:"createThread"}
                     ]
                 }
             ]
@@ -96,23 +92,19 @@ enyo.kind({
             inSender.select(inEvent.index);
         }
 
-        this.doSelected({thread: inSender.selected()});
+        this.doSelectThread({thread: inSender.selected()});
     },
 
-    createNewMessage: function(s,e){
-        var emptyThread = new ThreadModel();
-        this.globalThreadCollection.add(emptyThread, 0);
+    createThread: function(s,e){
+        this.doCreateThread();
         this.$.realThreadList.select(0);
-        console.log("createNewMessage", emptyThread, this.$.realThreadList.selected());
-        this.doSelected({thread: this.$.realThreadList.selected()});
-        /*
-        this.$.threadPanel.createComponent({
-            name:"newMessagePopup",
-            kind:"SelectContact"
-        },{owner:this});
-        this.$.newMessagePopup.render();
-        this.$.newMessagePopup.show();*/
-    }
+        this.doSelectThread({thread: this.$.realThreadList.selected()});
+        console.log("createNewThread", this.$.realThreadList.selected());
+    },
 
+    deleteThread: function(s,e){
+        console.log("deleteThread", s, e);
+        this.doDeleteThread();
+    }
 
 });
