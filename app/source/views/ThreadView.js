@@ -161,7 +161,7 @@ enyo.kind({
         var toArray = [];
         var message = {_kind: "com.palm.smsmessage:1", conversations: ["0"], folder: "outbox",
             localTimestamp: localTimestamp.format("X"), messageText: messageText,
-            networkMsgId: 0, priority: 0, serviceName: "sms", smsType: 0, status: "", timestamp: 0, to: toArray };
+            networkMsgId: 0, priority: 0, serviceName: "sms", smsType: 0, status: "pending", timestamp: 0, to: toArray };
 
         if (this.thread.get("replyAddress")){
             toArray.push({addr: this.thread.get("replyAddress")});
@@ -201,5 +201,6 @@ enyo.kind({
 
     messageSent: function(a,b,c){
         enyo.log("message SENT", a, b, c);
+        this.$.messageTextArea.setValue("");
     }
 });
