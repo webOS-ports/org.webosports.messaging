@@ -83,14 +83,15 @@ enyo.kind({
     showThread: function (inSender, inEvent) {
         console.log("showThread ", inEvent.thread);
 
-        this.$.threadView.setThread(inEvent.thread);
-
         if (inEvent.thread) {
             this.$.threadPanel.setIndex(1);
         } else {
             this.$.threadPanel.setIndex(0);
+            this.$.main.setIndex(0);
+            return true;
         }
 
+        this.$.threadView.setThread(inEvent.thread);
         if (enyo.Panels.isScreenNarrow()) {
             this.$.main.setIndex(1);
         }

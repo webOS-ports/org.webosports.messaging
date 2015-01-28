@@ -1,6 +1,7 @@
 enyo.kind({
     name: "ThreadView",
     kind: "FittableRows",
+    fit:true,
     published: {
         thread: ""
     },
@@ -14,6 +15,7 @@ enyo.kind({
             components:[
                 {
                     name:"existingThreadPanel",
+                    kind:"FittableRows",
                     components:[
                         {
                             name: "topToolbar",
