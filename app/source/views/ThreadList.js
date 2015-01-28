@@ -89,6 +89,9 @@ enyo.kind({
     },
     selectThread: function (inSender, inEvent) {
         console.log("selectThread", inSender, inEvent);
+        if (!inEvent||inEvent.index==undefined||inEvent.index==null){
+            return true;
+        }
         if (!inSender.selected()) {
             inSender.select(inEvent.index);
         }
