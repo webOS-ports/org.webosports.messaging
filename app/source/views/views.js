@@ -4,6 +4,10 @@
 enyo.kind({
     name: "messaging.MainView",
     kind: "FittableRows",
+    bindings:[
+        {from:".app.$.globalThreadCollection.status", to:".globalThreadCollectionStatus"},
+        {from:".app.$.globalThreadCollection", to:".globalThreadCollection"}
+    ],
     components: [
         {
             name: "main",
@@ -41,8 +45,10 @@ enyo.kind({
                             fit:true,
                             draggable:false,
                             components:[
-                                { name: "threadList", kind: "ThreadList", onSelected: "showThread", style:"width:100%; width:100%;"},
-                                { name: "buddyList", kind:"BuddyList", onSelected: "showThread"}
+                                { name: "threadList", kind: "ThreadList",
+                                        onSelectThread: "showThread", onDeleteThread:"deleteThread", onCreateThread:"createThread",
+                                        style:"width:100%; width:100%;"},
+                                { name: "buddyList", kind:"BuddyList", onSelectThread: "showThread"}
                             ]
                         }
 
@@ -65,7 +71,7 @@ enyo.kind({
                                 }
                             ]
                         },
-                        { name: "threadView", kind: "ThreadView"}
+                        { name: "threadView", kind: "ThreadView", onDeleteThread:"deleteThread"}
                     ]
                 }
             ]
@@ -80,10 +86,11 @@ enyo.kind({
 
         this.log("==========> Telling global list to fetch threads...");
     },
-    showThread: function (inSender, inEvent) {
-        console.log("showThread ", inEvent.thread);
 
-        if (inEvent.thread) {
+    showThread: function (inSender, inEvent) {
+        console.log("showThread ", inEvent);
+
+        if (inEvent&&inEvent.thread) {
             this.$.threadPanel.setIndex(1);
         } else {
             this.$.threadPanel.setIndex(0);
@@ -96,6 +103,21 @@ enyo.kind({
             this.$.main.setIndex(1);
         }
     },
+
+    createThread: function(s,e){
+        var emptyThread = new ThreadModel();
+        this.globalThreadCollection.add(emptyThread, 0);
+    },
+
+    deleteThread: function(s,e){
+        console.log("deleteThread", s, e);
+        var thread = e.thread|| e.originator.thread;
+        console.log("thread to be deleted is", thread);
+        this.globalThreadCollection.remove(thread);
+        this.showThread(s,{});
+
+    },
+
     paneChange: function(inSender, inEvent){
         //console.log("paneChange", inSender, inEvent);
         inEvent&&inEvent.originator&&inEvent.originator.active?this.$.viewPanel.setIndex(inEvent.originator.index||0):null;
