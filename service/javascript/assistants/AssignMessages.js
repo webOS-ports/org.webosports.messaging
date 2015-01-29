@@ -50,44 +50,37 @@ AssignMessages.prototype.processMessage = function (msg) {
 	"use strict";
 	var future = new Future(), innerFuture;
 	Log.debug("Processing message ", msg);
-	if (msg.folder === "outbox") {
-		if (!msg.to || (!msg.to.length && !msg.to.addr)) {
-			Log.log("Need address field. Message ", msg, " skipped.");
-			msg.flags.threadingError = true;
-			DB.merge([msg]).then(function msgStoreCB() {
-				future.result = {returnValue: false};
-			});
-			return future;
-		}
 
+	if (msg.to && msg.to.length) {
 		innerFuture = new Future({}); //inner future with dummy result
-		if (msg.to.length) {
-			//one message can be associated with multiple chattreads if it has multiple recievers.
-			msg.to.forEach(function (addrObj) {
-				Log.debug("Found address: ", addrObj);
-				//enque a lot of "processOneMessageAndAddress" functions and let each of them nest one result
-				innerFuture.then(this, function processOneMessageAndAddress() {
-					innerFuture.nest(this.processMessageAndAddress(msg, addrObj.addr));
-				});
-			}, this);
-		} else if (msg.to.addr) {
-			innerFuture.then(this, function processOneMessageAndAddress() {
-				innerFuture.nest(this.processMessageAndAddress(msg, msg.to.addr));
+		//one message can be associated with multiple chattreads if it has multiple recievers.
+		msg.to.forEach(function (addrObj) {
+			Log.debug("Found to-address: ", addrObj);
+			//enque a lot of "processOneMessageAndAddress" functions and let each of them nest one result
+			innerFuture.then(this, function processOneAddressFromToArray() {
+				innerFuture.getResult(); //consume result.
+				innerFuture.nest(this.processMessageAndAddress(msg, addrObj.addr));
 			});
-		}
-		return innerFuture;
+		}, this);
+
+		innerFuture.then(function proccessingFromArrayDone() {
+			Log.debug("Address processing done.");
+			future.result = innerFuture.result;
+		});
+	} else if (msg.to && msg.to.addr) {
+		Log.debug("Found one to-address: ", msg.to);
+		future.nest(this.processMessageAndAddress(msg, msg.to.addr));
+	} else if (msg.from && msg.from.addr) {
+		Log.debug("Found from-address: ", msg.from);
+		future.nest(this.processMessageAndAddress(msg, msg.from.addr));
 	} else {
-		if (!msg.from || !msg.from.addr) {
-			Log.log("Need address field. Message ", msg, " skipped.");
-			msg.flags.threadingError = true;
-			DB.merge([msg]).then(function msgStoreCB() {
-				future.result = {returnValue: false};
-			});
-			return future;
-		}
-		Log.debug("Found address: ", msg.from);
-		return this.processMessageAndAddress(msg, msg.from.addr);
+		Log.log("Need address field. Message ", msg, " skipped.");
+		msg.flags.threadingError = true;
+		DB.merge([msg]).then(function msgStoreCB() {
+			future.result = {returnValue: false};
+		});
 	}
+	return future;
 };
 
 AssignMessages.prototype.processMessageAndAddress = function (msg, address) {
@@ -114,6 +107,7 @@ AssignMessages.prototype.processMessageAndAddress = function (msg, address) {
 		normalizedAddress = Contacts.IMAddress.normalizeIm(address);
 	}
 
+	//process person result and then trigger query to chatthread db.
 	future.then(function personCB() {
 		var result = checkResult(future), query = { from: "com.palm.chatthread:1"};
 		if (result && (result.returnValue === undefined || result.returnValue)) { //result is person
@@ -189,8 +183,10 @@ AssignMessages.prototype.processMessageAndAddress = function (msg, address) {
 			}
 			//update rev to store msg again, if assigned to multiple conversations, i.e. multiple recepients.
 			msg._rev = result.results[0].rev;
+			Log.debug("Result ok, set future.result to true.");
 			future.result = {returnValue: true};
 		} else {
+			Log.debug("Result failed, propagate issues.");
 			future.result = result; //propagate errors.
 		}
 	});
@@ -205,7 +201,7 @@ AssignMessages.prototype.run = function (outerFuture) {
 		rev = args.lastCheckedRev || 0;
 
 	Log.debug("Running from activity: ", args.$activity);
-	
+
 	setRev(rev);
 	future.nest(DB.find(messageQuery, false, false));
 
@@ -222,11 +218,15 @@ AssignMessages.prototype.run = function (outerFuture) {
 				}
 				//enque a lot of "processOneMessage" functions and let each of them nest one result
 				innerFuture.then(this, function processOneMessage() {
+					innerFuture.getResult(); //consume result
 					innerFuture.nest(this.processMessage(msg));
 				});
 			}, this);
 
-			future.nest(innerFuture);
+			innerFuture.then(this, function messageProcessingDone() {
+				Log.debug("Message processing done.");
+				future.result = innerFuture.result;
+			});
 		} else {
 			throw "Could not get messages from db " + JSON.stringify(result);
 		}
