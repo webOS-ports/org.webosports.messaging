@@ -15,11 +15,9 @@ enyo.kind({
             if (a < b) { return 1; }
             return 0;
         };
-
-        if (this.models&&this.models.length!=0){
-            this.models.sort(compare);
+        if (res&&res.length!=0){
+            res.sort(compare);
         }
-
         this.inherited(arguments);
 
     }
