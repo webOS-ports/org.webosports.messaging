@@ -15,6 +15,7 @@ enyo.kind({
         smsType: 0,
         status: "",
         timestamp: 0,
-        to: []
+        to: [],
+        flags: {}
     }
 });

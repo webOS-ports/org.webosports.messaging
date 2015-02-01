@@ -132,7 +132,7 @@ enyo.kind({
         this.$.contactsSearchList.refilter();
     },
     threadChanged: function() {
-        this.log("Thread is ", this.thread, this.$.messageCollection);
+        this.log("Thread is ", this.thread.get("_id"),this.thread, this.$.messageCollection);
 
         this.$.messageCollection.empty();
         this.$.messageList.refresh();
@@ -142,13 +142,16 @@ enyo.kind({
         if (threadId){
             this.$.panels.setIndex(0);
             this.$.messageCollection.threadId = threadId;
-            this.$.messageCollection.fetch({merge: true, success: enyo.bindSafely(this, "messageListChanged")});
+            this.$.messageCollection.fetch({where: [{prop:"conversations",op:"=",val:threadId}],
+                merge: true,
+                success: enyo.bindSafely(this, "messageListChanged")});
 
         }else{
             this.$.panels.setIndex(1);
         }
     },
     messageListChanged: function() {
+        console.log("messageListChanged", this.messageCollection);
         this.$.messageList.refresh();
     },
     messageTextAreaChanged: function(s,e){
@@ -166,10 +169,11 @@ enyo.kind({
 
         var messageText = this.$.messageTextArea.getValue();
         var localTimestamp = new moment();
+        var threadId = this.thread.get("_id");
 
         var toArray = [];
-        var message = {_kind: "com.palm.smsmessage:1", conversations: ["0"], folder: "outbox",
-            localTimestamp: localTimestamp.format("X"), messageText: messageText,
+        var message = {_kind: "com.palm.smsmessage:1", conversations: [threadId], folder: "outbox",
+            localTimestamp: localTimestamp.format("X"), messageText: messageText, flags:{visible:true},
             networkMsgId: 0, priority: 0, serviceName: "sms", smsType: 0, status: "pending", timestamp: 0, to: toArray };
 
         if (this.thread.get("replyAddress")){
@@ -199,7 +203,7 @@ enyo.kind({
         this.thread.set("displayName", personModel.get("displayName"));
         this.thread.set("personId", personModel.get("_id"));
         this.thread.set("replyAddress", personModel.get("primaryPhoneNumber").value);
-       // this.threadChanged();
+        // this.threadChanged();
         this.thread.commit({success:enyo.bind(this, this.newThreadCreated)});
     },
 
@@ -215,5 +219,6 @@ enyo.kind({
     messageSent: function(a,b,c){
         enyo.log("message SENT", a, b, c);
         this.$.messageTextArea.setValue("");
+        //this.messageListChanged();
     }
 });

@@ -42,8 +42,7 @@ enyo.kind({
         var method,
             subscribe = false,
             options;
-console.log("==> Fetch called...");
-
+        console.log("==> Fetch called...");
 
         if (rec instanceof enyo.Model) {
             options = {ids: [rec.attributes[rec.primaryKey]]};
@@ -51,12 +50,12 @@ console.log("==> Fetch called...");
         } else {
             //if more than 500 contacts need to implement paging
             //if something changes, need to update collection. TODO: test this!
-            options = {query: {from: rec.dbKind}, count: true, watch: true};
+            options = {query: {from: rec.dbKind, where: opts.where}, count: true, watch: true};
             subscribe = true;
             method = "find";
         }
 
-console.log("===> Fetching: ", options);
+        console.log("===> Fetching: ", options);
 
         this._doRequest(method, options, opts.success, opts.fail, subscribe);
     },
