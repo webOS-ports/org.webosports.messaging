@@ -24,8 +24,20 @@ enyo.kind({
 
             if (dbkind === "com.palm.message:1") {
                 threadId = rec.get("threadId");
-                console.log("Collection threadId: " + threadId);
-                opts.success(this.dataArray[dbkind][threadId]);
+
+                console.log("Collection threadId: " + threadId, dbkind);
+                // simulate [{prop:"conversations",op:"=",val:rec.get("threadId")}] in db8
+                var messages = this.dataArray[dbkind];
+                console.log("messages are", messages);
+                var filterFunction = function(rec){
+                    if (rec.conversations.indexOf(threadId)!=-1){
+                        return true;
+                    } else return false;
+                }
+
+                messages = messages.filter(filterFunction);
+                console.log("results are ", messages);
+                opts.success(messages);
             }
             else if (dbkind === "com.palm.chatthread:1") {
                 console.log("dbKind is com.palm.chatthread:1", opts, this.dataArray[dbkind]);
@@ -131,172 +143,399 @@ enyo.kind({
     },
 
 
-
     dataArray: {
+        "com.palm.chatthread:1": [
+            {
+                _id: "JCih4JAw8x3",
+                _kind: "com.palm.chatthread:1",
+                _rev: 621,
+                displayName: "+49555121284",
+                flags: {visible: true},
+                normalizedAddress: "-48644025--13-+",
+                "replyAddress": "+49555121284",
+                "replyService": "sms",
+                "summary": "Test SMS N4 28-Jan-14 1",
+                "timestamp": 1422470892,
+                "unreadCount": 0,
+                "unreadCountRevSet": 621
+            },
+            {
+                "_id": "JCsNkgxK3iV",
+                "_kind": "com.palm.chatthread:1",
+                "_rev": 3472,
+                "displayName": "Web setting",
+                "flags": {"visible": true},
+                "normalizedAddress": "ttW----",
+                "replyAddress": "Web setting",
+                "replyService": "sms",
+                "summary": "Bedankt dat uonze dataservice gebruikt. Let op: als u email/apps continue aan laat staan is uw databundel eerder op en betaald u per MB. Bel 1200 voor info",
+                "timestamp": 1422639401,
+                "unreadCount": 0,
+                "unreadCountRevSet": 3444
+            },
+            {
+                "_id": "JCsNkhoJQF3",
+                "_kind": "com.palm.chatthread:1",
+                "_rev": 3446,
+                "displayName": "LYCAMOBILE",
+                "flags": {"visible": true},
+                "normalizedAddress": "----",
+                "replyAddress": "LYCAMOBILE",
+                "replyService": "sms",
+                "summary": "Calls to Netherlands/EU are 0.2300 c/min (0.0600 c/min to receive). Text is 0.0700c (Free to receive). Free info call 322. Emergency services call 112.",
+                "timestamp": 1422637252,
+                "unreadCount": 0,
+                "unreadCountRevSet": 3446
+            }
+        ],
+
+        "com.palm.message:1":[
+            {
+                "_id": "JCih06FZMXg",
+                "_kind": "com.palm.smsmessage:1",
+                "_rev": 622,
+                "_sync": true,
+                "conversations": ["JCih4JAw8x3"],
+                "flags": {"read": false},
+                "folder": "inbox",
+                "from": {"addr": "+49555121284"},
+                "localTimestamp": 1422470892,
+                "messageText": "Test SMS N4 28-Jan-14 1",
+                "readRevSet": 569,
+                "serviceName": "sms",
+                "status": "successful",
+                "timestamp": 1422470828
+            },
+            {
+                "_id": "JCihiDb_8IR",
+                "_kind": "com.palm.smsmessage:1",
+                "_rev": 629,
+                "_sync": true,
+                "conversations": ["0"],
+                "folder": "outbox",
+                "localTimestamp": "1422471082",
+                "messageText": "Test reply 28",
+                "networkMsgId": 0,
+                "priority": 0,
+                "readRevSet": 629,
+                "serviceName": "sms",
+                "smsType": 0,
+                "status": "",
+                "timestamp": 0,
+                "to": [
+                    {
+                        "_id": "276",
+                        "addr": "+49555121284"
+                    }
+                ]
+            },
+            {
+                "_id": "JCin8xhEj4c",
+                "_kind": "com.palm.smsmessage:1",
+                "_rev": 656,
+                "_sync": true,
+                "conversations": ["0"],
+                "folder": "outbox",
+                "localTimestamp": "1422472540",
+                "messageText": "Test reply jan 28 2",
+                "networkMsgId": 0,
+                "priority": 0,
+                "readRevSet": 656,
+                "serviceName": "sms",
+                "smsType": 0,
+                "status": "",
+                "timestamp": 0,
+                "to": [
+                    {
+                        "_id": "291",
+                        "addr": "+49555121284"
+                    }
+                ]
+            },
+            {
+                "_id": "JCizVJYnIcg",
+                "_kind": "com.palm.smsmessage:1",
+                "_rev": 691,
+                "_sync": true,
+                "conversations": ["0"],
+                "folder": "outbox",
+                "localTimestamp": "1422475855",
+                "messageText": "Test reply jan 283",
+                "networkMsgId": 0,
+                "priority": 0,
+                "readRevSet": 688,
+                "serviceName": "sms",
+                "smsType": 0,
+                "status": "successful",
+                "timestamp": 0,
+                "to": [
+                    {
+                        "_id": "2b1",
+                        "addr": "+49555121284"
+                    }
+                ]
+            },
+            {
+                "_id": "JClceWOszq7",
+                "_kind": "com.palm.smsmessage:1",
+                "_rev": 2516,
+                "_sync": true,
+                "conversations": ["0"],
+                "folder": "outbox",
+                "localTimestamp": "1422521264",
+                "messageText": "Test reply 29 1",
+                "networkMsgId": 0,
+                "priority": 0,
+                "readRevSet": 2513,
+                "serviceName": "sms",
+                "smsType": 0,
+                "status": "successful",
+                "timestamp": 0,
+                "to": [
+                    {
+                        "_id": "9d2",
+                        "addr": "+49555121284"
+                    }
+                ]
+            },
+            {
+                "_id": "JClmOkYmg1Z",
+                "_kind": "com.palm.smsmessage:1",
+                "_rev": 2549,
+                "_sync": true,
+                "conversations": ["0"],
+                "folder": "outbox",
+                "localTimestamp": "1422523878",
+                "messageText": "Test reply 29 2",
+                "networkMsgId": 0,
+                "priority": 0,
+                "readRevSet": 2546,
+                "serviceName": "sms",
+                "smsType": 0,
+                "status": "successful",
+                "timestamp": 0,
+                "to": [
+                    {
+                        "_id": "9f3",
+                        "addr": "+49555121284"
+                    }
+                ]
+            },
+            {
+                "_id": "JCsNjUXOtxc",
+                "_kind": "com.palm.smsmessage:1",
+                "_rev": 3445,
+                "_sync": true,
+                "conversations": ["JCsNkgxK3iV"],
+                "flags": {"read": false},
+                "folder": "inbox",
+                "from": {"addr": "Web setting"},
+                "localTimestamp": 1422637249,
+                "messageText": "U zult de GPRS instellingen configuratie ontvangen.Svpaccepteren.",
+                "readRevSet": 3442,
+                "serviceName": "sms",
+                "status": "successful",
+                "timestamp": 1422637244
+            },
+            {
+                "_id": "JCsVk_WtOuN",
+                "_kind": "com.palm.smsmessage:1",
+                "_rev": 3473,
+                "_sync": true,
+                "conversations": ["JCsNkgxK3iV"],
+                "flags": {"read": false},
+                "folder": "inbox",
+                "from": {"addr": "Web setting"},
+                "localTimestamp": 1422639401,
+                "messageText": "Bedankt dat u onze dataservice gebruikt. Let op: als u email/apps continue aan laat staan is uw databundel eerder op en betaald u per MB. Bel 1200 voor info",
+                "readRevSet": 3468,
+                "serviceName": "sms",
+                "status": "successful",
+                "timestamp": 1422639337
+            },
+            {
+                "_id": "JCsNkLo8p+g",
+                "_kind": "com.palm.smsmessage:1",
+                "_rev": 3447,
+                "_sync": true,
+                "conversations": ["JCsNkhoJQF3"],
+                "flags": {"read": false},
+                "folder": "inbox",
+                "from": {"addr": "LYCAMOBILE"},
+                "localTimestamp": 1422637252,
+                "messageText": "Calls to Netherlands/EU are 0.2300 c/min (0.0600 c/min to receive). Text is 0.0700c (Free to receive). Free info call 322. Emergency services call 112.",
+                "readRevSet": 3443,
+                "serviceName": "sms",
+                "status": "successful",
+                "timestamp": 1422637244
+            }]
+
+    },
+    altdataArray: {
         "com.palm.chatthread:1": [
             { _id: "0", displayName: "Person1 WithReallySuperLongName", summary: "Summary of message from Person 1",
                 timestamp: 1408101740, replyAddress: "0144334456", replyService: "sms", personId: "", unreadCount: 2},
             { _id: "1", displayName: "Person 2", summary: "Summary of message from Person 2",
                 timestamp: 1409610140, replyAddress: "0144334456", replyService: "sms", personId: "", unreadCount: 0},
             { _id: "2", displayName: "Person 3", summary: "Summary of messages from Person 3, for whom there are no messages " +
-                "in thread. But we have a really long summary in any case to see if ellipsis works",
+            "in thread. But we have a really long summary in any case to see if ellipsis works",
                 timestamp: 1409610140, replyAddress: "1234334456", replyService: "sms", personId: "", unreadCount: 0}
         ],
         "com.palm.message:1": {
             "0": [
-                { _id: "0", _kind: "com.palm.smsmessage:1", conversations: ["0"], folder: "inbox", 
-                  from: { addr: "+491234567890" }, localTimestamp: 1408101740, messageText: "This is a small SMS test message 1 from Someone",
-                  networkMsgId: 0, priority: 0, serviceName: "sms", smsType: 0, status: "successful", timestamp: 0 },
+                { _id: "0", _kind: "com.palm.smsmessage:1", conversations: ["0"], folder: "inbox",
+                    from: { addr: "+491234567890" }, localTimestamp: 1408101740, messageText: "This is a small SMS test message 1 from Someone",
+                    networkMsgId: 0, priority: 0, serviceName: "sms", smsType: 0, status: "successful", timestamp: 0 },
                 { _id: "1", _kind: "com.palm.smsmessage:1", conversations: ["1"], folder: "sent",
-                  from: { addr: "+491234567890" }, localTimestamp: 1408601740, messageText: "This is a extremely large " +
-                    "SMS test message 2 TO Someone. Like I said, this is a <i>extremely</i> large message " +
-                    "that also has some HTML formatting in it. <b><u>Just because we can!</u></b> Plus, we " +
-                    "need to <span style='color:maroon;'>check support for auto-expansion</span> of message.",
-                  networkMsgId: 0, priority: 0, serviceName: "sms", smsType: 0, status: "successful", timestamp: 0 },
+                    from: { addr: "+491234567890" }, localTimestamp: 1408601740, messageText: "This is a extremely large " +
+                "SMS test message 2 TO Someone. Like I said, this is a <i>extremely</i> large message " +
+                "that also has some HTML formatting in it. <b><u>Just because we can!</u></b> Plus, we " +
+                "need to <span style='color:maroon;'>check support for auto-expansion</span> of message.",
+                    networkMsgId: 0, priority: 0, serviceName: "sms", smsType: 0, status: "successful", timestamp: 0 },
                 { _id: "4", _kind: "com.palm.smsmessage:1", conversations: ["1"], folder: "inbox",
                     from: { addr: "+491234567890" }, localTimestamp: 1408601740, messageText: "This is a small SMS test message 5, also from Someone",
                     networkMsgId: 0, priority: 0, serviceName: "sms", smsType: 0, status: "successful", timestamp: 0 }
             ],
             "1": [
                 { _id: "2", _kind: "com.palm.smsmessage:1", conversations: ["0"], folder: "inbox",
-                  from: { addr: "+491234567890" }, localTimestamp: 0, messageText: "This is a small SMS test message 3 from test2",
-                  networkMsgId: 0, priority: 0, serviceName: "sms", smsType: 0, status: "successful", timestamp: 0 },
+                    from: { addr: "+491234567890" }, localTimestamp: 0, messageText: "This is a small SMS test message 3 from test2",
+                    networkMsgId: 0, priority: 0, serviceName: "sms", smsType: 0, status: "successful", timestamp: 0 },
                 { _id: "3", _kind: "com.palm.smsmessage:1", conversations: ["1"], folder: "inbox",
-                  from: { addr: "+491234567890" }, localTimestamp: 0, messageText: "This is a small SMS test message 4, also from test2",
-                  networkMsgId: 0, priority: 0, serviceName: "sms", smsType: 0, status: "successful", timestamp: 0 }
+                    from: { addr: "+491234567890" }, localTimestamp: 0, messageText: "This is a small SMS test message 4, also from test2",
+                    networkMsgId: 0, priority: 0, serviceName: "sms", smsType: 0, status: "successful", timestamp: 0 }
             ]
         },
         "com.palm.person:1":[
-        {
-            "_id": "J1EcwkckJBw",
-            "_kind": "com.palm.person:1",
-            "_rev": 344,
-            "addresses": [{
-                "_id": "130",
-                "country": "",
-                "locality": "",
-                "postalCode": "\\.. ",
-                "primary": false,
-                "region": "dassa'.,",
-                "streetAddress": "Neueaddresse.:",
-                "type": "type_work"
-            }, {
-                "_id": "131",
-                "country": "",
-                "locality": "",
-                "postalCode": "",
-                "primary": false,
-                "region": "",
-                "streetAddress": "., ",
-                "type": "type_home"
-            }, {
-                "_id": "12c",
-                "country": "USE",
-                "locality": "",
-                "postalCode": "",
-                "primary": false,
-                "region": "somewhere.m irgendwo",
-                "streetAddress": "",
-                "type": "type_work"
-            }],
-            "anniversary": "2014-09-01",
-            "birthday": "2014-07-12",
-            "contactIds": ["J1EcwYUFwGV", "J1EcwYUFYEg"],
-            "emails": [{
-                "_id": "132",
-                "favoriteData": {},
-                "normalizedValue": "test@blub.de",
-                "primary": false,
-                "type": "type_work",
-                "value": "test@blub.de"
-            }],
-            "favorite": false,
-            "gender": "",
-            "ims": [],
-            "launcherId": "",
-            "name": {
-                "familyName": "schlubbeltub",
-                "givenName": "test-zu-owo",
-                "honorificPrefix": "",
-                "honorificSuffix": "",
-                "middleName": ""
-            },
-            "names": [{
-                "_id": "159",
-                "familyName": "schlubbeltub",
-                "givenName": "test-zu-owo",
-                "honorificPrefix": "",
-                "honorificSuffix": "",
-                "middleName": ""
-            }, {
-                "_id": "15a",
-                "familyName": "",
-                "givenName": "test-zu-owo",
-                "honorificPrefix": "",
-                "honorificSuffix": "",
-                "middleName": ""
-            }],
-            "nickname": "",
-            "notes": [",.öäü\\?ß!\"&lt;&gt;&amp; does this read ok?"],
-            "organization": {
-                "department": "",
-                "description": "",
-                "endDate": "",
-                "location": {
+            {
+                "_id": "J1EcwkckJBw",
+                "_kind": "com.palm.person:1",
+                "_rev": 344,
+                "addresses": [{
+                    "_id": "130",
+                    "country": "",
+                    "locality": "",
+                    "postalCode": "\\.. ",
+                    "primary": false,
+                    "region": "dassa'.,",
+                    "streetAddress": "Neueaddresse.:",
+                    "type": "type_work"
+                }, {
+                    "_id": "131",
                     "country": "",
                     "locality": "",
                     "postalCode": "",
                     "primary": false,
                     "region": "",
+                    "streetAddress": "., ",
+                    "type": "type_home"
+                }, {
+                    "_id": "12c",
+                    "country": "USE",
+                    "locality": "",
+                    "postalCode": "",
+                    "primary": false,
+                    "region": "somewhere.m irgendwo",
                     "streetAddress": "",
                     "type": "type_work"
+                }],
+                "anniversary": "2014-09-01",
+                "birthday": "2014-07-12",
+                "contactIds": ["J1EcwYUFwGV", "J1EcwYUFYEg"],
+                "emails": [{
+                    "_id": "132",
+                    "favoriteData": {},
+                    "normalizedValue": "test@blub.de",
+                    "primary": false,
+                    "type": "type_work",
+                    "value": "test@blub.de"
+                }],
+                "favorite": false,
+                "gender": "",
+                "ims": [],
+                "launcherId": "",
+                "name": {
+                    "familyName": "schlubbeltub",
+                    "givenName": "test-zu-owo",
+                    "honorificPrefix": "",
+                    "honorificSuffix": "",
+                    "middleName": ""
                 },
-                "name": "Kentucky Fried Chicken/KFC",
-                "startDate": "",
-                "title": "",
-                "type": ""
+                "names": [{
+                    "_id": "159",
+                    "familyName": "schlubbeltub",
+                    "givenName": "test-zu-owo",
+                    "honorificPrefix": "",
+                    "honorificSuffix": "",
+                    "middleName": ""
+                }, {
+                    "_id": "15a",
+                    "familyName": "",
+                    "givenName": "test-zu-owo",
+                    "honorificPrefix": "",
+                    "honorificSuffix": "",
+                    "middleName": ""
+                }],
+                "nickname": "",
+                "notes": [",.öäü\\?ß!\"&lt;&gt;&amp; does this read ok?"],
+                "organization": {
+                    "department": "",
+                    "description": "",
+                    "endDate": "",
+                    "location": {
+                        "country": "",
+                        "locality": "",
+                        "postalCode": "",
+                        "primary": false,
+                        "region": "",
+                        "streetAddress": "",
+                        "type": "type_work"
+                    },
+                    "name": "Kentucky Fried Chicken/KFC",
+                    "startDate": "",
+                    "title": "",
+                    "type": ""
+                },
+                "phoneNumbers": [],
+                "photos": {
+                    "accountId": "",
+                    "bigPhotoId": "",
+                    "bigPhotoPath": "",
+                    "contactId": "",
+                    "listPhotoPath": "",
+                    "listPhotoSource": "",
+                    "squarePhotoId": "",
+                    "squarePhotoPath": ""
+                },
+                "relations": [{
+                    "_id": "133",
+                    "primary": false,
+                    "type": "type_spouse",
+                    "value": "Test spiuse"
+                }, {
+                    "_id": "134",
+                    "primary": false,
+                    "type": "type_child",
+                    "value": "Test child"
+                }],
+                "reminder": "",
+                "ringtone": {
+                    "location": "",
+                    "name": ""
+                },
+                "searchTerms": ["tschlubbeltub", "schlubbeltubtest-zu-owo"],
+                "sortKey": "schlubbeltub\ttest-zu-owo",
+                "urls": [{
+                    "_id": "135",
+                    "primary": false,
+                    "type": "type_other",
+                    "value": "Https://scrounge.dumpf"
+                }, {
+                    "_id": "12e",
+                    "primary": false,
+                    "type": "type_other",
+                    "value": "http://workurl.de"
+                }]
             },
-            "phoneNumbers": [],
-            "photos": {
-                "accountId": "",
-                "bigPhotoId": "",
-                "bigPhotoPath": "",
-                "contactId": "",
-                "listPhotoPath": "",
-                "listPhotoSource": "",
-                "squarePhotoId": "",
-                "squarePhotoPath": ""
-            },
-            "relations": [{
-                "_id": "133",
-                "primary": false,
-                "type": "type_spouse",
-                "value": "Test spiuse"
-            }, {
-                "_id": "134",
-                "primary": false,
-                "type": "type_child",
-                "value": "Test child"
-            }],
-            "reminder": "",
-            "ringtone": {
-                "location": "",
-                "name": ""
-            },
-            "searchTerms": ["tschlubbeltub", "schlubbeltubtest-zu-owo"],
-            "sortKey": "schlubbeltub\ttest-zu-owo",
-            "urls": [{
-                "_id": "135",
-                "primary": false,
-                "type": "type_other",
-                "value": "Https://scrounge.dumpf"
-            }, {
-                "_id": "12e",
-                "primary": false,
-                "type": "type_other",
-                "value": "http://workurl.de"
-            }]
-        },
 
             {
                 "_id": "J1EcwpjkP_k",
