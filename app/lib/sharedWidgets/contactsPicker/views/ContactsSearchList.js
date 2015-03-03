@@ -3,11 +3,13 @@ enyo.kind({
     kind: "FittableRows",
     classes: "contacts-list",
     published:{
-        collection:null
+        collection:null,
+        searchText:""
     },
     bindings:[
         {from:".collection", to:".$.contactsList.collection"},
-        {from: ".$.searchInput.value", to: ".$.contactsList.collection.searchText"}
+        {from: ".$.searchInput.value", to: ".$.contactsList.collection.searchText"},
+        {from: "$.searchInput.value", to: "searchText"}
     ],
     events: {
         onSelected: ""
@@ -37,7 +39,7 @@ enyo.kind({
         components: [
             { content:"To: ", style:"vertical-align:baseline; margin-right:5px;"},
             // When our version of webkit supports type "search", we can get a "recent searches" dropdown for free
-            { name: "searchInput", kind: "onyx.Input", placeholder: "Search", style:"vertical-align:middle;" /*, type: "search", attributes: {results:6, autosave:"contactsSearch"}, style: "font-size: 16px;"*/ },
+            { name: "searchInput", kind: "onyx.Input", placeholder: "Name or IM address", style:"vertical-align:middle;" /*, type: "search", attributes: {results:6, autosave:"contactsSearch"}, style: "font-size: 16px;"*/ },
             { kind: "Image", src: "assets/search-input.png" }
         ]
     },

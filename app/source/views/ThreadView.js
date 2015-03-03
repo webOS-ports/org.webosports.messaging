@@ -26,7 +26,14 @@ enyo.kind({
                             layoutKind:"FittableColumnsLayout",
                             components:[
                                 {name:"imStatus", style:"width:14px;", components:[{classes:"im-status unknown", kind:"onyx.Icon"}]},
-                                {name:"headerText", content:"Name name", fit:true}
+                                {name:"headerText", content:"Name name", fit:true},
+                                {kind: 'onyx.PickerDecorator', components: [
+									{}, //this uses the defaultKind property of PickerDecorator to inherit from PickerButton
+									{name:"addrSelect", kind: 'onyx.Picker', components: [   // TODO: dynamically populate
+                                        {content: "206-555-1212", active: true},
+                                        {content: "jdoe@gmail.com"}
+									]}
+								]}
                             ]
                         },
                         {
@@ -176,8 +183,9 @@ enyo.kind({
             localTimestamp: localTimestamp.format("X"), messageText: messageText, flags:{visible:true},
             networkMsgId: 0, priority: 0, serviceName: "sms", smsType: 0, status: "pending", timestamp: 0, to: toArray };
 
-        if (this.thread.get("replyAddress")){
-            toArray.push({addr: this.thread.get("replyAddress")});
+        var toAddress = this.thread.get("replyAddress") || this.$.contactsSearchList.get("searchText").trim();
+        if (toAddress){
+            toArray.push({addr: toAddress});
             message.to = toArray;
             message = new MessageModel(message);
             enyo.log("submitting message", message.raw(), message.dbKind);
@@ -193,12 +201,13 @@ enyo.kind({
         }else{
             //TODO: no reply address, give warning to user.
         	var msg = $L("Pick a recipient");
-            enyo.log(msg, messageText);
+            this.log(msg, messageText);
             if (window.PalmSystem) { PalmSystem.addBannerMessage(msg, '{ }', "icon.png", "alerts"); }
         }
         this.messageListChanged();
     },
 
+    // TODO: rework the contactspicker to select an IM address or phone number.  We shouldn't just blindly use the "primaryPhoneNumber".
     newContactSelected: function(sender,evt){
         enyo.log("contact selected", evt, this.thread);
         var personModel = evt.person;
