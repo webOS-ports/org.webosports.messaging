@@ -54,7 +54,7 @@ enyo.kind({
                     components:[
                         {
                             kind:"onyx.Toolbar",
-                            components:[{kind:"onyx.Button", content:"Cancel", ontap:"deleteThread"}, {content:"New Message"}]
+                            components:[{kind:"onyx.Button", content:"Cancel", ontap:"deleteThread"}, {content:$L("New Conversation")}]
                         },
                         {
                             name:"contactsSearchList",
@@ -179,7 +179,7 @@ enyo.kind({
         if (this.thread.get("replyAddress")){
             toArray.push({addr: this.thread.get("replyAddress")});
             message.to = toArray;
-            var message = new MessageModel(message);
+            message = new MessageModel(message);
             enyo.log("submitting message", message.raw(), message.dbKind);
 
             var rec = this.$.messageCollection.add(message)[0];
@@ -192,14 +192,16 @@ enyo.kind({
             }
         }else{
             //TODO: no reply address, give warning to user.
-            enyo.log("message not sent - no reply address found", messageText)
+        	var msg = $L("Pick a recipient");
+            enyo.log(msg, messageText);
+            if (window.PalmSystem) { PalmSystem.addBannerMessage(msg, '{ }', "icon.png", "alerts"); }
         }
         this.messageListChanged();
     },
 
-    newContactSelected: function(s,e){
-        enyo.log("contact selected", s, e, this.thread);
-        var personModel = e.person;
+    newContactSelected: function(sender,evt){
+        enyo.log("contact selected", evt, this.thread);
+        var personModel = evt.person;
         this.thread.set("displayName", personModel.get("displayName"));
         this.thread.set("personId", personModel.get("_id"));
         this.thread.set("replyAddress", personModel.get("primaryPhoneNumber").value);

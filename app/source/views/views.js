@@ -20,7 +20,6 @@ enyo.kind({
             components: [
                 {
                     kind:"FittableRows",
-                    style:"width:100%; max-width:320px;",
                     components:[
                         {
                             name: "toolbar",
@@ -32,8 +31,8 @@ enyo.kind({
                                     controlClasses: "onyx-tabbutton",
                                     onActivate: "paneChange",
                                     components: [
-                                        { name: "conversations", content: "Conversations", index: 0, active: true },
-                                        { name: "buddies", content: "Buddies", index: 1 }
+                                        { name: "conversations", content: $L("Conversations"), index: 0, active: true },
+                                        { name: "buddies", content: $L("Buddies"), index: 1 }
                                     ]
                                 }
                             ]

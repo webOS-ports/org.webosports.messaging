@@ -1,7 +1,7 @@
 org.webosports.messaging
 ========================
 
-The Messaging app and service for webOS Ports, built with Enyo2 and node.js
+The Messaging app and service for Lune OS, built with Enyo2 and node.js
 
 Description
 -----------
