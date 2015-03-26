@@ -28,12 +28,12 @@ enyo.kind({
                                 {name:"imStatus", style:"width:14px;", components:[{classes:"im-status unknown", kind:"onyx.Icon"}]},
                                 {name:"headerText", content:"Name name", fit:true},
                                 {kind: 'onyx.PickerDecorator', components: [
-									{}, //this uses the defaultKind property of PickerDecorator to inherit from PickerButton
-									{name:"addrSelect", kind: 'onyx.Picker', components: [   // TODO: dynamically populate
+                                    {}, //this uses the defaultKind property of PickerDecorator to inherit from PickerButton
+                                    {name:"addrSelect", kind: 'onyx.Picker', components: [   // TODO: dynamically populate
                                         {content: "206-555-1212", active: true},
                                         {content: "jdoe@gmail.com"}
-									]}
-								]}
+                                    ]}
+                                ]}
                             ]
                         },
                         {
@@ -200,7 +200,7 @@ enyo.kind({
             }
         }else{
             //TODO: no reply address, give warning to user.
-        	var msg = $L("Pick a recipient");
+            var msg = $L("Pick a recipient");
             this.log(msg, messageText);
             if (window.PalmSystem) { PalmSystem.addBannerMessage(msg, '{ }', "icon.png", "alerts"); }
         }
