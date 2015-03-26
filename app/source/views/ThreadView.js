@@ -79,6 +79,7 @@ enyo.kind({
         {
             name: "bottomToolbar",
             kind:"FittableColumns",
+            classes: "onyx-toolbar-inline",
             components: [
                 {
                     kind: "onyx.InputDecorator",
@@ -87,16 +88,6 @@ enyo.kind({
                     layoutKind:"FittableColumnsLayout",
                     style:"padding:0px; margin:1px;",
                     components: [
-                        {
-                            style:"background-color:rgba(200,200,200,0.5); padding:12px; margin-right:1px; border-radius; 0px 3px 3px 0px",
-                            components:[
-                                {
-                                    name:"attachItemIcon",
-                                    kind:"onyx.IconButton",
-                                    classes:"attachitem",
-                                },
-                            ]
-                        },
                         {
                             name:"messageTextArea",
                             kind: "onyx.TextArea",
@@ -107,17 +98,16 @@ enyo.kind({
                             style:"padding:8px;"
                         },
                         {
-                            style:"background-color:rgba(200,200,200,0.5); padding:12px; margin-right:1px; border-radius; 0px 3px 3px 0px",
-                            components:[
-                                {
-                                    name:"sendMessageIcon",
-                                    kind:"onyx.IconButton",
-                                    classes:"sendmessage",
-                                    ontap:"sendMessage"
-                                },
-
-                            ]
-                        }
+                            name:"attachItemIcon",
+                            kind:"onyx.IconButton",
+                            classes:"attachitem",
+                        },
+                        {
+                            name:"sendMessageIcon",
+                            kind:"onyx.IconButton",
+                            classes:"sendmessage",
+                            ontap:"sendMessage"
+                        },
                     ]
                 }
             ]
