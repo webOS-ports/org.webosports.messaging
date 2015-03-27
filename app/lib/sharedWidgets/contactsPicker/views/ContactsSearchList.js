@@ -37,7 +37,7 @@ enyo.kind({
         classes: "contacts-search",
         alwaysLooksFocused: true,
         components: [
-            { content:"To: ", style:"vertical-align:baseline; margin-right:5px;"},
+            { content:"To: ", style: "font-weight: bold; vertical-align:middle; margin-right:5px;"},
             // When our version of webkit supports type "search", we can get a "recent searches" dropdown for free
             { name: "searchInput", kind: "onyx.Input", placeholder: "Name or IM address", style:"vertical-align:middle;" /*, type: "search", attributes: {results:6, autosave:"contactsSearch"}, style: "font-size: 16px;"*/ },
             { kind: "Image", src: "assets/search-input.png" }
