@@ -18,8 +18,11 @@ if (typeof require === "undefined") {
 var fs = require("fs"); //required for own node modules and current vCard converter.
 
 var servicePath = fs.realpathSync(".");
-var checkResult = require(servicePath + "/javascript/utils/checkResult.js");
-var Log = require(servicePath + "/javascript/utils/Log.js");
+var libPath = servicePath + "/javascript/utils/";
+var checkResult = require(libPath + "checkResult.js");
+var Log = require(libPath + "Log.js");
+var MessageAssigner = require(libPath + "MessageAssigner.js");
+var ActivityHandler = require(libPath + "ActivityHandler.js");
 
 process.on("uncaughtException", function (e) {
 	"use strict";
