@@ -18,3 +18,10 @@ can be merged.
 
 Please refer to http://www.webos-ports.org/wiki/Communications for information about how to
 contact the developers of this project.
+
+
+## Building & Installing App
+
+cd app
+tools/deploy.sh -i
+
