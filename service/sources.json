@@ -22,5 +22,8 @@
 	},
 	{
 		"source": "javascript/assistants/AssignMessages.js"
+	},
+	{
+		"source": "javascript/assistants/PutMessage.js"
 	}
 ]
