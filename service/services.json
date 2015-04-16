@@ -25,6 +25,11 @@
 					"name": "deleteChatthread",
 					"assistant": "DeleteChatthread",
 					"public": false
+				},
+				{
+					"name": "updateThreadValues",
+					"assistant": "UpdateThreadValues",
+					"public": false
 				}
 			]
 		}
