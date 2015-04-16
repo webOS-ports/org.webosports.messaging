@@ -20,6 +20,11 @@
 					"name": "putMessage",
 					"assistant": "PutMessage",
 					"public": false
+				},
+				{
+					"name": "deleteChatthread",
+					"assistant": "DeleteChatthread",
+					"public": false
 				}
 			]
 		}
