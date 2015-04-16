@@ -36,13 +36,13 @@ var MessageAssigner = (function () {
 			chatthread = result.results[0];
 		}
 
-		chatthread.displayName = name;
+		chatthread.displayName = name || chatthread.displayName;
 		if (!chatthread.flags) {
 			chatthread.flags = {};
 		}
 		chatthread.flags.visible = true; //have new message.
-		chatthread.normalizedAddress = normalizedAddress;
-		chatthread.replyAddress = address;
+		chatthread.normalizedAddress = normalizedAddress || chatthread.normalizedAddress;
+		chatthread.replyAddress = address || chatthread.replyAddress;
 		chatthread.replyService = msg.serviceName;
 		chatthread.summary = msg.messageText;
 		chatthread.timestamp = msg.localTimestamp || Date.now();
@@ -52,6 +52,28 @@ var MessageAssigner = (function () {
 
 		Log.debug("Result chatthread to write into db: ", chatthread);
 		future.nest(DB.merge([chatthread]));
+	}
+
+	function updateChatthreadFromMessage(threadid, msg) {
+		var future;
+		future = DB.get([threadid]);
+
+		future.then(function checkThreadResult() {
+			//make sure we do not re-produce old threads here...
+			//if thread could not be found by id, remove id from conversations.
+			var result = future.result, i;
+			Log.debug("Got ", result, " for threadId ", threadid);
+			if (result.returnValue === true && result.results && result.results.length > 0 && !result.results[0]._del) {
+				updateChatthread(null, msg, null, null, future); //will set result in future.
+			} else {
+				Log.debug("Thread ", threadid, " not found. Might have been deleted?");
+				i = msg.conversations.indexOf(threadid);
+				msg.conversations.splice(i, 1);
+				future.result = { returnValue: false};
+			}
+		});
+
+		return future;
 	}
 
 	//public interface:
@@ -162,10 +184,39 @@ var MessageAssigner = (function () {
 			} else {
 				Log.log("Need address field. Message ", msg, " skipped.");
 				msg.flags.threadingError = true;
-				DB.merge([msg]).then(function msgStoreCB() {
+				DB.merge([msg]).then(function msgStoreCB(f) {
+					var result = f.result;
+					if (result.results && result.results[0] && result.results[0].rev > newRev) {
+						newRev = result.results[0].rev;
+					}
 					future.result = {returnValue: false};
 				});
 			}
+			return future;
+		},
+
+		updateChatthreads: function (msg) {
+			var future = new Future(), innerFuture = new Future({});
+			Log.debug("Updating chatthreads: ", msg.conversations);
+			msg.conversations.forEach(function (threadId) {
+				innerFuture.then(function processThreadId() {
+					innerFuture.getResult();
+					innerFuture.nest(updateChatthreadFromMessage(threadId, msg));
+				});
+			});
+
+			innerFuture.then(function processingThreadIdsDone() {
+				Log.debug("Processing thread ids done.");
+
+				if (msg.conversations.length === 0) {
+					Log.debug("Seems all conversations this message has been in have been deleted?");
+					future.nest(MessageAssigner.processMessage(msg));
+				} else {
+					Log.debug("Could update at least one thread.");
+					future.result = {returnValue: true};
+				}
+			});
+
 			return future;
 		}
 	};
