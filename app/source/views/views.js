@@ -70,7 +70,7 @@ enyo.kind({
                                 }
                             ]
                         },
-                        { name: "threadView", kind: "ThreadView", onDeleteThread:"deleteThread"}
+                        { name: "threadView", kind: "ThreadView", onSelectThread: "showThread", onDeleteThread:"deleteThread"}
                     ]
                 }
             ]
@@ -87,17 +87,20 @@ enyo.kind({
     },
 
     showThread: function (inSender, inEvent) {
-        console.log("showThread ", inEvent);
+        this.log(inSender, inEvent.thread);
 
-        if (inEvent&&inEvent.thread) {
-            this.$.threadPanel.setIndex(1);
-        } else {
+        if (!inEvent || !inEvent.thread) {
             this.$.threadPanel.setIndex(0);
             this.$.main.setIndex(0);
             return true;
         }
 
         this.$.threadView.setThread(inEvent.thread);
+
+        if (inSender !== this.$.threadList) {
+            this.$.threadList.forceSelectThread(inEvent.thread);
+        }
+        this.$.threadPanel.setIndex(1);
         if (enyo.Panels.isScreenNarrow()) {
             this.$.main.setIndex(1);
         }
@@ -122,6 +125,7 @@ enyo.kind({
         inEvent&&inEvent.originator&&inEvent.originator.active?this.$.viewPanel.setIndex(inEvent.originator.index||0):null;
     },
     goBack: function () {
+        this.log(enyo.Panels.isScreenNarrow());
         if (enyo.Panels.isScreenNarrow()) {
             this.$.main.setIndex(0);
         }

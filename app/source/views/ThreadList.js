@@ -76,12 +76,16 @@ enyo.kind({
    },
 
     globalThreadCollectionStatusChanged: function(){
-        console.log("changed", this.globalThreadCollection, this.globalThreadCollectionStatus);
+        this.log(this.globalThreadCollection, this.globalThreadCollectionStatus);
         this.$.realThreadList.set("collection", this.globalThreadCollection, true);
         /*
         if (this.globalThreadCollectionFetching==false){
             this.$.realThreadList.set("collection", this.globalThreadCollection, true);
         }*/
+    },
+    forceSelectThread: function(thread) {
+        var idx = this.globalThreadCollection.indexOf(thread);
+        this.$.realThreadList.select(idx);
     },
     selectThread: function (inSender, inEvent) {
         console.log("selectThread", inSender, inEvent);
