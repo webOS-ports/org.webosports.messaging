@@ -62,7 +62,7 @@ enyo.kind({
                     name: "BottomToolbar",
                     kind: "onyx.Toolbar",
                     components: [
-                        { kind: "onyx.Button", content: $L("New Conversation"), ontap:"createThread"}
+                        { kind: "onyx.IconButton", src: "assets/icon-new.png", ontap: "createThread" }
                     ]
                 }
             ]

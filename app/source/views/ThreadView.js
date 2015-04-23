@@ -30,12 +30,12 @@ enyo.kind({
                                 {name:"imStatus", style:"width:14px;", components:[{classes:"im-status unknown", kind:"onyx.Icon"}]},
                                 {name:"headerText", content:"Name name", fit:true},
                                 {kind: 'onyx.PickerDecorator', components: [
-									{}, //this uses the defaultKind property of PickerDecorator to inherit from PickerButton
-									{name:"addrSelect", kind: 'onyx.Picker', components: [   // TODO: dynamically populate
+                                    {}, //this uses the defaultKind property of PickerDecorator to inherit from PickerButton
+                                    {name:"addrSelect", kind: 'onyx.Picker', components: [   // TODO: dynamically populate
                                         {content: "206-555-1212", active: true},
                                         {content: "jdoe@gmail.com"}
-									]}
-								]}
+                                    ]}
+                                ]}
                             ]
                         },
                         {
@@ -81,6 +81,7 @@ enyo.kind({
         {
             name: "bottomToolbar",
             kind:"FittableColumns",
+            classes: "onyx-toolbar-inline",
             components: [
                 {
                     kind: "onyx.InputDecorator",
@@ -89,16 +90,6 @@ enyo.kind({
                     layoutKind:"FittableColumnsLayout",
                     style:"padding:0px; margin:1px;",
                     components: [
-                        {
-                            style:"background-color:rgba(200,200,200,0.5); padding:12px; margin-right:1px; border-radius; 0px 3px 3px 0px",
-                            components:[
-                                {
-                                    name:"attachItemIcon",
-                                    kind:"onyx.IconButton",
-                                    classes:"attachitem",
-                                },
-                            ]
-                        },
                         {
                             name:"messageTextArea",
                             kind: "onyx.TextArea",
@@ -109,16 +100,16 @@ enyo.kind({
                             style:"padding:8px;"
                         },
                         {
-                            ontap:"sendMessage", style:"background-color:rgba(200,200,200,0.5); padding:12px; margin-right:1px; border-radius; 0px 3px 3px 0px",
-                            components:[
-                                {
-                                    name:"sendMessageIcon",
-                                    kind:"onyx.IconButton",
-                                    classes:"sendmessage"
-                                },
-
-                            ]
-                        }
+                            name:"attachItemIcon",
+                            kind:"onyx.IconButton",
+                            classes:"attachitem",
+                        },
+                        {
+                            name:"sendMessageIcon",
+                            kind:"onyx.IconButton",
+                            classes:"sendmessage",
+                            ontap:"sendMessage"
+                        },
                     ]
                 }
             ]
@@ -201,7 +192,8 @@ enyo.kind({
             this.log("putMessageService.mock:", this.$.putMessageService.mock);
             this.$.putMessageService.send({message: message.raw()});
         }else{
-        	var msg = $L("Pick a recipient");
+            //TODO: no reply address, give warning to user.
+            var msg = $L("Pick a recipient");
             this.log(msg, messageText);
             if (window.PalmSystem) { PalmSystem.addBannerMessage(msg, '{ }', "icon.png", "alerts"); }
         }

@@ -22,5 +22,14 @@
 	},
 	{
 		"source": "javascript/assistants/AssignMessages.js"
+	},
+	{
+		"source": "javascript/assistants/DeleteChatthread.js"
+	},
+	{
+		"source": "javascript/assistants/PutMessage.js"
+	},
+	{
+		"source": "javascript/assistants/UpdateThreadValues.js"
 	}
 ]
