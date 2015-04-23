@@ -3,12 +3,14 @@ enyo.kind({
     kind: "FittableRows",
     fit:true,
     published: {
-        thread: ""
+        thread: ""   // a ThreadModel
     },
     bindings:[
-        {from:".app.$.globalPersonCollection.status", to:".globalPersonCollectionStatus"}
+        {from:"app.$.globalThreadCollection", to:"globalThreadCollection"},
+        {from:"app.$.globalPersonCollection.status", to:"globalPersonCollectionStatus"}
     ],
     events: {
+        onSelectThread:"",
         onDeleteThread:""
     },
     components: [
@@ -61,7 +63,7 @@ enyo.kind({
                     components:[
                         {
                             kind:"onyx.Toolbar",
-                            components:[{kind:"onyx.Button", content:"Cancel", ontap:"deleteThread"}, {content:$L("New Conversation")}]
+                            components:[{kind:"onyx.Button", content:$L("Cancel"), ontap:"deleteThread"}, {content:$L("New Conversation")}]
                         },
                         {
                             name:"contactsSearchList",
@@ -115,8 +117,15 @@ enyo.kind({
         {
             name: "messageCollection",
             kind: "MessageCollection",
-            threadId: "",
-        }
+            threadId: ""
+        },
+        {
+            name: 'putMessageService', kind: 'enyo.LunaService',
+            service: 'luna://org.webosports.service.messaging', method: 'putMessage',
+            mock: ! ('PalmSystem' in window),
+            onResponse: 'putMessageRspns', onError: 'putMessageErr'
+        },
+        { name: 'updateThreadService', method: 'updateThreadValues'},
     ],
     create: function () {
         this.inherited(arguments);
@@ -129,7 +138,7 @@ enyo.kind({
         this.$.contactsSearchList.refilter();
     },
     threadChanged: function() {
-        this.log("Thread is ", this.thread.get("_id"),this.thread, this.$.messageCollection);
+        this.log("Thread is ", this.thread && this.thread.get("_id"),this.thread, this.$.messageCollection);
 
         this.$.messageCollection.empty();
         this.$.messageList.refresh();
@@ -151,8 +160,8 @@ enyo.kind({
         console.log("messageListChanged", this.messageCollection);
         this.$.messageList.refresh();
     },
-    messageTextAreaChanged: function(s,e){
-        //console.log("messageTextAreaChanged", s, e);
+    messageTextAreaChanged: function(s,inEvent){
+        //console.log("messageTextAreaChanged", s, inEvent);
         if (s.getValue()!=""){
             //this.$.attachItemIcon.hide();
             this.$.sendMessageIcon.show();
@@ -161,8 +170,8 @@ enyo.kind({
             this.$.sendMessageIcon.show();
         }
     },
-    sendMessage:function(s,e){
-        enyo.log("do send message", s, e);
+    sendMessage:function(s,inEvent){
+        enyo.log("do send message", inEvent);
 
         var messageText = this.$.messageTextArea.getValue();
         var localTimestamp = new moment();
@@ -180,14 +189,8 @@ enyo.kind({
             message = new MessageModel(message);
             enyo.log("submitting message", message.raw(), message.dbKind);
 
-            var rec = this.$.messageCollection.add(message)[0];
-
-            if (!this.$.messageCollection.threadId){
-                enyo.log("message not sent - no threadId");
-            }else{
-                this.thread.set("summary", messageText);
-                rec.commit({threadId:this.$.messageCollection.threadId, success:enyo.bind(this, this.messageSent)});
-            }
+            this.log("putMessageService.mock:", this.$.putMessageService.mock);
+            this.$.putMessageService.send({message: message.raw()});
         }else{
             //TODO: no reply address, give warning to user.
             var msg = $L("Pick a recipient");
@@ -196,16 +199,48 @@ enyo.kind({
         }
         this.messageListChanged();
     },
+    putMessageRspns: function (inSender, inEvent) {
+        var threadView = this;
+        var messageThreadIds = inEvent.threadids;
+        var viewThreadId = this.thread.get("_id");
+        var threadMatch = messageThreadIds.indexOf(viewThreadId) >= 0;
+        this.log("viewThreadId:", viewThreadId, "   messageThreadIds:", messageThreadIds, "  threadMatch:", threadMatch);
+        if (! threadMatch) {   // none of the message threads match the view thread
+            var existingThread = this.globalThreadCollection.find(function (thread) {return messageThreadIds.indexOf(thread.get('_id')) >= 0 });
+            this.log("existingThread:", existingThread && existingThread.toJSON());
+            if (existingThread) {
+                this.doSelectThread({thread: existingThread});
+            } else if (!viewThreadId) {   // if globalThreadCollection is updated before this method is called, this branch won't be taken
+                // configures this new thread w/ real ID & placeholder data
+                this.thread.set({_id: messageThreadIds[0], replyAddress: "[entered addr]", summary: "[msg text]"});
+                this.thread.fetch();
+            } else {   // the message threads are not in the global collection
+                var msg = $L("Please file a detailed bug report") + " [can't find thread]";
+                this.log(msg, "viewThreadId:", viewThreadId, "   messageThreadIds:", messageThreadIds);
+                if (window.PalmSystem) { PalmSystem.addBannerMessage(msg, '{ }', "icon.png", "alerts"); }
+            }
+        }
+        // the watch on the thread will update the list of messages
+        this.$.messageTextArea.setValue("");
+    },
+    putMessageErr: function (inSender, inError) {
+        this.error(inError);
+        if (window.PalmSystem) { PalmSystem.addBannerMessage(inError.errorText || inError.toJSON(), '{ }', "icon.png", "alerts"); }
+    },
 
     // TODO: rework the contactspicker to select an IM address or phone number.  We shouldn't just blindly use the "primaryPhoneNumber".
     newContactSelected: function(sender,evt){
         enyo.log("contact selected", evt, this.thread);
         var personModel = evt.person;
-        this.thread.set("displayName", personModel.get("displayName"));
-        this.thread.set("personId", personModel.get("_id"));
-        this.thread.set("replyAddress", personModel.get("primaryPhoneNumber").value);
-        // this.threadChanged();
-        this.thread.commit({success:enyo.bind(this, this.newThreadCreated)});
+        if (personModel) {
+            this.thread.set("displayName", personModel.get("displayName"));
+            this.thread.set("personId", personModel.get("_id"));
+            this.thread.set("replyAddress", personModel.get("primaryPhoneNumber").value);
+            // this.threadChanged();
+            this.thread.commit({success: enyo.bind(this, this.newThreadCreated)});
+        } else {
+            enyo.warning("no person");
+        }
     },
 
     newThreadCreated: function(rec, opts){
@@ -213,13 +248,8 @@ enyo.kind({
         this.set("thread", rec, true);
     },
 
-    deleteThread: function(s,e){
-        console.log("delete button");
+    deleteThread: function(s,inEvent){
+        this.log();
         this.doDeleteThread({thread:this.get("thread")});
-    },
-    messageSent: function(a,b,c){
-        enyo.log("message SENT", a, b, c);
-        this.$.messageTextArea.setValue("");
-        //this.messageListChanged();
     }
 });

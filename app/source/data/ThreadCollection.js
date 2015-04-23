@@ -6,6 +6,7 @@ enyo.kind({
     dbKind: "com.palm.chatthread:1",
 
     fetched: function (opts, res, source) {
+        console.log("ThreadCollection fetched:", opts, res, source);
         var compare = function (a,b) {
             var recA=a.attributes?a.raw():a;
             var recB=b.attributes?b.raw():b;
@@ -15,7 +16,7 @@ enyo.kind({
             if (a < b) { return 1; }
             return 0;
         };
-        if (res&&res.length!=0){
+        if (res&&res.length>0){
             res.sort(compare);
         }
         this.inherited(arguments);
