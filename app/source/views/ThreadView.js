@@ -102,12 +102,15 @@ enyo.kind({
                         {
                             name:"attachItemIcon",
                             kind:"onyx.IconButton",
-                            classes:"attachitem",
+                            src:"assets/menu-icon-attach.png",
+                            classes:"textareaBtn",
+                            ontap:"selectAttachment"
                         },
                         {
                             name:"sendMessageIcon",
                             kind:"onyx.IconButton",
-                            classes:"sendmessage",
+                            src:"assets/header-send-icon.png",
+                            classes:"textareaBtn",
                             ontap:"sendMessage"
                         },
                     ]
@@ -171,7 +174,7 @@ enyo.kind({
         }
     },
     sendMessage:function(s,inEvent){
-        enyo.log("do send message", inEvent);
+        this.log();
 
         var messageText = this.$.messageTextArea.getValue();
         var localTimestamp = new moment();
@@ -187,9 +190,8 @@ enyo.kind({
             toArray.push({addr: toAddress});
             message.to = toArray;
             message = new MessageModel(message);
-            enyo.log("submitting message", message.raw(), message.dbKind);
+            this.log("submitting message", message.raw(), message.dbKind);
 
-            this.log("putMessageService.mock:", this.$.putMessageService.mock);
             this.$.putMessageService.send({message: message.raw()});
         }else{
             //TODO: no reply address, give warning to user.
@@ -197,7 +199,9 @@ enyo.kind({
             this.log(msg, messageText);
             if (window.PalmSystem) { PalmSystem.addBannerMessage(msg, '{ }', "icon.png", "alerts"); }
         }
-        this.messageListChanged();
+
+        inEvent.preventDefault();
+        return true;
     },
     putMessageRspns: function (inSender, inEvent) {
         var threadView = this;
@@ -228,6 +232,14 @@ enyo.kind({
         if (window.PalmSystem) { PalmSystem.addBannerMessage(inError.errorText || inError.toJSON(), '{ }', "icon.png", "alerts"); }
     },
 
+    selectAttachment: function(inSender, inEvent) {
+        var msg = $L("Attaching not yet implemented");
+        enyo.warn(msg);
+        if (window.PalmSystem) { PalmSystem.addBannerMessage(msg, '{ }', "icon.png", "alerts"); }
+        inEvent.preventDefault();
+        return true;
+    },
+
     // TODO: rework the contactspicker to select an IM address or phone number.  We shouldn't just blindly use the "primaryPhoneNumber".
     newContactSelected: function(sender,evt){
         enyo.log("contact selected", evt, this.thread);
@@ -239,7 +251,7 @@ enyo.kind({
             // this.threadChanged();
             this.thread.commit({success: enyo.bind(this, this.newThreadCreated)});
         } else {
-            enyo.warning("no person");
+            enyo.warn("no person");
         }
     },
 

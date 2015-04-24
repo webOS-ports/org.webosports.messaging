@@ -244,6 +244,25 @@ ContactsUI CSS
   height: 30px;
 }
 
+/* BottomToolbar */
+.unpaddedToolbar {
+  height: 52px;
+  padding: 0;
+}
+.onyx-toolbar-inline.unpaddedToolbar > * {
+  margin: 0;
+  box-sizing: border-box;
+  height:52px;
+  width:52px;
+  padding: 10px 8px;
+  background-repeat: no-repeat;
+  background-clip: content-box;
+  background-position: center 10px;
+}
+.onyx-toolbar-inline.unpaddedToolbar > .pressed {
+  background-position: center -22px;
+}
+
 
 /* Details */
 .contacts-details {
@@ -376,18 +395,17 @@ ContactsUI CSS
   background: url(../../assets/status-offline.png) no-repeat 0 0;
 }
 
-.details .sendmessage{
-  background: url(../../assets/header-send-icon.png) no-repeat 0 0;
-  height:30px;
-  width:30px;
-  margin-right:10px;
+.details .textareaBtn{
+  box-sizing: border-box;
+  height:52px;
+  width:52px;
+  padding: 10px 8px;
+  background-repeat: no-repeat;
+  background-clip: content-box;
+  background-position: center 10px;
 }
-
-.details .attachitem{
-  background: url(../../assets/menu-icon-attach.png) no-repeat 0 0;
-  height:30px;
-  width:30px;
-  margin-right:5px;
+.details .textareaBtn.pressed {
+  background-position: center -22px;
 }
 
 
