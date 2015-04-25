@@ -217,7 +217,10 @@ enyo.kind({
             } else if (!viewThreadId) {   // if globalThreadCollection is updated before this method is called, this branch won't be taken
                 // configures this new thread w/ real ID & placeholder data
                 this.thread.set({_id: messageThreadIds[0], replyAddress: "[entered addr]", summary: "[msg text]"});
-                this.thread.fetch();
+                this.thread.fetch({success: function () {
+                    enyo.log("thread.fetch success:", arguments);
+                    threadView.doSelectThread({thread: threadView.thread});
+                }});
             } else {   // the message threads are not in the global collection
                 var msg = $L("Please file a detailed bug report") + " [can't find thread]";
                 this.log(msg, "viewThreadId:", viewThreadId, "   messageThreadIds:", messageThreadIds);
