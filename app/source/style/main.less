@@ -370,30 +370,28 @@ ContactsUI CSS
     margin:0 0 10px;
 }
 
-.im-status {
-  height: 20px;
+.toolbar-status {
+  //height: 20px;
   width:20px;
   background: url(../../assets/status-blank.png) no-repeat 0 0;
   background-size: cover;
 }
 
-.im-status.status-busy, .im-status.status-away{
+.toolbar-status.status-busy, .toolbar-status.status-away{
     background: url(../../assets/status-away.png) no-repeat 0 0;
 }
-.im-status.status-offline{
+.toolbar-status.status-offline, .toolbar-status.status-unknown {
   background: url(../../assets/status-offline.png) no-repeat 0 0;
 }
-.im-status.status-available{
+.toolbar-status.status-available{
   background: url(../../assets/status-available.png) no-repeat 0 0;
 }
-.im-status.button{
+
+.toolbar-status.button{
   background: url(../../assets/status-button.png) no-repeat 0 0;
   background-size: cover;
 }
 
-.im-status.status-unknown, .im-status.unknown{
-  background: url(../../assets/status-offline.png) no-repeat 0 0;
-}
 
 .details .textareaBtn{
   box-sizing: border-box;

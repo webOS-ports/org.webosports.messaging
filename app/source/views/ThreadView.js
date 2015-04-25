@@ -27,7 +27,7 @@ enyo.kind({
                             kind:"onyx.Toolbar",
                             layoutKind:"FittableColumnsLayout",
                             components:[
-                                {name:"imStatus", style:"width:14px;", components:[{classes:"im-status unknown", kind:"onyx.Icon"}]},
+                                {name:"imStatus", style:"height:20px;", classes:"toolbar-status status-unknown", kind:"onyx.Icon"},
                                 {name:"headerText", content:"Name name", fit:true},
                                 {kind: 'onyx.PickerDecorator', components: [
                                     {}, //this uses the defaultKind property of PickerDecorator to inherit from PickerButton
