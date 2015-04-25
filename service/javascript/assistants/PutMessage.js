@@ -14,19 +14,14 @@ PutMessage.prototype.run = function (outerFuture) {
 	}
 
 	if (msg.conversations && msg.conversations.length > 0) {
-		future.nest(MessageAssigner.updateChatthreads(msg));
+		future.nest(MessageAssigner.updateChatthreads(msg, true));
 	} else {
 		future.nest(MessageAssigner.processMessage(msg));
 	}
 
-	future.then(function putMessage() {
+	future.then(function processingFinished() {
 		var result = future.result;
 		Log.debug("Thread association result: ", result);
-		future.nest(DB.merge([msg]));
-	});
-
-	future.then(this, function processingFinished() {
-		var result = future.result;
 		if (result.returnValue) {
 			Log.debug("Put succeeded: ", result);
 			if (result.results && result.results[0]) {
