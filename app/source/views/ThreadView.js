@@ -251,8 +251,6 @@ enyo.kind({
             this.thread.set("displayName", personModel.get("displayName"));
             this.thread.set("personId", personModel.get("_id"));
             this.thread.set("replyAddress", personModel.get("primaryPhoneNumber").value);
-            // this.threadChanged();
-            this.thread.commit({success: enyo.bind(this, this.newThreadCreated)});
         } else {
             enyo.warn("no person");
         }
