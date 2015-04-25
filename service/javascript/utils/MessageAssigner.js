@@ -144,6 +144,7 @@ var MessageAssigner = (function () {
 					}
 					//update rev to store msg again, if assigned to multiple conversations, i.e. multiple recepients.
 					msg._rev = result.results[0].rev;
+					msg._id = result.results[0].id;
 					Log.debug("Result ok, set future.result to true.");
 					future.result = {returnValue: true};
 				} else {
@@ -186,8 +187,11 @@ var MessageAssigner = (function () {
 				msg.flags.threadingError = true;
 				DB.merge([msg]).then(function msgStoreCB(f) {
 					var result = f.result;
-					if (result.results && result.results[0] && result.results[0].rev > newRev) {
-						newRev = result.results[0].rev;
+					if (result.results && result.results[0]) {
+						if (result.results[0].rev > newRev) {
+							newRev = result.results[0].rev;
+						}
+						msg._id = result.results[0].id;
 					}
 					future.result = {returnValue: false};
 				});
@@ -195,7 +199,7 @@ var MessageAssigner = (function () {
 			return future;
 		},
 
-		updateChatthreads: function (msg) {
+		updateChatthreads: function (msg, store) {
 			var future = new Future(), innerFuture = new Future({});
 			Log.debug("Updating chatthreads: ", msg.conversations);
 			msg.conversations.forEach(function (threadId) {
@@ -213,7 +217,20 @@ var MessageAssigner = (function () {
 					future.nest(MessageAssigner.processMessage(msg));
 				} else {
 					Log.debug("Could update at least one thread.");
-					future.result = {returnValue: true};
+					if (store) {
+						DB.merge([msg]).then(function msgStoreCB(f) {
+							var result = f.result;
+							if (result.results && result.results[0]) {
+								if (result.results[0].rev > newRev) {
+									newRev = result.results[0].rev;
+								}
+								msg._id = result.results[0].id;
+							}
+							future.result = {returnValue: result.returnValue};
+						});
+					} else {
+						future.result = {returnValue: true};
+					}
 				}
 			});
 
