@@ -93,7 +93,7 @@ var MessageAssigner = (function () {
 				msg.serviceName = "sms";
 			}
 			if (msg.serviceName === "sms" || msg.serviceName === "mms") {
-				person.normalizedAddress = Contacts.PhoneNumber.normalizePhoneNumber(address);
+				person.normalizedAddress = Contacts.PhoneNumber.normalizePhoneNumber(address, true);
 			} else {
 				person.normalizedAddress = Contacts.IMAddress.normalizeIm(address);
 			}
