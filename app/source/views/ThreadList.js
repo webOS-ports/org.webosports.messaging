@@ -12,6 +12,8 @@ enyo.kind({
         {from:".app.$.globalThreadCollection.status", to:".globalThreadCollectionStatus"},
         {from:".app.$.globalThreadCollection", to:".globalThreadCollection"}
     ],
+    holdEvtFlag: false,
+    dialogThread: null,
     components: [
         {
             name: "main",
@@ -21,8 +23,8 @@ enyo.kind({
                 {
                     name: "realThreadList",
                     kind: "enyo.DataList",
-                    ontap: "selectThread",
                     fit: true,
+                    groupSelection: true,   // disables tap-to-deselect
                     classes: "threads-list",
                     scrollerOptions: {
                         horizontal: "hidden",
@@ -52,11 +54,22 @@ enyo.kind({
                                         return model;
                                     }
                                 }
-                            ]
+                            ],
+                            ontap: "selectThread",
+                            onhold: "showThreadDlg"
                         }
                     ]
 
                 },
+                {name:'threadDlg', kind: 'onyx.Popup',
+                            style: 'display: absolute; bottom: 0; left: 0; right: 0;', components: [
+                    {name: 'threadDlgQuestion', style: 'margin: 0.5rem 0.5rem 1rem;'},
+                    {kind: 'enyo.FittableColumns', style: 'margin: 1rem 0.5rem 0.5rem;', components: [
+                        {kind: 'onyx.Button', content: $L("Cancel"), style: 'height:48px; width:45%;', ontap: "closeThreadDlg"},
+                        {fit: true},
+                        {kind: 'onyx.Button', content: $L("Delete"), classes: "onyx-negative", style: 'height:48px; width:45%;', ontap: "deleteThread"}
+                    ]}
+                ]},
 
                 {
                     name: "BottomToolbar",
@@ -89,15 +102,48 @@ enyo.kind({
         this.$.realThreadList.select(idx);
     },
     selectThread: function (inSender, inEvent) {
-        console.log("selectThread", inSender, inEvent);
-        if (!inEvent||inEvent.index==undefined||inEvent.index==null){
-            return true;
+        if (this.holdEvtFlag) {   // if the user held, ignore this tap event
+            this.holdEvtFlag = false;
+            return;
         }
-        if (!inSender.selected()) {
-            inSender.select(inEvent.index);
-        }
+        this.log(inEvent.model.toJSON());
 
-        this.doSelectThread({thread: inSender.selected()});
+        this.doSelectThread({thread: inEvent.model});
+    },
+
+    showThreadDlg: function(inSender, inEvent) {
+        this.log(inEvent.model.toJSON());
+        this.holdEvtFlag = true;
+
+        this.dialogThread = inEvent.model;
+        var displayName, question;
+        if (displayName = this.dialogThread.get('displayName').trim()) {
+            question = enyo.quickMacroize($L("Delete conversation with “{$displayName}”?"), {displayName: displayName});
+        } else {
+            question = $L("Delete selected conversation?");
+        }
+        this.$.threadDlgQuestion.set('content',question);
+        this.$.threadDlg.show();
+
+        //inEvent.preventDefault();
+        return true;
+    },
+    deleteThread: function(inSender, inEvent){
+        this.log();
+
+        this.doDeleteThread({thread: this.dialogThread});
+        this.$.threadDlg.hide();
+
+        inEvent.preventDefault();
+        return true;
+    },
+    closeThreadDlg: function (inSender, inEvent) {
+        this.log();
+
+        this.$.threadDlg.hide();
+
+        inEvent.preventDefault();
+        return true;
     },
 
     createThread: function(s,e){
@@ -105,11 +151,6 @@ enyo.kind({
         this.$.realThreadList.select(0);
         this.doSelectThread({thread: this.$.realThreadList.selected()});
         console.log("createNewThread", this.$.realThreadList.selected());
-    },
-
-    deleteThread: function(s,e){
-        console.log("deleteThread", s, e);
-        this.doDeleteThread();
     }
 
 });
