@@ -23,7 +23,10 @@ var MessageAssigner = (function () {
 	}
 
 	//updates a chattread or creates a new one
-	function updateChatthread(name, msg, address, normalizedAddress, future) {
+	function updateChatthread(msg, person, future) {
+		if (!person) {
+			person = {};
+		}
 		var result = checkResult(future), chatthread = { unreadCount: 0, flags: {}, _kind: "com.palm.chatthread:1"};
 
 		Log.debug("Get chatthread result: ", result);
@@ -36,13 +39,14 @@ var MessageAssigner = (function () {
 			chatthread = result.results[0];
 		}
 
-		chatthread.displayName = name || chatthread.displayName;
+		chatthread.displayName = person.name || chatthread.displayName;
 		if (!chatthread.flags) {
 			chatthread.flags = {};
 		}
+		chatthread.personId = person.personId || chatthread.personId;
 		chatthread.flags.visible = true; //have new message.
-		chatthread.normalizedAddress = normalizedAddress || chatthread.normalizedAddress;
-		chatthread.replyAddress = address || chatthread.replyAddress;
+		chatthread.normalizedAddress = person.normalizedAddress || chatthread.normalizedAddress;
+		chatthread.replyAddress = person.address || chatthread.replyAddress;
 		chatthread.replyService = msg.serviceName;
 		chatthread.summary = msg.messageText;
 		chatthread.timestamp = msg.localTimestamp || Date.now();
@@ -64,7 +68,7 @@ var MessageAssigner = (function () {
 			var result = future.result, i;
 			Log.debug("Got ", result, " for threadId ", threadid);
 			if (result.returnValue === true && result.results && result.results.length > 0 && !result.results[0]._del) {
-				updateChatthread(null, msg, null, null, future); //will set result in future.
+				updateChatthread(msg, future); //will set result in future.
 			} else {
 				Log.debug("Thread ", threadid, " not found. Might have been deleted?");
 				i = msg.conversations.indexOf(threadid);
@@ -83,15 +87,15 @@ var MessageAssigner = (function () {
 		},
 
 		processMessageAndAddress: function (msg, address) {
-			var future = new Future(), name = "", normalizedAddress = "";
+			var future = new Future(), person = { address: address};
 			if (!msg.serviceName) {
 				console.warn("No service name in message, assuming sms.");
 				msg.serviceName = "sms";
 			}
 			if (msg.serviceName === "sms" || msg.serviceName === "mms") {
-				normalizedAddress = Contacts.PhoneNumber.normalizePhoneNumber(address);
+				person.normalizedAddress = Contacts.PhoneNumber.normalizePhoneNumber(address, true);
 			} else {
-				normalizedAddress = Contacts.IMAddress.normalizeIm(address);
+				person.normalizedAddress = Contacts.IMAddress.normalizeIm(address);
 			}
 
 			//find person from address / phone number:
@@ -100,21 +104,23 @@ var MessageAssigner = (function () {
 			//process person result and then trigger query to chatthread db.
 			future.then(function personCB() {
 				var result = checkResult(future), query = { from: "com.palm.chatthread:1"};
+				Log.debug("Person find result: ", result);
 				if (result && (result.returnValue === undefined || result.returnValue)) { //result is person
 					//TODO: if multiple persons => try to find person by configured account <=> contacts or similar.
 					query.where = [ { op: "=", prop: "personId", val: result.getId() } ];
-					name = result.getDisplayName();
-					Log.debug("Person ", name, " found for ", address);
+					person.name = result.displayName;
+					person.personId = result.getId();
+					Log.debug("Person ", person, " found for ", address);
 				} else {
 					Log.debug("No person found for ", address);
-					name = address;
-					query.where = [ { op: "=", prop: "normalizedAddress", val: normalizedAddress } ];
+					person.name = address;
+					query.where = [ { op: "=", prop: "normalizedAddress", val: person.normalizedAddress } ];
 				}
 
 				future.nest(DB.find(query));
 			});
 
-			future.then(updateChatthread.bind(this, name, msg, address, normalizedAddress));
+			future.then(updateChatthread.bind(this, msg, person));
 
 			future.then(function chatthreadMergeCB() {
 				var result = checkResult(future);
@@ -144,6 +150,7 @@ var MessageAssigner = (function () {
 					}
 					//update rev to store msg again, if assigned to multiple conversations, i.e. multiple recepients.
 					msg._rev = result.results[0].rev;
+					msg._id = result.results[0].id;
 					Log.debug("Result ok, set future.result to true.");
 					future.result = {returnValue: true};
 				} else {
@@ -186,8 +193,11 @@ var MessageAssigner = (function () {
 				msg.flags.threadingError = true;
 				DB.merge([msg]).then(function msgStoreCB(f) {
 					var result = f.result;
-					if (result.results && result.results[0] && result.results[0].rev > newRev) {
-						newRev = result.results[0].rev;
+					if (result.results && result.results[0]) {
+						if (result.results[0].rev > newRev) {
+							newRev = result.results[0].rev;
+						}
+						msg._id = result.results[0].id;
 					}
 					future.result = {returnValue: false};
 				});
@@ -195,7 +205,7 @@ var MessageAssigner = (function () {
 			return future;
 		},
 
-		updateChatthreads: function (msg) {
+		updateChatthreads: function (msg, store) {
 			var future = new Future(), innerFuture = new Future({});
 			Log.debug("Updating chatthreads: ", msg.conversations);
 			msg.conversations.forEach(function (threadId) {
@@ -213,7 +223,20 @@ var MessageAssigner = (function () {
 					future.nest(MessageAssigner.processMessage(msg));
 				} else {
 					Log.debug("Could update at least one thread.");
-					future.result = {returnValue: true};
+					if (store) {
+						DB.merge([msg]).then(function msgStoreCB(f) {
+							var result = f.result;
+							if (result.results && result.results[0]) {
+								if (result.results[0].rev > newRev) {
+									newRev = result.results[0].rev;
+								}
+								msg._id = result.results[0].id;
+							}
+							future.result = {returnValue: result.returnValue};
+						});
+					} else {
+						future.result = {returnValue: true};
+					}
 				}
 			});
 
