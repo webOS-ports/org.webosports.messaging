@@ -49,7 +49,7 @@ var MessageAssigner = (function () {
 		chatthread.replyAddress = person.address || chatthread.replyAddress;
 		chatthread.replyService = msg.serviceName;
 		chatthread.summary = msg.messageText;
-		chatthread.timestamp = msg.localTimestamp || Date.now();
+		chatthread.timestamp = msg.localTimestamp || Date.now()/1000;
 		if (msg.folder === "inbox" && (!msg.flags || (!msg.flags.read && msg.flags.visible))) {
 			chatthread.unreadCount += 1;
 		}

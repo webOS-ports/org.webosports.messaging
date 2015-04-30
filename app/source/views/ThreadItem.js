@@ -1,6 +1,6 @@
 enyo.kind({
     name: "ThreadItem",
-    classes: "thread-item enyo-children-inline",
+    classes: "thread-item flex-row",
     bindings: [
         { from: ".model.unreadCount", to: ".$.unreadCount.content" },
         { from: ".model.unreadCount", to: ".$.unreadCount.showing", transform: function(val, dir, bind){return (val!=0);} },
@@ -9,7 +9,7 @@ enyo.kind({
     ],
     components: [
         {
-            classes:"info",
+            classes:"info flex-auto",
             components:[
                 {
                     classes:"enyo-children-inline",
@@ -27,7 +27,7 @@ enyo.kind({
             ]
         },
         {
-            classes:"icon",
+            classes:"icon flex-none",
             components:[
                 {classes:"mask"},
                 {classes:"img"}

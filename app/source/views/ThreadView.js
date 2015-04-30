@@ -17,6 +17,7 @@ enyo.kind({
         {
             kind:"Panels",
             fit:true,
+            draggable: false,
             components:[
                 {
                     name:"existingThreadPanel",
@@ -145,7 +146,7 @@ enyo.kind({
 
         this.$.messageCollection.empty();
         this.$.messageList.refresh();
-        this.$.headerText.setContent(this.thread.get("displayName")||"a");
+        this.$.headerText.setContent(this.thread.get("displayName")||this.thread.get("replyAddress"));
 
         var threadId = this.thread.get("_id");
         if (threadId){
@@ -217,7 +218,7 @@ enyo.kind({
             } else if (!viewThreadId) {   // if globalThreadCollection is updated before this method is called, this branch won't be taken
                 // configures this new thread w/ real ID & placeholder data
                 this.thread.set({_id: messageThreadIds[0], replyAddress: "[entered addr]", summary: "[msg text]"});
-                this.thread.fetch({success: function () {
+                this.thread.fetch({success: function (originalThread, opts, records, source) {
                     enyo.log("thread.fetch success:", arguments);
                     threadView.doSelectThread({thread: threadView.thread});
                 }});

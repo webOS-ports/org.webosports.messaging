@@ -20,21 +20,26 @@ enyo.kind({
             components: [
                 {
                     kind:"FittableRows",
+                    style: "width: 38.2%;",   /* golden ratio */
                     components:[
                         {
                             name: "toolbar",
                             kind: "onyx.Toolbar",
+                            classes: 'flex-row',
                             components: [
+                                {classes: 'flex-auto'},
                                 {
                                     name: "tabs",
                                     kind: "onyx.RadioGroup",
+                                    classes: 'flex-none',
                                     controlClasses: "onyx-tabbutton",
                                     onActivate: "paneChange",
                                     components: [
                                         { name: "conversations", content: $L("Conversations"), index: 0, active: true },
                                         { name: "buddies", content: $L("Buddies"), index: 1 }
                                     ]
-                                }
+                                },
+                                {classes: 'flex-auto'},
                             ]
                         },
                         {
@@ -78,7 +83,13 @@ enyo.kind({
         {
             kind: "enyo.Signals",
             onbackbutton: "goBack"
-        }
+        },
+        {
+            name: 'deleteChatthreadService', kind: 'enyo.LunaService',
+            service: 'luna://org.webosports.service.messaging', method: 'deleteChatthread',
+            mock: ! ('PalmSystem' in window),
+            onError: 'deleteChatthreadErr'
+        },
     ],
     create: function () {
         this.inherited(arguments);
@@ -112,12 +123,25 @@ enyo.kind({
     },
 
     deleteThread: function(s,e){
-        console.log("deleteThread", s, e);
         var thread = e.thread|| e.originator.thread;
-        console.log("thread to be deleted is", thread);
-        this.globalThreadCollection.remove(thread);
-        this.showThread(s,{});
+        this.log("thread to be deleted is", thread && thread.toJSON());
+        if (thread) {
+            if (thread.get('_id')) {
+                this.$.deleteChatthreadService.send({threadId:thread.get('_id')});
+            }
+            this.globalThreadCollection.remove(thread);
+            this.showThread(s, {});
+        } else {
+            var msg = $L("No conversation selected");
+            enyo.warn(msg);
+            if (window.PalmSystem) { PalmSystem.addBannerMessage(msg, '{ }', "icon.png", "alerts"); }
+        }
 
+    },
+    deleteChatthreadErr: function (inSender, inError) {
+        this.error(inError.errorText || inError);
+        var msg = inError.errorText || inError.toString();
+        if (window.PalmSystem) { PalmSystem.addBannerMessage(msg, '{ }', "icon.png", "alerts"); }
     },
 
     paneChange: function(inSender, inEvent){
