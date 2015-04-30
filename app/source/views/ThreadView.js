@@ -27,7 +27,7 @@ enyo.kind({
                             kind:"onyx.Toolbar",
                             layoutKind:"FittableColumnsLayout",
                             components:[
-                                {name:"imStatus", style:"width:14px;", components:[{classes:"im-status unknown", kind:"onyx.Icon"}]},
+                                {name:"imStatus", style:"height:20px;", classes:"toolbar-status status-unknown", kind:"onyx.Icon"},
                                 {name:"headerText", content:"Name name", fit:true},
                                 {kind: 'onyx.PickerDecorator', components: [
                                     {}, //this uses the defaultKind property of PickerDecorator to inherit from PickerButton
@@ -102,12 +102,15 @@ enyo.kind({
                         {
                             name:"attachItemIcon",
                             kind:"onyx.IconButton",
-                            classes:"attachitem",
+                            src:"assets/menu-icon-attach.png",
+                            classes:"textareaBtn",
+                            ontap:"selectAttachment"
                         },
                         {
                             name:"sendMessageIcon",
                             kind:"onyx.IconButton",
-                            classes:"sendmessage",
+                            src:"assets/header-send-icon.png",
+                            classes:"textareaBtn",
                             ontap:"sendMessage"
                         },
                     ]
@@ -171,7 +174,7 @@ enyo.kind({
         }
     },
     sendMessage:function(s,inEvent){
-        enyo.log("do send message", inEvent);
+        this.log();
 
         var messageText = this.$.messageTextArea.getValue();
         var localTimestamp = new moment();
@@ -187,9 +190,8 @@ enyo.kind({
             toArray.push({addr: toAddress});
             message.to = toArray;
             message = new MessageModel(message);
-            enyo.log("submitting message", message.raw(), message.dbKind);
+            this.log("submitting message", message.raw(), message.dbKind);
 
-            this.log("putMessageService.mock:", this.$.putMessageService.mock);
             this.$.putMessageService.send({message: message.raw()});
         }else{
             //TODO: no reply address, give warning to user.
@@ -197,7 +199,9 @@ enyo.kind({
             this.log(msg, messageText);
             if (window.PalmSystem) { PalmSystem.addBannerMessage(msg, '{ }', "icon.png", "alerts"); }
         }
-        this.messageListChanged();
+
+        inEvent.preventDefault();
+        return true;
     },
     putMessageRspns: function (inSender, inEvent) {
         var threadView = this;
@@ -213,7 +217,10 @@ enyo.kind({
             } else if (!viewThreadId) {   // if globalThreadCollection is updated before this method is called, this branch won't be taken
                 // configures this new thread w/ real ID & placeholder data
                 this.thread.set({_id: messageThreadIds[0], replyAddress: "[entered addr]", summary: "[msg text]"});
-                this.thread.fetch();
+                this.thread.fetch({success: function () {
+                    enyo.log("thread.fetch success:", arguments);
+                    threadView.doSelectThread({thread: threadView.thread});
+                }});
             } else {   // the message threads are not in the global collection
                 var msg = $L("Please file a detailed bug report") + " [can't find thread]";
                 this.log(msg, "viewThreadId:", viewThreadId, "   messageThreadIds:", messageThreadIds);
@@ -228,6 +235,14 @@ enyo.kind({
         if (window.PalmSystem) { PalmSystem.addBannerMessage(inError.errorText || inError.toJSON(), '{ }', "icon.png", "alerts"); }
     },
 
+    selectAttachment: function(inSender, inEvent) {
+        var msg = $L("Attaching not yet implemented");
+        enyo.warn(msg);
+        if (window.PalmSystem) { PalmSystem.addBannerMessage(msg, '{ }', "icon.png", "alerts"); }
+        inEvent.preventDefault();
+        return true;
+    },
+
     // TODO: rework the contactspicker to select an IM address or phone number.  We shouldn't just blindly use the "primaryPhoneNumber".
     newContactSelected: function(sender,evt){
         enyo.log("contact selected", evt, this.thread);
@@ -236,10 +251,8 @@ enyo.kind({
             this.thread.set("displayName", personModel.get("displayName"));
             this.thread.set("personId", personModel.get("_id"));
             this.thread.set("replyAddress", personModel.get("primaryPhoneNumber").value);
-            // this.threadChanged();
-            this.thread.commit({success: enyo.bind(this, this.newThreadCreated)});
         } else {
-            enyo.warning("no person");
+            enyo.warn("no person");
         }
     },
 

@@ -61,6 +61,7 @@ enyo.kind({
                 {
                     name: "BottomToolbar",
                     kind: "onyx.Toolbar",
+                    classes: "unpaddedToolbar",
                     components: [
                         { kind: "onyx.IconButton", src: "assets/icon-new.png", ontap: "createThread" }
                     ]
