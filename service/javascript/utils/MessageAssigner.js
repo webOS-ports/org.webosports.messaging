@@ -68,7 +68,7 @@ var MessageAssigner = (function () {
 			var result = future.result, i;
 			Log.debug("Got ", result, " for threadId ", threadid);
 			if (result.returnValue === true && result.results && result.results.length > 0 && !result.results[0]._del) {
-				updateChatthread(msg, future); //will set result in future.
+				updateChatthread(msg, {}, future); //will set result in future.
 			} else {
 				Log.debug("Thread ", threadid, " not found. Might have been deleted?");
 				i = msg.conversations.indexOf(threadid);
@@ -205,7 +205,7 @@ var MessageAssigner = (function () {
 			return future;
 		},
 
-		updateChatthreads: function (msg, store) {
+		updateChatthreads: function (msg, storeMessage) {
 			var future = new Future(), innerFuture = new Future({});
 			Log.debug("Updating chatthreads: ", msg.conversations);
 			msg.conversations.forEach(function (threadId) {
@@ -223,7 +223,7 @@ var MessageAssigner = (function () {
 					future.nest(MessageAssigner.processMessage(msg));
 				} else {
 					Log.debug("Could update at least one thread.");
-					if (store) {
+					if (storeMessage) {
 						DB.merge([msg]).then(function msgStoreCB(f) {
 							var result = f.result;
 							if (result.results && result.results[0]) {
