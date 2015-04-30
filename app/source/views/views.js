@@ -20,21 +20,26 @@ enyo.kind({
             components: [
                 {
                     kind:"FittableRows",
+                    style: "width: 38.2%;",   /* golden ratio */
                     components:[
                         {
                             name: "toolbar",
                             kind: "onyx.Toolbar",
+                            classes: 'flex-row',
                             components: [
+                                {classes: 'flex-auto'},
                                 {
                                     name: "tabs",
                                     kind: "onyx.RadioGroup",
+                                    classes: 'flex-none',
                                     controlClasses: "onyx-tabbutton",
                                     onActivate: "paneChange",
                                     components: [
                                         { name: "conversations", content: $L("Conversations"), index: 0, active: true },
                                         { name: "buddies", content: $L("Buddies"), index: 1 }
                                     ]
-                                }
+                                },
+                                {classes: 'flex-auto'},
                             ]
                         },
                         {

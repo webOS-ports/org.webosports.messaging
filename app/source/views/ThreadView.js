@@ -146,7 +146,7 @@ enyo.kind({
 
         this.$.messageCollection.empty();
         this.$.messageList.refresh();
-        this.$.headerText.setContent(this.thread.get("displayName")||"a");
+        this.$.headerText.setContent(this.thread.get("displayName")||this.thread.get("replyAddress"));
 
         var threadId = this.thread.get("_id");
         if (threadId){

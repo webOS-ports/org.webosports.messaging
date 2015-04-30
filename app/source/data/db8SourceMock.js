@@ -156,7 +156,7 @@ enyo.kind({
                 "replyService": "sms",
                 "summary": "Test SMS N4 28-Jan-14 1",
                 "timestamp": 1422470892,
-                "unreadCount": 0,
+                "unreadCount": 2,
                 "unreadCountRevSet": 621
             },
             {
@@ -184,7 +184,7 @@ enyo.kind({
                 "replyService": "sms",
                 "summary": "Calls to Netherlands/EU are 0.2300 c/min (0.0600 c/min to receive). Text is 0.0700c (Free to receive). Free info call 322. Emergency services call 112.",
                 "timestamp": 1422637252,
-                "unreadCount": 0,
+                "unreadCount": 1,
                 "unreadCountRevSet": 3446
             }
         ],

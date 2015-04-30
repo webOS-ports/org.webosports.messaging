@@ -4,39 +4,41 @@
 */
 
 .app-panels > * {
-  width:320px;
   background-color: #EAEAEA;
-  box-shadow: -6px -4px 3px 1px rgba(0,0,0,0.4);
 }
 
 @media all and (max-width: 800px) {
   .app-panels > * {
     min-width: 100%;
   }
-  .thread-item .info{
-    width:85%;
-  }
-
-  .thread-item-container {
-    width:100%;
-    min-width:100%;
-  }
-
 }
 
 @media all and (min-width: 800px) {
   .app-panels > * {
     min-width: auto!important;
-  }
-  .thread-item .info{
-    width:240px;
-  }
-  .thread-item-container{
-    width:320px;
-    min-width:320px;
-    max-width:320px;
+    box-shadow: -6px -4px 3px 1px rgba(0,0,0,0.4);
   }
 }
+
+/*** general-purpose styling ***/
+.flex-row {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-flow: row;
+  flex-flow: row;
+  -webkit-align-items: center;
+  align-items: center;
+}
+.flex-auto {
+  -webkit-flex: auto;
+  flex: auto;
+}
+.flex-none {
+  -webkit-flex: none;
+  flex: none;
+}
+
+/***  ***/
 
 .onyx-radiobutton.onyx-tabbutton {
   font-size: 14px;
@@ -153,14 +155,10 @@ ContactsUI CSS
     background-color:#d1e5f5;
     border-color:#B3d9f2
 }
-.threads-list .thread-item .content {
-    height:100%;
-}
 .threads-list .thread-item > .icon {
     height:50px;
     width:50px;
     margin:0px;
-    position: absolute;
 }
 .threads-list .thread-item > .icon .mask {
     position:absolute;
@@ -184,18 +182,15 @@ ContactsUI CSS
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
-    max-width: 80%;
     text-align: left;
     font-weight: bold;
+    margin-top: 1px;
     margin-bottom:5px;
 }
 .threads-list .thread-item .summary {
     color: #333333;
     font-size: 0.8rem;
     text-align: left;
-    display: block;
-    display: -webkit-box;
-    max-width: 100%;
     height: 32px;
     margin: 0 auto;
     line-height: 1.3;
