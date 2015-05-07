@@ -98,7 +98,7 @@ enyo.kind({
     },
 
     showThread: function (inSender, inEvent) {
-        this.log(inSender, inEvent.thread);
+        this.log(inSender && inSender.name, inEvent && inEvent.thread && inEvent.thread.attributes);
 
         if (!inEvent || !inEvent.thread) {
             this.$.threadPanel.setIndex(0);

@@ -50,17 +50,46 @@ enyo.kind({
             parameters;
 
         if (rec instanceof enyo.Model) {
-            parameters = {ids: [rec.get(rec.primaryKey)]};
-            method = "get";
-            this._doRequest(method, parameters, opts.success, opts.fail, subscribe);
+            this._fetchGet(rec.get(rec.primaryKey), opts);
         } else {
         	if (opts.ids) {
-                parameters = {ids: opts.ids};
-                method = "get";
-                this._doRequest(method, parameters, opts.success, opts.fail, subscribe);
+                this._fetchGet(opts.ids, opts);
         	} else {
         		this._fetchFind(rec, opts);
         	}
+        }
+    },
+    _fetchGet: function (ids, opts) {
+        var parameters;
+        if (ids instanceof Array) {
+            var parameters = {ids: ids};
+        } else {
+            var parameters = {ids: [ids]};
+        }
+        console.log("db8Source fetch get", ids instanceof Array, opts, parameters);
+
+        var request = new enyo.ServiceRequest({service: this.dbService, method: "get", subscribe: false});
+        request.go(parameters);
+
+        request.response(handleGetResponse.bind(this, opts.success, opts.fail));
+        request.error(this.generalFailure.bind(this, opts.fail));
+
+        this.requests.push(request);
+
+        function handleGetResponse(success, failure, inSender, inResponse) {
+            if (inResponse.results) {
+                console.log("fetch (get) handleGetResponse:", inResponse.results.length, "records", inResponse);
+
+                // Only records can be passed to the success callback.
+                // Never pass anything PalmBus- or DB8-specific.
+                if (ids instanceof Array) {
+                    success(inResponse.results);
+                } else {
+                    success(inResponse.results[0]);
+                }
+            }  else {
+                console.error("fetch (get) handleGetResponse weird response:", inResponse);
+            }
         }
     },
     _fetchFind: function (collection, opts) {
@@ -79,7 +108,7 @@ enyo.kind({
     		page: opts.page
     	};
         var parameters = {query: query, count: false, watch: true};
-        console.log("db8Source fetch", collection, opts, parameters);
+        console.log("db8Source fetch find", collection, opts, parameters);
 
         var request = new enyo.ServiceRequest({service: this.dbService, method: "find", subscribe: true});
         request.go(parameters);
