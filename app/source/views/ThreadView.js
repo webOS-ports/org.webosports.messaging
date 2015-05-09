@@ -50,11 +50,17 @@ enyo.kind({
                                 touch: true
                             },
                             components: [
-                                { kind: "MessageItem", classes: "thread-item" }
+                                { kind: "MessageItem", classes: "thread-item", ontap: "showMessageMenu"}
                             ]
                         },
 
-
+                        {kind: 'onyx.Menu', components: [
+                            {content: $L("Forward"), classes: 'onyx-menu-label'},
+                            //{content: $L("Forward via Email")},
+                            //{content: $L("Copy Text")},
+                            {classes: 'onyx-menu-divider'},
+                            {content: $L("Delete"), ontap: 'deleteMessage'},
+                        ]}
                     ]
                 },
                 {
@@ -127,9 +133,14 @@ enyo.kind({
             name: 'putMessageService', kind: 'enyo.LunaService',
             service: 'luna://org.webosports.service.messaging', method: 'putMessage',
             mock: ! ('PalmSystem' in window),
-            onResponse: 'putMessageRspns', onError: 'putMessageErr'
+            onResponse: 'putMessageRspns', onError: 'serviceErr'
         },
-        { name: 'updateThreadService', method: 'updateThreadValues'},
+        {
+            name: 'updateThreadValuesService', kind: 'enyo.LunaService',
+            service: 'luna://org.webosports.service.messaging', method: 'updateThreadValues',
+            mock: ! ('PalmSystem' in window),
+            onError: 'serviceErr'
+        }
     ],
     create: function () {
         this.inherited(arguments);
@@ -233,7 +244,7 @@ enyo.kind({
         this.$.messageTextArea.setValue("");
         this.$.messageTextArea.blur();
     },
-    putMessageErr: function (inSender, inError) {
+    serviceErr: function (inSender, inError) {
         this.error(inError);
         if (window.PalmSystem) { PalmSystem.addBannerMessage(inError.errorText || inError.toJSON(), '{ }', "icon.png", "alerts"); }
     },
@@ -267,5 +278,27 @@ enyo.kind({
     deleteThread: function(s,inEvent){
         this.log();
         this.doDeleteThread({thread:this.get("thread")});
+    },
+
+    showMessageMenu: function(inSender, inEvent) {
+        this.menuMessageIdx = inEvent.index;
+        this.menuMessage = this.$.messageCollection.at(inEvent.index);
+        this.$.menu.showAtEvent(inEvent, {left: 10});
+    },
+
+    deleteMessage: function(inSender, inEvent) {
+        this.log(this.menuMessageIdx, this.menuMessage);
+
+        var threadView = this;
+        this.menuMessage.destroy({source: 'db8', success: function () {
+            console.log("destroy success", threadView.$.messageCollection.length);
+            if (threadView.$.messageCollection.length === 0) {
+                threadView.doDeleteThread({thread:threadView.thread});
+            } else if (threadView.menuMessageIdx === threadView.$.messageCollection.length) { // deleted latest message
+                var newLastMessage = threadView.$.messageCollection.at(threadView.$.messageCollection.length-1);
+                console.log("newLastMessage:",newLastMessage);
+                threadView.$.updateThreadValuesService.send({threadId:threadView.thread.get("_id"), message: newLastMessage});
+            }
+        }});
     }
 });

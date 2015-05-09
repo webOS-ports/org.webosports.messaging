@@ -180,6 +180,7 @@ enyo.kind({
 
     destroy: function(rec, opts) {
         var ids;
+        console.log("db8Source destroy", rec, opts);
 
         if (rec instanceof enyo.Collection) {
             ids = [];
