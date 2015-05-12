@@ -50,11 +50,17 @@ enyo.kind({
                                 touch: true
                             },
                             components: [
-                                { kind: "MessageItem", classes: "thread-item" }
+                                { kind: "MessageItem", classes: "thread-item", ontap: "showMessageMenu"}
                             ]
                         },
 
-
+                        {kind: 'onyx.Menu', components: [
+                            {content: $L("Forward"), classes: 'onyx-menu-label'},
+                            //{content: $L("Forward via Email")},
+                            //{content: $L("Copy Text")},
+                            {classes: 'onyx-menu-divider'},
+                            {content: $L("Delete"), ontap: 'deleteMessage'},
+                        ]}
                     ]
                 },
                 {
@@ -127,9 +133,14 @@ enyo.kind({
             name: 'putMessageService', kind: 'enyo.LunaService',
             service: 'luna://org.webosports.service.messaging', method: 'putMessage',
             mock: ! ('PalmSystem' in window),
-            onResponse: 'putMessageRspns', onError: 'putMessageErr'
+            onResponse: 'putMessageRspns', onError: 'serviceErr'
         },
-        { name: 'updateThreadService', method: 'updateThreadValues'},
+        {
+            name: 'updateThreadValuesService', kind: 'enyo.LunaService',
+            service: 'luna://org.webosports.service.messaging', method: 'updateThreadValues',
+            mock: ! ('PalmSystem' in window),
+            onError: 'serviceErr'
+        }
     ],
     create: function () {
         this.inherited(arguments);
@@ -218,9 +229,10 @@ enyo.kind({
             } else if (!viewThreadId) {   // if globalThreadCollection is updated before this method is called, this branch won't be taken
                 // configures this new thread w/ real ID & placeholder data
                 this.thread.set({_id: messageThreadIds[0], replyAddress: "[entered addr]", summary: "[msg text]"});
-                this.thread.fetch({success: function (originalThread, opts, records, source) {
-                    enyo.log("thread.fetch success:", arguments);
+                this.thread.fetch({success: function (thread, opts, result, source) {
+                    enyo.log("thread.fetch success:", arguments, threadView.thread.attributes);
                     threadView.doSelectThread({thread: threadView.thread});
+                    threadView.threadChanged();   // wouldn't be called because thread is same
                 }});
             } else {   // the message threads are not in the global collection
                 var msg = $L("Please file a detailed bug report") + " [can't find thread]";
@@ -230,8 +242,9 @@ enyo.kind({
         }
         // the watch on the thread will update the list of messages
         this.$.messageTextArea.setValue("");
+        this.$.messageTextArea.blur();
     },
-    putMessageErr: function (inSender, inError) {
+    serviceErr: function (inSender, inError) {
         this.error(inError);
         if (window.PalmSystem) { PalmSystem.addBannerMessage(inError.errorText || inError.toJSON(), '{ }', "icon.png", "alerts"); }
     },
@@ -265,5 +278,27 @@ enyo.kind({
     deleteThread: function(s,inEvent){
         this.log();
         this.doDeleteThread({thread:this.get("thread")});
+    },
+
+    showMessageMenu: function(inSender, inEvent) {
+        this.menuMessageIdx = inEvent.index;
+        this.menuMessage = this.$.messageCollection.at(inEvent.index);
+        this.$.menu.showAtEvent(inEvent, {left: 10});
+    },
+
+    deleteMessage: function(inSender, inEvent) {
+        this.log(this.menuMessageIdx, this.menuMessage);
+
+        var threadView = this;
+        this.menuMessage.destroy({source: 'db8', success: function () {
+            console.log("destroy success", threadView.$.messageCollection.length);
+            if (threadView.$.messageCollection.length === 0) {
+                threadView.doDeleteThread({thread:threadView.thread});
+            } else if (threadView.menuMessageIdx === threadView.$.messageCollection.length) { // deleted latest message
+                var newLastMessage = threadView.$.messageCollection.at(threadView.$.messageCollection.length-1);
+                console.log("newLastMessage:",newLastMessage);
+                threadView.$.updateThreadValuesService.send({threadId:threadView.thread.get("_id"), message: newLastMessage});
+            }
+        }});
     }
 });

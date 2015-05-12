@@ -115,6 +115,7 @@ enyo.kind({
     },
     destroy: function(rec, opts) {
         var ids;
+        console.log("db8SourceMock destroy", rec, opts);
 
         if (rec instanceof enyo.Collection) {
             ids = [];
@@ -128,7 +129,10 @@ enyo.kind({
             });
         } else {
             ids = [rec.attributes[rec.primaryKey]];
+            console.warn("TODO: implement removal from in-memory DB");
         }
+
+        opts.success();
     },
     find: function(rec, opts) {
         console.log("No find..");
