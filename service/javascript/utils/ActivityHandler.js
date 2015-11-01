@@ -51,6 +51,7 @@ var ActivityHandler = (function () {
 			}
 		},
 
+		//dangerous: receiver can modify query object. Better would be to clone the object here and keep original hidden.
 		getMessageQuery: function () {
 			return messageQuery;
 		},
