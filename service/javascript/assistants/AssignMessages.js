@@ -1,6 +1,21 @@
 /*jslint nomen: true*/
 /*global ActivityHandler, Future, console, DB, Contacts, checkResult, Log, MessageAssigner */
 
+/**
+ * assignMessages service endpoint
+ *
+ * Parameters:
+ *   lastCheckedRev - the _rev of the last time messages where checked. Optional, might db query.
+ *
+ * Searches DB for all messages that do not have a conversations member (and are visible and do not
+ * have an threadingError flag) that were created after the given _rev. Those messages will be assigned
+ * to chatthreads. If necessary those thread objects will be created on the fly.
+ * Person objects are found by phone number (for sms/mms) or by instant messaging.
+ *
+ * Message objects are altered directly in db8!
+ * Creates notifications for newly assigned messages.
+ */
+
 var AssignMessages = function () { "use strict"; };
 
 AssignMessages.prototype.run = function (outerFuture) {

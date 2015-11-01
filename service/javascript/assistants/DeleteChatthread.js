@@ -1,6 +1,20 @@
 /*jslint nomen: true */
 /*global DB, Future, Log */
 
+/**
+ * deleteChatthread service endpoint
+ *
+ * Parameters:
+ *   threadId - Id of the thread to be deleted
+ *
+ * The app has no right to write into the chatthread db kind.
+ * So the service needs to handle deletion of chatthreads from DB.
+ * Also every message in the chatthread needs to be processed and
+ * either also be deleted or only the threadId needs to be removed
+ * from the conversations array. The service handles all this for
+ * the app, too. Requires parameter "threadId" with a valid threadId.
+ */
+
 var DeleteChatthread = function () { "use strict"; };
 
 function processMessage(message, threadId) {
