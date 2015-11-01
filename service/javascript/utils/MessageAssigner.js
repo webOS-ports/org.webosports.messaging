@@ -1,9 +1,30 @@
 /*jslint node: true, nomen: true */
-/*global checkResult, Contacts, DB, Future, Log */
+/*global checkResult, Contacts, DB, Future, Log, PalmCall */
 
 var MessageAssigner = (function () {
 	"use strict";
 	var newRev = 0;
+
+	//create notification for a message:
+	function createNotification(msg, contactName, threadId) {
+		return PalmCall.call("palm://org.webosports.notifications", "create", {
+			ownerId: "org.webosports.service.messaging",
+			launchId: "org.webosports.app.messaging",
+			launchParams: {threadId: threadId }, //Seems the messaging app does not support this, yet.
+			title: contactName,
+			message: msg.messageText,
+			iconUrl: "file:///usr/palm/applications/org.webosports.app.messaging/icon.png",
+			expiresTimeout: 5
+		}).then(function notificationDone(f) {
+			if (f.exception) {
+				Log.log("notification call had error: " + JSON.stringify(f.exception));
+			} else {
+				var result = f.result;
+				Log.debug("notification call came back: " + JSON.stringify(result));
+				f.result = result;
+			}
+		});
+	}
 
 	//find person from address / phone number:
 	function findPerson(msg, address) {
@@ -86,7 +107,7 @@ var MessageAssigner = (function () {
 			return newRev;
 		},
 
-		processMessageAndAddress: function (msg, address) {
+		processMessageAndAddress: function (msg, address, notification) {
 			var future = new Future(), person = { address: address};
 			if (!msg.serviceName) {
 				console.warn("No service name in message, assuming sms.");
@@ -157,6 +178,12 @@ var MessageAssigner = (function () {
 					Log.debug("Result failed, propagate issues.");
 					future.result = result; //propagate errors.
 				}
+
+				//create notification after background work is done and this is an incomming message:
+				if (notification) {
+					//notification for the currently worked on chatthread, ids are always added to the end of the array.
+					createNotification(msg, person.name, msg.conversations[msg.conversations.length - 1]);
+				}
 			});
 
 			return future;
@@ -187,7 +214,8 @@ var MessageAssigner = (function () {
 				future.nest(MessageAssigner.processMessageAndAddress(msg, msg.to.addr));
 			} else if (msg.from && msg.from.addr) {
 				Log.debug("Found from-address: ", msg.from);
-				future.nest(MessageAssigner.processMessageAndAddress(msg, msg.from.addr));
+				//new message from outside -> create notification.
+				future.nest(MessageAssigner.processMessageAndAddress(msg, msg.from.addr, true));
 			} else {
 				Log.log("Need address field. Message ", msg, " skipped.");
 				msg.flags.threadingError = true;
