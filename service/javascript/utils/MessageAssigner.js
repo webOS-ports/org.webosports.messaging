@@ -12,9 +12,9 @@ var MessageAssigner = (function () {
 			launchId: "org.webosports.app.messaging",
 			launchParams: {threadId: threadId }, //Seems the messaging app does not support this, yet.
 			title: contactName,
-			message: msg.messageText,
+			body: msg.messageText,
 			iconUrl: "file:///usr/palm/applications/org.webosports.app.messaging/icon.png",
-			expiresTimeout: 5
+			expireTimeout: 5
 		}).then(function notificationDone(f) {
 			if (f.exception) {
 				Log.log("notification call had error: " + JSON.stringify(f.exception));
