@@ -14,6 +14,10 @@ var MessageAssigner = (function () {
 			title: contactName,
 			body: msg.messageText,
 			iconUrl: "file:///usr/palm/applications/org.webosports.app.messaging/icon.png",
+			soundClass: "",
+			soundFile: "",
+			duration: -1,
+			doNotSuppress: false,
 			expireTimeout: 5
 		}).then(function notificationDone(f) {
 			if (f.exception) {
