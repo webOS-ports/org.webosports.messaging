@@ -82,7 +82,8 @@ enyo.kind({
         },
         {
             kind: "enyo.Signals",
-            onbackbutton: "goBack"
+            onbackbutton: "goBack",
+            onwebOSRelaunch: "handleRelaunch"
         },
         {
             name: 'deleteChatthreadService', kind: 'enyo.LunaService',
@@ -93,10 +94,28 @@ enyo.kind({
     ],
     create: function () {
         this.inherited(arguments);
-
         this.log("==========> Telling global list to fetch threads...");
     },
+    handleRelaunch: function(inSender, inEvent) {
+        this.log("sender:", inSender, ", event:", inEvent);
+        this.log("launchParams: ", PalmSystem.launchParams);
+        var params = JSON.parse(PalmSystem.launchParams);
 
+        if (typeof(params.threadId) !== 'undefined') {
+            var model = this.app.$.globalThreadCollection.find(function (candidate) {
+                return (candidate.get("_id") === params.threadId);
+            });
+            if (model) {
+                this.showThread({name: "Relaunch Handler"}, {thread: model});
+            }
+        }
+    },
+    globalThreadCollectionStatusChanged: function () {
+        if (window.PalmSystem) {
+            if(PalmSystem.launchParams !== null)
+                this.handleRelaunch();
+        }
+    },
     showThread: function (inSender, inEvent) {
         this.log(inSender && inSender.name, inEvent && inEvent.thread && inEvent.thread.attributes);
 
@@ -153,5 +172,5 @@ enyo.kind({
         if (enyo.Panels.isScreenNarrow()) {
             this.$.main.setIndex(0);
         }
-    },
+    }
 });
