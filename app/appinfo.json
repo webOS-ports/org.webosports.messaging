@@ -6,5 +6,14 @@
     "main": "index.html",
     "title": "Messaging",
     "icon": "icon.png",
-    "uiRevision": 2
+	"miniicon": "assets/notification-small.png",
+    "uiRevision": 2,
+	"keywords": ["Text","SMS","MMS","IM","Instant","Chat"],
+	"universalSearch":{
+		"action":{ 
+			"displayName": "New Message",
+			"url":"org.webosports.app.messaging",
+			"launchParam":{"compose":{"messageText":"#{searchTerms}"}}
+		}
+	}
 }
