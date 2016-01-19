@@ -3,11 +3,13 @@ enyo.kind({
     kind: "FittableRows",
     fit:true,
     published: {
-        thread: ""   // a ThreadModel
+        thread: "",   // a ThreadModel
+        messageText: ""
     },
     bindings:[
         {from:"app.$.globalThreadCollection", to:"globalThreadCollection"},
-        {from:"app.$.globalPersonCollection.status", to:"globalPersonCollectionStatus"}
+        {from:"app.$.globalPersonCollection.status", to:"globalPersonCollectionStatus"},
+        {from:".thread.attributes.draftMessage", to: ".$.messageTextArea.value"}
     ],
     events: {
         onSelectThread:"",
@@ -81,7 +83,7 @@ enyo.kind({
                         }
 
                     ]
-                },
+                }
             ]
         },
 
@@ -119,7 +121,7 @@ enyo.kind({
                             src:"assets/header-send-icon.png",
                             classes:"textareaBtn",
                             ontap:"sendMessage"
-                        },
+                        }
                     ]
                 }
             ]
@@ -170,6 +172,9 @@ enyo.kind({
         }else{
             this.$.panels.setIndex(1);
         }
+    },
+    messageTextChanged: function () {
+        this.$.messageTextArea.set('value', this.messageText);
     },
     messageListChanged: function() {
         console.log("messageListChanged", this.messageCollection);

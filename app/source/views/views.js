@@ -1,12 +1,8 @@
-/*global GlobalThreadCollection */
-
-
 enyo.kind({
     name: "messaging.MainView",
     kind: "FittableRows",
     bindings:[
-        {from:".app.$.globalThreadCollection.status", to:".globalThreadCollectionStatus"},
-        {from:".app.$.globalThreadCollection", to:".globalThreadCollection"}
+        {from:".app.$.globalThreadCollection.status", to:".globalThreadCollectionStatus"}
     ],
     components: [
         {
@@ -39,7 +35,7 @@ enyo.kind({
                                         { name: "buddies", content: $L("Buddies"), index: 1 }
                                     ]
                                 },
-                                {classes: 'flex-auto'},
+                                {classes: 'flex-auto'}
                             ]
                         },
                         {
@@ -90,7 +86,7 @@ enyo.kind({
             service: 'luna://org.webosports.service.messaging', method: 'deleteChatthread',
             mock: ! ('PalmSystem' in window),
             onError: 'deleteChatthreadErr'
-        },
+        }
     ],
     create: function () {
         this.inherited(arguments);
@@ -108,13 +104,22 @@ enyo.kind({
             if (model) {
                 this.showThread({name: "Relaunch Handler"}, {thread: model});
             }
+        } else if (typeof params.compose !== 'undefined' && typeof params.compose.messageText !== 'undefined') {
+            this.createThread(this, {messageText: params.compose.messageText});
+        }
+        if (window.PalmSystem && !window.PalmSystem.isActivated) {
+            window.PalmSystem.activate();
         }
     },
     globalThreadCollectionStatusChanged: function () {
-        if (window.PalmSystem) {
-            if(PalmSystem.launchParams !== null)
-                this.handleRelaunch();
-        }
+        // Handling the launchParams synchronously seems to cause issues with things not being initialized yet.
+        // Handle them in the next frame.
+        enyo.asyncMethod(this, function () {
+            if (window.PalmSystem) {
+                if(PalmSystem.launchParams !== null)
+                    this.handleRelaunch();
+            }
+        });
     },
     showThread: function (inSender, inEvent) {
         this.log(inSender && inSender.name, inEvent && inEvent.thread && inEvent.thread.attributes);
@@ -137,8 +142,13 @@ enyo.kind({
     },
 
     createThread: function(s,e){
+        this.$.threadView.setMessageText('');
         var emptyThread = new ThreadModel();
-        this.globalThreadCollection.add(emptyThread, 0);
+        this.app.$.globalThreadCollection.add(emptyThread, {index: 0});
+        this.showThread(this, {thread: emptyThread});
+        if (e && e.messageText) {
+            this.$.threadView.setMessageText(e.messageText);
+        }
     },
 
     deleteThread: function(s,e){
@@ -148,7 +158,7 @@ enyo.kind({
             if (thread.get('_id')) {
                 this.$.deleteChatthreadService.send({threadId:thread.get('_id')});
             }
-            this.globalThreadCollection.remove(thread);
+            this.app.$.globalThreadCollection.remove(thread);
             this.showThread(s, {});
         } else {
             var msg = $L("No conversation selected");
