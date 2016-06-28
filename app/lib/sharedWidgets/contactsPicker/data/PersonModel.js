@@ -131,7 +131,7 @@ enyo.kind({
     	} catch (err) {
     		console.error("PersonModel parse:", err);
     	}
-    	console.log("personModelDataParse", data, termSet)
+    	// console.log("personModelDataParse", data, termSet)
     	data.allSearchTerms = [];
     	for (term in termSet) {
     		// Ideally, we would test that the term contains at least two consecutive Unicode letters, but JS doesn't readily support that,

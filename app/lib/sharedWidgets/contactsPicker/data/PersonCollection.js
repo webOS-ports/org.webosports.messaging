@@ -31,7 +31,7 @@ enyo.kind({
     	this.add(app.$.globalPersonCollection.filter(function(item) {
     		var i, allSearchTerms, name;
     		try {
-				console.log("allSearchTerms", item, item.get("allSearchTerms"))
+				// console.log("allSearchTerms", item, item.get("allSearchTerms"))
 	    		allSearchTerms = item.get("allSearchTerms") || [""];
 	    		for (i=0; i<allSearchTerms.length; ++i) {
 	    			if (allSearchTerms[i].slice(0, searchLength) === searchText) { return true;}

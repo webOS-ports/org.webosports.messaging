@@ -93,23 +93,76 @@ enyo.kind({
         this.log("==========> Telling global list to fetch threads...");
     },
     handleRelaunch: function(inSender, inEvent) {
-        this.log("sender:", inSender, ", event:", inEvent);
-        this.log("launchParams: ", PalmSystem.launchParams);
-        var params = JSON.parse(PalmSystem.launchParams);
+        try {
+            this.log("sender:", inSender, ", event:", inEvent);
+            this.log("launchParams: ", PalmSystem.launchParams);
+            var params = JSON.parse(PalmSystem.launchParams);
+            var threadParam, match;
 
-        if (typeof(params.threadId) !== 'undefined') {
-            var model = this.app.$.globalThreadCollection.find(function (candidate) {
-                return (candidate.get("_id") === params.threadId);
-            });
-            if (model) {
-                this.showThread({name: "Relaunch Handler"}, {thread: model});
+            if (typeof(params.threadId) !== 'undefined') {
+                var model = this.app.$.globalThreadCollection.find(function (candidate) {
+                    return (candidate.get("_id") === params.threadId);
+                });
+                if (model) {
+                    this.showThread({name: "Relaunch Handler"}, {thread: model});
+                }
+            } else if (params.compose && (params.compose.ims || params.compose.messageText)) {
+                threadParam = {};
+                if (params.compose.ims && params.compose.ims.length > 0) {
+                    threadParam.recipientName = params.compose.ims[0].value || params.compose.ims[0].addr;
+                }
+                if (params.compose.messageText) {
+                    threadParam.messageText = params.compose.messageText;
+                }
+                this.createThread(this, threadParam);
+            } else if (params.target) {
+                var parsedUrl = this.parseUrl(params.target);
+                this.log(JSON.stringify(parsedUrl));
+                switch (parsedUrl.protocol) {
+                    case 'im:':
+                        threadParam = parsedUrl.searchParam;
+                        threadParam.recipientName = parsedUrl.pathname;
+                        threadParam.messageText = parsedUrl.searchParam.body;
+                        this.createThread(this, threadParam);
+                        break;
+                    case 'sms:':
+                        threadParam = parsedUrl.searchParam;
+                        var numbers = parsedUrl.pathname.split(",");
+                        threadParam.recipientName = numbers[0];   // TODO: use all numbers
+                        threadParam.messageText = parsedUrl.searchParam.body;
+                        this.createThread(this, threadParam);
+                        break;
+                }
             }
-        } else if (typeof params.compose !== 'undefined' && typeof params.compose.messageText !== 'undefined') {
-            this.createThread(this, {messageText: params.compose.messageText});
+        } catch (err) {
+            this.error(err);
         }
         if (window.PalmSystem && !window.PalmSystem.isActivated) {
             window.PalmSystem.activate();
         }
+    },
+    parseUrl: function (url) {
+        var parser = document.createElement('a'),
+            searchParam = {},
+            pairs, split, i;
+        parser.href = url;
+        pairs = parser.search.replace(/^\?/, '').split('&');
+        for (i = 0; i < pairs.length; i++ ) {
+            split = pairs[i].split('=');
+            if (split[0] && split[1]) {
+                searchParam[decodeURIComponent(split[0])] = decodeURIComponent(split[1]);
+            }
+        }
+        return {
+            protocol: parser.protocol,
+            host: parser.host,
+            hostname: parser.hostname,
+            port: parser.port,
+            pathname: decodeURIComponent(parser.pathname),
+            search: decodeURIComponent(parser.search),
+            searchParam: searchParam,
+            hash: decodeURIComponent(parser.hash)
+        };
     },
     globalThreadCollectionStatusChanged: function () {
         // Handling the launchParams synchronously seems to cause issues with things not being initialized yet.
@@ -142,12 +195,20 @@ enyo.kind({
     },
 
     createThread: function(s,e){
+        this.log("recipientName:" + e.recipientName, "type:" + e.type,
+                "personId:" + e.personId, "messageText:" + e.messageText);
         this.$.threadView.setMessageText('');
         var emptyThread = new ThreadModel();
         this.app.$.globalThreadCollection.add(emptyThread, {index: 0});
         this.showThread(this, {thread: emptyThread});
-        if (e && e.messageText) {
-            this.$.threadView.setMessageText(e.messageText);
+        if (e) {
+            if (e.messageText) {
+                this.$.threadView.setMessageText(e.messageText);
+            }
+            if (e.recipientName) {
+                this.$.threadView.setRecipientAddr(e.recipientName);
+            }
+            // TODO: use personId to select an exact recipient
         }
     },
 
