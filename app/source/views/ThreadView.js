@@ -4,12 +4,14 @@ enyo.kind({
     fit:true,
     published: {
         thread: "",   // a ThreadModel
+        recipientAddr: "",   // for example: george or john@example.com
         messageText: ""
     },
     bindings:[
         {from:"app.$.globalThreadCollection", to:"globalThreadCollection"},
         {from:"app.$.globalPersonCollection.status", to:"globalPersonCollectionStatus"},
-        {from:".thread.attributes.draftMessage", to: ".$.messageTextArea.value"}
+        {from:".thread.attributes.draftMessage", to: ".$.messageTextArea.value"},
+        {from: "recipientAddr", to: "$.contactsSearchList.searchText"}
     ],
     events: {
         onSelectThread:"",

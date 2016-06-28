@@ -9,7 +9,7 @@ enyo.kind({
     bindings:[
         {from:".collection", to:".$.contactsList.collection"},
         {from: ".$.searchInput.value", to: ".$.contactsList.collection.searchText"},
-        {from: "$.searchInput.value", to: "searchText"}
+        {from: "$.searchInput.value", to: "searchText", oneWay: false}
     ],
     events: {
         onSelected: ""
