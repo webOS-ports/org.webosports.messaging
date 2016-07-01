@@ -1,0 +1,11 @@
+{
+    "id": "com.palm.app.messagingprefs:1",
+    "owner": "com.palm.app.messaging",
+    "sync": true,
+    "indexes": [
+        {
+            "name": "revision",
+            "props": [{"name": "_rev"}]
+        }
+    ]
+}

@@ -18,5 +18,25 @@
 			"read": "allow",
 			"update": "allow"
 		}
+	},
+	{
+		"type": "db.kind",
+		"object": "com.palm.message:1",
+		"caller": "com.palm.*",
+		"operations": {
+			"extend": "allow",
+			"read": "allow"
+		}
+	},
+	{
+		"type": "db.kind",
+		"object": "com.palm.message:1",
+		"caller": "com.palm.app.messaging",
+		"operations": {
+			"create": "allow",
+			"delete": "allow",
+			"read": "allow",
+			"update": "allow"
+		}
 	}
 ]

@@ -1,0 +1,220 @@
+[
+    {
+        "type": "db.kind",
+        "object": "com.palm.carrierdb.settings.current:1",
+        "caller": "com.palm.app.attsyncpanel",
+        "operations": {
+            "read": "allow"
+        }
+    },
+    {
+        "type": "db.kind",
+        "object": "com.palm.carrierdb.settings.current:1",
+        "caller": "com.palm.app.camera",
+        "operations": {
+            "read": "allow"
+        }
+    },
+    {
+        "type": "db.kind",
+        "object": "com.palm.carrierdb.settings.current:1",
+        "caller": "com.palm.app.carrierdb",
+        "operations": {
+            "read": "allow",
+            "update": "allow"
+        }
+    },
+    {
+        "type": "db.kind",
+        "object": "com.palm.carrierdb.settings.current:1",
+        "caller": "com.palm.app.findapps",
+        "operations": {
+            "read": "allow"
+        }
+    },
+    {
+        "type": "db.kind",
+        "object": "com.palm.carrierdb.settings.current:1",
+        "caller": "com.palm.app.enyo-findapps",
+        "operations": {
+            "read": "allow"
+        }
+    },
+    {
+        "type": "db.kind",
+        "object": "com.palm.carrierdb.settings.current:1",
+        "caller": "com.palm.service.payment",
+        "operations": {
+            "read": "allow"
+        }
+    },
+    {
+        "type": "db.kind",
+        "object": "com.palm.carrierdb.settings.current:1",
+        "caller": "com.palm.app.firstuse",
+        "operations": {
+            "read": "allow"
+        }
+    },
+    {
+        "type": "db.kind",
+        "object": "com.palm.carrierdb.settings.current:1",
+        "caller": "com.palm.app.messaging",
+        "operations": {
+            "read": "allow"
+        }
+    },
+    {
+        "type": "db.kind",
+        "object": "com.palm.carrierdb.settings.current:1",
+        "caller": "org.webosports.app.messaging",
+        "operations": {
+            "read": "allow"
+        }
+    },
+    {
+        "type": "db.kind",
+        "object": "com.palm.carrierdb.settings.current:1",
+        "caller": "com.palm.app.phone",
+        "operations": {
+            "read": "allow"
+        }
+    },
+    {
+        "type": "db.kind",
+        "object": "com.palm.carrierdb.settings.current:1",
+        "caller": "com.palm.app.phoneprefs",
+        "operations": {
+            "read": "allow"
+        }
+    },
+    {
+        "type": "db.kind",
+        "object": "com.palm.carrierdb.settings.current:1",
+        "caller": "com.palm.app.videoplayer",
+        "operations": {
+            "read": "allow"
+        }
+    },
+    {
+        "type": "db.kind",
+        "object": "com.palm.carrierdb.settings.current:1",
+        "caller": "com.palm.attaddresssync",
+        "operations": {
+            "read": "allow"
+        }
+    },
+    {
+        "type": "db.kind",
+        "object": "com.palm.carrierdb.settings.current:1",
+        "caller": "com.palm.browserServer",
+        "operations": {
+            "read": "allow"
+        }
+    },
+    {
+        "type": "db.kind",
+        "object": "com.palm.carrierdb.settings.current:1",
+        "caller": "com.palm.connectionmanager",
+        "operations": {
+            "read": "allow"
+        }
+    },
+    {
+        "type": "db.kind",
+        "object": "com.palm.carrierdb.settings.current:1",
+        "caller": "com.palm.cplite",
+        "operations": {
+            "read": "allow"
+        }
+    },
+    {
+        "type": "db.kind",
+        "object": "com.palm.carrierdb.settings.current:1",
+        "caller": "com.palm.location",
+        "operations": {
+            "read": "allow"
+        }
+    },
+    {
+        "type": "db.kind",
+        "object": "com.palm.carrierdb.settings.current:1",
+        "caller": "com.palm.messagingrouter",
+        "operations": {
+            "read": "allow"
+        }
+    },
+    {
+        "type": "db.kind",
+        "object": "com.palm.carrierdb.settings.current:1",
+        "caller": "com.palm.mmsservice",
+        "operations": {
+            "read": "allow"
+        }
+    },
+    {
+        "type": "db.kind",
+        "object": "com.palm.carrierdb.settings.current:1",
+        "caller": "com.palm.pmdatawbtest",
+        "operations": {
+            "read": "allow"
+        }
+    },
+    {
+        "type": "db.kind",
+        "object": "com.palm.carrierdb.settings.current:1",
+        "caller": "com.palm.service.customization",
+        "operations": {
+            "read": "allow"
+        }
+    },
+    {
+        "type": "db.kind",
+        "object": "com.palm.carrierdb.settings.current:1",
+        "caller": "com.palm.smartKey",
+        "operations": {
+            "read": "allow"
+        }
+    },
+    {
+        "type": "db.kind",
+        "object": "com.palm.carrierdb.settings.current:1",
+        "caller": "com.palm.smsservice",
+        "operations": {
+            "read": "allow"
+        }
+    },
+    {
+        "type": "db.kind",
+        "object": "com.palm.carrierdb.settings.current:1",
+        "caller": "com.palm.sqatest",
+        "operations": {
+            "read": "allow"
+        }
+    },
+    {
+        "type": "db.kind",
+        "object": "com.palm.carrierdb.settings.current:1",
+        "caller": "com.palm.systemui",
+        "operations": {
+            "read": "allow"
+        }
+    },
+    {
+        "type": "db.kind",
+        "object": "com.palm.carrierdb.settings.current:1",
+        "caller": "com.palm.telephony",
+        "operations": {
+            "read": "allow"
+        }
+    },
+    {
+        "type": "db.kind",
+        "object": "com.palm.carrierdb.settings.current:1",
+        "caller": "com.palm.wanservice",
+        "operations": {
+            "read": "allow"
+        }
+    }
+]
+

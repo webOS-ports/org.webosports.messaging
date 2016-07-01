@@ -1,0 +1,5 @@
+{
+    "id":"com.palm.carrierdb.settings.current:1",
+    "owner":"com.palm.carrierdb",
+    "indexes":[{"name":"rev", "props":[{"name":"_rev"}]}]
+}

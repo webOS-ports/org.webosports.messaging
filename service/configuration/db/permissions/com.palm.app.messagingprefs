@@ -1,27 +1,7 @@
 [
     {
         "type": "db.kind",
-        "object": "com.palm.chatthread:1",
-        "caller": "org.webosports.*",
-        "operations": {
-            "extend": "allow",
-            "read": "allow"
-        }
-    },
-    {
-        "type": "db.kind",
-        "object": "com.palm.chatthread:1",
-        "caller": "org.webosports.app.messaging",
-        "operations": {
-            "create": "allow",
-            "delete": "allow",
-            "read": "allow",
-            "update": "allow"
-        }
-    },
-	{
-        "type": "db.kind",
-        "object": "com.palm.chatthread:1",
+        "object": "com.palm.app.messagingprefs:1",
         "caller": "com.palm.*",
         "operations": {
             "extend": "allow",
@@ -30,10 +10,30 @@
     },
     {
         "type": "db.kind",
-        "object": "com.palm.chatthread:1",
+        "object": "com.palm.app.messagingprefs:1",
         "caller": "com.palm.app.messaging",
         "operations": {
-            "create": "allow",
+        	"create": "allow",
+            "delete": "allow",
+            "read": "allow",
+            "update": "allow"
+        }
+    },
+	{
+        "type": "db.kind",
+        "object": "com.palm.app.messagingprefs:1",
+        "caller": "org.webosports.*",
+        "operations": {
+            "extend": "allow",
+            "read": "allow"
+        }
+    },
+    {
+        "type": "db.kind",
+        "object": "com.palm.app.messagingprefs:1",
+        "caller": "org.webosports.app.messaging",
+        "operations": {
+        	"create": "allow",
             "delete": "allow",
             "read": "allow",
             "update": "allow"
