@@ -96,7 +96,13 @@ enyo.kind({
         try {
             this.log("sender:", inSender, ", event:", inEvent);
             this.log("launchParams: ", PalmSystem.launchParams);
-            var params = JSON.parse(PalmSystem.launchParams);
+			
+            var params;
+            try {
+                params = JSON.parse(PalmSystem.launchParams);
+            } catch (err) {
+                params = {}
+            }
             var threadParam, match;
 
             if (typeof(params.threadId) !== 'undefined') {
