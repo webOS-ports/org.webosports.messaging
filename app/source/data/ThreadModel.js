@@ -8,7 +8,7 @@ enyo.kind({
         _id: null,
         displayName: "",
         summary: "",
-        timestamp: Date.now()/1000,
+        timestamp: Date.now(),
         replyAddress: "",
         replyService: "sms",
         personId: "",

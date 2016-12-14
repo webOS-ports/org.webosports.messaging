@@ -9,7 +9,7 @@ enyo.kind({
         { from: ".model.localTimestamp", to: ".$.timeStamp.content",
                 transform: function(val, dir, bind){
                     console.log("timestampe", val);
-                    return val?new moment(1000*val).format("llll"):"";
+                    return val?new moment(val).format("llll"):"";
                 }
         },
     ],

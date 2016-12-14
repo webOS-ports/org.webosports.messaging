@@ -159,7 +159,7 @@ enyo.kind({
                 "replyAddress": "+49555121284",
                 "replyService": "sms",
                 "summary": "Test SMS N4 28-Jan-14 1",
-                "timestamp": 1422470892,
+                "timestamp": 1422470892000,
                 "unreadCount": 2,
                 "unreadCountRevSet": 621
             },
@@ -173,7 +173,7 @@ enyo.kind({
                 "replyAddress": "Web setting",
                 "replyService": "sms",
                 "summary": "Bedankt dat uonze dataservice gebruikt. Let op: als u email/apps continue aan laat staan is uw databundel eerder op en betaald u per MB. Bel 1200 voor info",
-                "timestamp": 1422639401,
+                "timestamp": 1422639401000,
                 "unreadCount": 0,
                 "unreadCountRevSet": 3444
             },
@@ -187,7 +187,7 @@ enyo.kind({
                 "replyAddress": "LYCAMOBILE",
                 "replyService": "sms",
                 "summary": "Calls to Netherlands/EU are 0.2300 c/min (0.0600 c/min to receive). Text is 0.0700c (Free to receive). Free info call 322. Emergency services call 112.",
-                "timestamp": 1422637252,
+                "timestamp": 1422637252000,
                 "unreadCount": 1,
                 "unreadCountRevSet": 3446
             }
@@ -203,12 +203,12 @@ enyo.kind({
                 "flags": {"read": false},
                 "folder": "inbox",
                 "from": {"addr": "+49555121284"},
-                "localTimestamp": 1422470892,
+                "localTimestamp": 1422470892000,
                 "messageText": "Test SMS N4 28-Jan-14 1",
                 "readRevSet": 569,
                 "serviceName": "sms",
                 "status": "successful",
-                "timestamp": 1422470828
+                "timestamp": 1422470828000
             },
             {
                 "_id": "JCihiDb_8IR",
@@ -217,7 +217,7 @@ enyo.kind({
                 "_sync": true,
                 "conversations": ["0"],
                 "folder": "outbox",
-                "localTimestamp": "1422471082",
+                "localTimestamp": 1422471082000,
                 "messageText": "Test reply 28",
                 "networkMsgId": 0,
                 "priority": 0,
@@ -240,7 +240,7 @@ enyo.kind({
                 "_sync": true,
                 "conversations": ["0"],
                 "folder": "outbox",
-                "localTimestamp": "1422472540",
+                "localTimestamp": 1422472540000,
                 "messageText": "Test reply jan 28 2",
                 "networkMsgId": 0,
                 "priority": 0,
@@ -263,8 +263,8 @@ enyo.kind({
                 "_sync": true,
                 "conversations": ["0"],
                 "folder": "outbox",
-                "localTimestamp": "1422475855",
-                "messageText": "Test reply jan 283",
+                "localTimestamp": 1422475855000,
+                "messageText": "Test reply jan 28 3",
                 "networkMsgId": 0,
                 "priority": 0,
                 "readRevSet": 688,
@@ -286,7 +286,7 @@ enyo.kind({
                 "_sync": true,
                 "conversations": ["0"],
                 "folder": "outbox",
-                "localTimestamp": "1422521264",
+                "localTimestamp": 1422521264000,
                 "messageText": "Test reply 29 1",
                 "networkMsgId": 0,
                 "priority": 0,
@@ -309,7 +309,7 @@ enyo.kind({
                 "_sync": true,
                 "conversations": ["0"],
                 "folder": "outbox",
-                "localTimestamp": "1422523878",
+                "localTimestamp": 1422523878000,
                 "messageText": "Test reply 29 2",
                 "networkMsgId": 0,
                 "priority": 0,
@@ -334,12 +334,12 @@ enyo.kind({
                 "flags": {"read": false},
                 "folder": "inbox",
                 "from": {"addr": "Web setting"},
-                "localTimestamp": 1422637249,
+                "localTimestamp": 1422637249000,
                 "messageText": "U zult de GPRS instellingen configuratie ontvangen.Svpaccepteren.",
                 "readRevSet": 3442,
                 "serviceName": "sms",
                 "status": "successful",
-                "timestamp": 1422637244
+                "timestamp": 1422637244000
             },
             {
                 "_id": "JCsVk_WtOuN",
@@ -350,12 +350,12 @@ enyo.kind({
                 "flags": {"read": false},
                 "folder": "inbox",
                 "from": {"addr": "Web setting"},
-                "localTimestamp": 1422639401,
+                "localTimestamp": 1422639401000,
                 "messageText": "Bedankt dat u onze dataservice gebruikt. Let op: als u email/apps continue aan laat staan is uw databundel eerder op en betaald u per MB. Bel 1200 voor info",
                 "readRevSet": 3468,
                 "serviceName": "sms",
                 "status": "successful",
-                "timestamp": 1422639337
+                "timestamp": 1422639337000
             },
             {
                 "_id": "JCsNkLo8p+g",
@@ -366,38 +366,38 @@ enyo.kind({
                 "flags": {"read": false},
                 "folder": "inbox",
                 "from": {"addr": "LYCAMOBILE"},
-                "localTimestamp": 1422637252,
+                "localTimestamp": 1422637252000,
                 "messageText": "Calls to Netherlands/EU are 0.2300 c/min (0.0600 c/min to receive). Text is 0.0700c (Free to receive). Free info call 322. Emergency services call 112.",
                 "readRevSet": 3443,
                 "serviceName": "sms",
                 "status": "successful",
-                "timestamp": 1422637244
+                "timestamp": 1422637244000
             }]
 
     },
     altdataArray: {
         "com.palm.chatthread:1": [
             { _id: "0", displayName: "Person1 WithReallySuperLongName", summary: "Summary of message from Person 1",
-                timestamp: 1408101740, replyAddress: "0144334456", replyService: "sms", personId: "", unreadCount: 2},
+                timestamp: 1408101740000, replyAddress: "0144334456", replyService: "sms", personId: "", unreadCount: 2},
             { _id: "1", displayName: "Person 2", summary: "Summary of message from Person 2",
-                timestamp: 1409610140, replyAddress: "0144334456", replyService: "sms", personId: "", unreadCount: 0},
+                timestamp: 1409610140000, replyAddress: "0144334456", replyService: "sms", personId: "", unreadCount: 0},
             { _id: "2", displayName: "Person 3", summary: "Summary of messages from Person 3, for whom there are no messages " +
             "in thread. But we have a really long summary in any case to see if ellipsis works",
-                timestamp: 1409610140, replyAddress: "1234334456", replyService: "sms", personId: "", unreadCount: 0}
+                timestamp: 1409610140000, replyAddress: "1234334456", replyService: "sms", personId: "", unreadCount: 0}
         ],
         "com.palm.message:1": {
             "0": [
                 { _id: "0", _kind: "com.palm.smsmessage:1", conversations: ["0"], folder: "inbox",
-                    from: { addr: "+491234567890" }, localTimestamp: 1408101740, messageText: "This is a small SMS test message 1 from Someone",
+                    from: { addr: "+491234567890" }, localTimestamp: 1408101740000, messageText: "This is a small SMS test message 1 from Someone",
                     networkMsgId: 0, priority: 0, serviceName: "sms", smsType: 0, status: "successful", timestamp: 0 },
                 { _id: "1", _kind: "com.palm.smsmessage:1", conversations: ["1"], folder: "sent",
-                    from: { addr: "+491234567890" }, localTimestamp: 1408601740, messageText: "This is a extremely large " +
+                    from: { addr: "+491234567890" }, localTimestamp: 1408601740000, messageText: "This is a extremely large " +
                 "SMS test message 2 TO Someone. Like I said, this is a <i>extremely</i> large message " +
                 "that also has some HTML formatting in it. <b><u>Just because we can!</u></b> Plus, we " +
                 "need to <span style='color:maroon;'>check support for auto-expansion</span> of message.",
                     networkMsgId: 0, priority: 0, serviceName: "sms", smsType: 0, status: "successful", timestamp: 0 },
                 { _id: "4", _kind: "com.palm.smsmessage:1", conversations: ["1"], folder: "inbox",
-                    from: { addr: "+491234567890" }, localTimestamp: 1408601740, messageText: "This is a small SMS test message 5, also from Someone",
+                    from: { addr: "+491234567890" }, localTimestamp: 1408601740000, messageText: "This is a small SMS test message 5, also from Someone",
                     networkMsgId: 0, priority: 0, serviceName: "sms", smsType: 0, status: "successful", timestamp: 0 }
             ],
             "1": [
