@@ -196,7 +196,7 @@ enyo.kind({
         this.log();
 
         var messageText = this.$.messageTextArea.getValue();
-        var localTimestamp = new moment();
+        var localTimestamp = Date.now();
         var threadId = this.thread.get("_id");
 
         var toArray = [];
