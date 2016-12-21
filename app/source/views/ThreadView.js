@@ -201,7 +201,7 @@ enyo.kind({
 
         var toArray = [];
         var message = {_kind: "com.palm.smsmessage:1", conversations: [threadId], folder: "outbox",
-            localTimestamp: localTimestamp.format("X"), messageText: messageText, flags:{visible:true},
+            localTimestamp: localTimestamp, messageText: messageText, flags:{visible:true},
             networkMsgId: 0, priority: 0, serviceName: "sms", smsType: 0, status: "pending", timestamp: 0, to: toArray };
 
         var toAddress = this.thread.get("replyAddress") || this.$.contactsSearchList.get("searchText").trim();
