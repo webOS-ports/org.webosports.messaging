@@ -22,6 +22,13 @@ contact the developers of this project.
 
 ## Building & Installing App
 
-cd app
-tools/deploy.sh -i
+You can develop in the browser like a normal Enyo 2 web app - 
+Messaging will use the data in db8SourceMock.js and the mock directory.
+
+
+To rebuild and install on a LuneOS device attached via USB, run this command in the app directory:
+
+`tools/deploy.sh -i`
+
+Then, in Chrome, surf to `localhost:1122` to debug.
 
