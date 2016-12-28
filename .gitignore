@@ -1,3 +1,8 @@
+app/lib/
+app/node_modules/
+app/dist/
+.enyocache
+app/org.webosports.app.messaging_*_all.ipk
 .project
 app/.DS_Store
 app/build/
@@ -6,4 +11,3 @@ app/deploy/
 .idea/tasks.xml
 .idea/dictionaries
 .idea/misc.xml
-app/org.webosports.app.messaging_*_all.ipk
