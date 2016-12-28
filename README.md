@@ -23,7 +23,7 @@ contact the developers of this project.
 ## Building & Installing App
 
 You can develop in the browser like a normal Enyo 2 web app - 
-Contacts will use the data in db8SourceMock.js and the mock directory.
+Messaging will use the data in db8SourceMock.js and the mock directory.
 You'll need node.js and enyo-dev: 
 http://enyojs.com/docs/latest/developer-guide/getting-started/first-steps.html
 
