@@ -1,0 +1,20 @@
+{
+  "name": "Messaging",
+  "version": "0.2.0",
+  "description": "The instant messaging/SMS front-end application for LuneOS",
+  "main": "index.js",
+  "moduleDir": "src",
+  "assets": [
+    "appinfo.json",
+    "favicon.ico",
+    "assets/**/*"
+  ],
+  "devAssets": [
+    "mock/**/*"
+  ],
+  "styles": [
+    "css/*.less",
+    "css/*.css",
+    "src/contactsPicker/style/main.less"
+  ]
+}
