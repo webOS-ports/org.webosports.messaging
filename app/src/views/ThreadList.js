@@ -51,7 +51,7 @@ module.exports = kind({
                                     transform: function(model, dir, bind){
                                         if (!model) {return null};
                                         var col = this.repeater.collection;
-                                        console.log("model", model, this, bind.owner);
+                                        console.log("thread:", model.get('displayName'));
                                         var currentDate = new moment((model.get?model.get("timestamp"):model.timestamp)).format("dddd, MMMM DD, YYYY");
                                         var prevModel = col.at(this.index-1);
                                         if (prevModel&&prevModel!=model){

@@ -1,12 +1,11 @@
 {
   "name": "Messaging",
   "version": "0.2.0",
-  "description": "The instant messaging/SMS front-end application for LuneOS",
+  "description": "The instant messaging & SMS front-end application for LuneOS",
   "main": "index.js",
   "moduleDir": "src",
   "assets": [
     "appinfo.json",
-    "favicon.ico",
     "icon.png",
     "assets/**/*"     
   ],

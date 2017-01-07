@@ -3,6 +3,7 @@
 var kind = require('enyo/kind'),
     FittableRows = require('layout/FittableRows'),
     Panels = require('layout/Panels'),
+    Image = require('enyo/Image'),
     CardArranger = require('layout/CardArranger'),
     CollapsingArranger = require('layout/CollapsingArranger'),
     Toolbar = require('onyx/Toolbar'),
@@ -14,6 +15,7 @@ var kind = require('enyo/kind'),
     utils = require('enyo/utils'),
     LunaService = require('enyo-webos/LunaService'),
     $L = require('enyo/i18n').$L,   // no-op placeholder
+    showErrorBanner = require('../util/showErrorBanner'),
     ThreadModel = require('../data/ThreadModel');
 
 
@@ -23,6 +25,7 @@ module.exports = kind({
     bindings:[
         {from:".app.$.globalThreadCollection.status", to:".globalThreadCollectionStatus"}
     ],
+    launchParamsHandled: false,
     components: [
         {
             name: "main",
@@ -84,8 +87,9 @@ module.exports = kind({
                     components: [
                         {
                             name: "empty",
-                            style: 'display: flex; flex-direction: column; justify-content: center',
+                            style: 'display: flex; flex-direction: column; justify-content: center; align-items: center',
                             components: [
+                                {kind: Image, src: 'assets/notification-large-messaging-mult.png'},
                                 {
                                     style: "text-align: center; color: darkGray",
                                     content: $L("Select a thread on the left to see its messages.")
@@ -111,28 +115,53 @@ module.exports = kind({
     ],
     create: function () {
         this.inherited(arguments);
+
+        this.log("==========> Telling global list to fetch threads...");
+        this.app.$.globalThreadCollection.fetch({ merge: true,
+            success: this.handleLaunchParam.bind(this), error: showErrorBanner });
     },
     handleRelaunch: function(inSender, inEvent) {
-        try {
-            this.log("sender:", inSender, ", event:", inEvent);
-            this.log("launchParams: ", PalmSystem.launchParams);
-			
-            var params;
-            try {
-                params = JSON.parse(PalmSystem.launchParams);
-            } catch (err) {
-                params = {}
-            }
-            var threadParam, match;
+        this.launchParamsHandled = false;
+        this.handleLaunchParam();
+    },
+    /** called after threads loaded or reloaded, and on relaunch */
+    handleLaunchParam: function() {
+        setTimeout(this.processParams.bind(this), 0);
+    },
+    processParams: function () {
+        this.log("launchParamsHandled:", this.launchParamsHandled);
+        if (this.launchParamsHandled) {
+            return;
+        }
+        this.launchParamsHandled = true;
 
+        var params;
+        try {
+            if ('PalmSystem' in window && PalmSystem.launchParams) {
+                params = JSON.parse(PalmSystem.launchParams);
+            } else {
+                return;
+            }
+        } catch (err) {
+            this.error(err);
+            showErrorBanner(err);
+            return;
+        }
+
+        this.log(JSON.stringify(params));
+        var threadParam;
+        try {
             if (typeof(params.threadId) !== 'undefined') {
                 var model = this.app.$.globalThreadCollection.find(function (candidate) {
                     return (candidate.get("_id") === params.threadId);
                 });
                 if (model) {
                     this.showThread({name: "Relaunch Handler"}, {thread: model});
+                } else {
+                    PalmSystem.addBannerMessage($L("File a detailed bug report:") + " unknown thread");
                 }
             } else if (params.compose && (params.compose.ims || params.compose.messageText)) {
+                // this branch is probably obsolete - DR
                 threadParam = {};
                 if (params.compose.ims && params.compose.ims.length > 0) {
                     threadParam.recipientName = params.compose.ims[0].value || params.compose.ims[0].addr;
@@ -163,9 +192,6 @@ module.exports = kind({
         } catch (err) {
             this.error(err);
         }
-        if (window.PalmSystem && !window.PalmSystem.isActivated) {
-            window.PalmSystem.activate();
-        }
     },
     parseUrl: function (url) {
         var parser = document.createElement('a'),
@@ -189,16 +215,6 @@ module.exports = kind({
             searchParam: searchParam,
             hash: decodeURIComponent(parser.hash)
         };
-    },
-    globalThreadCollectionStatusChanged: function () {
-        // Handling the launchParams synchronously seems to cause issues with things not being initialized yet.
-        // Handle them in the next frame.
-        utils.asyncMethod(this, function () {
-            if (window.PalmSystem) {
-                if(PalmSystem.launchParams !== null)
-                    this.handleRelaunch();
-            }
-        });
     },
     showThread: function (inSender, inEvent) {
         this.log(inSender && inSender.name, inEvent && inEvent.thread && inEvent.thread.attributes);

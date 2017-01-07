@@ -878,7 +878,7 @@ module.exports = kind({
                     "normalizedValue": "-098797898779808-708--",
                     "primary": false,
                     "speedDial": "",
-                    "type": "type_mobile",
+                    "type": "type_fax",
                     "value": "8-0780897789879--7890"
                 }],
                 "photos": {
