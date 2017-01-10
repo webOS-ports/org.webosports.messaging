@@ -13,7 +13,7 @@ var kind = require('enyo/kind'),
     MessageItem = require('./MessageItem'),
     Menu = require('onyx/Menu'),
     Button = require('onyx/Button'),
-    AddrSearchList = require('./AddrSearchList'),
+    MsgAddrSearchList = require('./MsgAddrSearchList'),
     InputDecorator = require('onyx/InputDecorator'),
     TextArea = require('onyx/TextArea'),
     IconButton = require('onyx/IconButton'),
@@ -37,7 +37,7 @@ module.exports = kind({
     bindings:[
         {from:"app.$.globalThreadCollection", to:"globalThreadCollection"},
         {from:".thread.attributes.draftMessage", to: ".$.messageTextArea.value"},
-        {from: "recipientAddr", to: "$.addrSearchList.searchText"}
+        {from: "recipientAddr", to: "$.msgAddrSearchList.searchText"}
     ],
     events: {
         onSelectThread:"",
@@ -103,12 +103,11 @@ module.exports = kind({
                             components:[{kind:Button, content:$L("Cancel"), ontap:"deleteThread"}, {content:$L("New Conversation")}]
                         },
                         {
-                            name:"addrSearchList",
-                            kind: AddrSearchList,
-                            // kind:ContactsSearchList,
+                            name:"msgAddrSearchList",
+                            kind: MsgAddrSearchList,
                             classes:"threads-contactslist",
                             fit:true,
-                            onSelected:"newAddrSelected"
+                            onSelected:"newMsgAddrSelected"
                         }
 
                     ]
@@ -198,8 +197,8 @@ module.exports = kind({
             });
 
         }else{
-            this.log("showing newThreadPanel, incl. addrSearchList");
-            this.$.addrSearchList.reload();
+            this.log("showing newThreadPanel, incl. msgAddrSearchList");
+            this.$.msgAddrSearchList.reload();
             this.$.panels.setIndex(1);
         }
     },
@@ -232,7 +231,7 @@ module.exports = kind({
             localTimestamp: localTimestamp, messageText: messageText, flags:{visible:true},
             networkMsgId: 0, priority: 0, serviceName: "sms", smsType: 0, status: "pending", timestamp: 0, to: toArray };
 
-        var toAddress = this.thread.get("replyAddress") || this.$.addrSearchList.get("searchText").trim();
+        var toAddress = this.thread.get("replyAddress") || this.$.msgAddrSearchList.get("searchText").trim();
         if (toAddress){
             toArray.push({addr: toAddress});
             message.to = toArray;
@@ -292,15 +291,15 @@ module.exports = kind({
         return true;
     },
 
-    newAddrSelected: function (inSender, inEvent) {
+    newMsgAddrSelected: function (inSender, inEvent) {
         this.log(inEvent);
-        var addrModel = inEvent.addr;
-        this.thread.set('displayName', addrModel.get('displayName'));
-        this.thread.set('personId', addrModel.get('personId'));
-        this.thread.set('replyAddress', addrModel.get('value'));
+        var msgAddrModel = inEvent.msgAddr;
+        this.thread.set('displayName', msgAddrModel.get('displayName'));
+        this.thread.set('personId', msgAddrModel.get('personId'));
+        this.thread.set('replyAddress', msgAddrModel.get('value'));
         // TODO: set replyService from isPhone and type
-        this.thread.set('isPhone', addrModel.get('isPhone'));
-        this.thread.set('type', addrModel.get('type'));
+        this.thread.set('isPhone', msgAddrModel.get('isPhone'));
+        this.thread.set('type', msgAddrModel.get('type'));
     },
 
     newThreadCreated: function(rec, opts){

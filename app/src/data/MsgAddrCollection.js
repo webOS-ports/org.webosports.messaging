@@ -5,18 +5,18 @@
 
 var kind = require('enyo/kind'),
     Collection = require('enyo/Collection'),
-    AddrModel = require('./AddrModel'),
+    MsgAddrModel = require('./MsgAddrModel'),
     PersonCollection = require('./PersonCollection'),
     showErrorBanner = require('../util/showErrorBanner');
 
 
 module.exports = kind({
-    name: "AddrCollection",
+    name: "MsgAddrCollection",
     kind: Collection,
     published: {
         searchText: ""
     },
-    model: AddrModel,
+    model: MsgAddrModel,
     personCollection: new PersonCollection(),
     extractSuccess: null,
 
@@ -41,7 +41,7 @@ module.exports = kind({
         this.log(people.length, "   people instanceof Array:", people instanceof Array);
         var searchText = this.searchText.trim().toLowerCase();
         var searchLength = searchText.length;
-        var addrData = [];
+        var msgAddrData = [];
         people.forEach(function (person) {
             var allSearchTerms = person.get("allSearchTerms") || [""];
             for (i=0; i<allSearchTerms.length; ++i) {   // if any search term matches, add all addr for person
@@ -51,7 +51,7 @@ module.exports = kind({
                     if (person.get('ims')) {
                         person.get('ims').forEach(function (msgAddr) {
                             console.log(displayName, msgAddr.value);
-                            addrData.push({
+                            msgAddrData.push({
                                 displayName: displayName,
                                 personId: personId,
                                 value: msgAddr.value,
@@ -63,7 +63,7 @@ module.exports = kind({
                     if (person.get('phoneNumbers')) {
                         person.get('phoneNumbers').forEach(function (phoneNumber) {
                             console.log(displayName, phoneNumber.value);
-                            addrData.push({
+                            msgAddrData.push({
                                 displayName: displayName,
                                 personId: personId,
                                 value: phoneNumber.value,
@@ -77,11 +77,11 @@ module.exports = kind({
             }
         });
 
-        this.log("replacing with " + addrData.length + " models");
-        var removedModels = this.empty(addrData);
+        this.log("replacing with " + msgAddrData.length + " models");
+        var removedModels = this.empty(msgAddrData);
 
         if (this.extractSuccess instanceof Function) {
-            this.extractSuccess(people.length, addrData.length);
+            this.extractSuccess(people.length, msgAddrData.length);
         }
     }
 });

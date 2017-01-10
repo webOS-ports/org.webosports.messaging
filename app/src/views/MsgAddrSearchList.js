@@ -11,12 +11,12 @@ var kind = require('enyo/kind'),
     $L = require('enyo/i18n').$L,   // no-op placeholder
     DataList = require('enyo/DataList'),
     Collection = require('enyo/Collection'),
-    AddrCollection = require('../data/AddrCollection'),
+    MsgAddrCollection = require('../data/MsgAddrCollection'),
     showErrorBanner = require('../util/showErrorBanner');
 
 
 module.exports = kind({
-    name: 'AddrSearchList',
+    name: 'MsgAddrSearchList',
     kind: Control,
     published: {
         searchText: ""
@@ -46,10 +46,10 @@ module.exports = kind({
                 { kind: Image, src: "assets/search-input.png" }
             ]
         },
-        {name: 'dataList', kind: DataList, collection: new AddrCollection(), ontap: "selectAddr", components: [
-            {classes: 'addr-item', components: [
-                {name: 'addrHeader', classes: 'addr-header ellipsized-line', value: ''},
-                {classes: 'addr-wrapper', components: [
+        {name: 'dataList', kind: DataList, collection: new MsgAddrCollection(), ontap: "selectMsgAddr", components: [
+            {classes: 'msg-addr-item', components: [
+                {name: 'addrHeader', classes: 'msg-addr-header ellipsized-line', value: ''},
+                {classes: 'msg-addr-wrapper', components: [
                     {name: 'value', classes: 'ellipsized-line'},
                     {name: 'type'}
                 ]}
@@ -95,13 +95,13 @@ module.exports = kind({
     //     this.inherited(arguments);
     // }
 
-    selectAddr: function (inSender, inEvent) {
+    selectMsgAddr: function (inSender, inEvent) {
         this.log();
 
         if (!inSender.selected()) {
             inSender.select(inEvent.index);
         }
 
-        this.doSelected({addr: inSender.selected()});
+        this.doSelected({msgAddr: inSender.selected()});
     }
 });

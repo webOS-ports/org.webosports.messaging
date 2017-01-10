@@ -9,12 +9,12 @@ var kind = require('enyo/kind'),
 
 
 module.exports = kind({
-    name: "AddrModel",
+    name: "MsgAddrModel",
     kind: Model,
     attributes:{
         displayName: "",   // recipient's real name (used in dividers)
         personId: '',   // _id of associated person
-        value: "",   // recipient's account name/alias, may or may not include @ and host
+        value: "",   // recipient's account name/alias/screen name/username, may or may not include @ and host
         isPhone: false,
         type: 'type_other'   // IM: type_jabber, type_icq, etc. Phone: type_work, type_mobile, etc.
     }
