@@ -21,6 +21,13 @@
 }
 
 /*** general-purpose styling ***/
+.onyx-background {
+  background-color: @onyx-background;
+}
+.onyx-background-on-child > * {
+  background-color: @onyx-background;
+}
+
 .flex-row {
   display: -webkit-flex;
   display: flex;
@@ -36,6 +43,12 @@
 .flex-none {
   -webkit-flex: none;
   flex: none;
+}
+
+.ellipsized-line {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /***  ***/
@@ -259,84 +272,42 @@ ContactsUI CSS
 }
 
 
-/* Details */
-.contacts-details {
-    padding:0 2px;
+/* Message Address Picker */
+
+input.search-input {
+  font-size: @onyx-font-size;
 }
-.contacts-details .header {
-    padding:5px 13px 10px 5px;
-    border-bottom:1px solid #d8d8d8;
+
+.msg-addr-header {
+  padding-top: 0.5em;
+  padding-left: 1em;
+  font-weight: bold;
 }
-.contacts-details .icon {
-    height:50px;
-    margin:0 10px 4px 2px;
-    width:50px;
-    position:relative;
+
+.msg-addr-wrapper {
+  height: 48px;
+
+  display: flex;
+  flex-direction: row;
+  align-items: center;
 }
-.contacts-details .icon .mask {
-    position:absolute;
-    top:0;
-    left:0;
-    height:100%;
-    width:100%;
-    background:url(../assets/bg_icon_mask.png) no-repeat 0 0;
+.msg-addr-wrapper > :first-child {
+  flex: 1 1;
+  min-width: 0;
+  padding-left: 1em;
+
+  font-size: 18px;
 }
-.contacts-details .icon .img {
-    border-radius: 3px;
-    height:100%;
-    width:100%;
-    background-position:50% 50%;
-    background-repeat: no-repeat;
-    background-color:#f1f1f1;
-    background-image:url(../assets/bg_icon_img.png)
+.msg-addr-wrapper > :last-child {
+  margin-right: 1em;
+
+  color: #1879cd;
+  font-weight: normal;
+  text-transform: uppercase;
+  font-size: 16px;
 }
-.contacts-details .nameinfo {
-    font-size:20px;
-    margin:0 0 4px;
-}
-.contacts-details .nameinfo div {
-    overflow:hidden;
-    text-overflow:ellipsis;
-}
-.contacts-details .name {
-    color:#222;
-    font-weight:normal;
-/*    padding:0 0 0.5em; */
-    overflow:hidden;
-    text-overflow:ellipsis;
-    width:100%;
-    white-space: nowrap;
-}
-.contacts-details .position {
-    color:#888;
-}
-.contacts-details .group .scroller {
-    margin:-12px;
-}
-.contacts-details .group {
-    border-image:none;
-    border:0;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.2);
-    border-top:1px solid rgba(255,255,255,0.2);
-    border-radius:0;
-    margin:0;
-}
-.contacts-details .group .thread-item {
-    border-top-width:1px;
-    border-bottom-width:1px;
-}
-.contacts-details .group:first-child {
-    border-top-width:0;
-}
-.contacts-details .group:first-child .thread-item.first {
-    border-top-width:0;
-}
-.contacts-details .group-inner {
-    margin:0;
-}
-.contacts-details .group .thread-item {
-    color:#222;
-}
+
+/* ??? */
 .contacts-pointpickerlist .label {
     color:#1879cd;
     font-weight:normal;
@@ -403,10 +374,6 @@ ContactsUI CSS
 }
 
 
-.edit-contact.button {
-    background:none;
-    border-image:none;
-}
 /* TODO: temporary styling to be replaced...all GAL styling TDB*/
 .contacts-GAL-message {
     margin-top:10px;
@@ -417,16 +384,9 @@ ContactsUI CSS
 .contacts-gal-person {
     padding: 10px 10px;
 }
-.contacts-gal-person.selected {
+.msg-addr-item.selected {
     background-color:#d1e5f5;
-    border-color:#B3d9f2
-}
-.contacts-gal-noresults {
-    color: gray;
-    text-align: center;
-}
-.contacts-gal-spinner {
-    margin:10px 14px 10px 0px;
+    //border-color:#B3d9f2
 }
 
 .contactsui-peoplepicker {

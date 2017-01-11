@@ -13,8 +13,8 @@ module.exports = kind({
 	source: "db8",
     dbKind: "com.palm.person:1",
 
-    fetched: function (opts, res, source) {
-        console.log("PersonCollection fetched:", opts, res, source);
+    fetched: function (opts, res, sourceName) {
+        console.log("PersonCollection fetched:", opts, sourceName);
         this.inherited(arguments);
     }
 });

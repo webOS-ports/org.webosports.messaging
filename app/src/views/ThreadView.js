@@ -13,11 +13,12 @@ var kind = require('enyo/kind'),
     MessageItem = require('./MessageItem'),
     Menu = require('onyx/Menu'),
     Button = require('onyx/Button'),
-    ContactsSearchList = require('../contactsPicker/views/ContactsSearchList'),
+    MsgAddrSearchList = require('./MsgAddrSearchList'),
     InputDecorator = require('onyx/InputDecorator'),
     TextArea = require('onyx/TextArea'),
     IconButton = require('onyx/IconButton'),
     MessageCollection = require('../data/MessageCollection'),
+    showErrorBanner = require('../util/showErrorBanner'),
     LunaService = require('enyo-webos/LunaService'),
     utils =require('enyo/utils'),
     $L = require('enyo/i18n').$L,   // no-op placeholder
@@ -36,7 +37,7 @@ module.exports = kind({
     bindings:[
         {from:"app.$.globalThreadCollection", to:"globalThreadCollection"},
         {from:".thread.attributes.draftMessage", to: ".$.messageTextArea.value"},
-        {from: "recipientAddr", to: "$.contactsSearchList.searchText"}
+        {from: "recipientAddr", to: "$.msgAddrSearchList.searchText"}
     ],
     events: {
         onSelectThread:"",
@@ -102,11 +103,11 @@ module.exports = kind({
                             components:[{kind:Button, content:$L("Cancel"), ontap:"deleteThread"}, {content:$L("New Conversation")}]
                         },
                         {
-                            name:"contactsSearchList",
-                            kind:ContactsSearchList,
+                            name:"msgAddrSearchList",
+                            kind: MsgAddrSearchList,
                             classes:"threads-contactslist",
                             fit:true,
-                            onSelected:"newContactSelected"
+                            onSelected:"newMsgAddrSelected"
                         }
 
                     ]
@@ -179,7 +180,7 @@ module.exports = kind({
     },
 
     threadChanged: function() {
-        this.log("Thread is ", this.thread && this.thread.get("_id"),this.thread, this.$.messageCollection);
+        this.log("Thread is: >>" + this.thread.get('displayName') + "<<");
 
         this.$.messageCollection.empty();
         this.$.messageList.refresh();
@@ -191,11 +192,13 @@ module.exports = kind({
             this.$.messageCollection.threadId = threadId;
             this.$.messageCollection.fetch({where: [{prop:"conversations",op:"=",val:threadId}],
                 merge: true,
-                success: utils.bindSafely(this, "messageListChanged")});
+                success: utils.bindSafely(this, "messageListChanged"),
+                error: showErrorBanner
+            });
 
         }else{
-            this.log("showing newThreadPanel, incl. contactsSearchList");
-            this.$.contactsSearchList.reload();
+            this.log("showing newThreadPanel, incl. msgAddrSearchList");
+            this.$.msgAddrSearchList.reload();
             this.$.panels.setIndex(1);
         }
     },
@@ -228,7 +231,7 @@ module.exports = kind({
             localTimestamp: localTimestamp, messageText: messageText, flags:{visible:true},
             networkMsgId: 0, priority: 0, serviceName: "sms", smsType: 0, status: "pending", timestamp: 0, to: toArray };
 
-        var toAddress = this.thread.get("replyAddress") || this.$.contactsSearchList.get("searchText").trim();
+        var toAddress = this.thread.get("replyAddress") || this.$.msgAddrSearchList.get("searchText").trim();
         if (toAddress){
             toArray.push({addr: toAddress});
             message.to = toArray;
@@ -264,7 +267,7 @@ module.exports = kind({
                     this.log("thread.fetch success:", arguments, threadView.thread.attributes);
                     threadView.doSelectThread({thread: threadView.thread});
                     threadView.threadChanged();   // wouldn't be called because thread is same
-                }});
+                }, error: showErrorBanner});
             } else {   // the message threads are not in the global collection
                 var msg = $L("Please file a detailed bug report") + " [can't find thread]";
                 this.log(msg, "viewThreadId:", viewThreadId, "   messageThreadIds:", messageThreadIds);
@@ -288,17 +291,15 @@ module.exports = kind({
         return true;
     },
 
-    // TODO: rework the contactspicker to select an IM address or phone number.  We shouldn't just blindly use the "primaryPhoneNumber".
-    newContactSelected: function(sender,evt){
-        this.log("contact selected", evt, this.thread);
-        var personModel = evt.person;
-        if (personModel) {
-            this.thread.set("displayName", personModel.get("displayName"));
-            this.thread.set("personId", personModel.get("_id"));
-            this.thread.set("replyAddress", personModel.get("primaryPhoneNumber").value);
-        } else {
-            this.warn("no person");
-        }
+    newMsgAddrSelected: function (inSender, inEvent) {
+        this.log(inEvent);
+        var msgAddrModel = inEvent.msgAddr;
+        this.thread.set('displayName', msgAddrModel.get('displayName'));
+        this.thread.set('personId', msgAddrModel.get('personId'));
+        this.thread.set('replyAddress', msgAddrModel.get('value'));
+        // TODO: set replyService from isPhone and type
+        this.thread.set('isPhone', msgAddrModel.get('isPhone'));
+        this.thread.set('type', msgAddrModel.get('type'));
     },
 
     newThreadCreated: function(rec, opts){

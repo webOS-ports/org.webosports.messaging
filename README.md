@@ -43,3 +43,16 @@ To rebuild and install on a LuneOS device attached via USB, run this command in 
 `enyo pack && adb push dist /usr/palm/applications/org.webosports.app.messaging && adb shell systemctl restart luna-next; adb forward tcp:1122 tcp:1122`
 Then, in Chrome, surf to `localhost:1122` to debug.
 
+
+## API exposed to other apps
+Open an `im` or `sms` URL.  Like `mailto` URLs, this does not require a PalmBus call.
+
+`luna-send -n 1 palm://com.palm.applicationManager/open '{"target": "im:fred@aim.com?body=Let%27s%20do%20this%20thing!"}'`
+
+`luna-send -n 1 palm://com.palm.applicationManager/open '{"target": "sms:1-206-555-1212?body=Hey%20babe"}'`
+
+## API exposed to chat threader
+When an incoming message arrives, a banner message is displayed.
+Tapping on the banner should call (the equivalent of) this:
+
+`luna-send -n 1 palm://com.palm.applicationManager/launch '{"id":"org.webosports.app.messaging", "params": { "threadId": 123456 }}'`
