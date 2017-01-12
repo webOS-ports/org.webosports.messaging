@@ -279,9 +279,29 @@ input.search-input {
 }
 
 .msg-addr-header {
-  padding-top: 0.5em;
-  padding-left: 1em;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.msg-addr-header > :first-child {
+  width: 9px;
+  margin-right: 9px;
+  border-left-width: 0;
+  border-right-width: 0;
+  border-color: #1c94fd;
+}
+.msg-addr-header > :nth-child(2n) {
+  text-transform: uppercase;
+  font-size: 15px;
   font-weight: bold;
+  color: #1c94fd;
+}
+.msg-addr-header > :last-child {
+  flex: 1 1;
+  min-width: 0;
+
+  margin-left: 9px;
+  border-color: #1c94fd;
 }
 
 .msg-addr-wrapper {

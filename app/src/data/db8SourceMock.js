@@ -835,7 +835,7 @@ module.exports = kind({
                 "emails": [],
                 "favorite": false,
                 "gender": "",
-                "ims": [],
+                "ims": [{"_id": "ggsr57ty", "type": "type_jabber", "favoriteData": {}, "value": "aster@example.com", "primary": false }],
                 "launcherId": "",
                 "name": {
                     "familyName": "Njam",

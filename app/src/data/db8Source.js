@@ -89,13 +89,16 @@ module.exports = kind({
         function handleGetResponse(success, failure, inSender, inResponse) {
             if (inResponse.results) {
                 console.log("fetch (get) handleGetResponse:", inResponse.results.length, "records", inResponse);
+                console.log("fetch (get) handleGetResponse2:", success);
 
-                // Only records can be passed to the success callback.
-                // Never pass anything PalmBus- or DB8-specific.
-                if (ids instanceof Array) {
-                    success(inResponse.results);
-                } else {
-                    success(inResponse.results[0]);
+                if (typeof success === 'function') {
+                    // Only records can be passed to the success callback.
+                    // Never pass anything PalmBus- or DB8-specific.
+                    if (ids instanceof Array) {
+                        success(inResponse.results);
+                    } else {
+                        success(inResponse.results[0]);
+                    }
                 }
             }  else {
                 console.error("fetch (get) handleGetResponse weird response:", inResponse);
@@ -135,14 +138,17 @@ module.exports = kind({
             	// Do we need to store inResponse.next so it can be passed as opts.page?
             	// If we set parameters.count=true, can we make use of inResponse.count?
     			collection.empty();   // replaces all models so sort order is used
-            	// Only records can be passed to the success callback.
-            	// Never pass anything PalmBus- or DB8-specific.
-            	success(inResponse.results);
+                if (typeof success === 'function') {
+                    // Only records can be passed to the success callback.
+                    // Never pass anything PalmBus- or DB8-specific.
+                    success(inResponse.results);
+                }
         	} else if (inResponse.fired) {   // watch
         		console.log("fetch (find) handleFindResponse watch fired:", inResponse);
 
         		var requestInd = this.requests.findIndex( function (element) { return element === request;} );
 				this.requests.splice(requestInd, 1);
+				console.log("fetch (find) handleFindResponse: new request " + requestInd + " of " + this.requests.length);
 				
 				this._fetchFind(collection, opts);
         	} else {
