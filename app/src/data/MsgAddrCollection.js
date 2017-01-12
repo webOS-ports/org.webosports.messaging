@@ -50,7 +50,7 @@ module.exports = kind({
                     var personId = person.get('_id');
                     if (person.get('ims')) {
                         person.get('ims').forEach(function (msgAddr) {
-                            console.log(displayName, msgAddr.value);
+                            console.log(displayName, msgAddr.value, msgAddr.type);
                             msgAddrData.push({
                                 displayName: displayName,
                                 personId: personId,
@@ -62,7 +62,7 @@ module.exports = kind({
                     }
                     if (person.get('phoneNumbers')) {
                         person.get('phoneNumbers').forEach(function (phoneNumber) {
-                            console.log(displayName, phoneNumber.value);
+                            console.log(displayName, phoneNumber.value, phoneNumber.type);
                             msgAddrData.push({
                                 displayName: displayName,
                                 personId: personId,

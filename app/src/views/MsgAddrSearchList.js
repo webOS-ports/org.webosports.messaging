@@ -39,7 +39,7 @@ module.exports = kind({
                 {
                     name: "searchInput",
                     kind: Input,
-                    placeholder: $L("Name, IM address, org. or email"),
+                    placeholder: $L("Enter number or search contacts"),
                     classes: 'search-input',
                     style: "flex: 1 1; vertical-align:middle;"
                 },
@@ -48,13 +48,17 @@ module.exports = kind({
         },
         {name: 'dataList', kind: DataList, collection: new MsgAddrCollection(), ontap: "selectMsgAddr", components: [
             {classes: 'msg-addr-item', components: [
-                {name: 'addrHeader', classes: 'msg-addr-header ellipsized-line', value: ''},
+                {name: 'addrHeader', classes: 'msg-addr-header',  components: [
+                    {tag: 'hr'},
+                    {name: 'addrHeaderLbl', classes: 'ellipsized-line', value: ''},
+                    {tag: 'hr'}
+                ]},
                 {classes: 'msg-addr-wrapper', components: [
                     {name: 'value', classes: 'ellipsized-line'},
                     {name: 'type'}
                 ]}
             ], bindings: [
-                {from: '.model.displayName', to: '$.addrHeader.content'},
+                {from: '.model.displayName', to: '$.addrHeaderLbl.content'},
                 {from: '.model.displayName', to: '$.addrHeader.showing', transform: function (value, dir, bind) {
                     // this.log(value, dir, bind);
                     if (this.index === 0) {
