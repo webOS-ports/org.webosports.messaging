@@ -1,0 +1,541 @@
+{
+  "returnValue": true,
+  "results": [
+    {
+      "loc_name": "HP webOS Account",
+      "beingDeleted": false,
+      "readPermissions": [
+        "com.palm.service.contacts",
+        "com.palm.app.contacts"
+      ],
+      "writePermissions": [
+        "com.palm.accountservices",
+        "com.palm.app.firstuse"
+      ],
+      "_rev": 501,
+      "icon": {
+        "loc_32x32": "/usr/palm/public/accounts/com.palm.palmprofile/images/mypalm-32x32.png",
+        "loc_48x48": "/usr/palm/public/accounts/com.palm.palmprofile/images/mypalm-48x48.png"
+      },
+      "username": "Open webOS",
+      "templateId": "com.palm.palmprofile",
+      "_sync": true,
+      "capabilityProviders": [
+        {
+          "dbkinds": {
+            "contact": "com.palm.contact.palmprofile:1"
+          },
+          "id": "com.palm.palmprofile.contacts",
+          "refetchPhoto": "palm://com.palm.service.contacts/refetchPhoto",
+          "_id": "1f6",
+          "capability": "CONTACTS"
+        },
+        {
+          "id": "com.palm.palmprofile.calendar",
+          "_id": "1f7",
+          "capability": "CALENDAR"
+        },
+        {
+          "id": "com.palm.palmprofile.tasks",
+          "_id": "1f8",
+          "capability": "TASKS"
+        },
+        {
+          "id": "com.palm.palmprofile.memos",
+          "_id": "1f9",
+          "capability": "MEMOS"
+        },
+        {
+          "capabilitySubtype": "SMS",
+          "id": "com.palm.palmprofile.sms",
+          "loc_name": "SMS Account",
+          "loc_shortName": "Text",
+          "icon": {
+            "splitter": "/usr/palm/public/accounts/com.palm.palmprofile/images/sms-32x32.png",
+            "loc_32x32": "/usr/palm/public/accounts/com.palm.palmprofile/images/sms-32x32.png",
+            "loc_48x48": "/usr/palm/public/accounts/com.palm.palmprofile/images/sms-48x48.png"
+          },
+          "_id": "1fa",
+          "capability": "MESSAGING"
+        },
+        {
+          "loc_shortName": "Carrier",
+          "id": "com.palm.palmprofile.voice",
+          "loc_name": "Carrier",
+          "icon": {
+            "loc_32x32": "/usr/palm/public/accounts/com.palm.palmprofile/images/mypalm-32x32.png",
+            "loc_48x48": "/usr/palm/public/accounts/com.palm.palmprofile/images/mypalm-48x48.png"
+          },
+          "alwaysOn": true,
+          "_id": "1fb",
+          "capability": "PHONE"
+        },
+        {
+          "id": "com.palm.palmprofile.localfilestore",
+          "icon": {
+            "loc_32x32": "/usr/palm/public/accounts/com.palm.palmprofile/images/touchpad-32x32.png"
+          },
+          "_id": "1fc",
+          "capability": "LOCAL.FILESTORAGE"
+        }
+      ],
+      "_id": "K4lghcNNrYB",
+      "_kind": "com.palm.account:1"
+    },
+    {
+      "loc_name": "Google C+DAV",
+      "validator": {
+        "address": "palm://org.webosports.cdav.service/checkCredentials",
+        "customUI": {
+          "appId": "org.webosports.cdav.app",
+          "name": "GoogleOauth/index.html"
+        }
+      },
+      "beingDeleted": false,
+      "loc_usernameLabel": "Google-Mail",
+      "readPermissions": [
+        "org.webosports.cdav.service",
+        "org.webosports.app.contacts",
+        "org.webosports.app.messaging",
+        "com.palm.service.contacts",
+        "com.palm.service.contacts.linker",
+        "com.palm.imlibpurple",
+        "com.palm.app.contacts",
+        "com.palm.app.messaging",
+        "com.palm.app.calendar",
+        "com.palm.app.email"
+      ],
+      "config": {
+        "url": "https://www.googleapis.com/caldav/v2",
+        "urlScheme": "google",
+        "name": "Google C+DAV"
+      },
+      "writePermissions": [
+        "org.webosports.cdav.service",
+        "org.webosports.app.contacts",
+        "org.webosports.app.messaging",
+        "com.palm.app.accounts",
+        "com.palm.app.contacts",
+        "com.palm.app.messaging",
+        "com.palm.app.calendar",
+        "com.palm.app.email"
+      ],
+      "alias": "luneostest@gmail.com",
+      "_rev": 530,
+      "_kind": "com.palm.account:1",
+      "templateId": "org.webosports.cdav.account.google",
+      "icon": {
+        "loc_256x256": "/usr/palm/public/accounts/org.webosports.cdav.account.google/images/google_256x256.png",
+        "loc_128x128": "/usr/palm/public/accounts/org.webosports.cdav.account.google/images/google_128x128.png",
+        "loc_32x32": "/usr/palm/public/accounts/org.webosports.cdav.account.google/images/google_32.png",
+        "loc_64x64": "/usr/palm/public/accounts/org.webosports.cdav.account.google/images/google_64.png"
+      },
+      "_sync": true,
+      "capabilityProviders": [
+        {
+          "loc_name": "Google Contacts",
+          "onDelete": "palm://org.webosports.cdav.service/onContactsDelete",
+          "id": "org.webosports.cdav.contact",
+          "capability": "CONTACTS",
+          "onCreate": "palm://org.webosports.cdav.service/onContactsCreate",
+          "sync": "palm://org.webosports.cdav.service/sync",
+          "onEnabled": "palm://org.webosports.cdav.service/onContactsEnabled",
+          "_id": "213",
+          "dbkinds": {
+            "contact": "org.webosports.cdav.contact:1",
+            "contactset": "org.webosports.cdav.contactset:1"
+          }
+        },
+        {
+          "loc_name": "Google Calendar",
+          "onDelete": "palm://org.webosports.cdav.service/onCalendarDelete",
+          "id": "org.webosports.cdav.calendar",
+          "capability": "CALENDAR",
+          "onCreate": "palm://org.webosports.cdav.service/onCalendarCreate",
+          "sync": "palm://org.webosports.cdav.service/sync",
+          "onEnabled": "palm://org.webosports.cdav.service/onCalendarEnabled",
+          "_id": "214",
+          "dbkinds": {
+            "calendarevent": "org.webosports.cdav.calendarevent:1",
+            "calendar": "org.webosports.cdav.calendar:1"
+          }
+        }
+      ],
+      "_id": "K4lgxlJexp7",
+      "username": "luneostest@gmail.com",
+      "onCredentialsChanged": "palm://org.webosports.cdav.service/onCredentialsChanged"
+    },
+
+    {
+      "_kind": "com.palm.account:1",
+      "_id": "++HnXzFHlZ+shjlJ",
+      "_rev": 17471,
+      "_sync": true,
+      "alias": "AIM",
+      "beingDeleted": false,
+      "capabilityProviders": [
+        {
+          "_id": "d1d",
+          "capability": "MESSAGING",
+          "id": "com.palm.aol.aim",
+          "capabilitySubtype": "IM",
+          "dbkinds": {
+            "imcommand": "com.palm.imcommand.libpurple:1",
+            "immessage": "com.palm.immessage.libpurple:1"
+          },
+          "icon": {
+            "splitter": "/usr/palm/public/accounts/com.palm.aol/images/aim-32x32.png"
+          },
+          "implementation": "palm://com.palm.imlibpurple/",
+          "loc_shortName": "AIM",
+          "onEnabled": "palm://com.palm.imlibpurple/onEnabled",
+          "readOnlyData": true,
+          "serviceName": "type_aim"
+        }
+      ],
+      "templateId": "com.palm.aol",
+      "username": "lunatic@aol.com",
+      "icon": {
+        "loc_32x32": "/usr/palm/public/accounts/com.palm.aol/images/aim-32x32.png",
+        "loc_48x48": "/usr/palm/public/accounts/com.palm.aol/images/aim-logo.png"
+      },
+      "loc_name": "AIM",
+      "readPermissions": [
+        "com.palm.imlibpurple",
+        "com.palm.app.messaging",
+        "com.palm.app.contacts",
+        "com.palm.service.contacts",
+        "com.palm.service.contacts.linker"
+      ],
+      "validator": "palm://com.palm.imaccountvalidator/checkCredentials",
+      "writePermissions": [
+        "com.palm.app.contacts",
+        "com.palm.app.messaging"
+      ]
+    },
+
+    {
+      "_kind": "com.palm.account:1",
+      "_id": "++HnY2Qbp2pHNVFT",
+      "_rev": 17476,
+      "_sync": true,
+      "alias": "Skype",
+      "beingDeleted": false,
+      "capabilityProviders": [
+        {
+          "_id": "1e76",
+          "capability": "MESSAGING",
+          "id": "com.palm.skype.messaging",
+          "capabilitySubtype": "IM",
+          "loc_shortName": "Skype",
+          "alwaysOn": true,
+          "icon": {
+            "loc_32x32": "\/usr\/palm\/public\/accounts\/com.palm.skype\/images\/skype32.png",
+            "loc_48x48": "\/usr\/palm\/public\/accounts\/com.palm.skype\/images\/skype48.png",
+            "splitter": "\/usr\/palm\/public\/accounts\/com.palm.skype\/images\/skype32.png"
+          },
+          "implementation": "palm:\/\/com.palm.skype\/",
+          "onEnabled": "palm:\/\/com.palm.skype\/onEnabled",
+          "serviceName": "type_skype",
+          "dbkinds": {
+            "immessage": "com.palm.immessage.skypem:1",
+            "imcommand": "com.palm.imcommand.skypem:1"
+          },
+          "settingsUI": {
+            "appId": "com.palm.app.skype",
+            "sceneName": "accountlogin"
+          },
+          "invites": {
+            "supportsCustomMessage": true,
+            "loc_bannerText": "Skype contact request"
+          },
+          "groupChat": {
+            "supported": true,
+            "topicsSupported": true,
+            "invitesSupportMessages": false
+          },
+          "chatWithNonBuddies": true
+        },
+        {
+          "_id": "1e77",
+          "capability": "CONTACTS",
+          "id": "com.palm.skype.contacts",
+          "alwaysOn": true,
+          "implementation": "palm:\/\/com.palm.skype\/",
+          "sync": "palm:\/\/com.palm.skype\/sync",
+          "readOnlyData": true,
+          "db_kinds": {
+            "contact": "com.palm.contact.skypem:1"
+          }
+        },
+        {
+          "_id": "1e78",
+          "capability": "PHONE",
+          "id": "com.palm.skype.call",
+          "alwaysOn": true,
+          "implementation": "palm:\/\/com.palm.skype\/",
+          "serviceName": "type_skype",
+          "wanAllowed": true,
+          "wifiAllowed": true,
+          "pausePrompt": false,
+          "pauseCode": [
+          ],
+          "waitCode": [
+          ],
+          "keyHoldMappings": [
+          ],
+          "launchCode": "##"
+        }
+      ],
+      "templateId": "com.palm.skype",
+      "username": "lunagirl",
+      "loc_name": "Skype",
+      "icon": {
+        "loc_32x32": "\/usr\/palm\/public\/accounts\/com.palm.skype\/images\/skype32.png",
+        "loc_48x48": "\/usr\/palm\/public\/accounts\/com.palm.skype\/images\/skype48.png"
+      },
+      "validator": {
+        "customUI": {
+          "appId": "com.palm.app.skype",
+          "name": "validator.html"
+        },
+        "address": "palm:\/\/com.palm.skypevalidator\/updateCredentials"
+      },
+      "onCredentialsChanged": "palm:\/\/com.palm.skypevalidator\/credentialsChanged",
+      "readPermissions": [
+        "com.palm.app.phone",
+        "com.palm.app.skype",
+        "com.palm.app.messaging",
+        "com.palm.app.contacts",
+        "com.palm.service.contacts",
+        "com.palm.service.contacts.linker",
+        "com.palm.skype"
+      ],
+      "writePermissions": [
+        "com.palm.app.phone",
+        "com.palm.app.skype",
+        "com.palm.app.messaging",
+        "com.palm.app.contacts",
+        "com.palm.service.contacts",
+        "com.palm.service.contacts.linker",
+        "com.palm.skype"
+      ]
+    },
+
+    {
+      "_kind": "com.palm.account:1",
+      "_id": "++HnY2vjPIZtIAbb",
+      "_rev": 17477,
+      "_sync": true,
+      "alias": "Yahoo!",
+      "beingDeleted": false,
+      "capabilityProviders": [
+        {
+          "_id": "1f1a",
+          "capability": "CONTACTS",
+          "id": "com.palm.yahoo.contacts",
+          "dbkinds": {
+            "contact": "com.palm.contact.yahoo:1"
+          },
+          "implementation": "palm:\/\/com.palm.service.contacts.yahoo\/",
+          "onCreate": "palm:\/\/com.palm.service.contacts.yahoo\/onCreate",
+          "onCredentialsChanged": "palm:\/\/com.palm.service.contacts.yahoo\/credentialsChanged",
+          "onDelete": "palm:\/\/com.palm.service.contacts.yahoo\/onDelete",
+          "onEnabled": "palm:\/\/com.palm.service.contacts.yahoo\/onEnabled",
+          "readOnlyData": true,
+          "sync": "palm:\/\/com.palm.service.contacts.yahoo\/sync",
+          "validator": "palm:\/\/com.palm.service.contacts.yahoo\/checkCredentials"
+        },
+        {
+          "_id": "1f1b",
+          "capability": "MESSAGING",
+          "id": "com.palm.yahoo.im",
+          "capabilitySubtype": "IM",
+          "dbkinds": {
+            "imcommand": "com.palm.imcommand.yahoo:1",
+            "immessage": "com.palm.immessage.yahoo:1"
+          },
+          "icon": {
+            "loc_32x32": "\/usr\/palm\/public\/accounts\/com.palm.yahoo\/images\/yim-32x32.png",
+            "loc_48x48": "\/usr\/palm\/public\/accounts\/com.palm.yahoo\/images\/yim-48x48.png",
+            "splitter": "\/usr\/palm\/public\/accounts\/com.palm.yahoo\/images\/yim-32x32.png"
+          },
+          "implementation": "palm:\/\/com.palm.imyahoo\/",
+          "invites": {
+            "supportsCustomMessage": true
+          },
+          "loc_shortName": "Yahoo!",
+          "onCredentialsChanged": "palm:\/\/com.palm.imyahoo\/onCredentialsChanged",
+          "onEnabled": "palm:\/\/com.palm.imyahoo\/onEnabled",
+          "serviceName": "type_yahoo",
+          "supportsInvisibleStatus": true
+        },
+        {
+          "_id": "1f1c",
+          "capability": "MAIL",
+          "id": "com.palm.yahoo.mail",
+          "config": {
+            "encryption": "ssl",
+            "port": 993,
+            "server": "palm.imap.mail.yahoo.com",
+            "smtpConfig": {
+              "encryption": "ssl",
+              "port": 465,
+              "server": "palm.smtp.mail.yahoo.com",
+              "useSmtpAuth": true
+            }
+          },
+          "dbkinds": {
+            "email": "com.palm.imap.email:1"
+          },
+          "implementation": "palm:\/\/com.palm.imap\/",
+          "onCreate": "palm:\/\/com.palm.imap\/accountCreated",
+          "onCredentialsChanged": "palm:\/\/com.palm.imap\/credentialsChanged",
+          "onDelete": "palm:\/\/com.palm.imap\/accountDeleted",
+          "onEnabled": "palm:\/\/com.palm.imap\/accountEnabled",
+          "subKind": "com.palm.imap.email:1"
+        },
+        {
+          "_id": "1f1d",
+          "capability": "CALENDAR",
+          "id": "com.palm.yahoo.calendar",
+          "dbkinds": {
+            "calendar": "com.palm.calendar.yahoo:1",
+            "calendarevent": "com.palm.calendarevent.yahoo:1"
+          },
+          "implementation": "palm:\/\/com.palm.service.calendar.yahoo\/",
+          "onCreate": "palm:\/\/com.palm.service.calendar.yahoo\/onCreate",
+          "onCredentialsChanged": "palm:\/\/com.palm.service.calendar.yahoo\/credentialsChanged",
+          "onDelete": "palm:\/\/com.palm.service.calendar.yahoo\/onDelete",
+          "onEnabled": "palm:\/\/com.palm.service.calendar.yahoo\/onEnabled",
+          "subKind": "com.palm.calendarevent.yahoo:1",
+          "sync": "palm:\/\/com.palm.service.calendar.yahoo\/sync"
+        }
+      ],
+      "templateId": "com.palm.yahoo",
+      "username": "luminescent@yahoo.com",
+      "disallowed_locales": [
+        "en_cn",
+        "zh_cn",
+        "zh_hk"
+      ],
+      "icon": {
+        "loc_32x32": "\/usr\/palm\/public\/accounts\/com.palm.yahoo\/images\/yahoo-32x32.png",
+        "loc_48x48": "\/usr\/palm\/public\/accounts\/com.palm.yahoo\/images\/yahoo-48x48.png"
+      },
+      "loc_name": "Yahoo!",
+      "loc_usernameLabel": "EMAIL ADDRESS",
+      "readPermissions": [
+        "com.palm.imap",
+        "com.palm.smtp",
+        "com.palm.imyahoo",
+        "com.palm.yahoo",
+        "com.palm.service.contacts",
+        "com.palm.service.calendar.yahoo",
+        "com.palm.service.contacts.yahoo",
+        "com.palm.service.contacts.linker",
+        "com.palm.app.messaging",
+        "com.palm.app.calendar",
+        "com.palm.app.contacts",
+        "com.palm.app.email"
+      ],
+      "validator": "palm:\/\/com.palm.yahoo\/validate",
+      "writePermissions": [
+        "com.palm.yahoo",
+        "com.palm.service.contacts.yahoo",
+        "com.palm.app.messaging",
+        "com.palm.app.calendar",
+        "com.palm.app.contacts",
+        "com.palm.app.email"
+      ]
+    },
+
+    {
+      "_kind": "com.palm.account:1",
+      "_id": "++I7DWIQ5uOB35iL",
+      "_rev": 3579,
+      "_sync": true,
+      "alias": "Space99 @ Skype",
+      "beingDeleted": false,
+      "capabilityProviders": [
+        {
+          "_id": "1aa0f",
+          "capability": "MESSAGING",
+          "id": "com.palm.skype.messaging",
+          "alwaysOn": true,
+          "capabilitySubtype": "IM",
+          "chatWithNonBuddies": true,
+          "dbkinds": {
+            "imcommand": "com.palm.imcommand.skypem:1",
+            "immessage": "com.palm.immessage.skypem:1"
+          },
+          "groupChat": {
+            "invitesSupportMessages": false,
+            "supported": true,
+            "topicsSupported": true
+          },
+          "icon": {
+            "loc_32x32": "\/usr\/palm\/public\/accounts\/com.palm.skype\/images\/skype32.png",
+            "loc_48x48": "\/usr\/palm\/public\/accounts\/com.palm.skype\/images\/skype48.png",
+            "splitter": "\/usr\/palm\/public\/accounts\/com.palm.skype\/images\/skype32.png"
+          },
+          "implementation": "palm:\/\/com.palm.skype\/",
+          "invites": {
+            "loc_bannerText": "Skype contact request",
+            "supportsCustomMessage": true
+          },
+          "loc_shortName": "Skype",
+          "onEnabled": "palm:\/\/com.palm.skype\/onEnabled",
+          "serviceName": "type_skype",
+          "settingsUI": {
+            "appId": "com.palm.app.skype",
+            "sceneName": "accountlogin"
+          }
+        },
+        {
+          "_id": "1aa10",
+          "capability": "CONTACTS",
+          "id": "com.palm.skype.contacts",
+          "alwaysOn": true,
+          "db_kinds": {
+            "contact": "com.palm.contact.skypem:1"
+          },
+          "implementation": "palm:\/\/com.palm.skype\/",
+          "readOnlyData": true,
+          "sync": "palm:\/\/com.palm.skype\/sync"
+        },
+        {
+          "_id": "1aa11",
+          "capability": "PHONE",
+          "id": "com.palm.skype.call",
+          "alwaysOn": true,
+          "implementation": "palm:\/\/com.palm.skype\/",
+          "keyHoldMappings": [],
+          "launchCode": "##",
+          "pauseCode": [],
+          "pausePrompt": false,
+          "serviceName": "type_skype",
+          "waitCode": [],
+          "wanAllowed": true,
+          "wifiAllowed": true
+        }
+      ],
+      "templateId": "com.palm.skype",
+      "username": "space.1999",
+      "icon": {
+        "loc_32x32": "\/usr\/palm\/public\/accounts\/com.palm.skype\/images\/skype32.png",
+        "loc_48x48": "\/usr\/palm\/public\/accounts\/com.palm.skype\/images\/skype48.png"
+      },
+      "loc_name": "Skype",
+      "onCredentialsChanged": "palm:\/\/com.palm.skypevalidator\/credentialsChanged",
+      "validator": {
+        "address": "palm:\/\/com.palm.skypevalidator\/updateCredentials",
+        "customUI": {
+          "appId": "com.palm.app.skype",
+          "name": "validator"
+        }
+      }
+    }
+
+  ]
+}

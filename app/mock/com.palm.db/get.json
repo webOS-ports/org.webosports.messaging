@@ -1,0 +1,93 @@
+{
+  "returnValue" : true,
+  "results"     : [
+    {
+      "_id": "J1EcwpjkP_k",
+      "_kind": "com.palm.person:1",
+      "_rev": 347,
+      "addresses": [],
+      "anniversary": "",
+      "birthday": "",
+      "contactIds": ["J1EcwYUG8r3"],
+      "emails": [],
+      "favorite": false,
+      "gender": "",
+      "ims": [
+        {"_id": "zczfzvs", "type": "type_aim", "value": "Maus", "primary": false },
+        {"_id": "zc49zvs", "type": "type_facebook", "value": "Schnucki", "primary": true }
+      ],
+      "launcherId": "",
+      "name": {
+        "familyName": "Anders",
+        "givenName": "Was",
+        "honorificPrefix": "",
+        "honorificSuffix": "",
+        "middleName": "Gaaaanz"
+      },
+      "names": [{
+        "_id": "15c",
+        "familyName": "Anders",
+        "givenName": "Was",
+        "honorificPrefix": "",
+        "honorificSuffix": "",
+        "middleName": "Gaaaanz"
+      }],
+      "nickname": "Way too long a nickname for any normal person, this entry exists to test the details layout",
+      "notes": [],
+      "organization": {
+        "department": "",
+        "description": "",
+        "endDate": "",
+        "location": {
+          "country": "",
+          "locality": "",
+          "postalCode": "",
+          "primary": false,
+          "region": "",
+          "streetAddress": "",
+          "type": "type_work"
+        },
+        "name": "National Public Radio / NPR",
+        "startDate": "",
+        "title": "",
+        "type": ""
+      },
+      "phoneNumbers": [{
+        "_id": "137",
+        "favoriteData": {},
+        "normalizedValue": "-0989898989898-898--",
+        "primary": false,
+        "speedDial": "",
+        "type": "type_mobile",
+        "value": "8988989898989890"
+      }, {
+        "_id": "138",
+        "favoriteData": {},
+        "normalizedValue": "-6543643253465345324-123--",
+        "primary": false,
+        "speedDial": "",
+        "type": "type_work",
+        "value": "13214235435643523463456"
+      }],
+      "photos": {
+        "accountId": "",
+        "bigPhotoId": "",
+        "bigPhotoPath": "",
+        "contactId": "",
+        "listPhotoPath": "",
+        "listPhotoSource": "",
+        "squarePhotoId": "",
+        "squarePhotoPath": ""
+      },
+      "relations": [],
+      "reminder": "",
+      "ringtone": {
+        "location": "",
+        "name": ""
+      },
+      "searchTerms": ["wanders", "anderswas", "maus", "schnucki"],
+      "sortKey": "anders\twas",
+      "urls": []
+    }
+  ]
+}

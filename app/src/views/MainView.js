@@ -116,9 +116,6 @@ module.exports = kind({
     create: function () {
         this.inherited(arguments);
 
-        this.log("==========> Telling global list to fetch threads...");
-        this.app.$.globalThreadCollection.fetch({ merge: true,
-            success: this.handleLaunchParam.bind(this), error: showErrorBanner });
     },
     handleRelaunch: function(inSender, inEvent) {
         this.launchParamsHandled = false;
@@ -148,7 +145,7 @@ module.exports = kind({
             return;
         }
 
-        this.log(JSON.stringify(params));
+        this.log(params);
         var threadParam;
         try {
             if (typeof(params.threadId) !== 'undefined') {
@@ -172,7 +169,7 @@ module.exports = kind({
                 this.createThread(this, threadParam);
             } else if (params.target) {
                 var parsedUrl = this.parseUrl(params.target);
-                this.log(JSON.stringify(parsedUrl));
+                this.log(parsedUrl);
                 switch (parsedUrl.protocol) {
                     case 'im:':
                         threadParam = parsedUrl.searchParam;

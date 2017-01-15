@@ -88,8 +88,9 @@ module.exports = kind({
 
         function handleGetResponse(success, failure, inSender, inResponse) {
             if (inResponse.results) {
-                console.log("fetch (get) handleGetResponse:", inResponse.results.length, "records", inResponse);
-                console.log("fetch (get) handleGetResponse2:", success);
+                console.log("fetch (get) handleGetResponse:",
+                    inResponse.results instanceof Array, inResponse.results.length, "records" /*, inResponse*/);
+                console.log("fetch (get) handleGetResponse2:", typeof success, ids instanceof Array);
 
                 if (typeof success === 'function') {
                     // Only records can be passed to the success callback.
@@ -97,7 +98,11 @@ module.exports = kind({
                     if (ids instanceof Array) {
                         success(inResponse.results);
                     } else {
-                        success(inResponse.results[0]);
+                        if (inResponse.results.length > 0) {
+                            success(inResponse.results[0]);
+                        } else if (typeof opts.fail === 'function') {
+                            opts.fail();
+                        }
                     }
                 }
             }  else {
