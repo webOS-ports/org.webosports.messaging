@@ -16,7 +16,8 @@ var kind = require('enyo/kind'),
     LunaService = require('enyo-webos/LunaService'),
     $L = require('enyo/i18n').$L,   // no-op placeholder
     showErrorBanner = require('../util/showErrorBanner'),
-    ThreadModel = require('../data/ThreadModel');
+    ThreadModel = require('../data/ThreadModel'),
+    enyoLuneos = require('enyo-luneos');
 
 
 module.exports = kind({
@@ -103,7 +104,7 @@ module.exports = kind({
         },
         {
             kind: Signals,
-            onbackbutton: "goBack",
+            onbackgesture: "goBack",
             onwebOSRelaunch: "handleRelaunch"
         },
         {
@@ -118,11 +119,14 @@ module.exports = kind({
 
     },
     handleRelaunch: function(inSender, inEvent) {
+        this.log();
         this.launchParamsHandled = false;
         this.handleLaunchParam();
     },
     /** called after threads loaded or reloaded, and on relaunch */
-    handleLaunchParam: function() {
+    handleLaunchParam: function handleLaunchParam() {
+        var callerName = handleLaunchParam.caller && (handleLaunchParam.caller.displayName || handleLaunchParam.caller.name);
+        this.log("called by: “" + callerName + "”");
         setTimeout(this.processParams.bind(this), 0);
     },
     processParams: function () {

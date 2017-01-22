@@ -185,7 +185,7 @@ module.exports = kind({
     },
 
     threadChanged: function() {
-        this.log("Thread is: >>" + this.thread.get('displayName') + "<<");
+        this.log("Thread is: <<" + this.thread.get('displayName') + ">>");
 
         this.$.messageCollection.empty();
         this.$.messageList.refresh();
@@ -208,7 +208,7 @@ module.exports = kind({
         }
 
         var personId = this.thread.get('personId');
-        this.log("thread:", "»"+personId+"«", this.thread.attributes);
+        this.log("thread:", "«"+personId+"»", this.thread.attributes);
         if (personId) {
             this.$.msgAddrPckrDcrtr.set('showing', true);
             this.$.db8GetService.send({ids: [personId]});
@@ -315,7 +315,7 @@ module.exports = kind({
         var messageThreadIds = inEvent.threadids;
         var viewThreadId = this.thread.get("_id");
         var threadMatch = messageThreadIds.indexOf(viewThreadId) >= 0;
-        this.log("viewThreadId:", viewThreadId, "   messageThreadIds:", messageThreadIds, "  threadMatch:", threadMatch);
+        this.log("viewThreadId: «"+viewThreadId+"»   messageThreadIds: «"+messageThreadIds+"»  threadMatch:", threadMatch);
         if (! threadMatch) {   // none of the message threads match the view thread
             var existingThread = this.globalThreadCollection.find(function (thread) {return messageThreadIds.indexOf(thread.get('_id')) >= 0 });
             this.log("existingThread:", existingThread && existingThread.toJSON());

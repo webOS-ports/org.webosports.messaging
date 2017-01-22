@@ -153,7 +153,7 @@ module.exports = kind({
 
         		var requestInd = this.requests.findIndex( function (element) { return element === request;} );
 				this.requests.splice(requestInd, 1);
-				console.log("fetch (find) handleFindResponse: new request " + requestInd + " of " + this.requests.length);
+				console.log("fetch (find) handleFindResponse: new request " + requestInd + " of " + this.requests.length + " outstanding");
 				
 				this._fetchFind(collection, opts);
         	} else {
