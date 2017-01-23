@@ -20,5 +20,14 @@ module.exports = kind({
         replyService: "sms",
         personId: "",
         unreadCount: 0
+    },
+    updateReplyInfo: function (replyAddress, isPhone, type) {
+        console.log("ThreadModel.updateReplyInfo:", replyAddress, isPhone, type);
+        this.set('replyAddress', replyAddress);
+        if (isPhone) {
+            this.set('replyService', 'sms');
+        } else {
+            this.set('replyService', '???');   // TODO: set to proper value, using type
+        }
     }
 });

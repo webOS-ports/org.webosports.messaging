@@ -18,11 +18,13 @@ module.exports = function () {
             msgs.push(obj);
         } else if (typeof obj === 'undefined' || obj === null || typeof obj === 'boolean' || typeof obj === 'function') {
             // nothing useful to user
-        } else {
-            try {
-                msgs.push(JSON.stringify(obj));
-            } catch (err) {
-            }
+        } else if (typeof obj.errorText === 'string') {   // Luna bus service call error
+            msgs.push(obj.errorText);
+        // } else {
+        //     try {
+        //         msgs.push(JSON.stringify(obj));   // calling JSON.stringify on native under LuneOS crashes app
+        //     } catch (err) {
+        //     }
 
         }
     }

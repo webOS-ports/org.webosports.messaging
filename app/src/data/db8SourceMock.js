@@ -56,12 +56,12 @@ module.exports = kind({
                 opts.success(this.dataArray[dbkind]);
             }
             else {
-                console.log("dbKind is none of above");
-                opts.success([]);
+                console.error("dbKind is none of above");
+                opts.error(new Error("dbKind is none of above"));
             }
         } else {
             //return all dataArray here:
-            console.log("return " + JSON.stringify(this.dataArray));
+            console.log("fetch returning ", this.dataArray);
             opts.success(this.dataArray);
         }
     },
@@ -189,10 +189,11 @@ module.exports = kind({
                 "_id": "JCsNkhoJQF3",
                 "_kind": "com.palm.chatthread:1",
                 "_rev": 3446,
+                "personId": "fldfjli3j98",
                 "displayName": "LYCAMOBILE",
                 "flags": {"visible": true},
                 "normalizedAddress": "----",
-                "replyAddress": "LYCAMOBILE",
+                "replyAddress": "8988989898989890",
                 "replyService": "sms",
                 "summary": "Calls to Netherlands/EU are 0.2300 c/min (0.0600 c/min to receive). Text is 0.0700c (Free to receive). Free info call 322. Emergency services call 112.",
                 "timestamp": 1422637252000,
@@ -525,7 +526,10 @@ module.exports = kind({
                 "emails": [],
                 "favorite": false,
                 "gender": "",
-                "ims": [],
+                "ims": [
+                    {"_id": "zczfzvs", "type": "type_aim", "value": "Maus", "primary": false },
+                    {"_id": "zc49zvs", "type": "type_facebook", "value": "Schnucki", "primary": true }
+                ],
                 "launcherId": "",
                 "name": {
                     "familyName": "Anders",
@@ -576,7 +580,7 @@ module.exports = kind({
                     "normalizedValue": "-6543643253465345324-123--",
                     "primary": false,
                     "speedDial": "",
-                    "type": "type_mobile",
+                    "type": "type_work",
                     "value": "13214235435643523463456"
                 }],
                 "photos": {
@@ -595,7 +599,7 @@ module.exports = kind({
                     "location": "",
                     "name": ""
                 },
-                "searchTerms": ["wanders", "anderswas"],
+                "searchTerms": ["wanders", "anderswas", "maus", "schnucki"],
                 "sortKey": "anders\twas",
                 "urls": []
             }, {

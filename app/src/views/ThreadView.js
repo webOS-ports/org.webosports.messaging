@@ -43,6 +43,7 @@ module.exports = kind({
         onSelectThread:"",
         onDeleteThread:""
     },
+    handlers: { onSelect: 'replyAddrSelected' },
     components: [
         {
             kind:Panels,
@@ -60,11 +61,9 @@ module.exports = kind({
                             components:[
                                 {name:"imStatus", style:"height:20px;", classes:"toolbar-status status-unknown", kind:Icon},
                                 {name:"headerText", content:"Name name", fit:true},
-                                {kind: PickerDecorator, components: [
+                                {name:'msgAddrPckrDcrtr', kind: PickerDecorator, components: [
                                     {}, //this uses the defaultKind property of PickerDecorator to inherit from PickerButton
-                                    {name:"addrSelect", kind: Picker, components: [   // TODO: dynamically populate
-                                        {content: "206-555-1212", active: true},
-                                        {content: "jdoe@gmail.com"}
+                                    {name:"msgAddrPckr", kind: Picker, components: [
                                     ]}
                                 ]}
                             ]
@@ -170,6 +169,12 @@ module.exports = kind({
             service: 'luna://org.webosports.service.messaging', method: 'updateThreadValues',
             mock: ! ('PalmSystem' in window),
             onError: 'serviceErr'
+        },
+        {
+            name: 'db8GetService', kind: LunaService,
+            service: 'luna://com.palm.db', method: 'get',
+            mock: ! ('PalmSystem' in window),
+            onResponse: 'db8GetRspns', onError: 'serviceErr'
         }
     ],
     create: function () {
@@ -180,7 +185,7 @@ module.exports = kind({
     },
 
     threadChanged: function() {
-        this.log("Thread is: >>" + this.thread.get('displayName') + "<<");
+        this.log("Thread is: «" + this.thread.get('displayName') + "»");
 
         this.$.messageCollection.empty();
         this.$.messageList.refresh();
@@ -201,7 +206,63 @@ module.exports = kind({
             this.$.msgAddrSearchList.reload();
             this.$.panels.setIndex(1);
         }
+
+        var personId = this.thread.get('personId');
+        this.log("thread:", "«"+personId+"»", this.thread.attributes);
+        if (personId) {
+            this.$.msgAddrPckrDcrtr.set('showing', true);
+            this.$.db8GetService.send({ids: [personId]});
+        } else {
+            this.$.msgAddrPckrDcrtr.set('showing', false);
+        }
     },
+    db8GetRspns: function (inSender, inResponse) {
+        this.log(inResponse);   // Don't pass inResponse to JSON.stringify()
+        var providerSet = this.app.providerSet;
+        this.log("providerSet:", JSON.stringify(providerSet));
+
+        var menuItems = [];
+        var thread = this.thread;
+        this.log("replyAddress:", thread.get('replyAddress'));
+        if (inResponse && inResponse.results instanceof Array) {
+            inResponse.results.forEach( function (person) {
+                if (person.ims instanceof Array) {
+                    person.ims.forEach( function (imAddr) {
+                        if (providerSet[imAddr.type]) {
+                            menuItems.push({
+                                content: imAddr.value + " " + imAddr.type.slice(5),
+                                value: imAddr.value,
+                                isPhone: false,
+                                type: imAddr.type,
+                                active: imAddr.value === thread.get('replyAddress')
+                            });
+                        }
+                    });
+                }
+                if (providerSet['type_sms'] && person.phoneNumbers instanceof Array) {
+                    person.phoneNumbers.forEach( function (phoneNumber) {
+                        menuItems.push({
+                            content: phoneNumber.value + " " + phoneNumber.type.slice(5),
+                            value: phoneNumber.value,
+                            isPhone: true,
+                            type: phoneNumber.type,
+                            active: phoneNumber.value === thread.get('replyAddress')
+                        });
+                    });
+                }
+            });
+        }
+        this.log("menuItems:", JSON.stringify(menuItems));
+        this.$.msgAddrPckr.destroyClientControls();
+        this.$.msgAddrPckr.createComponents(menuItems);
+        this.$.topToolbar.resize();
+    },
+    replyAddrSelected: function (inSender, inEvent) {
+        this.thread.updateReplyInfo(inEvent.originator.value, inEvent.originator.isPhone, inEvent.originator.type);
+
+        this.$.topToolbar.resize();
+    },
+
     messageTextChanged: function () {
         this.$.messageTextArea.set('value', this.messageText);
     },
@@ -254,7 +315,7 @@ module.exports = kind({
         var messageThreadIds = inEvent.threadids;
         var viewThreadId = this.thread.get("_id");
         var threadMatch = messageThreadIds.indexOf(viewThreadId) >= 0;
-        this.log("viewThreadId:", viewThreadId, "   messageThreadIds:", messageThreadIds, "  threadMatch:", threadMatch);
+        this.log("viewThreadId: «"+viewThreadId+"»   messageThreadIds: «"+messageThreadIds+"»  threadMatch:", threadMatch);
         if (! threadMatch) {   // none of the message threads match the view thread
             var existingThread = this.globalThreadCollection.find(function (thread) {return messageThreadIds.indexOf(thread.get('_id')) >= 0 });
             this.log("existingThread:", existingThread && existingThread.toJSON());
@@ -296,10 +357,7 @@ module.exports = kind({
         var msgAddrModel = inEvent.msgAddr;
         this.thread.set('displayName', msgAddrModel.get('displayName'));
         this.thread.set('personId', msgAddrModel.get('personId'));
-        this.thread.set('replyAddress', msgAddrModel.get('value'));
-        // TODO: set replyService from isPhone and type
-        this.thread.set('isPhone', msgAddrModel.get('isPhone'));
-        this.thread.set('type', msgAddrModel.get('type'));
+        this.thread.updateReplyInfo(msgAddrModel.get('value'), msgAddrModel.get('isPhone'), msgAddrModel.get('type'));
     },
 
     newThreadCreated: function(rec, opts){

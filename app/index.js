@@ -4,6 +4,7 @@ var
 	ready = require('enyo/ready'),
     db8Source = require('./src/data/db8Source'),
     db8SourceMock = require('./src/data/db8SourceMock'),
+    LunaSource = require('enyo-webos/LunaSource'),
     MessagingApp = require('./src/MessagingApp');
 
 ready(function () {
@@ -18,5 +19,6 @@ ready(function () {
         new db8SourceMock({name:"db8"});
         //enyo.store.addSources({db8: "db8SourceMock"});
     }
+    new LunaSource({name: 'lunaSource'});
     new MessagingApp({name: "app"});
 });

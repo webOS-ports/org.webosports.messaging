@@ -16,7 +16,8 @@ var kind = require('enyo/kind'),
     LunaService = require('enyo-webos/LunaService'),
     $L = require('enyo/i18n').$L,   // no-op placeholder
     showErrorBanner = require('../util/showErrorBanner'),
-    ThreadModel = require('../data/ThreadModel');
+    ThreadModel = require('../data/ThreadModel'),
+    enyoLuneos = require('enyo-luneos');
 
 
 module.exports = kind({
@@ -103,7 +104,7 @@ module.exports = kind({
         },
         {
             kind: Signals,
-            onbackbutton: "goBack",
+            onbackgesture: "goBack",
             onwebOSRelaunch: "handleRelaunch"
         },
         {
@@ -116,16 +117,16 @@ module.exports = kind({
     create: function () {
         this.inherited(arguments);
 
-        this.log("==========> Telling global list to fetch threads...");
-        this.app.$.globalThreadCollection.fetch({ merge: true,
-            success: this.handleLaunchParam.bind(this), error: showErrorBanner });
     },
     handleRelaunch: function(inSender, inEvent) {
+        this.log();
         this.launchParamsHandled = false;
         this.handleLaunchParam();
     },
     /** called after threads loaded or reloaded, and on relaunch */
-    handleLaunchParam: function() {
+    handleLaunchParam: function handleLaunchParam() {
+        var callerName = handleLaunchParam.caller && (handleLaunchParam.caller.displayName || handleLaunchParam.caller.name);
+        this.log("called by: “" + callerName + "”");
         setTimeout(this.processParams.bind(this), 0);
     },
     processParams: function () {
@@ -148,7 +149,7 @@ module.exports = kind({
             return;
         }
 
-        this.log(JSON.stringify(params));
+        this.log(params);
         var threadParam;
         try {
             if (typeof(params.threadId) !== 'undefined') {
@@ -172,7 +173,7 @@ module.exports = kind({
                 this.createThread(this, threadParam);
             } else if (params.target) {
                 var parsedUrl = this.parseUrl(params.target);
-                this.log(JSON.stringify(parsedUrl));
+                this.log(parsedUrl);
                 switch (parsedUrl.protocol) {
                     case 'im:':
                         threadParam = parsedUrl.searchParam;

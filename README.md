@@ -49,7 +49,7 @@ Open an `im` or `sms` URL.  Like `mailto` URLs, this does not require a PalmBus 
 
 `luna-send -n 1 palm://com.palm.applicationManager/open '{"target": "im:fred@aim.com?body=Let%27s%20do%20this%20thing!"}'`
 
-`luna-send -n 1 palm://com.palm.applicationManager/open '{"target": "sms:1-206-555-1212?body=Hey%20babe"}'`
+`luna-send -n 1 palm://com.palm.applicationManager/open '{"target": "sms:1-501-555-1212?body=Hey%20babe"}'`
 
 ## API exposed to chat threader
 When an incoming message arrives, a banner message is displayed.

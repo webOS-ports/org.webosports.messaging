@@ -49,14 +49,14 @@ module.exports = kind({
                     var displayName = person.get('displayName');
                     var personId = person.get('_id');
                     if (person.get('ims')) {
-                        person.get('ims').forEach(function (msgAddr) {
-                            console.log(displayName, msgAddr.value, msgAddr.type);
+                        person.get('ims').forEach(function (imAddr) {
+                            console.log(displayName, imAddr.value, imAddr.type);
                             msgAddrData.push({
                                 displayName: displayName,
                                 personId: personId,
-                                value: msgAddr.value,
+                                value: imAddr.value,
                                 isPhone: false,
-                                type: msgAddr.type
+                                type: imAddr.type
                             });
                         });
                     }
