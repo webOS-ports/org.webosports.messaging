@@ -185,7 +185,7 @@ module.exports = kind({
     },
 
     threadChanged: function() {
-        this.log("Thread is: <<" + this.thread.get('displayName') + ">>");
+        this.log("Thread is: «" + this.thread.get('displayName') + "»");
 
         this.$.messageCollection.empty();
         this.$.messageList.refresh();
