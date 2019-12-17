@@ -1,3 +1,0 @@
-[D-BUS Service]
-Name=org.webosports.service.messaging
-Exec=/usr/bin/run-js-service -n /usr/palm/services/org.webosports.service.messaging

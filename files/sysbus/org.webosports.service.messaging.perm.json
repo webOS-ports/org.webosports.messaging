@@ -1,0 +1,6 @@
+{
+    "org.webosports.service.messaging": [
+        "services",
+        "applications"
+    ]
+}
