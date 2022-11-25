@@ -1,10 +1,7 @@
 {
     "org.webosports.service.messaging": [
-        "services",
-        "applications",
-        "database",
-        "database.internal",
-        "activities",
-        "activities.manage"
+        "activity.operation",
+        "database.operation",
+        "messaging-service.operation"
     ]
 }
