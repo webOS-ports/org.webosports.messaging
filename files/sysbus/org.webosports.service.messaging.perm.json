@@ -1,6 +1,7 @@
 {
     "org.webosports.service.messaging": [
         "accountsservice.management",
+        "accountsservice.operation",
         "activity.operation",
         "database.operation",
         "messaging-service.operation"
