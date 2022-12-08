@@ -16,5 +16,5 @@
             "launchParam":{"compose":{"messageText":"#{searchTerms}"}}
         }
     },
-    "requiredPermissions": ["database.operation", "messaging-service.operation", "tempdatabase.operation"]
+    "requiredPermissions": ["accountsservice.management", "database.operation", "messaging-service.operation", "tempdatabase.operation"]
 }
