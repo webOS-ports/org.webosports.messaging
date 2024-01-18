@@ -1,0 +1,4 @@
+{
+ "allowedNames": ["org.webosports.service.messaging"],
+ "messaging-service.operation": ["dev"]
+}
