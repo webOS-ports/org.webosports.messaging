@@ -11,7 +11,7 @@ var kind = require('enyo/kind'),
 module.exports = kind({
     name: "db8Source",
     kind: Source,
-    dbService: "palm://com.palm.db",
+    dbService: "luna://com.webos.service.db",
     requests: [],
 
     _doRequest: function (method, parameters, success, failure, subscribe) {

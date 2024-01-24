@@ -16,7 +16,7 @@ module.exports = kind({
     // model: AccountCapabilityModel,
     source: "lunaSource",
     options: {parse: true},
-    service: 'palm://com.palm.service.accounts',
+    service: 'luna://com.webos.service.accounts',
     method: 'listAccounts',
     subscribe: true,
     mock: !('PalmSystem' in window),

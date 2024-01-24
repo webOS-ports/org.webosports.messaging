@@ -27,11 +27,11 @@ var ActivityHandler = (function () {
 			},
 			trigger: {
 				key: "fired",
-				method: "palm://com.palm.db/watch",
+				method: "luna://com.webos.service.db/watch",
 				params: { query: messageQuery }
 			},
 			callback: {
-				method: "palm://org.webosports.service.messaging/assignMessages",
+				method: "luna://org.webosports.service.messaging/assignMessages",
 				params: { lastCheckedRev: 0 } //set to same rev as above in code.
 			}
 		},
@@ -58,24 +58,24 @@ var ActivityHandler = (function () {
 
 		updateActivityOnComplete: function (activityObject) {
 			Log.debug("Completing ", activityObject ? activityObject.name : "", " with id: ", activityObject ? activityObject._activityId : "invalid");
-			var future = PalmCall.call("palm://com.palm.activitymanager", "getDetails", {"activityName": activity.name, current: false, internal: false});
+			var future = PalmCall.call("luna://com.webos.service.activitymanager", "getDetails", {"activityName": activity.name, current: false, internal: false});
 
 			future.then(this, function getDetailsCB() {
 				var result = checkResult(future);
 				ActivityHandler.setRev(newRev);
 				activityObject.setTrigger("fired",
-										  "palm://com.palm.db/watch",
+										  "luna://com.webos.service.db/watch",
 										  { query: messageQuery });
 				Log.debug("Rev: ", newRev, " query: ", messageQuery);
-				activityObject.setCallback("palm://org.webosports.service.messaging/assignMessages",
+				activityObject.setCallback("luna://org.webosports.service.messaging/assignMessages",
 										   { lastCheckedRev: newRev });
 				if (result.returnValue === false) {
 					Log.debug("Could not get activity, re-creating it: ", result);
-					future.nest(PalmCall.call("palm://com.palm.activitymanager", "create", {activity: activity, start: true, replace: true}));
+					future.nest(PalmCall.call("luna://com.webos.service.activitymanager", "create", {activity: activity, start: true, replace: true}));
 				} else {
 					if (activityObject._activityId === result.activity.activityId) {
 						Log.debug("Need to restart.");
-						future.nest(PalmCall.call("palm://com.palm.activitymanager", "complete", {
+						future.nest(PalmCall.call("luna://com.webos.service.activitymanager", "complete", {
 							activityId: result.activity.activityId,
 							restart: true,
 							trigger: activity.trigger,
@@ -85,7 +85,7 @@ var ActivityHandler = (function () {
 						Log.debug("Different activity, finish it");
 						activityObject.complete().then(function completeCB() {
 							Log.debug("Setting new rev in old activity.");
-							future.nest(PalmCall.call("palm://com.palm.activitymanager", "create", {activity: activity, start: true, replace: true}));
+							future.nest(PalmCall.call("luna://com.webos.service.activitymanager", "create", {activity: activity, start: true, replace: true}));
 						});
 					}
 					future.result = {returnValue: true};
