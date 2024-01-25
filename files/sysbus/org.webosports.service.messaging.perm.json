@@ -5,6 +5,8 @@
         "activity.operation",
         "activity.query",
         "database.operation",
-        "messaging-service.operation"
+        "messaging-service.operation",
+        "notification.management",
+        "notification.operation"
     ]
 }
