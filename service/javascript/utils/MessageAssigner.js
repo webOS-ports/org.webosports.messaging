@@ -7,18 +7,18 @@ var MessageAssigner = (function () {
 
 	//create notification for a message:
 	function createNotification(msg, contactName, threadId) {
-		return PalmCall.call("palm://org.webosports.notifications", "create", {
-			ownerId: "org.webosports.service.messaging",
-			launchId: "org.webosports.app.messaging",
-			launchParams: {threadId: threadId }, //Seems the messaging app does not support this, yet.
+		return PalmCall.call("luna://com.webos.notification", "createToast", {
+			sourceId: "org.webosports.service.messaging",
+			onclick: {appId: "org.webosports.app.messaging", params: {threadId: threadId }}, //Seems the messaging app does not support this, yet.
 			title: contactName,
-			body: msg.messageText,
-			iconUrl: "file:///usr/palm/applications/org.webosports.app.messaging/icon.png",
-			soundClass: "notifications",
-			soundFile: "",
-			duration: -1,
-			doNotSuppress: false,
-			expireTimeout: 5
+			message: msg.messageText,
+			iconUrl: "/usr/palm/applications/org.webosports.app.messaging/icon.png"
+			//Below items are no longer supported for Toasts in OSE, commented them out for now
+			//soundClass: "notifications",
+			//soundFile: "",
+			//duration: -1,
+			//doNotSuppress: false,
+			//expireTimeout: 5
 		}).then(function notificationDone(f) {
 			if (f.exception) {
 				Log.log("notification call had error: " + JSON.stringify(f.exception));
