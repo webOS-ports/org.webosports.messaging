@@ -58,12 +58,12 @@ module.exports = kind({
         if (inResponse && inResponse.templates) {
             this._accountTemplates = inResponse.templates;
         }
-        this.notify();
+        this.notifyListeners();
     },
 
     accountsError: function (inSender, inError) {
         this.warn("listAccounts failed:", inError && (inError.errorText || inError));
-        this.notify();
+        this.notifyListeners();
     },
 
     // --- marshalling ---------------------------------------------------------------------
@@ -278,7 +278,12 @@ module.exports = kind({
 
     // --- listener plumbing ---------------------------------------------------------------
 
-    notify: function () {
+    /**
+     * Named notifyListeners rather than notify: Enyo's ObserverSupport already defines notify(),
+     * and overriding it breaks every property notification on this component — including the one
+     * addComponent fires while the kind is still being constructed.
+     */
+    notifyListeners: function () {
         for (var i = 0; i < this._listeners.length; i++) {
             try {
                 this._listeners[i].callback();
