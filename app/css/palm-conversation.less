@@ -1,0 +1,830 @@
+/**
+ * Port of com.palm.app.messaging/stylesheets/conversation.css.
+ *
+ * Bubble, receipt, divider, attachment, reaction, poll and media-player styling for the
+ * conversation view. Class names match the Mojo originals; framework selectors are mapped to their
+ * Onyx equivalents and image paths point at ../assets.
+ */
+
+/*----------------------
+Header
+----------------------*/
+.conversationList {
+  background-color: #fff;
+}
+.conversation-header-content {
+  margin-left: 3px;
+  margin-right: 3px;
+  color: #222222;
+  font-size: 20px;
+  text-align: left;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.conversation-header .status {
+  margin-left: 8px;
+}
+.conversation-header-type.onyx-button {
+  padding: 0 5px;
+  margin: 0 7px 0;
+}
+
+/* Bare transparent header call buttons (video + phone): no square button chrome, matching the
+   paperclip/send icons. Sized to the 32x32 glyphs and nudged to the row centre. */
+.conversation-call-btn {
+  -webkit-flex: none;
+  flex: none;
+  -webkit-border-image: none;
+  border: 0;
+  border-radius: 0;
+  background-color: transparent;
+  box-shadow: none;
+  min-width: 32px;
+  width: 32px;
+  height: 32px;
+  position: relative;
+  top: 6px;
+  margin: 0 4px;
+}
+.conversation-call-btn.pressed {
+  -webkit-border-image: none;
+  border: 0;
+  background-color: transparent;
+  box-shadow: none;
+}
+
+.block-delete-box {
+  padding: 0 12px 0 68px;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-flow: row;
+  flex-flow: row;
+}
+.button-left {
+  margin-right: 10px;
+}
+.blocksender-bt,
+.deleteconversation-bt {
+  opacity: 0.5;
+  color: #333;
+}
+.blocksender-bt {
+  margin-right: 8px;
+}
+.accept-decline-box {
+  margin-top: 3px;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-flow: row;
+  flex-flow: row;
+}
+.accept-decline-box .onyx-button {
+  min-width: 120px;
+}
+.accept-decline-box > :first-child {
+  margin-right: 6px;
+}
+
+/*----------------------
+Composer
+----------------------*/
+.conversation-bottom {
+  height: auto;
+  max-height: 192px;
+}
+.conversation-bottom .onyx-input-decorator {
+  margin-left: 6px;
+  /* Match the input->arrow gap to the arrow's distance from the screen edge so the send arrow
+     reads as centred in the trailing gutter. */
+  margin-right: 4px;
+}
+
+.header-shadow,
+.footer-shadow {
+  position: relative;
+  z-index: 100;
+  height: 3px;
+  width: 100%;
+  pointer-events: none;
+}
+.header-shadow {
+  top: 0;
+  background: transparent url('../assets/light_chrome_drop_shadow_header.png') bottom repeat-x;
+}
+.footer-shadow {
+  bottom: 0;
+  background: transparent url('../assets/light_chrome_drop_shadow_footer.png') top repeat-x;
+}
+
+/*----------------------
+Staged attachment chip (above the input once a file is picked)
+----------------------*/
+.attachment-chip {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+  padding: 2px 10px;
+  background-color: #d3e2f0;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+.attachment-chip-thumb {
+  width: 40px;
+  height: 40px;
+  margin-right: 8px;
+  border-radius: 4px;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  top: 3px;
+}
+.attachment-chip-player {
+  -webkit-flex: 1;
+  flex: 1;
+  margin-right: 6px;
+}
+.attachment-chip-label {
+  -webkit-flex: 1;
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 15px;
+  color: #333;
+}
+
+/* Attachment (paperclip), mic and send buttons: bare transparent icons like the slide handle -
+   strip the default button chrome in both rest and pressed states, keeping only the icon. */
+.conversation-attach-btn,
+.conversation-mic-btn,
+.conversation-send-btn {
+  -webkit-flex: none;
+  flex: none;
+  -webkit-align-self: flex-end;
+  align-self: flex-end;
+  -webkit-border-image: none;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  background-color: transparent;
+  box-shadow: none;
+  min-width: 0;
+  margin: 0 2px 4px 2px;
+}
+.conversation-attach-btn.pressed,
+.conversation-mic-btn.pressed,
+.conversation-send-btn.pressed {
+  -webkit-border-image: none;
+  border: 0;
+  background: transparent;
+  background-color: transparent;
+}
+/* While recording, the mic icon swaps to the red variant; no pulsing, just a steady muted red. */
+.conversation-mic-btn.recording {
+  opacity: 0.5;
+}
+/* Elapsed-time readout shown while recording a voice note. */
+.conversation-vn-timer {
+  -webkit-align-self: center;
+  align-self: center;
+  color: #555;
+  font-size: 16px;
+  min-width: 40px;
+  text-align: center;
+  margin: 0 2px 4px 2px;
+}
+
+.header-app-shadow,
+.footer-app-shadow,
+.header-favorite-shadow {
+  position: absolute;
+}
+.header-app-shadow {
+  top: 48px;
+}
+.footer-app-shadow {
+  height: 57px;
+}
+
+/*----------------------
+Conversation list
+----------------------*/
+.conversationList .enyo-scroller > * {
+  padding-top: 10px;
+  padding-bottom: 5px;
+}
+
+/*----------------------
+Balloons
+----------------------*/
+.chat-balloon {
+  padding: 5px 8px 5px 13px;
+  position: relative;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-flow: row;
+  flex-flow: row;
+  -webkit-align-items: flex-start;
+  align-items: flex-start;
+}
+.chat-balloon-received,
+.chat-balloon-sent,
+.chat-balloon-error,
+.chat-balloon-system {
+  margin: 0 7px 0 58px;
+  padding: 5px 10px 6px;
+  min-height: 36px;
+  font-size: 16px;
+  -webkit-border-radius: 9px;
+  border-radius: 9px;
+  word-wrap: break-word;
+  border: none;
+  position: relative;
+}
+.chat-balloon-received {
+  border: solid 1px #b3d9f2;
+  background-color: #d6edff;
+}
+.chat-balloon-sent {
+  border: solid 1px #d0e1cb;
+  background-color: #dcffd1;
+}
+.chat-balloon-error,
+.chat-balloon-received-error,
+.chat-balloon-system {
+  border: solid 1px #d4d4d4;
+  background-color: #f4f4f4;
+  color: #888888;
+}
+.chat-balloon-system {
+  font-style: italic;
+}
+
+.chat-balloon-received:after,
+.chat-balloon-sent:after,
+.chat-balloon-error:after,
+.chat-balloon-received-error:after {
+  content: "";
+  position: absolute;
+  display: block;
+  top: 18px;
+  width: 8px;
+  height: 14px;
+}
+.chat-balloon-received:after {
+  left: -8px;
+  background: transparent url(../assets/chat-balloon-received-shape.png) no-repeat 0 0;
+}
+.chat-balloon-received-error:after {
+  left: -8px;
+  background: transparent url(../assets/chat-balloon-received-error-shape.png) no-repeat 0 0;
+}
+.chat-balloon-sent:after {
+  right: -8px;
+  background: transparent url(../assets/chat-balloon-sent-shape.png) no-repeat 0 0;
+}
+.chat-balloon-error:after {
+  right: -8px;
+  background: transparent url(../assets/chat-balloon-error-shape.png) no-repeat 0 0;
+}
+
+.conversationContactImage {
+  position: absolute;
+}
+.erroricon {
+  position: absolute;
+  bottom: 5px;
+  right: 4px;
+}
+.message-time {
+  color: #888888;
+  font-size: 12px;
+  padding-top: 4px;
+}
+
+/* Delivery/read receipt for an outgoing message: single check = delivered, double = read. Pinned
+   to the bubble's bottom-right; mutually exclusive with the error icon, so sharing that corner is
+   fine. Scaled by height, width follows the aspect ratio. */
+.message-receipt {
+  position: absolute;
+  bottom: 5px;
+  right: 6px;
+  height: 13px;
+}
+
+/* Sender name atop an incoming group/channel message bubble. */
+.chat-sender-name {
+  color: #2f6fb3;
+  font-size: 12px;
+  font-weight: bold;
+  padding-bottom: 2px;
+}
+
+/* Between runs of messages: who the exchange was with and when, followed by a rule to the edge.
+   Overrides the list-divider colouring from palm-app.less, which is bolder than this needs. */
+.conversationDivider {
+  background: transparent;
+  color: #888888;
+  font-size: 12px;
+  font-weight: normal;
+  margin-left: 16px;
+  padding: 6px 8px 2px 0;
+}
+.conversationDivider:after {
+  background-color: #8ab4d8;
+}
+
+.transport-picker .onyx-menu-item {
+  border: none;
+}
+.transport-picker-phoneLabel {
+  font-size: 12px;
+  display: block;
+  color: #888888;
+}
+.high-priority {
+  color: red;
+}
+
+/*----------------------
+Inline message images
+----------------------*/
+.message-image {
+  display: block;
+  max-width: 100%;
+  max-height: 320px;
+  margin-top: 6px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+}
+/* On old WebKit a touch-drag starting on an <img> triggers the native image-drag gesture, which
+   swallows the move events the scroller needs - so the thread will not scroll while a finger is on
+   an image. Disable native drag (and selection) on conversation imagery. Taps still work. */
+.message-image,
+img.emoji,
+.contact-image {
+  -webkit-user-drag: none;
+  -webkit-user-select: none;
+}
+
+/*----------------------
+Reactions
+----------------------*/
+/* Float the badges over the bubble's bottom-right rather than taking their own line, so they add
+   no row height. The timestamp is bottom-left, so they do not collide. */
+.message-reactions {
+  position: absolute;
+  right: 5px;
+  bottom: 3px;
+  margin: 0;
+  line-height: normal;
+  white-space: nowrap;
+  z-index: 1;
+}
+/* Outgoing bubbles carry the delivery tick in that corner, so shift the badges left of it. */
+.chat-balloon-sent .message-reactions {
+  right: 34px;
+}
+.reaction-badge {
+  display: inline-block;
+  margin: 0 0 0 3px;
+  padding: 0 6px;
+  background-color: #e4e4e4;
+  border: 1px solid rgba(0, 0, 0, 0.16);
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 18px;
+  vertical-align: middle;
+  white-space: nowrap;
+  -webkit-box-shadow: 0 1px 1px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.12);
+}
+.reaction-badge img {
+  height: 16px;
+  width: 16px;
+  vertical-align: middle;
+}
+.reaction-count {
+  margin-left: 3px;
+  font-size: 13px;
+  color: #555;
+  vertical-align: middle;
+}
+/* A reaction I placed - tinted so it is clear it is mine and a tap removes it. */
+.reaction-badge.reaction-mine {
+  background-color: rgba(45, 111, 179, 0.22);
+  border-color: rgba(45, 111, 179, 0.55);
+}
+
+/* Quick reaction picker (short tap / short right-swipe on a message). The stock popup chrome is
+   far too big for an emoji strip, so draw a small pill instead. */
+.reaction-picker-popup {
+  min-width: 0;
+  border-width: 0;
+  -webkit-border-image: none;
+  border-image: none;
+  padding: 2px 6px;
+  background: #e4e4e4;
+  border: 1px solid rgba(0, 0, 0, 0.22);
+  -webkit-border-radius: 9px;
+  border-radius: 9px;
+  -webkit-box-shadow: 0 1px 5px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.35);
+}
+.reaction-row-box {
+  white-space: nowrap;
+}
+.reaction-pick {
+  display: inline-block;
+  padding: 2px 5px;
+  font-size: 20px;
+  line-height: 22px;
+  cursor: pointer;
+  vertical-align: middle;
+}
+.reaction-pick img {
+  height: 20px;
+  width: 20px;
+  vertical-align: middle;
+}
+.reaction-pick.reaction-more {
+  color: #666;
+  font-weight: bold;
+  font-size: 15px;
+  letter-spacing: 1px;
+}
+.reaction-pick.active,
+.reaction-pick:active {
+  background-color: rgba(0, 0, 0, 0.10);
+  -webkit-border-radius: 16px;
+  border-radius: 16px;
+}
+
+/*----------------------
+Inline media attachment chip (tap to open in the associated app)
+----------------------*/
+.msg-attachment {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-flow: row;
+  flex-flow: row;
+  -webkit-align-items: center;
+  align-items: center;
+  max-width: 100%;
+  margin-top: 6px;
+  padding: 7px 12px 7px 7px;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  background-color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+}
+.msg-attachment-icon {
+  -webkit-flex: none;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  margin-right: 10px;
+  border-radius: 6px;
+  background-color: #4a90d9;
+  position: relative;
+}
+/* audio & video: a white play triangle centred in the tile */
+.msg-attachment-audio:after,
+.msg-attachment-video:after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin: -7px 0 0 -5px;
+  border-style: solid;
+  border-width: 7px 0 7px 12px;
+  border-color: transparent transparent transparent #fff;
+}
+/* other files: the paperclip glyph on a neutral tile */
+.msg-attachment-file {
+  background-color: #8f9aa6;
+  background-image: url(../assets/menu-icon-attach.png);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 20px 20px;
+}
+/* documents, contact cards, locations and events: the file-type icon on a transparent tile */
+.msg-attachment-pdf,
+.msg-attachment-doc,
+.msg-attachment-xls,
+.msg-attachment-ppt,
+.msg-attachment-contact,
+.msg-attachment-location,
+.msg-attachment-event {
+  background-color: transparent;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+.msg-attachment-pdf      { background-image: url(../assets/attach-pdf.png); }
+.msg-attachment-doc      { background-image: url(../assets/attach-doc.png); }
+.msg-attachment-xls      { background-image: url(../assets/attach-xls.png); }
+.msg-attachment-ppt      { background-image: url(../assets/attach-ppt.png); }
+.msg-attachment-contact  { background-image: url(../assets/attach-contact.png); }
+.msg-attachment-location { background-image: url(../assets/attach-location.png); }
+.msg-attachment-event    { background-image: url(../assets/attach-event.png); }
+
+.msg-attachment-name {
+  -webkit-flex: 1;
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 15px;
+  color: #234766;
+}
+
+/*----------------------
+Polls
+----------------------*/
+.msg-poll {
+  max-width: 100%;
+  margin-top: 6px;
+  padding: 10px 12px;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  background-color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+}
+.msg-poll-question {
+  font-weight: bold;
+  font-size: 15px;
+  color: #234766;
+  margin-bottom: 6px;
+}
+.msg-poll-option {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+  padding: 6px 4px;
+  margin: 0 -4px;
+  font-size: 14px;
+  color: #234766;
+  border-radius: 6px;
+}
+.msg-poll-option input {
+  margin-right: 8px;
+  /* Native inputs render tiny on old WebKit; a larger tap target beats a custom-drawn control. */
+  width: 18px;
+  height: 18px;
+  /* A tap landing on the input would ALSO fire the browser's native label/input toggle, racing
+     with Enyo's tap gesture. The native toggle flips .checked but never records the vote, so the
+     next re-render silently reverts it - looking like "the tap did not stick". Route every tap
+     through the label so togglePollOption is the only thing that sets .checked. */
+  pointer-events: none;
+}
+.msg-poll-option-checked {
+  background-color: rgba(74, 144, 217, 0.12);
+}
+.msg-poll-footer {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #8f9aa6;
+}
+
+/*----------------------
+Inline video player
+----------------------*/
+.msg-video-player {
+  position: relative;
+  display: inline-block;
+  margin-top: 6px;
+  max-width: 100%;
+  /* border-radius on the <video> does not clip the poster on old WebKit, so clip at the container. */
+  border-radius: 8px;
+  overflow: hidden;
+}
+.msg-video {
+  display: block;
+  width: 260px;
+  max-width: 100%;
+  /* FIXED height, not max-height: this is a virtual list, and a row whose height changes late -
+     when the video's metadata loads - makes the list re-lay-out and snap back to the video,
+     blocking scrolling past it. A fixed box keeps the row height deterministic. */
+  height: 180px;
+  border-radius: 8px;
+  background: #000;
+}
+.msg-video-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 56px;
+  height: 56px;
+  margin: -28px 0 0 -28px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.45) url(../assets/mini-player-icon-play.png) center center no-repeat;
+  -webkit-background-size: 40px 40px;
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+.msg-video-player.playing .msg-video-btn {
+  display: none;
+}
+/* Tapped-open full-viewport overlay (native WebKit video fullscreen is not usable here). */
+.msg-video-player.fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  background: #000;
+  border-radius: 0;
+  z-index: 9999;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-justify-content: center;
+  justify-content: center;
+  -webkit-align-items: center;
+  align-items: center;
+}
+.msg-video-player.fullscreen .msg-video {
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+}
+.msg-video-close {
+  display: none;
+}
+.msg-video-player.fullscreen .msg-video-close {
+  display: block;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 10000;
+}
+.msg-video-close:before,
+.msg-video-close:after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 22px;
+  height: 3px;
+  margin: -1px 0 0 -11px;
+  background: #fff;
+}
+.msg-video-close:before { -webkit-transform: rotate(45deg); transform: rotate(45deg); }
+.msg-video-close:after  { -webkit-transform: rotate(-45deg); transform: rotate(-45deg); }
+
+/*----------------------
+Inline voice-note player
+----------------------*/
+audio.msg-audio {
+  display: none;
+}
+.msg-audio-player {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-flow: row;
+  flex-flow: row;
+  -webkit-align-items: center;
+  align-items: center;
+  max-width: 100%;
+  margin-top: 6px;
+  padding: 6px 12px 6px 6px;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  background-color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+}
+.msg-audio-btn {
+  -webkit-flex: none;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  margin-right: 10px;
+  background: url(../assets/mini-player-icon-play.png) center center no-repeat;
+  -webkit-background-size: 30px 30px;
+  background-size: 30px 30px;
+}
+.msg-audio-btn.playing {
+  background-image: url(../assets/mini-player-icon-pause.png);
+}
+.msg-audio-body {
+  -webkit-flex: 1;
+  flex: 1;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-flow: column;
+  flex-flow: column;
+  -webkit-justify-content: center;
+  justify-content: center;
+  min-width: 120px;
+}
+.msg-audio-track {
+  position: relative;
+  height: 5px;
+  border-radius: 3px;
+  background-color: rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+.msg-audio-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 0%;
+  background-color: #4a90d9;
+}
+.msg-audio-time {
+  margin-top: 3px;
+  font-size: 12px;
+  color: #888888;
+}
+
+/*----------------------
+Inline emoji
+----------------------*/
+/* Sized to sit on the text baseline like a glyph, never picking up .message-image's block styling. */
+img.emoji {
+  display: inline-block;
+  width: 1.2em;
+  height: 1.2em;
+  vertical-align: -0.2em;
+  margin: 0 0.02em;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  max-height: none;
+}
+
+/*----------------------
+Replies
+----------------------*/
+/* Quote bar shown above the composer while replying to a message. */
+.reply-bar {
+  padding: 4px 8px 4px 6px;
+  background-color: #e8e8e8;
+  border-top: 1px solid #cfcfcf;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-flow: row;
+  flex-flow: row;
+  -webkit-align-items: center;
+  align-items: center;
+}
+.reply-bar-accent {
+  width: 3px;
+  min-width: 3px;
+  height: 28px;
+  background-color: #2f6fb3;
+  margin-right: 7px;
+  -webkit-border-radius: 2px;
+  border-radius: 2px;
+}
+.reply-bar-text {
+  font-size: 13px;
+  color: #444444;
+  line-height: 16px;
+  max-height: 32px;
+  overflow: hidden;
+  -webkit-flex: 1;
+  flex: 1;
+}
+.reply-bar-close {
+  margin-left: 4px;
+}
+
+/* Inline quoted-original card at the top of a reply bubble; mirrors the composer's reply bar. */
+.reply-quote {
+  display: block;
+  margin: 0 0 4px 0;
+  padding: 2px 6px;
+  border-left: 3px solid #2f6fb3;
+  background-color: rgba(0, 0, 0, 0.06);
+  -webkit-border-radius: 2px;
+  border-radius: 2px;
+  max-height: 48px;
+  overflow: hidden;
+}
+.reply-quote-from {
+  display: block;
+  font-size: 12px;
+  font-weight: bold;
+  color: #2f6fb3;
+  line-height: 15px;
+}
+.reply-quote-text {
+  display: block;
+  font-size: 13px;
+  color: #444444;
+  line-height: 16px;
+  white-space: normal;
+}
