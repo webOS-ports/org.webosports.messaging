@@ -9,6 +9,7 @@
 var kind = require('enyo/kind'),
     Component = require('enyo/Component'),
     LunaService = require('enyo-webos/LunaService'),
+    cancelRequests = require('../util/cancelRequests'),
     mockDb = require('./mockDb');
 
 var DB_SERVICE = 'luna://com.webos.service.db';
@@ -50,7 +51,7 @@ module.exports = kind({
             }, 0);
             return;
         }
-        this.$.prefsGetter.cancel();
+        cancelRequests(this.$.prefsGetter);
         this.$.prefsGetter.send({ query: query, watch: true });
     },
 

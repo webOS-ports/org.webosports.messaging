@@ -6,6 +6,7 @@
 var kind = require('enyo/kind'),
     Component = require('enyo/Component'),
     LunaService = require('enyo-webos/LunaService'),
+    cancelRequests = require('../util/cancelRequests'),
     messagingUtils = require('../util/messagingUtils'),
     mockDb = require('./mockDb');
 
@@ -38,12 +39,12 @@ module.exports = kind({
             }, 0);
             return;
         }
-        this.$.messages.cancel();
+        cancelRequests(this.$.messages);
         this.$.messages.send({ query: query, watch: true });
     },
 
     cancel: function () {
-        this.$.messages.cancel();
+        cancelRequests(this.$.messages);
     },
 
     gotMessages: function (inSender, inResponse) {

@@ -16,6 +16,7 @@
 var kind = require('enyo/kind'),
     Component = require('enyo/Component'),
     LunaService = require('enyo-webos/LunaService'),
+    cancelRequests = require('../util/cancelRequests'),
     messagingUtils = require('../util/messagingUtils'),
     appState = require('../util/appState'),
     mockDb = require('./mockDb'),
@@ -63,8 +64,8 @@ module.exports = kind({
     },
 
     destroy: function () {
-        this.$.messageWatch.cancel();
-        this.$.inviteWatch.cancel();
+        cancelRequests(this.$.messageWatch);
+        cancelRequests(this.$.inviteWatch);
         this.inherited(arguments);
     },
 
@@ -138,7 +139,7 @@ module.exports = kind({
     // --- incoming messages ---------------------------------------------------------------------
 
     watchMessages: function () {
-        this.$.messageWatch.cancel();
+        cancelRequests(this.$.messageWatch);
         this.$.messageWatch.send({
             query: {
                 from: messagingUtils.message.dbKind,
@@ -212,7 +213,7 @@ module.exports = kind({
     // --- buddy invitations -----------------------------------------------------------------------
 
     watchInvites: function () {
-        this.$.inviteWatch.cancel();
+        cancelRequests(this.$.inviteWatch);
         this.$.inviteWatch.send({
             query: {
                 from: "com.palm.iminvitation:1",

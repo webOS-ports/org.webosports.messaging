@@ -17,6 +17,7 @@
 var kind = require('enyo/kind'),
     Component = require('enyo/Component'),
     LunaService = require('enyo-webos/LunaService'),
+    cancelRequests = require('../util/cancelRequests'),
     messagingUtils = require('../util/messagingUtils'),
     mockDb = require('./mockDb');
 
@@ -53,12 +54,12 @@ var SubscribedFind = kind({
             }, 0);
             return;
         }
-        this.$.find.cancel();
+        cancelRequests(this.$.find);
         this.$.find.send({ query: query, watch: true });
     },
 
     cancel: function () {
-        this.$.find.cancel();
+        cancelRequests(this.$.find);
     },
 
     gotResults: function (inSender, inResponse) {

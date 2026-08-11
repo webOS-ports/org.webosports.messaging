@@ -15,6 +15,7 @@ var kind = require('enyo/kind'),
     RadioGroup = require('onyx/RadioGroup'),
     Button = require('onyx/Button'),
     LunaService = require('enyo-webos/LunaService'),
+    cancelRequests = require('../util/cancelRequests'),
     ImStatus = require('./ImStatus'),
     ThreadList = require('./ThreadList'),
     BuddyList = require('./BuddyList'),
@@ -249,7 +250,7 @@ module.exports = kind({
             this.threadFound(null, mockDb.find(query));
             return;
         }
-        this.$.findThread.cancel();
+        cancelRequests(this.$.findThread);
         this.$.findThread.send({ query: query });
     },
 

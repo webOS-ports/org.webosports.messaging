@@ -10,6 +10,7 @@
 var kind = require('enyo/kind'),
     Component = require('enyo/Component'),
     LunaService = require('enyo-webos/LunaService'),
+    cancelRequests = require('../util/cancelRequests'),
     messagingUtils = require('../util/messagingUtils'),
     mockDb = require('./mockDb');
 
@@ -62,7 +63,7 @@ module.exports = kind({
             }, 0);
             return;
         }
-        this.$[lunaName].cancel();
+        cancelRequests(this.$[lunaName]);
         this.$[lunaName].send(params);
     },
 
@@ -83,10 +84,10 @@ module.exports = kind({
     },
 
     cancel: function () {
-        this.$.threads.cancel();
-        this.$.threadsSearch.cancel();
-        this.$.people.cancel();
-        this.$.status.cancel();
+        cancelRequests(this.$.threads);
+        cancelRequests(this.$.threadsSearch);
+        cancelRequests(this.$.people);
+        cancelRequests(this.$.status);
     },
 
     fail: function (inSender, inResponse) {

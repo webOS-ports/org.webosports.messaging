@@ -10,6 +10,7 @@
 var kind = require('enyo/kind'),
     Component = require('enyo/Component'),
     LunaService = require('enyo-webos/LunaService'),
+    cancelRequests = require('../util/cancelRequests'),
     messagingUtils = require('../util/messagingUtils'),
     mockDb = require('./mockDb');
 
@@ -39,12 +40,12 @@ var LoginStateFinder = kind({
             }, 0);
             return;
         }
-        this.$.finder.cancel();
+        cancelRequests(this.$.finder);
         this.$.finder.send({ query: query, watch: true });
     },
 
     cancel: function () {
-        this.$.finder.cancel();
+        cancelRequests(this.$.finder);
     },
 
     gotResults: function (inSender, inResponse) {
