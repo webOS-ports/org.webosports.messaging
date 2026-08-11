@@ -293,9 +293,14 @@ var messaging = module.exports = {
         _scriptsRe: new RegExp("<script[^>]*>([\\S\\s]*?)<\/script>", "gim"),
         _tagsRe: new RegExp(/<\w+(\s+("[^"]*"|'[^']*'|[^>])+)?>|<\/\w+>/gi),
 
+        /**
+         * Strip tags without escaping the result, unlike the framework helper this replaces.
+         * Coerces first: display names and status text reach this straight off db records, which
+         * are not guaranteed to hold strings.
+         */
         removeHtml: function (inHtml) {
             if (!inHtml) { return inHtml; }
-            return inHtml.replace(messaging.message._scriptsRe, "")
+            return String(inHtml).replace(messaging.message._scriptsRe, "")
                 .replace(messaging.message._tagsRe, "");
         },
 
@@ -311,7 +316,8 @@ var messaging = module.exports = {
         },
 
         unescapeText: function (inText) {
-            return inText && inText.replace(/&amp;/g, '&').replace(/&lt;/g, '<')
+            if (!inText) { return inText; }
+            return String(inText).replace(/&amp;/g, '&').replace(/&lt;/g, '<')
                 .replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'");
         },
 
@@ -371,7 +377,7 @@ var messaging = module.exports = {
         decodeNumericEntities: function (text) {
             if (!text) { return text; }
             var m = messaging.message;
-            return text.replace(/&#(?:x([0-9a-fA-F]+)|(\d+));/g, function (ent, hex, dec) {
+            return String(text).replace(/&#(?:x([0-9a-fA-F]+)|(\d+));/g, function (ent, hex, dec) {
                 var cp = hex ? parseInt(hex, 16) : parseInt(dec, 10);
                 if (cp >= 0x2000 && cp <= 0x1FFFFF) {
                     try { return m._fromCodePoint(cp); } catch (e) { return ent; }
