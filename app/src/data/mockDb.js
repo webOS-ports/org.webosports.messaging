@@ -195,7 +195,10 @@ var messages = [
         folder: "inbox", messageText: "Perfect &#128512;",
         localTimestamp: ago(0, 2), timestamp: ago(0, 2), status: "successful",
         serviceName: "type_telegram", from: { addr: "anna.k", name: "Anna Kowalski" },
-        replyTo: { from: "You", text: "Yes — 14:30 at the north entrance" },
+        // The field names the transports actually stamp on a reply (see ConversationItem.buildQuote).
+        quotedFrom: "You",
+        quotedText: "Yes — 14:30 at the north entrance",
+        quotedMessageId: "msg-a2",
         reactions: [{ emoji: "&#128077;", count: 2, mine: true }],
         flags: { visible: true, read: false }
     },

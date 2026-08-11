@@ -20,5 +20,12 @@ ready(function () {
         //enyo.store.addSources({db8: "db8SourceMock"});
     }
     new LunaSource({name: 'lunaSource'});
-    new MessagingApp({name: "app"});
+    var app = new MessagingApp({name: "app"});
+
+    if (!window.PalmSystem) {
+        // The packed bundle scopes every module, so there is otherwise no way to reach the running
+        // app from the console. Expose it when developing in a browser (see the debugging notes in
+        // README.md); on device this stays off.
+        window.app = app;
+    }
 });
