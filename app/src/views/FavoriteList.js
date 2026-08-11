@@ -11,7 +11,7 @@ var kind = require('enyo/kind'),
     DataList = require('enyo/DataList'),
     Collection = require('enyo/Collection'),
     LunaService = require('enyo-webos/LunaService'),
-    FavoriteItem = require('./FavoriteItem'),
+    FavoriteRow = require('./FavoriteRow'),
     FavoriteService = require('../data/FavoriteService'),
     messagingUtils = require('../util/messagingUtils'),
     mockDb = require('../data/mockDb'),
@@ -37,18 +37,9 @@ module.exports = kind({
         {
             name: "list", kind: DataList, fit: true, classes: "threads-list messaging-listsDivider",
             scrollerOptions: { horizontal: "hidden", touch: true },
+            ontap: "favoriteTapped", onConfirm: "removeFavorite",
             components: [
-                {
-                    components: [
-                        {
-                            name: "favoriteItem", kind: FavoriteItem,
-                            ontap: "favoriteTapped", onConfirm: "removeFavorite"
-                        }
-                    ],
-                    bindings: [
-                        { from: ".model", to: ".$.favoriteItem.record", transform: "setupRow" }
-                    ]
-                }
+                { kind: FavoriteRow }
             ]
         },
         {
@@ -111,24 +102,20 @@ module.exports = kind({
     gotFavorites: function (inSender, inEvent) {
         var results = (inEvent && inEvent.results) || [];
         this.collection.empty(results);
+        if (this.selectedRecord) {
+            this.markSelected(this.selectedRecord._id);
+        }
         this.$.noFavoriteMessage.setShowing(results.length === 0);
         return true;
     },
 
     // --- rendering -----------------------------------------------------------------------
 
-    setupRow: function (model, dir, bind) {
-        if (!model) {
-            return null;
-        }
-        var record = model.attributes;
-        var list = this.owner;
-
-        this.$.favoriteItem.addRemoveClass("enyo-item-selected",
-            !!(list.selectedRecord && record._id === list.selectedRecord._id));
-        this.$.favoriteItem.set("index", this.index);
-
-        return record;
+    /** Selection rides on the models so the rows restyle themselves through their bindings. */
+    markSelected: function (personId) {
+        this.collection.forEach(function (model) {
+            model.set('selected', model.attributes._id === personId);
+        });
     },
 
     // --- interaction ---------------------------------------------------------------------
@@ -147,7 +134,7 @@ module.exports = kind({
 
         if (messagingUtils.person.hasMessagingAccounts(selected)) {
             this.selectedRecord = selected;
-            this.$.list.refresh();
+            this.markSelected(selected._id);
             this.doSelectFavorite({
                 favorite: {
                     personId: selected._id,
@@ -158,7 +145,7 @@ module.exports = kind({
             });
         } else if (messagingUtils.person.hasSMSAccounts(selected)) {
             this.selectedRecord = selected;
-            this.$.list.refresh();
+            this.markSelected(selected._id);
             this.doSelectFavorite({
                 favorite: {
                     personId: selected._id,
@@ -203,7 +190,7 @@ module.exports = kind({
             return;   // selection did not change
         }
         this.selectedRecord = { _id: inChatThread ? inChatThread.personId : null };
-        this.$.list.refresh();
+        this.markSelected(this.selectedRecord._id);
     },
 
     updateList: function () {

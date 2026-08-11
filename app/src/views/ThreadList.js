@@ -13,12 +13,10 @@ var kind = require('enyo/kind'),
     Collection = require('enyo/Collection'),
     Control = require('enyo/Control'),
     LunaService = require('enyo-webos/LunaService'),
-    ThreadItem = require('./ThreadItem'),
-    Divider = require('./widgets/Divider'),
+    ThreadRow = require('./ThreadRow'),
     SearchInput = require('./widgets/SearchInput'),
     ThreadService = require('../data/ThreadService'),
     mockDb = require('../data/mockDb'),
-    BucketDateFormatter = require('../util/BucketDateFormatter'),
     messagingUtils = require('../util/messagingUtils'),
     appState = require('../util/appState'),
     $L = require('enyo/i18n').$L;
@@ -41,19 +39,11 @@ module.exports = kind({
         {
             name: "list", kind: DataList, fit: true, classes: "threads-list messaging-listsDivider",
             scrollerOptions: { horizontal: "hidden", touch: true },
+            // Handlers live on the list, not on the row: events bubble up from the row and
+            // RepeaterChildSupport decorates them with the model and index they came from.
+            ontap: "selectThread", onConfirm: "swipeDelete",
             components: [
-                {
-                    components: [
-                        { name: "divider", kind: Divider, classes: "threadList-Divider", showing: false },
-                        {
-                            name: "threadItem", kind: ThreadItem,
-                            ontap: "selectThread", onConfirm: "swipeDelete"
-                        }
-                    ],
-                    bindings: [
-                        { from: ".model", to: ".$.threadItem.record", transform: "setupRow" }
-                    ]
-                }
+                { kind: ThreadRow }
             ]
         },
         {
@@ -145,6 +135,9 @@ module.exports = kind({
         }
 
         this.collection.empty(results);
+        if (this.selectedRecord) {
+            this.markSelected(this.selectedRecord._id);
+        }
         this.updateEmptyMessage(results);
         this.reportUnreadCount(results);
         return true;
@@ -200,38 +193,18 @@ module.exports = kind({
     // --- rendering -----------------------------------------------------------------------
 
     /**
-     * Row binding transform: sets up this row's date divider from the previous row's bucket, marks
-     * the selection, and hands the raw record to the ThreadItem.
+     * Selection rides on the models rather than being applied row by row, so the rows restyle
+     * themselves through their bindings and nothing has to reach into the repeater's children.
      */
-    setupRow: function (model, dir, bind) {
-        if (!model) {
-            return null;
-        }
-        var record = model.attributes;
-        var collection = this.repeater && this.repeater.collection;
-
-        var caption = BucketDateFormatter.getDateBucket(new Date(record.timestamp));
-        var previous = collection && this.index > 0 && collection.at(this.index - 1);
-        var previousCaption = previous &&
-            BucketDateFormatter.getDateBucket(new Date(previous.attributes.timestamp));
-        var showDivider = caption !== previousCaption;
-
-        this.$.divider.setCaption(caption);
-        this.$.divider.setShowing(showDivider);
-        this.$.threadItem.addRemoveClass("enyo-first", showDivider);
-
-        var list = this.owner;
-        var selected = list && list.selectedRecord;
-        this.$.threadItem.addRemoveClass("enyo-item-selected",
-            !!(selected && selected._id === record._id));
-        this.$.threadItem.set("index", this.index);
-
-        return record;
+    markSelected: function (threadId) {
+        this.collection.forEach(function (model) {
+            model.set('selected', model.attributes._id === threadId);
+        });
     },
 
     // --- interaction ---------------------------------------------------------------------
 
-    /** DataList decorates its own events with `model`; our row events only carry an index. */
+    /** RepeaterChildSupport decorates every event bubbled out of a row with its model and index. */
     recordFor: function (inEvent) {
         var model = (inEvent && inEvent.model) ||
             (inEvent && inEvent.index !== undefined && this.collection.at(inEvent.index));
@@ -247,7 +220,7 @@ module.exports = kind({
             return true;   // tap on the already-selected row: nothing to do
         }
         this.selectedRecord = record;
-        this.$.list.refresh();
+        this.markSelected(record._id);
         this.doSelectThread({ thread: record });
         return true;
     },
@@ -276,7 +249,7 @@ module.exports = kind({
             return;   // selection did not change
         }
         this.selectedRecord = inChatThread;
-        this.$.list.refresh();
+        this.markSelected(inChatThread && inChatThread._id);
     },
 
     updateList: function () {

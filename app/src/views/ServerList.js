@@ -15,7 +15,7 @@ var kind = require('enyo/kind'),
     CardArranger = require('layout/CardArranger'),
     DataList = require('enyo/DataList'),
     Collection = require('enyo/Collection'),
-    ServerItem = require('./ServerItem'),
+    ServerRow = require('./ServerRow'),
     ChannelList = require('./ChannelList'),
     SearchInput = require('./widgets/SearchInput'),
     ServerServices = require('../data/ServerService'),
@@ -47,15 +47,9 @@ module.exports = kind({
                             name: "list", kind: DataList, fit: true,
                             classes: "threads-list messaging-listsDivider",
                             scrollerOptions: { horizontal: "hidden", touch: true },
+                            ontap: "selectServer",
                             components: [
-                                {
-                                    components: [
-                                        { name: "serverItem", kind: ServerItem, ontap: "selectServer" }
-                                    ],
-                                    bindings: [
-                                        { from: ".model", to: ".$.serverItem.record", transform: "setupRow" }
-                                    ]
-                                }
+                                { kind: ServerRow }
                             ]
                         }
                     ]
@@ -169,6 +163,7 @@ module.exports = kind({
         }
 
         this.collection.empty(results);
+        this.decorateModels();
         if (results.length === 0) {
             this.$.emptyMessage.setContent(this.filterString ?
                 $L("No servers match your search.") :
@@ -216,32 +211,26 @@ module.exports = kind({
         }
         this.serverUnread = map;
         this.serverLatest = latest;
-        this.$.list.refresh();
+        this.decorateModels();
         return true;
     },
 
     // --- rendering -----------------------------------------------------------------------
 
-    setupRow: function (model, dir, bind) {
-        if (!model) {
-            return null;
-        }
-        var record = model.attributes;
-        var list = this.owner;
-
-        this.$.serverItem.setServer(record);
-        this.$.serverItem.setUnread(list.serverUnread[record._id] || 0);
-
-        var avail = list.accountAvail[record.serviceName];
-        this.$.serverItem.setStatus(avail === undefined ? null : avail);
-
-        var latest = list.serverLatest[record._id];
-        this.$.serverItem.setOutgoing(latest ? latest.outgoing : false);
-
-        this.$.serverItem.addRemoveClass("enyo-item-selected",
-            !!(list.selectedServer && list.selectedServer._id === record._id));
-
-        return record;
+    /**
+     * Unread, availability and last-activity direction are not on the imserver record, so stamp
+     * the derived values onto the models; the rows pick them up through their bindings.
+     */
+    decorateModels: function () {
+        var list = this;
+        this.collection.forEach(function (model) {
+            var id = model.attributes._id;
+            var latest = list.serverLatest[id];
+            model.set('unread', list.serverUnread[id] || 0);
+            model.set('availability', list.accountAvail[model.attributes.serviceName]);
+            model.set('outgoing', latest ? latest.outgoing : false);
+            model.set('selected', !!(list.selectedServer && list.selectedServer._id === id));
+        });
     },
 
     // --- interaction ---------------------------------------------------------------------
@@ -258,7 +247,7 @@ module.exports = kind({
             return true;
         }
         this.selectedServer = record;
-        this.$.list.refresh();
+        this.decorateModels();
         this.$.channelsView.setServer(record);
         this.$.drill.setIndex(1);
         this.setDrilled(true);
@@ -286,7 +275,7 @@ module.exports = kind({
 
     /** Re-render visible rows without re-querying, e.g. once the account-types hash fills in. */
     refreshRows: function () {
-        this.$.list.refresh();
+        this.decorateModels();
         this.$.channelsView.refreshRows();
     },
 

@@ -13,8 +13,7 @@ var kind = require('enyo/kind'),
     Collection = require('enyo/Collection'),
     Popup = require('onyx/Popup'),
     Button = require('onyx/Button'),
-    BuddyItem = require('./BuddyItem'),
-    Divider = require('./widgets/Divider'),
+    BuddyRow = require('./BuddyRow'),
     SearchInput = require('./widgets/SearchInput'),
     BuddyService = require('../data/BuddyService'),
     DeleteBuddyService = require('../data/DeleteBuddyService'),
@@ -51,19 +50,9 @@ module.exports = kind({
         {
             name: "list", kind: DataList, fit: true, classes: "threads-list messaging-listsDivider",
             scrollerOptions: { horizontal: "hidden", touch: true },
+            ontap: "buddyTapped", onConfirm: "showDeleteConfirmDialog",
             components: [
-                {
-                    components: [
-                        { name: "divider", kind: Divider, classes: "buddyList-Divider", showing: false },
-                        {
-                            name: "buddyItem", kind: BuddyItem,
-                            ontap: "buddyTapped", onConfirm: "showDeleteConfirmDialog"
-                        }
-                    ],
-                    bindings: [
-                        { from: ".model", to: ".$.buddyItem.record", transform: "setupRow" }
-                    ]
-                }
+                { kind: BuddyRow }
             ]
         },
         {
@@ -179,6 +168,9 @@ module.exports = kind({
         });
 
         this.collection.empty(results);
+        if (this.selectedRecord) {
+            this.markSelected(this.selectedRecord.personId);
+        }
         this.emptyMessageCheck(results, this.loginStates, this.filterString, this.showOffline);
         return true;
     },
@@ -230,35 +222,12 @@ module.exports = kind({
 
     // --- rendering -----------------------------------------------------------------------
 
-    setupRow: function (model, dir, bind) {
-        if (!model) {
-            return null;
-        }
-        var record = model.attributes;
-        var list = this.owner;
-        var collection = this.repeater && this.repeater.collection;
-
-        if (!list.filterString || list.filterString.length === 0) {
-            var offlineCaption = $L("offline");
-            var caption = record.offline ? offlineCaption : (record.group || offlineCaption);
-            var previous = collection && this.index > 0 && collection.at(this.index - 1);
-            var previousCaption = previous &&
-                (previous.attributes.offline ? offlineCaption :
-                    (previous.attributes.group || offlineCaption));
-            var showDivider = caption !== previousCaption;
-
-            this.$.divider.setCaption(String(caption).toUpperCase());
-            this.$.divider.setShowing(showDivider);
-            this.$.buddyItem.addRemoveClass("enyo-first", showDivider);
-        } else {
-            this.$.divider.setShowing(false);
-        }
-
-        this.$.buddyItem.addRemoveClass("enyo-item-selected",
-            list.shouldHighlight(record, list.selectedRecord));
-        this.$.buddyItem.set("index", this.index);
-
-        return record;
+    /** Selection rides on the models so the rows restyle themselves through their bindings. */
+    markSelected: function (personId) {
+        var list = this;
+        this.collection.forEach(function (model) {
+            model.set('selected', list.shouldHighlight(model.attributes, { personId: personId }));
+        });
     },
 
     shouldHighlight: function (inBuddy, selectedRecord) {
@@ -299,7 +268,7 @@ module.exports = kind({
         }
         this.selectedRecord = record;
         this.doSelectBuddy({ buddy: record });
-        this.$.list.refresh();
+        this.markSelected(record.personId);
         return true;
     },
 
@@ -341,7 +310,7 @@ module.exports = kind({
             return;   // selection did not change
         }
         this.selectedRecord = { personId: inChatThread ? inChatThread.personId : null };
-        this.$.list.refresh();
+        this.markSelected(this.selectedRecord.personId);
     },
 
     setLoginStates: function (states) {

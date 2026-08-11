@@ -23,8 +23,7 @@ var kind = require('enyo/kind'),
     Image = require('enyo/Image'),
     Scroller = require('enyo/Scroller'),
     LunaService = require('enyo-webos/LunaService'),
-    ConversationItem = require('./ConversationItem'),
-    Divider = require('./widgets/Divider'),
+    ConversationRow = require('./ConversationRow'),
     ConversationService = require('../data/ConversationService'),
     transportPicker = require('../util/transportPicker'),
     messagingUtils = require('../util/messagingUtils'),
@@ -99,22 +98,12 @@ module.exports = kind({
         {
             name: "list", kind: DataList, fit: true,
             scrollerOptions: { horizontal: "hidden", touch: true },
+            // Handlers sit on the list; row events arrive decorated with their model and index.
+            ontap: "handleMessageTap", onConfirm: "swipeDelete", onReact: "handleReactSwipe",
+            onError: "showErrorDialog", onSelectSender: "senderRowSelected",
+            onOpenAttachment: "openAttachment", onInviteResponse: "respondToInvite",
             components: [
-                {
-                    components: [
-                        { name: "divider", kind: Divider, classes: "conversationDivider", showing: false },
-                        {
-                            name: "conversationItem", kind: ConversationItem,
-                            onConfirm: "swipeDelete", ontap: "handleMessageTap",
-                            onReact: "handleReactSwipe", onError: "showErrorDialog",
-                            onSelectSender: "senderRowSelected", onOpenAttachment: "openAttachment",
-                            onInviteResponse: "respondToInvite"
-                        }
-                    ],
-                    bindings: [
-                        { from: ".model", to: ".$.conversationItem.message", transform: "setupRow" }
-                    ]
-                }
+                { kind: ConversationRow }
             ]
         },
         { classes: "footer-shadow" },
@@ -508,25 +497,6 @@ module.exports = kind({
     },
 
     // --- rendering -----------------------------------------------------------------------
-
-    setupRow: function (model, dir, bind) {
-        if (!model) {
-            return null;
-        }
-        var record = model.attributes;
-        var list = this.owner;
-        var collection = this.repeater && this.repeater.collection;
-
-        var previous = collection && this.index > 0 && collection.at(this.index - 1);
-        var caption = list.getDividerCaption(record);
-        var previousCaption = previous && list.getDividerCaption(previous.attributes);
-
-        this.$.divider.setCaption(caption);
-        this.$.divider.setShowing(caption !== previousCaption);
-        this.$.conversationItem.set("index", this.index);
-
-        return record;
-    },
 
     /**
      * The divider carries who the message was with and when, and repeats whenever any of those

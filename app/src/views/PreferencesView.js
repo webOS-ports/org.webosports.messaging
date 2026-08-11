@@ -283,12 +283,15 @@ module.exports = kind({
         if (!account) {
             return true;
         }
+        // Repeater rows are reached through the event's item, not this.$: the row controls belong
+        // to the repeated instance, so this.$ only ever holds the prototype row.
+        var row = inEvent.item.$;
         var accountService = appState.accountService;
         var icon = accountService && accountService.getIconPath(account.serviceName);
 
-        this.$.accountIcon.setSrc(icon || "assets/messaging-48x48.png");
-        this.$.accountName.setContent(account.loc_name || account.alias || "");
-        this.$.accountUser.setContent(account.username || "");
+        row.accountIcon.setSrc(icon || "assets/messaging-48x48.png");
+        row.accountName.setContent(account.loc_name || account.alias || "");
+        row.accountUser.setContent(account.username || "");
         return true;
     },
 

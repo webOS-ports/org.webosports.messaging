@@ -13,7 +13,7 @@ var kind = require('enyo/kind'),
     DataList = require('enyo/DataList'),
     Collection = require('enyo/Collection'),
     LunaService = require('enyo-webos/LunaService'),
-    ChannelItem = require('./ChannelItem'),
+    ChannelRow = require('./ChannelRow'),
     SearchInput = require('./widgets/SearchInput'),
     ServerServices = require('../data/ServerService'),
     messagingUtils = require('../util/messagingUtils'),
@@ -41,15 +41,9 @@ module.exports = kind({
         {
             name: "list", kind: DataList, fit: true, classes: "threads-list messaging-listsDivider",
             scrollerOptions: { horizontal: "hidden", touch: true },
+            ontap: "selectChannel",
             components: [
-                {
-                    components: [
-                        { name: "channelItem", kind: ChannelItem, ontap: "selectChannel" }
-                    ],
-                    bindings: [
-                        { from: ".model", to: ".$.channelItem.record", transform: "setupRow" }
-                    ]
-                }
+                { kind: ChannelRow }
             ]
         },
         {
@@ -143,7 +137,7 @@ module.exports = kind({
         }
         this.channelUnread = byChannel;
         this.threadUnread = byThread;
-        this.$.list.refresh();
+        this.decorateModels();
         return true;
     },
 
@@ -210,6 +204,7 @@ module.exports = kind({
         }
 
         this.collection.empty(results);
+        this.decorateModels();
         if (results.length === 0) {
             this.$.emptyMessage.setContent(this.filterString ?
                 $L("No channels match your search.") : $L("No channels yet."));
@@ -221,26 +216,19 @@ module.exports = kind({
 
     // --- rendering -----------------------------------------------------------------------
 
-    setupRow: function (model, dir, bind) {
-        if (!model) {
-            return null;
-        }
-        var record = model.attributes;
-        var list = this.owner;
-
-        var selected = (list.selectedRecord && list.selectedRecord._id === record._id) ||
-            (list.selectedChatThread && record.chatThreadId &&
-                list.selectedChatThread._id === record.chatThreadId);
-
-        // The open channel is being read, so suppress its badge, as ThreadItem does for its row.
-        var unread = selected ? 0 :
-            (list.channelUnread[record._id] ||
-             (record.chatThreadId && list.threadUnread[record.chatThreadId]) || 0);
-
-        this.$.channelItem.setUnread(unread);
-        this.$.channelItem.addRemoveClass("enyo-item-selected", !!selected);
-
-        return record;
+    /** Unread lives on the chatthreads, so stamp the derived value onto the channel models. */
+    decorateModels: function () {
+        var list = this;
+        this.collection.forEach(function (model) {
+            var record = model.attributes;
+            var selected = (list.selectedRecord && list.selectedRecord._id === record._id) ||
+                !!(list.selectedChatThread && record.chatThreadId &&
+                    list.selectedChatThread._id === record.chatThreadId);
+            var unread = list.channelUnread[record._id] ||
+                (record.chatThreadId && list.threadUnread[record.chatThreadId]) || 0;
+            model.set('unread', unread);
+            model.set('selected', selected);
+        });
     },
 
     // --- interaction ---------------------------------------------------------------------
@@ -257,7 +245,7 @@ module.exports = kind({
             return true;
         }
         this.selectedRecord = record;
-        this.$.list.refresh();
+        this.decorateModels();
 
         // Join-on-open: fetch this channel's history via the transport. Idempotent if already joined.
         if (record.serviceName && record.remoteId && !mockDb.enabled) {
@@ -392,7 +380,7 @@ module.exports = kind({
     },
 
     refreshRows: function () {
-        this.$.list.refresh();
+        this.decorateModels();
     },
 
     resetList: function () {
@@ -402,6 +390,6 @@ module.exports = kind({
 
     setSelection: function (inChatThread) {
         this.selectedChatThread = inChatThread;
-        this.$.list.refresh();
+        this.decorateModels();
     }
 });
