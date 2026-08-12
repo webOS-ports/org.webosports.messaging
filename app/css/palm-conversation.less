@@ -94,12 +94,52 @@ Composer
 .conversation-bottom {
   height: auto;
   max-height: 192px;
+  padding: 6px 8px;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
 }
-.conversation-bottom .onyx-input-decorator {
-  margin-left: 6px;
-  /* Match the input->arrow gap to the arrow's distance from the screen edge so the send arrow
-     reads as centred in the trailing gutter. */
-  margin-right: 4px;
+
+/* The message field: a white rounded box spanning the gap between the mic and the send arrow.
+   Mojo got this look from the framework's own RichText chrome, which Onyx has no equivalent of, so
+   it is drawn here. The margins are the ones conversation.css set: 6px in from the icons on the
+   left, 4px on the right so the arrow reads as centred in the trailing gutter. */
+.conversation-input.onyx-input-decorator {
+  -webkit-flex: 1 1 auto;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0 4px 0 6px;
+  padding: 0;
+  background: #fff;
+  background-image: none;
+  border: 1px solid #b5b5b5;
+  -webkit-border-image: none;
+  border-image: none;
+  -webkit-border-radius: 9px;
+  border-radius: 9px;
+  box-shadow: none;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+/* Sized to one line by default and grown by growInput() as the text wraps, capped at the 155px
+   the Mojo scroller used. */
+.conversation-input-text {
+  display: block;
+  width: 100%;
+  min-height: 38px;
+  max-height: 155px;
+  padding: 8px 12px;
+  line-height: 20px;
+  font-size: 16px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  resize: none;
+  overflow-y: auto;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 .header-shadow,
