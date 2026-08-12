@@ -12,6 +12,8 @@ var kind = require('enyo/kind'),
     FittableRows = require('layout/FittableRows'),
     DataList = require('enyo/DataList'),
     Collection = require('enyo/Collection'),
+    RecordModel = require('../data/RecordModel'),
+    syncCollection = require('../util/syncCollection'),
     LunaService = require('enyo-webos/LunaService'),
     ChannelRow = require('./ChannelRow'),
     SearchInput = require('./widgets/SearchInput'),
@@ -81,7 +83,7 @@ module.exports = kind({
         this.pendingChannel = null;
         this.allChannels = [];
 
-        this.collection = new Collection();
+        this.collection = new Collection({ model: RecordModel });
         this.$.list.set("collection", this.collection);
 
         this.channelService = this.createComponent({
@@ -203,7 +205,7 @@ module.exports = kind({
             });
         }
 
-        this.collection.empty(results);
+        syncCollection(this.collection, results);
         this.decorateModels();
         if (results.length === 0) {
             this.$.emptyMessage.setContent(this.filterString ?

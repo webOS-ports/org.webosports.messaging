@@ -15,6 +15,8 @@ var kind = require('enyo/kind'),
     CardArranger = require('layout/CardArranger'),
     DataList = require('enyo/DataList'),
     Collection = require('enyo/Collection'),
+    RecordModel = require('../data/RecordModel'),
+    syncCollection = require('../util/syncCollection'),
     ServerRow = require('./ServerRow'),
     ChannelList = require('./ChannelList'),
     SearchInput = require('./widgets/SearchInput'),
@@ -69,7 +71,7 @@ module.exports = kind({
         this.serverLatest = {};    // serverId -> {ts, outgoing} of its most recent thread
         this.accountAvail = {};    // serviceName -> imloginstate availability (0..4)
 
-        this.collection = new Collection();
+        this.collection = new Collection({ model: RecordModel });
         this.$.list.set("collection", this.collection);
 
         this.serverService = this.createComponent({
@@ -162,7 +164,7 @@ module.exports = kind({
             });
         }
 
-        this.collection.empty(results);
+        syncCollection(this.collection, results);
         this.decorateModels();
         if (results.length === 0) {
             this.$.emptyMessage.setContent(this.filterString ?

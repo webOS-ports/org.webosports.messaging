@@ -11,6 +11,8 @@ var kind = require('enyo/kind'),
     FittableRows = require('layout/FittableRows'),
     DataList = require('enyo/DataList'),
     Collection = require('enyo/Collection'),
+    RecordModel = require('../data/RecordModel'),
+    syncCollection = require('../util/syncCollection'),
     Popup = require('onyx/Popup'),
     Button = require('onyx/Button'),
     BuddyRow = require('./BuddyRow'),
@@ -81,7 +83,7 @@ module.exports = kind({
         this.selectedRecord = null;
         this.pendingDeleteBuddy = null;
 
-        this.collection = new Collection();
+        this.collection = new Collection({ model: RecordModel });
         this.$.list.set("collection", this.collection);
 
         this.buddyService = this.createComponent({
@@ -167,7 +169,7 @@ module.exports = kind({
             return na < nb ? -1 : 1;
         });
 
-        this.collection.empty(results);
+        syncCollection(this.collection, results);
         if (this.selectedRecord) {
             this.markSelected(this.selectedRecord.personId);
         }

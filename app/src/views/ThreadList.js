@@ -11,6 +11,8 @@ var kind = require('enyo/kind'),
     FittableRows = require('layout/FittableRows'),
     DataList = require('enyo/DataList'),
     Collection = require('enyo/Collection'),
+    RecordModel = require('../data/RecordModel'),
+    syncCollection = require('../util/syncCollection'),
     Control = require('enyo/Control'),
     LunaService = require('enyo-webos/LunaService'),
     ThreadRow = require('./ThreadRow'),
@@ -58,7 +60,7 @@ module.exports = kind({
         this.filterString = "";
         this.selectedRecord = null;
 
-        this.collection = new Collection();
+        this.collection = new Collection({ model: RecordModel });
         this.$.list.set("collection", this.collection);
 
         this.threadService = this.createComponent({
@@ -133,7 +135,7 @@ module.exports = kind({
             }
         }
 
-        this.collection.empty(results);
+        syncCollection(this.collection, results);
         if (this.selectedRecord) {
             this.markSelected(this.selectedRecord._id);
         }

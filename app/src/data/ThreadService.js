@@ -49,6 +49,7 @@ module.exports = kind({
         this.inherited(arguments);
         this.data = { results: [] };
         this.pids = [];
+        this._pendingJoins = 0;
     },
 
     /**
@@ -99,6 +100,16 @@ module.exports = kind({
         this.doResults({ results: (this.data && this.data.results) || [] });
     },
 
+    /** Emit once every outstanding join has come back. */
+    joinFinished: function () {
+        if (this._pendingJoins > 0) {
+            this._pendingJoins--;
+        }
+        if (this._pendingJoins <= 0) {
+            this.reply();
+        }
+    },
+
     gotThreads: function (inSender, inResponse) {
         if (inResponse && inResponse.fired) {
             // The db8 watch fired: the result set is stale, so re-run the whole join.
@@ -110,8 +121,11 @@ module.exports = kind({
         }
         this.data = inResponse;
         this.assembleIds();
-        // Query people and status concurrently so the list updates as soon as either returns. This
-        // can refresh the list twice, which is what the Mojo app did too.
+        // Both joins run concurrently, but the results are only emitted once BOTH have landed.
+        // Emitting on the first (as the Mojo app did) shows every row with its raw reply address
+        // for a moment, then swaps in the real display name once the person join arrives - a
+        // visible flicker on every refresh, and these queries re-run on any watch fire.
+        this._pendingJoins = 2;
         this.queryPeople();
         this.queryStatus();
     },
@@ -140,7 +154,7 @@ module.exports = kind({
         if (inResponse && inResponse.results && inResponse.results.length > 0) {
             messagingUtils.utils.joinData(this.data, inResponse.results, "_id", "personId", "person");
         }
-        this.reply();
+        this.joinFinished();
     },
 
     queryStatus: function () {
@@ -156,6 +170,6 @@ module.exports = kind({
         if (inResponse && inResponse.results && inResponse.results.length > 0) {
             messagingUtils.utils.joinData(this.data, inResponse.results, "personId", "personId", "status");
         }
-        this.reply();
+        this.joinFinished();
     }
 });

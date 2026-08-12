@@ -12,6 +12,8 @@ var kind = require('enyo/kind'),
     FittableRows = require('layout/FittableRows'),
     DataList = require('enyo/DataList'),
     Collection = require('enyo/Collection'),
+    RecordModel = require('../data/RecordModel'),
+    syncCollection = require('../util/syncCollection'),
     Toolbar = require('onyx/Toolbar'),
     Button = require('onyx/Button'),
     IconButton = require('onyx/IconButton'),
@@ -21,7 +23,6 @@ var kind = require('enyo/kind'),
     TextArea = require('onyx/TextArea'),
     InputDecorator = require('onyx/InputDecorator'),
     Image = require('enyo/Image'),
-    Scroller = require('enyo/Scroller'),
     LunaService = require('enyo-webos/LunaService'),
     ConversationRow = require('./ConversationRow'),
     ConversationService = require('../data/ConversationService'),
@@ -145,16 +146,15 @@ module.exports = kind({
                 },
                 { name: "vnTimer", classes: "conversation-vn-timer", showing: false },
                 {
-                    kind: InputDecorator, classes: "flex-one", components: [
+                    // The field grows with its content up to a cap, so the textarea sizes itself
+                    // rather than sitting in a scroller — a scroller inside the decorator has no
+                    // height of its own and collapsed the field.
+                    kind: InputDecorator, classes: "conversation-input flex-one", components: [
                         {
-                            name: "scroller", kind: Scroller, horizontal: "hidden",
-                            style: "max-height: 155px;", components: [
-                                {
-                                    name: "richText", kind: TextArea,
-                                    placeholder: $L("Enter message here..."),
-                                    onkeydown: "checkKey"
-                                }
-                            ]
+                            name: "richText", kind: TextArea, classes: "conversation-input-text",
+                            attributes: { rows: 1 },
+                            placeholder: $L("Enter message here..."),
+                            onkeydown: "checkKey", oninput: "growInput"
                         }
                     ]
                 },
@@ -264,7 +264,7 @@ module.exports = kind({
         this.recording = false;
         this.messages = [];
 
-        this.collection = new Collection();
+        this.collection = new Collection({ model: RecordModel });
         this.$.list.set("collection", this.collection);
 
         this.conversationService = this.createComponent({
@@ -465,7 +465,7 @@ module.exports = kind({
         }
 
         this.messages = results;
-        this.collection.empty(results);
+        syncCollection(this.collection, results);
         this.updateListButtons(this.chatThread);
         this.$.listButtons.setShowing(
             results.length > 0 && !!(this.chatThread && !(this.chatThread.flags || {}).locked));
@@ -619,6 +619,16 @@ module.exports = kind({
 
     // --- sending -------------------------------------------------------------------------
 
+    /** Grow the field with its content, up to the cap the stylesheet sets. */
+    growInput: function () {
+        var node = this.$.richText.hasNode();
+        if (!node) {
+            return;
+        }
+        node.style.height = "auto";
+        node.style.height = Math.min(node.scrollHeight, 155) + "px";
+    },
+
     checkKey: function (inSender, inEvent) {
         // Enter sends; Shift+Enter inserts a newline.
         if (inEvent.keyCode === 13 && !inEvent.shiftKey) {
@@ -740,6 +750,7 @@ module.exports = kind({
         }
 
         this.$.richText.set('value', "");
+        this.growInput();
         this.cancelReply();
         if (this.outboundAttachment) {
             this.clearAttachment();
@@ -794,6 +805,7 @@ module.exports = kind({
         var results = (inResponse && inResponse.results) || [];
         if (results.length > 0 && results[0].messageText) {
             this.$.richText.set('value', results[0].messageText);
+            this.growInput();
         }
         // The draft has been restored into the composer, so drop the stored copies.
         var ids = [];

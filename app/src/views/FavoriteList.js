@@ -10,6 +10,8 @@ var kind = require('enyo/kind'),
     FittableRows = require('layout/FittableRows'),
     DataList = require('enyo/DataList'),
     Collection = require('enyo/Collection'),
+    RecordModel = require('../data/RecordModel'),
+    syncCollection = require('../util/syncCollection'),
     LunaService = require('enyo-webos/LunaService'),
     FavoriteRow = require('./FavoriteRow'),
     FavoriteService = require('../data/FavoriteService'),
@@ -58,7 +60,7 @@ module.exports = kind({
         this.inherited(arguments);
         this.selectedRecord = null;
 
-        this.collection = new Collection();
+        this.collection = new Collection({ model: RecordModel });
         this.$.list.set("collection", this.collection);
 
         this.favoriteService = this.createComponent({
@@ -101,7 +103,7 @@ module.exports = kind({
 
     gotFavorites: function (inSender, inEvent) {
         var results = (inEvent && inEvent.results) || [];
-        this.collection.empty(results);
+        syncCollection(this.collection, results);
         if (this.selectedRecord) {
             this.markSelected(this.selectedRecord._id);
         }
