@@ -9,7 +9,8 @@
 
 var kind = require('enyo/kind'),
     FittableRows = require('layout/FittableRows'),
-    DataList = require('enyo/DataList'),
+    DataRepeater = require('enyo/DataRepeater'),
+    Scroller = require('enyo/Scroller'),
     Collection = require('enyo/Collection'),
     RecordModel = require('../data/RecordModel'),
     syncCollection = require('../util/syncCollection'),
@@ -39,13 +40,15 @@ module.exports = kind({
         { classes: "header-shadow header-app-shadow" },
         { name: "emptyMessage", classes: "messageTexts", showing: false },
         {
-            name: "list", kind: DataList, fit: true, classes: "threads-list messaging-listsDivider",
-            scrollerOptions: { horizontal: "hidden", touch: true },
-            // Handlers live on the list, not on the row: events bubble up from the row and
-            // RepeaterChildSupport decorates them with the model and index they came from.
+            // A Scroller around a DataRepeater rather than a DataList: DataList is
+            // virtualised, sizing pages from measured row heights and re-rendering as those
+            // measurements settle. These lists are short, so rendering the rows once removes
+            // that entire feedback loop.
+            name: "scroller", kind: Scroller, fit: true, horizontal: "hidden", touch: true,
+            classes: "threads-list messaging-listsDivider",
             ontap: "selectThread", onConfirm: "swipeDelete",
             components: [
-                { kind: ThreadRow }
+                { name: "list", kind: DataRepeater, components: [ { kind: ThreadRow } ] }
             ]
         },
         {

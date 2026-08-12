@@ -33,7 +33,22 @@ module.exports = kind({
         { name: "serverItem", kind: ServerItem }
     ],
 
+    create: function () {
+        this.inherited(arguments);
+        // DataRepeater hands the model to the row as a construction property, which does not fire
+        // the changed handler (DataList assigned it afterwards, which did). Populate once up front;
+        // later reassignments still come through modelChanged as normal.
+        if (this.model) {
+            this.populateRow();
+        }
+    },
+
     modelChanged: function () {
+        this.populateRow();
+    },
+
+    /** The actual population, kept off modelChanged so create() can call it directly. */
+    populateRow: function () {
         var record = this.model && this.model.attributes;
         if (!record) {
             return;

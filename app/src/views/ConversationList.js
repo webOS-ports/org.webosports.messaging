@@ -10,7 +10,8 @@
 
 var kind = require('enyo/kind'),
     FittableRows = require('layout/FittableRows'),
-    DataList = require('enyo/DataList'),
+    DataRepeater = require('enyo/DataRepeater'),
+    Scroller = require('enyo/Scroller'),
     Collection = require('enyo/Collection'),
     RecordModel = require('../data/RecordModel'),
     syncCollection = require('../util/syncCollection'),
@@ -97,14 +98,16 @@ module.exports = kind({
             ]
         },
         {
-            name: "list", kind: DataList, fit: true,
-            scrollerOptions: { horizontal: "hidden", touch: true },
-            // Handlers sit on the list; row events arrive decorated with their model and index.
+            // A Scroller around a DataRepeater rather than a DataList, for the reason given in
+            // ThreadList. Message rows vary a lot in height - images, players, poll blocks - so
+            // they were the worst case for a list that sizes pages from measured heights.
+            name: "scroller", kind: Scroller, fit: true, horizontal: "hidden", touch: true,
+            // Handlers sit on the scroller; row events arrive decorated with model and index.
             ontap: "handleMessageTap", onConfirm: "swipeDelete", onReact: "handleReactSwipe",
             onError: "showErrorDialog", onSelectSender: "senderRowSelected",
             onOpenAttachment: "openAttachment", onInviteResponse: "respondToInvite",
             components: [
-                { kind: ConversationRow }
+                { name: "list", kind: DataRepeater, components: [ { kind: ConversationRow } ] }
             ]
         },
         { classes: "footer-shadow" },
@@ -432,7 +435,11 @@ module.exports = kind({
                     { prop: "flags.visible", op: "=", val: true },
                     { prop: "localTimestamp", op: ">", val: 0 }
                 ],
-                orderBy: "localTimestamp"
+                orderBy: "localTimestamp",
+                // Every row is rendered now, so bound the history a thread can pull in. Mojo paged
+                // 20 at a time through its flyweight list; this keeps a long thread from turning
+                // into thousands of controls at once.
+                limit: 200
             }
         });
     },
@@ -473,7 +480,9 @@ module.exports = kind({
     },
 
     revealListBottom: function () {
-        this.$.list.scrollToBottom && this.$.list.scrollToBottom();
+        if (this.$.scroller.scrollToBottom) {
+            this.$.scroller.scrollToBottom();
+        }
         return true;
     },
 
