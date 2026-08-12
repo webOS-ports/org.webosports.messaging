@@ -8,6 +8,7 @@ var kind = require('enyo/kind'),
     FittableRows = require('layout/FittableRows'),
     Panels = require('layout/Panels'),
     CollapsingArranger = require('layout/CollapsingArranger'),
+    CardArranger = require('layout/CardArranger'),
     Signals = require('enyo/Signals'),
     Popup = require('onyx/Popup'),
     Button = require('onyx/Button'),
@@ -32,8 +33,11 @@ module.exports = kind({
 
     components: [
         {
-            name: "views", kind: Panels, arrangerKind: CollapsingArranger, fit: true,
-            draggable: false, narrowFit: false, classes: "app-panels",
+            // CardArranger, not CollapsingArranger: these are alternative whole-screen views, so
+            // exactly one shows at a time. A collapsing arranger lays its panels side by side,
+            // which put first launch and preferences on screen next to the app.
+            name: "views", kind: Panels, arrangerKind: CardArranger, fit: true,
+            draggable: false, classes: "app-panels",
             components: [
                 {
                     name: "slidingGroup", kind: Panels, arrangerKind: CollapsingArranger,
