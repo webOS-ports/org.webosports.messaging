@@ -23,18 +23,10 @@ img {
   background-color: #EAEAEA;
 }
 
-@media all and (max-width: 800px) {
-  .app-panels > * {
-    min-width: 100%;
-  }
-}
-
-@media all and (min-width: 800px) {
-  .app-panels > * {
-    min-width: auto !important;
-    box-shadow: -6px -4px 3px 1px rgba(0, 0, 0, 0.4);
-  }
-}
+/* The panels size themselves: the messaging pane is a fixed 320px column and the conversation
+   pane is the arranger's `fit` panel, so it takes whatever is left. The old min-width rules here
+   fought that - forcing each panel to the full width below 800px - and left the conversation
+   pane narrower than the space available. */
 
 /* The left pane is a fixed 320px column, as in the Mojo app's SlidingPane. */
 .messaging-pane {

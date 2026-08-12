@@ -127,8 +127,12 @@ Composer
    the Mojo scroller used. The height, text inset and placeholder colour are measured off a device
    screenshot of the Mojo composer: a 45px box, the text set 33px in from the left edge, and a
    #919191 hint. */
+.onyx-toolbar.conversation-bottom .conversation-input-text,
 .conversation-input-text {
   display: block;
+  /* A textarea does not inherit the document face - it defaults to monospace - while Mojo's
+     composer was a RichText div in the UI font. */
+  font-family: 'Prelude', 'Prelude Medium', 'Segoe UI', 'Helvetica Neue', Arial, Helvetica, sans-serif;
   width: 100%;
   min-height: 43px;
   max-height: 155px;
@@ -144,8 +148,17 @@ Composer
   -webkit-box-sizing: border-box;
   box-sizing: border-box;
 }
-.conversation-input-text::-webkit-input-placeholder { color: #919191; }
-.conversation-input-text::placeholder { color: #919191; }
+/* Onyx colours toolbar input placeholders #ddd for a dark bar; the sampled Mojo hint is #919191. */
+.onyx-toolbar.conversation-bottom .conversation-input-text::-webkit-input-placeholder,
+.conversation-input-text::-webkit-input-placeholder {
+  color: #919191;
+  font-style: normal;
+}
+.onyx-toolbar.conversation-bottom .conversation-input-text::placeholder,
+.conversation-input-text::placeholder {
+  color: #919191;
+  font-style: normal;
+}
 
 .header-shadow,
 .footer-shadow {

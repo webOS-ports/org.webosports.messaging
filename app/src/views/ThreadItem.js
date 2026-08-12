@@ -70,8 +70,12 @@ module.exports = kind({
         this.$.displayName.setContent(messagingUtils.message.emojifyEscaped(displayName));
 
         // The summary mirrors the message text, whose astral emoji the transport stored as numeric
-        // entities, so render them as inline images too.
-        this.$.summary.setContent(messagingUtils.message.emojify(this.getThreadSummary(inThread)));
+        // entities, so render them as inline images too. Line breaks are flattened first: the
+        // preview is styled nowrap/ellipsis for a single line, but a <br> defeats that, and feed
+        // summaries carry several - which is what made those rows several times taller than the
+        // 77px a row should be.
+        this.$.summary.setContent(
+            messagingUtils.message.emojify(this.flattenLines(this.getThreadSummary(inThread))));
     },
 
     updateStatus: function (inStatus) {
@@ -153,6 +157,18 @@ module.exports = kind({
      */
     summarizeMedia: function (text) {
         return messagingUtils.message.summarizeMedia(text);
+    },
+
+    /** Collapse breaks and runs of whitespace so the preview stays on one line. */
+    flattenLines: function (text) {
+        if (!text) {
+            return text;
+        }
+        return String(text)
+            .replace(/<br\s*\/?>/gi, " ")
+            .replace(/[\r\n]+/g, " ")
+            .replace(/\s{2,}/g, " ")
+            .replace(/^\s+|\s+$/g, "");
     },
 
     isThreadSelected: function (inThread) {

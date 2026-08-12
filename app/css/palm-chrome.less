@@ -98,3 +98,31 @@ Bottom toolbar of the messaging pane
 .messaging-footer .onyx-button {
   text-shadow: none;
 }
+
+/*----------------------
+Buttons on the light bars
+----------------------*/
+/* Onyx styles toolbar buttons for a dark bar - #555656 with #F2F2F2 text - which reads as a dark
+   slab on the silver chrome. Mojo's are the same light silver as the bar with dark text; the
+   gradient below is sampled from the device (#efefef -> #d8d8d8, text #2b2b2b). */
+.onyx-toolbar.messaging-availability .onyx-button,
+.onyx-toolbar.conversation-header .onyx-button,
+.onyx-toolbar.conversation-bottom .onyx-button,
+.onyx-toolbar.messaging-footer .onyx-button {
+  color: #2b2b2b;
+  background-color: #e4e4e4;
+  background-image: -webkit-linear-gradient(top, #efefef, #d8d8d8);
+  background-image: linear-gradient(to bottom, #efefef, #d8d8d8);
+  border: 1px solid #a8a8a8;
+  border-color: #a8a8a8;
+  text-shadow: none;
+}
+
+/* The block/delete bar sits on the conversation background rather than a toolbar. */
+.block-delete-box .onyx-button {
+  color: #333333;
+  background-color: #f3f3f3;
+  background-image: none;
+  border: 1px solid #cfcfcf;
+  text-shadow: none;
+}
