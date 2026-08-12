@@ -1,0 +1,100 @@
+/**
+ * Light chrome, to match com.palm.app.messaging.
+ *
+ * The Mojo app dresses every bar with "enyo-toolbar-light": a silver gradient with dark text.
+ * Onyx's Toolbar is the opposite — a dark #4C4C4C bar with white text — and its RadioButton brings
+ * its own gradient, borders, inset shadows and first/last-child rounding. None of that is
+ * overridable through variables at this point in the build, so the affected pieces are restyled
+ * here.
+ *
+ * The colours and sizes below are sampled from a device screenshot of the Mojo app rather than
+ * guessed: toolbars run #f2f2f2 -> #ababab over 48px with a #878787 hairline, the tab strip is
+ * #e3e3e3 -> #dbdbdb over 44px, and the selected tab is a #306ba3 -> #6ca6ce blue.
+ */
+
+/*----------------------
+Toolbars
+----------------------*/
+.onyx-toolbar.messaging-availability,
+.onyx-toolbar.conversation-header,
+.onyx-toolbar.messaging-footer {
+  height: 48px;
+  padding: 0 8px;
+  background: #d0d0d0;
+  background-image: -webkit-linear-gradient(top, #f2f2f2, #ababab);
+  background-image: linear-gradient(to bottom, #f2f2f2, #ababab);
+  border: 0;
+  border-bottom: 1px solid #878787;
+  color: #222222;
+  text-shadow: none;
+  box-shadow: none;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+/* The composer carries its hairline on top instead, and grows with the field. */
+.onyx-toolbar.conversation-bottom {
+  min-height: 53px;
+  padding: 6px 8px;
+  background: #e2e2e2;
+  background-image: -webkit-linear-gradient(top, #f6f6f6, #cfcfcf);
+  background-image: linear-gradient(to bottom, #f6f6f6, #cfcfcf);
+  border: 0;
+  border-top: 1px solid #b2b2b2;
+  color: #222222;
+  text-shadow: none;
+  box-shadow: none;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+/* Onyx colours toolbar text and inputs for a dark bar. */
+.onyx-toolbar.messaging-availability .onyx-input,
+.onyx-toolbar.conversation-header .onyx-input,
+.onyx-toolbar.conversation-bottom .onyx-input {
+  color: #222222;
+  text-shadow: none;
+}
+
+/*----------------------
+Tab strip
+----------------------*/
+.messaging-radiobuttons {
+  height: 44px;
+  background: #dfdfdf;
+  background-image: -webkit-linear-gradient(top, #e3e3e3, #dbdbdb);
+  background-image: linear-gradient(to bottom, #e3e3e3, #dbdbdb);
+  border-bottom: 1px solid #9c9c9c;
+}
+
+/* Strip the Onyx radiobutton chrome: its gradient, hairlines, inset highlight and the rounded
+   end caps. The caps in particular would land on the wrong cell, since the Servers tab is moved
+   leftmost with flex ordering while staying first in the DOM. */
+.messaging-radiobuttons .onyx-radiobutton.onyx-tabbutton {
+  height: 44px;
+  padding: 6px 0;
+  margin: 0;
+  background: transparent;
+  background-image: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  text-shadow: none;
+  color: #333333;
+}
+
+.messaging-radiobuttons .onyx-radiobutton.onyx-tabbutton.active {
+  background: #4a86b8;
+  background-image: -webkit-linear-gradient(top, #306ba3, #6ca6ce);
+  background-image: linear-gradient(to bottom, #306ba3, #6ca6ce);
+  border: 0;
+  box-shadow: none;
+  color: #ffffff;
+}
+
+/*----------------------
+Bottom toolbar of the messaging pane
+----------------------*/
+.messaging-footer .onyx-button {
+  text-shadow: none;
+}

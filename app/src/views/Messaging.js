@@ -111,7 +111,7 @@ module.exports = kind({
         },
         { classes: "footer-shadow footer-app-shadow" },
         {
-            kind: Toolbar, classes: "flex-row", components: [
+            kind: Toolbar, classes: "messaging-footer flex-row", components: [
                 {
                     name: "serverBackBtn", kind: Button, content: $L("Servers"),
                     ontap: "serverBack", showing: false
@@ -166,7 +166,6 @@ module.exports = kind({
         this._curTab = inValue;
         this.$.pane.setIndex(inValue);
         this.updateButtons(inValue);
-        this.refreshList(inValue);
     },
 
     highlightTabButton: function (inValue) {
@@ -195,18 +194,6 @@ module.exports = kind({
         this.$.serverBackBtn.setShowing(
             (this._curTab === TAB_SERVERS) && !!(inEvent && inEvent.drilledIn));
         return true;
-    },
-
-    /** A list that was hidden loses its scroll position, so refresh it when it comes back. */
-    refreshList: function (inValue) {
-        var lists = [this.$.threadList, this.$.buddyList, this.$.favoriteList, this.$.serverList];
-        if (inValue === undefined) {
-            for (var i = 0; i < lists.length; i++) {
-                lists[i].updateList();
-            }
-        } else if (lists[inValue]) {
-            lists[inValue].updateList();
-        }
     },
 
     updateUnreadCount: function (inSender, inEvent) {

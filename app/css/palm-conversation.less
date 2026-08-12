@@ -113,26 +113,29 @@ Composer
   padding: 0;
   background: #fff;
   background-image: none;
-  border: 1px solid #b5b5b5;
+  border: 1px solid #8b8b8b;
   -webkit-border-image: none;
   border-image: none;
-  -webkit-border-radius: 9px;
-  border-radius: 9px;
+  -webkit-border-radius: 8px;
+  border-radius: 8px;
   box-shadow: none;
   -webkit-box-sizing: border-box;
   box-sizing: border-box;
 }
 
 /* Sized to one line by default and grown by growInput() as the text wraps, capped at the 155px
-   the Mojo scroller used. */
+   the Mojo scroller used. The height, text inset and placeholder colour are measured off a device
+   screenshot of the Mojo composer: a 45px box, the text set 33px in from the left edge, and a
+   #919191 hint. */
 .conversation-input-text {
   display: block;
   width: 100%;
-  min-height: 38px;
+  min-height: 43px;
   max-height: 155px;
-  padding: 8px 12px;
-  line-height: 20px;
-  font-size: 16px;
+  padding: 11px 14px 11px 32px;
+  line-height: 21px;
+  font-size: 17px;
+  color: #222222;
   border: 0;
   outline: none;
   background: transparent;
@@ -141,6 +144,8 @@ Composer
   -webkit-box-sizing: border-box;
   box-sizing: border-box;
 }
+.conversation-input-text::-webkit-input-placeholder { color: #919191; }
+.conversation-input-text::placeholder { color: #919191; }
 
 .header-shadow,
 .footer-shadow {
