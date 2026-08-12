@@ -142,7 +142,13 @@ Tab strip
 }
 
 .messaging-radiobuttons .onyx-tabbutton {
+  /* 10 + 32 + 7 = the 49px strip the Mojo app draws. line-height:0 keeps the button from adding a
+     text line box around the icon, which is what made the strip taller than the glyph. */
   padding: 10px 0 7px;
+  height: 49px;
+  line-height: 0;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
   -webkit-flex: 1 1 0;
   flex: 1 1 0;
   min-width: 0;
@@ -156,6 +162,8 @@ Tab strip
   height: 32px;
   background-repeat: no-repeat;
   background-position: 0 0;
+  /* Anchors the unread count, which is drawn on top of the bubble glyph. */
+  position: relative;
 }
 
 .messaging-radiobuttons .onyx-tabbutton.active .tab-button-icon,
@@ -179,17 +187,21 @@ Tab strip
   background-image: url(../assets/menu-icon-servers.png);
 }
 
+/* The count is overlaid on the bubble glyph, so it is taken out of flow and centred over the
+   icon's 44x32 box rather than stacked under it. */
 .chat-button-text {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* Sits slightly above centre, inside the bubble rather than over its tail. */
+  height: 26px;
+  line-height: 26px;
+  text-align: center;
   color: #fff;
   /* Prelude is the webOS system face; pin it so the count does not fall back to another face. */
   font-family: Prelude, 'Prelude Medium', 'Segoe UI', Arial, Helvetica, sans-serif;
   font-size: 15px;
-  padding-top: 4px;
-  margin-left: -1px;
-  text-align: center;
-  position: relative;
-  top: -28px;
-  height: 0;
 }
 
 .messaging-radiobuttons .onyx-tabbutton.active .chat-button-text,

@@ -63,8 +63,14 @@ module.exports = kind({
                 // button must stay first even though Servers is shown leftmost (see the CSS order).
                 {
                     name: "chatsTab", value: TAB_CHATS, active: true, components: [
-                        { classes: "tab-button-icon chat-button" },
-                        { name: "unreadCountText", classes: "chat-button-text" }
+                        // The count sits INSIDE the icon: the bubble glyph is the icon's
+                        // background, and the number is overlaid on it. As a sibling it added its
+                        // own line below the glyph, which is what made the strip too tall.
+                        {
+                            name: "chatsIcon", classes: "tab-button-icon chat-button", components: [
+                                { name: "unreadCountText", classes: "chat-button-text" }
+                            ]
+                        }
                     ]
                 },
                 {
@@ -205,7 +211,9 @@ module.exports = kind({
 
     updateUnreadCount: function (inSender, inEvent) {
         var count = (inEvent && inEvent.count) || 0;
-        this.$.chatsTab.addRemoveClass("chat-button-plus", count > 99);
+        // The "plus" variant is a different glyph, so it belongs on the icon that carries the
+        // background image, not on the button around it.
+        this.$.chatsIcon.addRemoveClass("chat-button-plus", count > 99);
         this.$.unreadCountText.setContent(count > 99 ? "99" : (count || ""));
         return true;
     },
