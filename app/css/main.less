@@ -43,8 +43,16 @@ img {
   height: 100%;
 }
 
+/* Panels position their children but do not give them a height, and every view in this app is a
+   FittableRows whose `fit` child needs a definite one to size against. Pin it explicitly rather
+   than relying on the arranger. */
 .conversation-pane {
   background-color: #fff;
+  height: 100%;
+}
+
+.conversationList {
+  height: 100%;
 }
 
 /*** general-purpose styling ***/
