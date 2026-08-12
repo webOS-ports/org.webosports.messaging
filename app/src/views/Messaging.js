@@ -91,7 +91,9 @@ module.exports = kind({
             ]
         },
         {
+            // Mojo's tab Pane used transitions.Simple: an instant swap, no cross-fade.
             name: "pane", kind: Panels, arrangerKind: CardArranger, fit: true, draggable: false,
+            animate: false,
             components: [
                 {
                     name: "threadList", kind: ThreadList,

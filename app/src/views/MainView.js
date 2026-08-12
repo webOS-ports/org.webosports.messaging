@@ -36,12 +36,18 @@ module.exports = kind({
             // CardArranger, not CollapsingArranger: these are alternative whole-screen views, so
             // exactly one shows at a time. A collapsing arranger lays its panels side by side,
             // which put first launch and preferences on screen next to the app.
+            // animate:false matches Mojo, whose Pane used transitions.Simple - an instant swap.
+            // Enyo 2 defaults to an animated cross-fade, which reads as a flicker on every switch.
             name: "views", kind: Panels, arrangerKind: CardArranger, fit: true,
-            draggable: false, classes: "app-panels",
+            draggable: false, animate: false, classes: "app-panels",
             components: [
                 {
+                    // narrowFit is left at its default: it adds the class that makes each panel
+                    // fill the width once the screen is narrow, which is how the conversation
+                    // takes over the screen on a small display. Forcing it off kept the
+                    // conversation pinned to its wide-layout width.
                     name: "slidingGroup", kind: Panels, arrangerKind: CollapsingArranger,
-                    fit: true, draggable: false, narrowFit: false, classes: "app-panels",
+                    fit: true, draggable: false, classes: "app-panels",
                     components: [
                         {
                             name: "messaging", kind: Messaging,

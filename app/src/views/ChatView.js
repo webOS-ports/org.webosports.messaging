@@ -48,6 +48,8 @@ module.exports = kind({
     kind: Panels,
     arrangerKind: CardArranger,
     draggable: false,
+    // Mojo's ChatView Pane used transitions.Simple: an instant swap, no cross-fade.
+    animate: false,
     classes: "conversation-pane",
 
     published: {
