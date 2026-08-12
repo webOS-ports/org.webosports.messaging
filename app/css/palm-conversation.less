@@ -281,6 +281,13 @@ Conversation list
 /*----------------------
 Balloons
 ----------------------*/
+/* The bubble column has to take the remaining width so a message spans the thread, rather than
+   collapsing to the width of its text. */
+.chat-balloon > .swipeable-item-content > * {
+  -webkit-flex: 1 1 auto;
+  flex: 1 1 auto;
+  min-width: 0;
+}
 .chat-balloon {
   padding: 5px 8px 5px 13px;
   position: relative;
