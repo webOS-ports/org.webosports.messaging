@@ -36,5 +36,5 @@
 		}
 	],
 	"revSets":[{"name":"unreadCountRevSet","props":[{"name":"unreadCount"}]}],
-	"sync":false
+	"sync":true
 }
