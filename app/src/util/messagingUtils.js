@@ -290,7 +290,10 @@ var messaging = module.exports = {
             return addresses || [];
         },
 
-        _scriptsRe: new RegExp("<script[^>]*>([\\S\\s]*?)<\/script>", "gim"),
+        // The escape in "<\\/script>" has to survive minification: enyo pack --production
+        // inlines all the JS into index.html, and a bare script-end sequence in a string literal ends
+        // the inline script element there. \/ is just / to the regex engine.
+        _scriptsRe: new RegExp("<script[^>]*>([\\S\\s]*?)<\\/script>", "gim"),
         _tagsRe: new RegExp(/<\w+(\s+("[^"]*"|'[^']*'|[^>])+)?>|<\/\w+>/gi),
 
         /**
