@@ -39,11 +39,41 @@ def alpha_field(image, x0, y0, width, height):
 
 
 def plateau(grid):
-    """The alpha the glyph settles at, so the trace level can be half of it."""
+    """The alpha the glyph settles at, so the trace level can be half of it.
+
+    Not a percentile of everything with ink in it: these glyphs carry a soft shadow, and its
+    many faint pixels drag a percentile down until the trace level sits inside the shadow
+    rather than at the glyph's edge - which is what merged the two figures of the buddies icon
+    into one blob. Otsu's threshold splits the two populations instead, and the glyph's own
+    level is read from the pixels above it.
+    """
     values = sorted(v for row in grid for v in row if v > 0.05)
     if not values:
         return 1.0
-    return values[int(len(values) * 0.80)]
+    counts = [0] * 64
+    for v in values:
+        counts[min(63, int(v * 64))] += 1
+    total = len(values)
+    best, cut = -1.0, 32
+    running = 0
+    weighted = 0.0
+    overall = sum(i * c for i, c in enumerate(counts))
+    for i, c in enumerate(counts):
+        running += c
+        if running == 0 or running == total:
+            continue
+        weighted += i * c
+        m1 = weighted / running
+        m2 = (overall - weighted) / (total - running)
+        between = running * (total - running) * (m1 - m2) ** 2
+        if between > best:
+            best, cut = between, i
+    floor = cut / 64.0
+    glyph = [v for v in values if v >= floor]
+    if not glyph:
+        return values[int(total * 0.80)]
+    glyph.sort()
+    return glyph[int(len(glyph) * 0.60)]
 
 
 def march(grid, level):

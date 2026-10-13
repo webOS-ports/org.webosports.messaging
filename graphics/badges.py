@@ -203,6 +203,9 @@ def build(name, ref):
                      for i, c in enumerate(stops))
     svg = '''<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d" viewBox="0 0 %d %d">
   <defs>
+    <filter id="soft" x="-20%%" y="-20%%" width="140%%" height="140%%">
+      <feGaussianBlur stdDeviation="0.7"/>
+    </filter>
     <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
 %s
     </linearGradient>
@@ -216,9 +219,9 @@ def build(name, ref):
 %s
 </svg>
 ''' % (w, h, w, h, grad, letter_grad,
-       x0 + 1.4, y0 + 1.6, x1 - x0, y1 - y0,
-       x0 + 0.5, y0 + 0.5, x1 - x0 - 1.0, y1 - y0 - 1.0, hexc(outer),
-       x0 + 1.5, y0 + 1.5, x1 - x0 - 3.0, y1 - y0 - 3.0, hexc(border),
+       x0 + 1.4, y0 + 1.6, x1 - x0 + 1, y1 - y0 + 1,
+       x0 + 0.5, y0 + 0.5, x1 - x0, y1 - y0, hexc(outer),
+       x0 + 1.5, y0 + 1.5, x1 - x0 - 2.0, y1 - y0 - 2.0, hexc(border),
        glyph)
     io.open(os.path.join(ASSETS, name + '.svg'), 'w', encoding='utf-8').write(svg)
     return stops[0], stops[-1], border, ink
