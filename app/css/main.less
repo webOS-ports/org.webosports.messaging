@@ -62,6 +62,38 @@ img {
   height: 100%;
 }
 
+/* The first-run screen's middle row. Centred, but "safe" centred: plain `center` overflows a box
+   that is too small in BOTH directions, and the part above the top edge cannot be scrolled to, so
+   on a short screen the Add An Account button disappeared under the footer with no way to reach
+   it. The Q25's 720x720 panel is 380px of viewport once the toolbars are taken off, which is not
+   enough for the 165px watermark, two paragraphs and a button. */
+.first-launch-body {
+  -webkit-justify-content: safe center;
+  justify-content: safe center;
+  -webkit-align-items: center;
+  align-items: center;
+  overflow-y: auto;
+  padding: 2rem;
+}
+
+/* A flex column shrinks its children before it overflows, which squashed the Add An Account
+   button to a 13px sliver. None of these should ever be smaller than their content. */
+.first-launch-body > * {
+  -webkit-flex-shrink: 0;
+  flex-shrink: 0;
+}
+
+@media all and (max-height: 480px) {
+  .first-launch-body {
+    padding: 1rem;
+  }
+  /* The watermark is decoration and it is 165px of a 380px screen. Drop it there and the title,
+     the explanation and the button fit without scrolling. */
+  .first-launch-body > img {
+    display: none;
+  }
+}
+
 /*** general-purpose styling ***/
 
 .onyx-background {

@@ -29,8 +29,9 @@ module.exports = kind({
         },
         { classes: "header-shadow" },
         {
-            fit: true, classes: "flex-column",
-            style: "justify-content: center; align-items: center; padding: 2rem;",
+            // first-launch-body centres this column and lets it scroll when the screen is too
+            // short to hold it, which a 720x720 panel is.
+            fit: true, classes: "flex-column first-launch-body",
             components: [
                 { kind: Image, src: "assets/icon-165x165.png" },
                 {
