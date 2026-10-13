@@ -1,21 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="64" viewBox="0 0 32 64">
   <defs>
     <linearGradient id="fdn" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ababab"/><stop offset="1" stop-color="#878787"/>
+      <stop offset="0" stop-color="#e7e7e7" stop-opacity="0.811"/>
+      <stop offset="1" stop-color="#e7e7e7" stop-opacity="0.723"/>
     </linearGradient>
     <linearGradient id="fup" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#adadad"/><stop offset="1" stop-color="#909090"/>
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.931"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.876"/>
     </linearGradient>
-    <mask id="mdn"><rect width="32" height="32" fill="url(#fdn)"/></mask>
-    <mask id="mup"><rect width="32" height="32" fill="url(#fup)"/></mask>
     <filter id="sdn" x="-35%" y="-35%" width="180%" height="180%">
-      <feDropShadow dx="0" dy="1" stdDeviation="1.0" flood-color="#000000" flood-opacity="0.22"/>
+      <feDropShadow dx="0" dy="1" stdDeviation="0.9" flood-color="#000000" flood-opacity="0.20"/>
     </filter>
     <filter id="sup" x="-35%" y="-35%" width="180%" height="180%">
-      <feDropShadow dx="0" dy="1" stdDeviation="1.2" flood-color="#000000" flood-opacity="0.38"/>
+      <feDropShadow dx="0" dy="1" stdDeviation="1.1" flood-color="#000000" flood-opacity="0.34"/>
     </filter>
   </defs>
-  <g fill="#000000" color="#000000" mask="url(#mdn)" filter="url(#sdn)"><path d="M27,5.5 L3.5,15.4 L12.6,18.8 L25.3,8.2 L15.6,20.4 L15.6,27 L19.4,22.6 L23.3,24.1 Z"/></g>
-  <g fill="#ffffff" color="#ffffff" mask="url(#mup)" filter="url(#sup)"
-     transform="translate(0,32)"><path d="M27,5.5 L3.5,15.4 L12.6,18.8 L25.3,8.2 L15.6,20.4 L15.6,27 L19.4,22.6 L23.3,24.1 Z"/></g>
+  <g fill="url(#fdn)" fill-rule="evenodd" filter="url(#sdn)">
+    <path d="M21.71,6.18 L21.71,6.18 Q22.07,6.00 22.44,5.84 L22.63,5.76 Q23.00,5.60 23.39,5.67 L23.61,5.71 Q24.00,5.78 24.39,5.71 L24.61,5.68 Q25.00,5.61 25.20,5.80 L25.20,5.80 Q25.40,6.00 25.37,6.40 L24.52,18.60 Q24.49,19.00 24.32,19.36 L24.17,19.67 Q24.00,20.03 23.60,20.00 L20.40,19.76 Q20.00,19.73 19.73,20.03 L15.27,24.98 Q15.00,25.28 14.79,24.94 L14.41,24.34 Q14.19,24.00 14.17,23.60 L14.02,20.55 Q14.00,20.15 13.96,20.55 L13.67,23.60 Q13.63,24.00 13.42,24.34 L13.21,24.69 Q13.00,25.03 12.83,24.67 L12.23,23.36 Q12.06,23.00 11.96,22.61 L11.10,19.11 Q11.00,18.72 10.64,18.55 L9.86,18.17 Q9.50,18.00 9.10,17.95 L7.40,17.72 Q7.00,17.66 6.62,17.55 L4.38,16.87 Q4.00,16.75 3.67,16.52 L3.26,16.23 Q2.93,16.00 3.23,15.73 L3.76,15.27 Q4.06,15.00 4.42,14.82 Z"/>
+  </g>
+
+  <g fill="url(#fup)" fill-rule="evenodd" filter="url(#sup)"
+     transform="translate(0,32)">
+    <path d="M20.49,6.17 L20.49,6.17 Q20.85,6.00 21.21,5.82 L21.64,5.62 Q22.00,5.44 22.33,5.67 L22.67,5.90 Q23.00,6.12 23.31,5.87 L23.69,5.58 Q24.00,5.33 24.33,5.56 L24.64,5.77 Q24.97,6.00 24.95,6.40 L24.24,17.60 Q24.22,18.00 23.86,18.19 L23.35,18.46 Q23.00,18.65 22.60,18.64 L20.40,18.55 Q20.00,18.54 19.72,18.83 L15.28,23.52 Q15.00,23.81 14.78,23.47 L14.69,23.34 Q14.47,23.00 14.46,22.60 L14.32,19.40 Q14.30,19.00 14.21,18.61 L14.10,18.17 Q14.00,17.79 13.95,18.18 L13.54,21.60 Q13.49,22.00 13.32,22.36 L13.17,22.66 Q13.00,23.02 12.87,22.64 L11.13,17.65 Q11.00,17.28 10.61,17.17 L4.39,15.53 Q4.00,15.43 3.75,15.21 L3.75,15.21 Q3.51,15.00 3.85,14.80 L8.66,11.93 Q9.00,11.73 9.36,11.56 Z"/>
+  </g>
+
 </svg>
