@@ -96,6 +96,35 @@ def outer_edge(im, box):
     return collections.Counter(ring).most_common(1)[0][0]
 
 
+def letter_halo(im, box, stops):
+    """The letters sit in a darker edge - more than half the pixels touching them are darker
+    than the tile, and evenly all round rather than to one side, so it is an outline and not a
+    drop shadow. Measure its colour the same way as everything else."""
+    px = im.load()
+    x0, y0, x1, y1 = box
+    span = max(1, y1 - y0)
+
+    def local(y):
+        return stops[min(len(stops) - 1, (y - y0) * len(stops) // span)]
+
+    lit = {(x, y) for y in range(y0 + 2, y1 - 1) for x in range(x0 + 2, x1 - 1)
+           if px[x, y][3] > 150 and luma(px[x, y]) > luma(local(y)) + 38}
+    dark = []
+    for x, y in lit:
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                q = (x + dx, y + dy)
+                if q in lit or not (x0 < q[0] < x1 and y0 < q[1] < y1):
+                    continue
+                p = px[q[0], q[1]]
+                if luma(p) < luma(local(q[1])) - 16:
+                    dark.append(p[:3])
+    if not dark:
+        return None
+    return '#%02x%02x%02x' % tuple(
+        int(round(sum(c[i] for c in dark) / len(dark))) for i in range(3))
+
+
 def letter_mask(im, box, stops):
     """Whatever is clearly lighter than the tile it sits on.
 
@@ -135,13 +164,18 @@ def build(name, ref):
     stops = tile_gradient(im, box)
     border = edge_colour(im, box)
     mask, ink = letter_mask(im, box, stops)
+    halo = letter_halo(im, box, stops)
     outer = outer_edge(im, box)
     glyph = ''
     if mask is not None:
         paths = tracer.trace(mask, 0, 0, w * SUPER, h * SUPER, 0.5, 1.2, 0.5)
         if paths:
+            edge = ('' if not halo else
+                    ' stroke="%s" stroke-width="%.1f" stroke-linejoin="round"'
+                    ' paint-order="stroke"' % (halo, 1.15 * SUPER))
             glyph = ('  <g transform="scale(%.6f)" fill="%s" fill-rule="evenodd">'
-                     '<path d="%s"/></g>' % (1.0 / SUPER, ink, ' '.join(paths)))
+                     '<path d="%s"%s/></g>'
+                     % (1.0 / SUPER, ink, ' '.join(paths), edge))
     x0, y0, x1, y1 = box
     grad = '\n'.join('      <stop offset="%.3f" stop-color="%s"/>' % (i / (len(stops) - 1), hexc(c))
                      for i, c in enumerate(stops))
