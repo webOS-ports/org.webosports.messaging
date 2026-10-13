@@ -92,6 +92,31 @@ def gradient(stops, name):
     return '\n'.join(parts)
 
 
+def core_fill(im, frame, width, fraction):
+    """Colour and opacity of the pixels at or above a coverage level."""
+    px = im.load()
+    vals = sorted(px[x, frame * 32 + y][3]
+                  for y in range(32) for x in range(width) if px[x, frame * 32 + y][3] > 8)
+    if not vals:
+        return '#808080', 0.5
+    cut = vals[int(len(vals) * 0.80)] * fraction
+    weight = 0.0
+    rgb = [0.0, 0.0, 0.0]
+    picked = []
+    for y in range(32):
+        for x in range(width):
+            r, g, b, a = px[x, frame * 32 + y]
+            if a >= cut:
+                rgb[0] += r * a; rgb[1] += g * a; rgb[2] += b * a
+                weight += a
+                picked.append(a)
+    if not picked:
+        return '#808080', 0.5
+    picked.sort()
+    return ('#%02x%02x%02x' % tuple(int(round(c / weight)) for c in rgb),
+            round(picked[int(len(picked) * 0.85)] / 255, 3))
+
+
 def contrast_mark(im, frame, width):
     """Some glyphs carry a mark in a second colour - the plus on each server bar. The alpha
     trace cannot see it, because it is opaque like the rest of the bar; it shows up as a jump in
@@ -123,20 +148,34 @@ def contrast_mark(im, frame, width):
     paths = tracer.trace(mark, 0, 0, width, 32, 0.12, 0.2)
     if not paths:
         return '', None
-    body = '\n'.join('    <path d="%s"/>' % d for d in paths)
+    body = '    <path d="%s"/>' % ' '.join(paths)
     offset = '' if frame == 0 else ' transform="translate(0,32)"'
     return '  <g fill="%s"%s>\n%s\n  </g>' % (colour, offset, body), colour
 
 
-def rebuild(name, rest=None, press=None, tolerance=0.16, radius=0.4, ref=None):
+def rebuild(name, rest=None, press=None, tolerance=0.16, radius=0.4, ref=None,
+            level=0.5, inner=None):
     src = os.path.join(ref, name + '.png')
     im = Image.open(src).convert('RGBA')
     width = im.size[0]
     glyphs = []
     marks = []
     for frame in (0, 1):
-        paths = tracer.trace(im, 0, frame * 32, width, 32, tolerance, radius)
-        glyphs.append('\n'.join('    <path d="%s"/>' % d for d in paths))
+        paths = tracer.trace(im, 0, frame * 32, width, 32, tolerance, radius, level)
+        # One path, not one per contour: even-odd subtracts a hole from the shape it sits in,
+        # and it only does that within a single path. Emitted separately, the loops of the
+        # paperclip were traced correctly and then painted over by the body around them.
+        body = '    <path d="%s"/>' % ' '.join(paths) if paths else ''
+        if inner:
+            # Some of these are a light fill inside dark edges - a paperclip, the server bars,
+            # the decline X. One outline turns that into a solid blob, so trace the denser
+            # core as well and lay it over the silhouette in its own colour.
+            core = tracer.trace(im, 0, frame * 32, width, 32, tolerance, radius, inner)
+            colour, alpha = core_fill(im, frame, width, inner)
+            if core:
+                body += ('\n    <g fill="%s" fill-opacity="%s">'
+                         '<path d="%s"/></g>' % (colour, alpha, ' '.join(core)))
+        glyphs.append(body)
         marks.append(contrast_mark(im, frame, width)[0])
     dn = band(im, 0, 32)
     up = band(im, 32, 64)

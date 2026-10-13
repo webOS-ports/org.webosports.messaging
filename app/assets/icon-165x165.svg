@@ -1,24 +1,28 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="165" height="165" viewBox="0 0 165 165">
-<defs>
-  <path id="arcTop" d="M20,82.5 A62.5,62.5 0 0 1 145,82.5"/>
-  <path id="arcBottom" d="M26.5,82.5 A56,56 0 0 0 138.5,82.5"/>
-</defs>
-<g fill="none" stroke="#d2d2d2" stroke-opacity="0.70">
-  <circle cx="82.5" cy="82.5" r="70.5" stroke-width="2.4"/>
-  <circle cx="82.5" cy="82.5" r="64" stroke-width="1.2"/>
-  <circle cx="82.5" cy="82.5" r="39" stroke-width="1.2"/>
-</g>
-<g fill="#cccccc" fill-opacity="0.70" font-family="Prelude, 'DejaVu Sans', Arial, sans-serif"
-   font-size="13" letter-spacing="2.6" text-anchor="middle">
-  <text><textPath href="#arcTop" startOffset="50%">MESSAGING</textPath></text>
-  <text><textPath href="#arcBottom" startOffset="50%">BY LUNEOS</textPath></text>
-</g>
-<g fill="#d2d2d2" fill-opacity="0.70">
-  <path d="M70,52 C53,52 43,61.5 43,73 C43,80.5 47.5,87 55,90.5 L52,101 C51.6,102.2 52.7,102.8
-           53.5,102.1 L65.5,93.5 C67,93.7 68.5,93.8 70,93.8 C87,93.8 97,84.3 97,73
-           C97,61.5 87,52 70,52 Z"/>
-  <path d="M100,72 C114,72 123,79.5 123,88.5 C123,94.4 119.3,99.6 113.3,102.4 L115.6,110.6
-           C115.9,111.6 115,112.1 114.3,111.5 L104.9,104.8 C103.3,105 101.7,105.1 100,105.1
-           C86,105.1 77,97.6 77,88.5 C77,79.5 86,72 100,72 Z"/>
-</g>
+  <!-- The watermark behind an empty conversation: a stamp, at the ring radii measured off the
+       one it replaces (80, 71, 63.5 and 55 from a centre of 82.5), in the same light grey at
+       70% rather than a black at 9%. Palm's read "Messaging by webOS"; this one says LuneOS. -->
+  <defs>
+    <path id="arcTop" d="M15.5,82.5 A67,67 0 0 1 149.5,82.5"/>
+    <path id="arcBottom" d="M141.5,82.5 A59,59 0 0 1 23.5,82.5"/>
+  </defs>
+  <g fill="none" stroke="#d2d2d2" stroke-opacity="0.70">
+    <circle cx="82.5" cy="82.5" r="80" stroke-width="2.6"/>
+    <circle cx="82.5" cy="82.5" r="71" stroke-width="1.6"/>
+    <circle cx="82.5" cy="82.5" r="63.5" stroke-width="1.6"/>
+    <circle cx="82.5" cy="82.5" r="55" stroke-width="3"/>
+  </g>
+  <g fill="#cccccc" fill-opacity="0.70" font-family="Prelude, 'DejaVu Sans', Arial, sans-serif"
+     font-size="12.5" letter-spacing="3.4" text-anchor="middle">
+    <text><textPath href="#arcTop" startOffset="50%">MESSAGING</textPath></text>
+    <text><textPath href="#arcBottom" startOffset="50%">BY LUNEOS</textPath></text>
+  </g>
+  <g fill="none" stroke="#d2d2d2" stroke-opacity="0.70" stroke-width="3.4">
+    <path d="M68,48 C46,48 33,60 33,74.5 C33,84 38.8,92.3 48.5,96.8 L44.5,110 C44,111.6 45.4,112.4
+             46.5,111.5 L62,100.5 C64,100.8 66,101 68,101 C90,101 103,89 103,74.5
+             C103,60 90,48 68,48 Z"/>
+    <path d="M104,70 C122,70 133,79.5 133,91 C133,98.6 128.2,105.2 120.4,108.8 L123.4,119
+             C123.8,120.3 122.6,120.9 121.7,120.2 L109.4,111.6 C107.6,111.9 105.8,112 104,112
+             C86,112 75,102.5 75,91 C75,79.5 86,70 104,70 Z"/>
+  </g>
 </svg>

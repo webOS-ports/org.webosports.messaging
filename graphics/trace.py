@@ -157,9 +157,16 @@ def round_corners(points, radius):
     return ' '.join(parts)
 
 
-def trace(image, x0, y0, width, height, tolerance=0.18, radius=0.45):
+def trace(image, x0, y0, width, height, tolerance=0.18, radius=0.45,
+          level_fraction=0.5):
+    """level_fraction picks where in the coverage the outline is taken.
+
+    Half is the true edge of a solid shape. A glyph whose detail is a gap only a
+    pixel wide - the loops of a paperclip - needs a higher one, or the gap sits
+    astride the level and gets swallowed.
+    """
     grid = alpha_field(image, x0, y0, width, height)
-    level = plateau(grid) / 2.0
+    level = plateau(grid) * level_fraction
     paths = []
     for contour in march(grid, level):
         pts = simplify(contour, tolerance)
@@ -183,10 +190,12 @@ def main():
     ap.add_argument('--height', type=int, default=None)
     ap.add_argument('--tolerance', type=float, default=0.18)
     ap.add_argument('--radius', type=float, default=0.45)
+    ap.add_argument('--level', type=float, default=0.5)
     args = ap.parse_args()
     im = Image.open(args.image).convert('RGBA')
     h = args.height or im.size[1]
-    for d in trace(im, 0, args.frame * h, im.size[0], h, args.tolerance, args.radius):
+    for d in trace(im, 0, args.frame * h, im.size[0], h, args.tolerance,
+                   args.radius, args.level):
         print('<path d="%s"/>' % d)
     return 0
 
