@@ -121,21 +121,25 @@ def presence_sheet(c):
 @asset('incoming-outgoing.png', 17, 34)
 def direction_sheet(c):
     """Two 17px frames: incoming on top, outgoing below (.message-outgoing steps to bottom).
-    An arrow into the corner for a message that arrived, out of it for one that was sent."""
+    A bar with a head. The platform's own direction is kept: an arriving message points right,
+    into the list, and a sent one points left, away from it. Light on purpose - it sits beside
+    the summary text on every row and should not compete with it."""
+    ink = p.ARROW + (p.ARROW_ALPHA,)
     for i, outgoing in enumerate((False, True)):
         top = i * 17
         if outgoing:
-            c.line([(4, top + 12), (13, top + 4)], fill=p.INK + (255,), width=2)
-            c.polygon([(13, top + 3), (13.5, top + 9), (7.5, top + 3.5)], fill=p.INK + (255,))
+            c.rect(7, top + 7, 17, top + 11, fill=ink)
+            c.polygon([(8, top + 3), (0.5, top + 9), (8, top + 15)], fill=ink)
         else:
-            c.line([(13, top + 4), (4, top + 12)], fill=p.INK + (255,), width=2)
-            c.polygon([(3.5, top + 13), (3.5, top + 7), (9.5, top + 12.5)], fill=p.INK + (255,))
+            c.rect(0, top + 7, 10, top + 11, fill=ink)
+            c.polygon([(9, top + 3), (16.5, top + 9), (9, top + 15)], fill=ink)
 
 
 @asset('list-unread.png', 25, 24)
 def unread_badge(c):
-    """The disc an unread count sits on; the row gives it a 24px box."""
-    c.dot(12.5, 12, 11.5, fill=p.UNREAD + (255,))
+    """The disc an unread count is drawn over. A scrim rather than a colour: the row behind it
+    varies, and .server-unread swaps in a flat grey of its own for the counts that run long."""
+    c.dot(12.5, 12, 11.5, fill=p.UNREAD + (p.UNREAD_ALPHA,))
 
 
 @asset('favorites-star-blue.png', 24, 24)
@@ -151,16 +155,18 @@ def favorite_star(c):
 
 @asset('search-input.png', 20, 20)
 def search_glyph(c):
-    c.dot(8.5, 8.5, 5.6, outline=p.INK_LIGHT + (255,), width=1.6)
-    c.line([(12.6, 12.6), (17.5, 17.5)], fill=p.INK_LIGHT + (255,), width=2)
+    c.dot(8.0, 8.0, 5.8, outline=p.INK_LIGHT + (255,), width=2.2)
+    c.line([(12.2, 12.2), (18.0, 18.0)], fill=p.INK_LIGHT + (255,), width=2.8)
 
 
 @asset('menuitem-arrow-dark.png', 24, 48)
 def menu_arrow(c):
-    """Two 24px frames: the resting chevron and the pressed one."""
-    for i, colour in enumerate((p.INK, p.INK_LIGHT)):
-        top = i * 24
-        c.line([(9, top + 6), (16, top + 12), (9, top + 18)], fill=colour + (255,), width=2.2)
+    """Two 24px frames: closed on top, open below. A menu item that can expand points right at
+    its submenu and turns to point down once it is showing, so the two frames are not the same
+    glyph in two shades - they are two different directions."""
+    ink = (0, 0, 0, 176)
+    c.polygon([(9, 6), (17, 11.5), (9, 17)], fill=ink)            # closed: points right
+    c.polygon([(6, 30), (17.5, 30), (11.75, 38)], fill=ink)       # open: points down
 
 
 # -- inline media player -------------------------------------------------------------------
@@ -207,8 +213,8 @@ def warning(c):
 def default_avatar(c):
     """The silhouette shown for a person with no photo."""
     c.rect(0, 0, 50, 50, fill=p.AVATAR_BG + (255,))
-    c.dot(25, 19, 9, fill=p.AVATAR_FG + (255,))
-    c.ellipse(9, 31, 41, 63, fill=p.AVATAR_FG + (255,))
+    c.dot(25, 18, 9, fill=p.AVATAR_FG + (255,))
+    c.ellipse(8, 30, 42, 64, fill=p.AVATAR_FG + (255,))
 
 
 @asset('list-view-avatar-frame.png', 52, 52)
