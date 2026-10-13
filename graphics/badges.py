@@ -107,7 +107,7 @@ def letter_halo(im, box, stops):
     def local(y):
         return stops[min(len(stops) - 1, (y - y0) * len(stops) // span)]
 
-    lit = {(x, y) for y in range(y0 + 2, y1 - 1) for x in range(x0 + 2, x1 - 1)
+    lit = {(x, y) for y in range(y0 + 5, y1 - 4) for x in range(x0 + 5, x1 - 4)
            if px[x, y][3] > 150 and luma(px[x, y]) > luma(local(y)) + 38}
     dark = []
     for x, y in lit:
@@ -139,18 +139,33 @@ def letter_mask(im, box, stops):
     mp = mask.load()
     span = max(1, (y1 - y0) * SUPER)
     picked = []
-    for y in range((y0 + 2) * SUPER, (y1 - 1) * SUPER):
+    picked_rows = []
+    for y in range((y0 + 5) * SUPER, (y1 - 4) * SUPER):
         local = stops[min(len(stops) - 1, (y - y0 * SUPER) * len(stops) // span)]
-        for x in range((x0 + 2) * SUPER, (x1 - 1) * SUPER):
+        for x in range((x0 + 5) * SUPER, (x1 - 4) * SUPER):
             p = px[x, y]
             if p[3] > 150 and luma(p) > luma(local) + 38:
                 mp[x, y] = (255, 255, 255, 255)
                 picked.append(p[:3])
+                picked_rows.append((y, p[:3]))
     if not picked:
-        return None, '#ffffff'
-    colour = '#%02x%02x%02x' % tuple(
-        int(round(sum(c[i] for c in picked) / len(picked))) for i in range(3))
-    return mask, colour
+        return None, ['#ffffff']
+    # The core, in bands down the letter - not the mean. Averaging pulls the antialiased edge
+    # pixels in with the solid ones and the letter comes out dull; these are near white inside,
+    # shading toward the tile's hue lower down.
+    bands = []
+    rows = [[] for _ in range(4)]
+    top, bottom = (y0 + 5) * SUPER, (y1 - 4) * SUPER
+    for (y, colour) in picked_rows:
+        idx = min(3, max(0, (y - top) * 4 // max(1, bottom - top)))
+        rows[idx].append(colour)
+    for band in rows:
+        if not band:
+            bands.append(bands[-1] if bands else (255, 255, 255))
+            continue
+        band.sort(key=luma)
+        bands.append(band[int(len(band) * 0.88)])
+    return mask, ['#%02x%02x%02x' % tuple(int(round(v)) for v in c) for c in bands]
 
 
 def hexc(rgb):
@@ -167,15 +182,22 @@ def build(name, ref):
     halo = letter_halo(im, box, stops)
     outer = outer_edge(im, box)
     glyph = ''
+    letter_grad = ''
     if mask is not None:
         paths = tracer.trace(mask, 0, 0, w * SUPER, h * SUPER, 0.5, 1.2, 0.5)
         if paths:
             edge = ('' if not halo else
                     ' stroke="%s" stroke-width="%.1f" stroke-linejoin="round"'
                     ' paint-order="stroke"' % (halo, 1.15 * SUPER))
-            glyph = ('  <g transform="scale(%.6f)" fill="%s" fill-rule="evenodd">'
+            letter_grad = ('    <linearGradient id="ink" x1="0" y1="0" x2="0" y2="1"'
+                           ' gradientUnits="objectBoundingBox">\n'
+                           + '\n'.join('      <stop offset="%.3f" stop-color="%s"/>'
+                                       % (i / (len(ink) - 1) if len(ink) > 1 else 0, c)
+                                       for i, c in enumerate(ink))
+                           + '\n    </linearGradient>')
+            glyph = ('  <g transform="scale(%.6f)" fill="url(#ink)" fill-rule="evenodd">'
                      '<path d="%s"%s/></g>'
-                     % (1.0 / SUPER, ink, ' '.join(paths), edge))
+                     % (1.0 / SUPER, ' '.join(paths), edge))
     x0, y0, x1, y1 = box
     grad = '\n'.join('      <stop offset="%.3f" stop-color="%s"/>' % (i / (len(stops) - 1), hexc(c))
                      for i, c in enumerate(stops))
@@ -184,6 +206,7 @@ def build(name, ref):
     <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
 %s
     </linearGradient>
+%s
   </defs>
   <rect x="%.1f" y="%.1f" width="%.1f" height="%.1f" rx="1.2" fill="#000000" fill-opacity="0.20"/>
   <rect x="%.1f" y="%.1f" width="%.1f" height="%.1f" rx="1.2" fill="url(#tile)"
@@ -192,7 +215,7 @@ def build(name, ref):
         stroke="%s" stroke-width="1"/>
 %s
 </svg>
-''' % (w, h, w, h, grad,
+''' % (w, h, w, h, grad, letter_grad,
        x0 + 1.4, y0 + 1.6, x1 - x0, y1 - y0,
        x0 + 0.5, y0 + 0.5, x1 - x0 - 1.0, y1 - y0 - 1.0, hexc(outer),
        x0 + 1.5, y0 + 1.5, x1 - x0 - 3.0, y1 - y0 - 3.0, hexc(border),
@@ -206,4 +229,4 @@ if __name__ == '__main__':
     for n in (sys.argv[2:] or BADGES):
         top, bottom, border, ink = build(n, ref)
         print('%-14s tile %s -> %s  border %s  letter %s'
-              % (n, hexc(top), hexc(bottom), hexc(border), ink))
+              % (n, hexc(top), hexc(bottom), hexc(border), ' '.join(ink)))
