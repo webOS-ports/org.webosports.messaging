@@ -1,18 +1,32 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="64" viewBox="0 0 32 64">
   <defs>
     <linearGradient id="fdn" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="32">
-      <stop offset="0.000" stop-color="#1f1f1f" stop-opacity="0.773"/>
-      <stop offset="0.250" stop-color="#1f1f1f" stop-opacity="0.773"/>
-      <stop offset="0.500" stop-color="#1b1b1b" stop-opacity="0.584"/>
-      <stop offset="0.750" stop-color="#1b1b1b" stop-opacity="0.647"/>
-      <stop offset="1.000" stop-color="#1b1b1b" stop-opacity="0.647"/>
+      <stop offset="0.000" stop-color="#212121" stop-opacity="0.82"/>
+      <stop offset="0.091" stop-color="#212121" stop-opacity="0.82"/>
+      <stop offset="0.182" stop-color="#212121" stop-opacity="0.82"/>
+      <stop offset="0.273" stop-color="#202020" stop-opacity="0.718"/>
+      <stop offset="0.364" stop-color="#1e1e1e" stop-opacity="0.667"/>
+      <stop offset="0.455" stop-color="#1c1c1c" stop-opacity="0.561"/>
+      <stop offset="0.545" stop-color="#1b1b1b" stop-opacity="0.494"/>
+      <stop offset="0.636" stop-color="#1d1d1d" stop-opacity="0.627"/>
+      <stop offset="0.727" stop-color="#1f1f1f" stop-opacity="0.659"/>
+      <stop offset="0.818" stop-color="#1e1e1e" stop-opacity="0.639"/>
+      <stop offset="0.909" stop-color="#1e1e1e" stop-opacity="0.639"/>
+      <stop offset="1.000" stop-color="#1e1e1e" stop-opacity="0.639"/>
     </linearGradient>
     <linearGradient id="fup" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="32">
-      <stop offset="0.000" stop-color="#5190bd" stop-opacity="0.784"/>
-      <stop offset="0.250" stop-color="#6bbef8" stop-opacity="1.0"/>
-      <stop offset="0.500" stop-color="#6cc0fb" stop-opacity="1.0"/>
-      <stop offset="0.750" stop-color="#68b8f1" stop-opacity="1.0"/>
-      <stop offset="1.000" stop-color="#427599" stop-opacity="0.384"/>
+      <stop offset="0.000" stop-color="#69baf3" stop-opacity="1.0"/>
+      <stop offset="0.091" stop-color="#69baf3" stop-opacity="1.0"/>
+      <stop offset="0.182" stop-color="#69baf3" stop-opacity="1.0"/>
+      <stop offset="0.273" stop-color="#6cbffa" stop-opacity="1.0"/>
+      <stop offset="0.364" stop-color="#6dc2fd" stop-opacity="1.0"/>
+      <stop offset="0.455" stop-color="#6dc1fd" stop-opacity="1.0"/>
+      <stop offset="0.545" stop-color="#6dc1fd" stop-opacity="1.0"/>
+      <stop offset="0.636" stop-color="#6dc1fc" stop-opacity="1.0"/>
+      <stop offset="0.727" stop-color="#6bbef8" stop-opacity="1.0"/>
+      <stop offset="0.818" stop-color="#589dcd" stop-opacity="0.651"/>
+      <stop offset="0.909" stop-color="#589dcd" stop-opacity="0.651"/>
+      <stop offset="1.000" stop-color="#589dcd" stop-opacity="0.651"/>
     </linearGradient>
     <filter id="sdn" x="-35%" y="-35%" width="180%" height="180%">
       <feDropShadow dx="0" dy="1" stdDeviation="0.5" flood-color="#000000" flood-opacity="0.26"/>

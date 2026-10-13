@@ -46,7 +46,28 @@ TEMPLATE = '''<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="64" vi
 '''
 
 
-def band(img, y0, y1, slices=5):
+def otsu(values):
+    """Splits a sorted list of alphas into halo and glyph."""
+    counts = [0] * 64
+    for v in values:
+        counts[min(63, v * 64 // 256)] += 1
+    total = len(values)
+    overall = sum(i * c for i, c in enumerate(counts))
+    best, cut, running, weighted = -1.0, 32, 0, 0.0
+    for i, c in enumerate(counts):
+        running += c
+        if running == 0 or running == total:
+            continue
+        weighted += i * c
+        m1 = weighted / running
+        m2 = (overall - weighted) / (total - running)
+        between = running * (total - running) * (m1 - m2) ** 2
+        if between > best:
+            best, cut = between, i
+    return max(40, cut * 4)
+
+
+def band(img, y0, y1, slices=12):
     """The glyph's colour and opacity sampled down a frame.
 
     Two numbers cannot describe these. A glyph's alpha is flat across its face and falls off at
@@ -55,6 +76,12 @@ def band(img, y0, y1, slices=5):
     - in each of several slices instead, and emit the whole profile as gradient stops.
     """
     px = img.load()
+    # Which pixels are the glyph rather than its halo. A fixed threshold mixed the two: the
+    # decline X is white at its core with a dark shadow round it, and averaging them returned a
+    # mid grey - so every one of these came out flat where the original is lit.
+    alphas = sorted(px[x, y][3] for y in range(y0, y1) for x in range(img.size[0])
+                    if px[x, y][3] > 8)
+    cut = otsu(alphas) if alphas else 60
     stops = []
     height = y1 - y0
     for i in range(slices):
@@ -66,7 +93,7 @@ def band(img, y0, y1, slices=5):
         for y in range(a, b):
             for x in range(img.size[0]):
                 r, g, bl, alpha = px[x, y]
-                if alpha > 60:          # the glyph, not its shadow
+                if alpha >= cut:        # the glyph, not its halo
                     rgb[0] += r * alpha; rgb[1] += g * alpha; rgb[2] += bl * alpha
                     weight += alpha
                     alphas.append(alpha)
@@ -157,6 +184,52 @@ def contrast_mark(im, frame, width):
     return '  <g fill="%s"%s>\n%s\n  </g>' % (colour, offset, body), colour
 
 
+def relief(im, frame, width, tolerance, radius, base_colour):
+    """The highlight and the shade that give these glyphs their relief.
+
+    Palm's toolbar icons are not flat silhouettes: each is lit, with a light edge down one side
+    and a dark one down the other, which is most of what makes them read as objects rather than
+    cut-outs. The base fill cannot carry that, so find the pixels markedly lighter and markedly
+    darker than the body and lay them over it.
+    """
+    px = im.load()
+    def luma(p):
+        return 0.3 * p[0] + 0.6 * p[1] + 0.1 * p[2]
+    body = [px[x, frame * 32 + y] for y in range(32) for x in range(width)
+            if px[x, frame * 32 + y][3] > 150]
+    if len(body) < 40:
+        return ''
+    mid = sorted(luma(p) for p in body)[len(body) // 2]
+    spread = sorted(luma(p) for p in body)
+    lo, hi = spread[int(len(spread) * 0.10)], spread[int(len(spread) * 0.90)]
+    if hi - lo < 55:
+        return ''
+    out = []
+    for name, test in (('shade', lambda v: v < mid - (mid - lo) * 0.45),
+                       ('light', lambda v: v > mid + (hi - mid) * 0.45)):
+        mask = Image.new('RGBA', (width, 32), (0, 0, 0, 0))
+        mp = mask.load()
+        picked = []
+        for y in range(32):
+            for x in range(width):
+                p = px[x, frame * 32 + y]
+                if p[3] > 150 and test(luma(p)):
+                    mp[x, y] = (255, 255, 255, 255)
+                    picked.append(p)
+        if len(picked) < 10:
+            continue
+        paths = tracer.trace(mask, 0, 0, width, 32, tolerance, radius, 0.5)
+        if not paths:
+            continue
+        weight = sum(p[3] for p in picked)
+        colour = '#%02x%02x%02x' % tuple(
+            int(round(sum(p[k] * p[3] for p in picked) / weight)) for k in range(3))
+        alpha = round(sorted(p[3] for p in picked)[len(picked) // 2] / 255.0, 3)
+        out.append('    <g fill="%s" fill-opacity="%s" fill-rule="evenodd">'
+                   '<path d="%s"/></g>' % (colour, alpha, ' '.join(paths)))
+    return '\n'.join(out)
+
+
 def tone_regions(im, frame, width, tolerance, radius, bands=2):
     """Splits a frame into tonal regions and traces each.
 
@@ -245,7 +318,7 @@ def alpha_layers(im, frame, width, tolerance, radius, levels):
 
 
 def rebuild(name, rest=None, press=None, tolerance=0.16, radius=0.4, ref=None,
-            level=0.5, inner=None, levels=None, tones=None):
+            level=0.5, inner=None, levels=None, tones=None, emboss=False):
     src = os.path.join(ref, name + '.png')
     im = Image.open(src).convert('RGBA')
     width = im.size[0]
@@ -267,6 +340,8 @@ def rebuild(name, rest=None, press=None, tolerance=0.16, radius=0.4, ref=None,
         # and it only does that within a single path. Emitted separately, the loops of the
         # paperclip were traced correctly and then painted over by the body around them.
         body = '    <path d="%s"/>' % ' '.join(paths) if paths else ''
+        if emboss and paths:
+            body += '\n' + relief(im, frame, width, tolerance, radius, None)
         if inner:
             # Some of these are a light fill inside dark edges - a paperclip, the server bars,
             # the decline X. One outline turns that into a solid blob, so trace the denser
