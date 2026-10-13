@@ -1,18 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="44" height="64" viewBox="0 0 44 64">
   <defs>
     <linearGradient id="fdn" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#171717" stop-opacity="0.52"/>
-      <stop offset="1" stop-color="#3a3a3a" stop-opacity="0.465"/>
+      <stop offset="0.000" stop-color="#101010" stop-opacity="0.612"/>
+      <stop offset="0.250" stop-color="#030303" stop-opacity="0.561"/>
+      <stop offset="0.500" stop-color="#262626" stop-opacity="0.592"/>
+      <stop offset="0.750" stop-color="#1f1f1f" stop-opacity="0.486"/>
+      <stop offset="1.000" stop-color="#898989" stop-opacity="0.624"/>
     </linearGradient>
     <linearGradient id="fup" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#f0f0f0" stop-opacity="0.663"/>
-      <stop offset="1" stop-color="#cacaca" stop-opacity="0.488"/>
+      <stop offset="0.000" stop-color="#ebebeb" stop-opacity="0.824"/>
+      <stop offset="0.250" stop-color="#eeeeee" stop-opacity="0.788"/>
+      <stop offset="0.500" stop-color="#e6e6e6" stop-opacity="0.71"/>
+      <stop offset="0.750" stop-color="#e7e7e7" stop-opacity="0.553"/>
+      <stop offset="1.000" stop-color="#8b8b8b" stop-opacity="0.482"/>
     </linearGradient>
     <filter id="sdn" x="-35%" y="-35%" width="180%" height="180%">
-      <feDropShadow dx="0" dy="1" stdDeviation="0.9" flood-color="#000000" flood-opacity="0.20"/>
+      <feDropShadow dx="0" dy="1" stdDeviation="0.5" flood-color="#000000" flood-opacity="0.26"/>
     </filter>
     <filter id="sup" x="-35%" y="-35%" width="180%" height="180%">
-      <feDropShadow dx="0" dy="1" stdDeviation="1.1" flood-color="#000000" flood-opacity="0.34"/>
+      <feDropShadow dx="0" dy="1" stdDeviation="0.6" flood-color="#000000" flood-opacity="0.40"/>
     </filter>
   </defs>
   <g fill="url(#fdn)" fill-rule="evenodd" filter="url(#sdn)">

@@ -25,19 +25,12 @@ ASSETS = os.path.normpath(os.path.join(HERE, '..', 'app', 'assets'))
 
 TEMPLATE = '''<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="64" viewBox="0 0 {w} 64">
   <defs>
-    <linearGradient id="fdn" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="{dn0}" stop-opacity="{dna0}"/>
-      <stop offset="1" stop-color="{dn1}" stop-opacity="{dna1}"/>
-    </linearGradient>
-    <linearGradient id="fup" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="{up0}" stop-opacity="{upa0}"/>
-      <stop offset="1" stop-color="{up1}" stop-opacity="{upa1}"/>
-    </linearGradient>
+{gradients}
     <filter id="sdn" x="-35%" y="-35%" width="180%" height="180%">
-      <feDropShadow dx="0" dy="1" stdDeviation="0.9" flood-color="#000000" flood-opacity="0.20"/>
+      <feDropShadow dx="0" dy="1" stdDeviation="0.5" flood-color="#000000" flood-opacity="0.26"/>
     </filter>
     <filter id="sup" x="-35%" y="-35%" width="180%" height="180%">
-      <feDropShadow dx="0" dy="1" stdDeviation="1.1" flood-color="#000000" flood-opacity="0.34"/>
+      <feDropShadow dx="0" dy="1" stdDeviation="0.6" flood-color="#000000" flood-opacity="0.40"/>
     </filter>
   </defs>
   <g fill="url(#fdn)" fill-rule="evenodd" filter="url(#sdn)">
@@ -53,34 +46,50 @@ TEMPLATE = '''<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="64" vi
 '''
 
 
-def band(img, y0, y1):
-    """Colour and opacity of the glyph in the top and bottom half of a frame.
+def band(img, y0, y1, slices=5):
+    """The glyph's colour and opacity sampled down a frame.
 
-    Both are read, not assumed: these icons are not all a dark silhouette. The decline X is
-    near-white at four fifths opacity and the server bars are an opaque mid grey, and painting
-    either of them black was most of what was wrong with them.
+    Two numbers cannot describe these. A glyph's alpha is flat across its face and falls off at
+    its edge, so averaging the two lands between them: every icon came out washed out and soft,
+    with peaks of 180 where the originals reach 211-249. Take the plateau - the 85th percentile
+    - in each of several slices instead, and emit the whole profile as gradient stops.
     """
     px = img.load()
-    out = []
-    for a, b in ((y0, (y0 + y1) // 2), ((y0 + y1) // 2, y1)):
+    stops = []
+    height = y1 - y0
+    for i in range(slices):
+        a = y0 + height * i // slices
+        b = y0 + height * (i + 1) // slices
         weight = 0.0
         rgb = [0.0, 0.0, 0.0]
-        alpha_sum = 0.0
-        count = 0
+        alphas = []
         for y in range(a, b):
             for x in range(img.size[0]):
                 r, g, bl, alpha = px[x, y]
-                if alpha > 90:          # the glyph, not its shadow
+                if alpha > 60:          # the glyph, not its shadow
                     rgb[0] += r * alpha; rgb[1] += g * alpha; rgb[2] += bl * alpha
                     weight += alpha
-                    alpha_sum += alpha
-                    count += 1
-        if not count:
-            out.append(('#808080', 0.5))
+                    alphas.append(alpha)
+        if not alphas:
+            stops.append(None)
             continue
+        alphas.sort()
         colour = '#%02x%02x%02x' % tuple(int(round(c / weight)) for c in rgb)
-        out.append((colour, round(alpha_sum / count / 255, 3)))
-    return out
+        stops.append((colour, round(alphas[int(len(alphas) * 0.85)] / 255, 3)))
+    for i, v in enumerate(stops):
+        if v is None:
+            stops[i] = next((w for w in stops[i:] if w), None) or \
+                       next((w for w in reversed(stops[:i]) if w), ('#808080', 0.5))
+    return stops
+
+
+def gradient(stops, name):
+    parts = ['    <linearGradient id="%s" x1="0" y1="0" x2="0" y2="1">' % name]
+    for i, (colour, alpha) in enumerate(stops):
+        parts.append('      <stop offset="%.3f" stop-color="%s" stop-opacity="%s"/>'
+                     % (i / (len(stops) - 1), colour, alpha))
+    parts.append('    </linearGradient>')
+    return '\n'.join(parts)
 
 
 def contrast_mark(im, frame, width):
@@ -131,14 +140,9 @@ def rebuild(name, rest=None, press=None, tolerance=0.16, radius=0.4, ref=None):
         marks.append(contrast_mark(im, frame, width)[0])
     dn = band(im, 0, 32)
     up = band(im, 32, 64)
-    if rest is not None:
-        dn = [(rest, dn[0][1]), (rest, dn[1][1])]
-    if press is not None:
-        up = [(press, up[0][1]), (press, up[1][1])]
     io.open(os.path.join(ASSETS, name + '.svg'), 'w', encoding='utf-8').write(
         TEMPLATE.format(w=width, glyph0=glyphs[0], glyph1=glyphs[1],
-                        dn0=dn[0][0], dna0=dn[0][1], dn1=dn[1][0], dna1=dn[1][1],
-                        up0=up[0][0], upa0=up[0][1], up1=up[1][0], upa1=up[1][1],
+                        gradients=gradient(dn, 'fdn') + '\n' + gradient(up, 'fup'),
                         mark0=marks[0], mark1=marks[1]))
     return len(glyphs[0].splitlines()), len(glyphs[1].splitlines())
 

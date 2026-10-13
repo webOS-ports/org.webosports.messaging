@@ -3,17 +3,17 @@
   <path id="arcTop" d="M20,82.5 A62.5,62.5 0 0 1 145,82.5"/>
   <path id="arcBottom" d="M26.5,82.5 A56,56 0 0 0 138.5,82.5"/>
 </defs>
-<g fill="none" stroke="#000000" stroke-opacity="0.09">
+<g fill="none" stroke="#d2d2d2" stroke-opacity="0.70">
   <circle cx="82.5" cy="82.5" r="70.5" stroke-width="2.4"/>
   <circle cx="82.5" cy="82.5" r="64" stroke-width="1.2"/>
   <circle cx="82.5" cy="82.5" r="39" stroke-width="1.2"/>
 </g>
-<g fill="#000000" fill-opacity="0.09" font-family="Prelude, 'DejaVu Sans', Arial, sans-serif"
+<g fill="#cccccc" fill-opacity="0.70" font-family="Prelude, 'DejaVu Sans', Arial, sans-serif"
    font-size="13" letter-spacing="2.6" text-anchor="middle">
   <text><textPath href="#arcTop" startOffset="50%">MESSAGING</textPath></text>
   <text><textPath href="#arcBottom" startOffset="50%">BY LUNEOS</textPath></text>
 </g>
-<g fill="#000000" fill-opacity="0.085">
+<g fill="#d2d2d2" fill-opacity="0.70">
   <path d="M70,52 C53,52 43,61.5 43,73 C43,80.5 47.5,87 55,90.5 L52,101 C51.6,102.2 52.7,102.8
            53.5,102.1 L65.5,93.5 C67,93.7 68.5,93.8 70,93.8 C87,93.8 97,84.3 97,73
            C97,61.5 87,52 70,52 Z"/>
