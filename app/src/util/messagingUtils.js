@@ -866,11 +866,13 @@ var messaging = module.exports = {
             if (!plus && digits.length === 11 && digits.charAt(0) === "1") {
                 return "1 (" + digits.slice(1, 4) + ") " + digits.slice(4, 7) + "-" + digits.slice(7);
             }
-            if (plus && digits.length > 7) {
-                // +CC NNN NNN NNNN — group the subscriber part in threes from the right.
-                var tail = digits.slice(-10), head = digits.slice(0, digits.length - 10);
-                var grouped = tail.replace(/(\d{3})(\d{3})(\d{0,4})/, "$1 $2 $3").replace(/\s+$/, "");
-                return "+" + (head ? head + " " : "") + grouped;
+            // +1 is the only country code with a fixed, known subscriber length (NANP, ten
+            // digits), so it is the only one that can be grouped without a country-code table.
+            // Grouping every international number on that assumption cut into the country code
+            // instead: a Dutch +31612345678 came out as "+3 161 234 5678", which reads as a
+            // different number. Anything else is shown as stored.
+            if (plus && digits.length === 11 && digits.charAt(0) === "1") {
+                return "+1 " + digits.slice(1, 4) + " " + digits.slice(4, 7) + " " + digits.slice(7);
             }
             return raw;
         },
