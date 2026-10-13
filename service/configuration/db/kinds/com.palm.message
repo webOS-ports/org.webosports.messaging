@@ -37,6 +37,13 @@
 				{"name":"_rev"}
 			]
 		}, {
+			"name":"unreadbyfolder",
+			"props": [
+				{"name":"folder"},
+				{"default":false,"name":"flags.read"},
+				{"name":"localTimestamp"}
+			]
+		}, {
 			"name":"readFlagChanges",
 			"props": [{"name":"readRevSet"}]
 		}, {
