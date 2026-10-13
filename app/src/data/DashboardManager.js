@@ -214,10 +214,15 @@ module.exports = kind({
 
     watchInvites: function () {
         cancelRequests(this.$.inviteWatch);
+        // com.palm.iminvitation belongs to com.palm.app.messaging, not to this repo, and its kind
+        // carries no index on `accepted` - so a where clause on it is answered with
+        // "db: no index for query" and the watch never fires at all. Walk the revision index,
+        // which the kind does have, and pick the pending ones out below. There are only ever a
+        // handful of invitations, so this costs nothing.
         this.$.inviteWatch.send({
             query: {
                 from: "com.palm.iminvitation:1",
-                where: [{ prop: "accepted", op: "=", val: "pending" }]
+                where: [{ prop: "_rev", op: ">", val: 0 }]
             },
             watch: true
         });
@@ -232,7 +237,9 @@ module.exports = kind({
 
         if (!this.invitesPrimed) {
             for (var p = 0; p < results.length; p++) {
-                this.seenInviteIds[results[p]._id] = true;
+                if (results[p].accepted === "pending") {
+                    this.seenInviteIds[results[p]._id] = true;
+                }
             }
             this.invitesPrimed = true;
             return true;
@@ -240,7 +247,8 @@ module.exports = kind({
 
         for (var i = 0; i < results.length; i++) {
             var invite = results[i];
-            if (this.seenInviteIds[invite._id] || this.filter.filterAll) {
+            if (invite.accepted !== "pending" || this.seenInviteIds[invite._id] ||
+                    this.filter.filterAll) {
                 continue;
             }
             this.seenInviteIds[invite._id] = true;
