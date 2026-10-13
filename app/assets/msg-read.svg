@@ -1,3 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="45" height="23" viewBox="0 0 45 23">
-<g><polyline points="2.9,9.4 11.9,18.7 29,1" fill="none" stroke="#6cc3e8" stroke-width="6" stroke-linejoin="miter" stroke-miterlimit="4"/><g transform="translate(14,0)"><polyline points="2.9,9.4 11.9,18.7 29,1" fill="none" stroke="#6cc3e8" stroke-width="6" stroke-linejoin="miter" stroke-miterlimit="4"/></g></g>
+<defs><linearGradient id="t" x1="0" y1="0" x2="0" y2="1">
+  <stop offset="0" stop-color="#7ecbec"/><stop offset="1" stop-color="#58a0c2"/>
+</linearGradient></defs>
+<g stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <polyline points="4.2,9.6 11.8,17.8 26.2,3.8" stroke="#002a3c" stroke-width="6.1"/>
+    <polyline points="4.2,9.6 11.8,17.8 26.2,3.8" stroke="url(#t)" stroke-width="4.6"/>
+    <polyline points="4.2,9.6 11.8,17.8 26.2,3.8" stroke="#d3edf8" stroke-width="1.1" stroke-opacity="0.85"
+              transform="translate(-0.6,-1.3)"/>
+  </g>
+<g transform="translate(14,0)"><g stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <polyline points="4.2,9.6 11.8,17.8 26.2,3.8" stroke="#002a3c" stroke-width="6.1"/>
+    <polyline points="4.2,9.6 11.8,17.8 26.2,3.8" stroke="url(#t)" stroke-width="4.6"/>
+    <polyline points="4.2,9.6 11.8,17.8 26.2,3.8" stroke="#d3edf8" stroke-width="1.1" stroke-opacity="0.85"
+              transform="translate(-0.6,-1.3)"/>
+  </g></g>
 </svg>
