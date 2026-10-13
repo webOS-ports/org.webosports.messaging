@@ -27,6 +27,14 @@ echo "== static analysis"
 "$HERE/static-analysis.sh" || fail=1
 
 echo
+echo "== artwork"
+if command -v python3 >/dev/null 2>&1 && python3 -c 'import PIL' 2>/dev/null; then
+	python3 "$HERE/../graphics/build.py" --check || fail=1
+else
+	echo "SKIP artwork (needs python3 with Pillow)"
+fi
+
+echo
 echo "== build"
 if PACK=$("$HERE/pack.sh" "$WORK"); then
 	MESSAGING_PACK_DIR="$PACK" node --test "$HERE"/build/*.test.js || fail=1
