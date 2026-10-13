@@ -410,8 +410,8 @@ describe('person helpers', function () {
 
     it('getDisplayImage falls back to the silhouette', function () {
         assert.equal(person.getDisplayImage({ photos: { squarePhotoPath: '/p.png' } }), '/p.png');
-        assert.equal(person.getDisplayImage({}), 'assets/list-avatar-default.png');
-        assert.equal(person.getDisplayImage(undefined), 'assets/list-avatar-default.png');
+        assert.equal(person.getDisplayImage({}), 'assets/list-avatar-default.svg');
+        assert.equal(person.getDisplayImage(undefined), 'assets/list-avatar-default.svg');
     });
 
     it('reports which kinds of account a person can be reached on', function () {

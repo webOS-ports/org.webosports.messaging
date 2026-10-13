@@ -33,7 +33,7 @@ module.exports = kind({
                     name: "input", kind: Input, classes: "flex-one search-input",
                     oninput: "inputChanged", onchange: "inputChanged"
                 },
-                { name: "icon", kind: Image, src: "assets/search-input.png", ontap: "clearTapped" }
+                { name: "icon", kind: Image, src: "assets/search-input.svg", ontap: "clearTapped" }
             ]
         }
     ],

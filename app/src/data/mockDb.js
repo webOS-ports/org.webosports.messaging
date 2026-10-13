@@ -31,7 +31,7 @@ var people = [
             { value: "+15015559090", type: "type_work" }
         ],
         ims: [{ value: "anna.k", type: "type_telegram" }],
-        photos: { squarePhotoPath: "assets/list-avatar-default.png" }
+        photos: { squarePhotoPath: "assets/list-avatar-default.svg" }
     },
     {
         _id: "person-ben", _kind: "com.palm.person:1", favorite: true,
@@ -40,7 +40,7 @@ var people = [
         emails: [],
         phoneNumbers: [{ value: "+442071838750", type: "type_mobile" }],
         ims: [{ value: "44207183875@s.whatsapp.net", type: "type_whatsapp" }],
-        photos: { squarePhotoPath: "assets/list-avatar-default.png" }
+        photos: { squarePhotoPath: "assets/list-avatar-default.svg" }
     },
     {
         _id: "person-chi", _kind: "com.palm.person:1", favorite: false,
@@ -48,7 +48,7 @@ var people = [
         name: { givenName: "Chi", familyName: "Nguyen" },
         phoneNumbers: [{ value: "5551234567", type: "type_home" }],
         ims: [{ value: "chi_ng", type: "type_discord" }],
-        photos: { squarePhotoPath: "assets/list-avatar-default.png" }
+        photos: { squarePhotoPath: "assets/list-avatar-default.svg" }
     },
     {
         _id: "person-dora", _kind: "com.palm.person:1", favorite: false,
@@ -56,7 +56,7 @@ var people = [
         name: { givenName: "Dora", familyName: "Silva" },
         phoneNumbers: [{ value: "+5511987654321", type: "type_mobile" }],
         ims: [{ value: "dora.silva", type: "type_telegram" }],
-        photos: { squarePhotoPath: "assets/list-avatar-default.png" }
+        photos: { squarePhotoPath: "assets/list-avatar-default.svg" }
     },
     {
         // A favorite with no messaging accounts at all, to exercise the "Tap here to add contact

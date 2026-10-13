@@ -127,6 +127,29 @@ describe('the packed appinfo', function () {
             'no emoji images next to the app');
     });
 
+    it('ships every asset the packed app asks for', function () {
+        // A renamed or retyped asset is silent: the reference just 404s on the device and the
+        // glyph is missing. The artwork is SVG, so a stale .png reference is exactly that case.
+        var missing = [];
+        var seen = {};
+        var pattern = /assets\/[A-Za-z0-9_@.\/-]+\.(?:svg|png|jpg|gif)/g;
+        var match;
+        while ((match = pattern.exec(html)) !== null) {
+            var ref = match[0];
+            if (seen[ref]) { continue; }
+            seen[ref] = true;
+            if (!fs.existsSync(path.join(PACK, ref))) { missing.push(ref); }
+        }
+        assert.ok(Object.keys(seen).length > 10, 'found almost no asset references to check');
+        assert.deepEqual(missing, []);
+    });
+
+    it('draws its artwork from vectors, so a denser screen costs nothing', function () {
+        var svgs = fs.readdirSync(path.join(PACK, 'assets'))
+            .filter(function (f) { return f.endsWith('.svg'); });
+        assert.ok(svgs.length >= 20, 'only ' + svgs.length + ' svg assets were packed');
+    });
+
     it('leaves the browser-only mock data out of the shipped assets', function () {
         assert.ok(!fs.existsSync(path.join(PACK, 'mock')), 'the mock directory was packed');
     });

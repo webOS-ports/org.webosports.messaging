@@ -621,7 +621,7 @@ var messaging = module.exports = {
             if (inPerson && inPerson.photos && inPerson.photos.squarePhotoPath) {
                 return inPerson.photos.squarePhotoPath;
             }
-            return "assets/list-avatar-default.png";
+            return "assets/list-avatar-default.svg";
         },
 
         hasMessagingAccounts: function (person) {

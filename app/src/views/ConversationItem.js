@@ -62,7 +62,7 @@ module.exports = kind({
                                     showing: false
                                 },
                                 {
-                                    name: "errorIcon", kind: Image, src: "assets/header-warning-icon.png",
+                                    name: "errorIcon", kind: Image, src: "assets/header-warning-icon.svg",
                                     classes: "erroricon", showing: false, ontap: "showError"
                                 }
                             ]
@@ -178,7 +178,7 @@ module.exports = kind({
         var isOutgoing = folder === FOLDERS.OUTBOX;
         if (isOutgoing && (status === "read" || status === "delivered")) {
             this.$.receiptIcon.setSrc(status === "read" ?
-                "assets/msg-read.png" : "assets/msg-delivered.png");
+                "assets/msg-read.svg" : "assets/msg-delivered.svg");
             this.$.receiptIcon.show();
         } else {
             this.$.receiptIcon.hide();

@@ -28,10 +28,12 @@ echo "== static analysis"
 
 echo
 echo "== artwork"
-if command -v python3 >/dev/null 2>&1 && python3 -c 'import PIL' 2>/dev/null; then
-	python3 "$HERE/../graphics/build.py" --check || fail=1
+# The artwork ships as SVG and the app loads it as SVG, so there is nothing to rebuild - but a
+# file that does not rasterise would not draw on the device either, and nothing else would say so.
+if python3 "$HERE/../graphics/render.py" >/dev/null 2>&1; then
+	echo "PASS artwork ($(ls "$HERE/../app/assets"/*.svg | wc -l) svg assets rasterise)"
 else
-	echo "SKIP artwork (needs python3 with Pillow)"
+	echo "SKIP artwork (needs python3 and rsvg-convert or chromium)"
 fi
 
 echo

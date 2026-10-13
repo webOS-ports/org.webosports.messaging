@@ -43,7 +43,7 @@ module.exports = kind({
                     classes: 'search-input',
                     style: "flex: 1 1; vertical-align:middle;"
                 },
-                { kind: Image, src: "assets/search-input.png" }
+                { kind: Image, src: "assets/search-input.svg" }
             ]
         },
         {name: 'dataList', kind: DataList, collection: new MsgAddrCollection(), ontap: "selectMsgAddr", components: [
