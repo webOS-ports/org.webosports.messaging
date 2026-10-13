@@ -1,4 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="17" height="34" viewBox="0 0 17 34">
-<g><g fill="none" stroke="#5a5a5a" stroke-opacity="0.33" stroke-width="2"><path d="M0.9,6.4 h8.6 M0.9,10.6 h8.6 M0.9,6.4 v4.2"/></g><polygon points="8.6,2.6 16.2,8.5 8.6,14.4" fill="#5a5a5a" fill-opacity="0.33"/></g>
-<g transform="translate(17,34) rotate(180)"><g fill="none" stroke="#5a5a5a" stroke-opacity="0.33" stroke-width="2"><path d="M0.9,6.4 h8.6 M0.9,10.6 h8.6 M0.9,6.4 v4.2"/></g><polygon points="8.6,2.6 16.2,8.5 8.6,14.4" fill="#5a5a5a" fill-opacity="0.33"/></g>
+<defs>
+  <mask id="cut" maskUnits="userSpaceOnUse" x="-1" y="0" width="19" height="17">
+    <rect x="-1" y="0" width="19" height="17" fill="#ffffff"/>
+    <path d="M0,5.5 H9.5 V2 L16.5,8.5 L9.5,15 V11.5 H0 Z" fill="#000000"/>
+  </mask>
+</defs>
+<g>
+  <path d="M0,5.5 H9.5 V2 L16.5,8.5 L9.5,15 V11.5 H0 Z" fill="#ffffff" fill-opacity="0.72" transform="translate(-1,1)"
+        mask="url(#cut)"/>
+  <path d="M0,5.5 H9.5 V2 L16.5,8.5 L9.5,15 V11.5 H0 Z" fill="#000000" fill-opacity="0.15" stroke="#000000"
+        stroke-opacity="0.11" stroke-width="1"/>
+</g>
+<g transform="translate(17,34) rotate(180)">
+  <path d="M0,5.5 H9.5 V2 L16.5,8.5 L9.5,15 V11.5 H0 Z" fill="#ffffff" fill-opacity="0.72" transform="translate(-1,1)"
+        mask="url(#cut)"/>
+  <path d="M0,5.5 H9.5 V2 L16.5,8.5 L9.5,15 V11.5 H0 Z" fill="#000000" fill-opacity="0.15" stroke="#000000"
+        stroke-opacity="0.11" stroke-width="1"/>
+</g>
 </svg>
