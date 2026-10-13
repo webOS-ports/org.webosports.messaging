@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="44" height="64" viewBox="0 0 44 64">
+  <defs>
+    <linearGradient id="fdn" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#848484"/><stop offset="1" stop-color="#747474"/>
+    </linearGradient>
+    <linearGradient id="fup" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a4a4a4"/><stop offset="1" stop-color="#737373"/>
+    </linearGradient>
+    <mask id="mdn"><rect width="44" height="32" fill="url(#fdn)"/></mask>
+    <mask id="mup"><rect width="44" height="32" fill="url(#fup)"/></mask>
+    <filter id="sdn" x="-35%" y="-35%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="1" stdDeviation="1.0" flood-color="#000000" flood-opacity="0.22"/>
+    </filter>
+    <filter id="sup" x="-35%" y="-35%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="1" stdDeviation="1.2" flood-color="#000000" flood-opacity="0.38"/>
+    </filter>
+  </defs>
+  <g fill="#000000" color="#000000" mask="url(#mdn)" filter="url(#sdn)"><path d="M19.5,5 C11.4,5 5.5,9.5 5.5,15.2 C5.5,18.9 8,22.2 11.9,24 L9,30.4 C8.7,31 9.3,31.6 9.9,31.2 L18.3,26.1 C18.7,26.1 19.1,26.1 19.5,26.1 C27.6,26.1 33.5,21.7 33.5,15.2 C33.5,9.5 27.6,5 19.5,5 Z"/><path d="M34.6,1.2 h3.8 v5 h5 v3.8 h-5 v5 h-3.8 v-5 h-5 V6.2 h5 Z"/></g>
+  <g fill="#ffffff" color="#ffffff" mask="url(#mup)" filter="url(#sup)"
+     transform="translate(0,32)"><path d="M19.5,5 C11.4,5 5.5,9.5 5.5,15.2 C5.5,18.9 8,22.2 11.9,24 L9,30.4 C8.7,31 9.3,31.6 9.9,31.2 L18.3,26.1 C18.7,26.1 19.1,26.1 19.5,26.1 C27.6,26.1 33.5,21.7 33.5,15.2 C33.5,9.5 27.6,5 19.5,5 Z"/><path d="M34.6,1.2 h3.8 v5 h5 v3.8 h-5 v5 h-3.8 v-5 h-5 V6.2 h5 Z"/></g>
+</svg>

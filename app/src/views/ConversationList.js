@@ -69,11 +69,11 @@ module.exports = kind({
                     allowHtml: true, ontap: "handleHeaderTap"
                 },
                 {
-                    name: "videoCallButton", kind: IconButton, src: "assets/video-call-icon.png",
+                    name: "videoCallButton", kind: IconButton, src: "assets/video-call-icon.svg",
                     showing: false, ontap: "videocall", classes: "conversation-call-btn"
                 },
                 {
-                    name: "phoneCallButton", kind: IconButton, src: "assets/phone-icon.png",
+                    name: "phoneCallButton", kind: IconButton, src: "assets/phone-icon.svg",
                     showing: false, ontap: "voicecall", classes: "conversation-call-btn"
                 },
                 {
@@ -118,7 +118,7 @@ module.exports = kind({
                 { name: "attachmentChipThumb", kind: Image, classes: "attachment-chip-thumb", showing: false },
                 { name: "attachmentChipLabel", classes: "attachment-chip-label" },
                 {
-                    name: "attachmentChipRemove", kind: IconButton, src: "assets/icon-decline.png",
+                    name: "attachmentChipRemove", kind: IconButton, src: "assets/icon-decline.svg",
                     ontap: "clearAttachment"
                 }
             ]
@@ -130,7 +130,7 @@ module.exports = kind({
                 { classes: "reply-bar-accent" },
                 { name: "replyBarText", classes: "reply-bar-text flex-one", allowHtml: true },
                 {
-                    name: "replyBarClose", kind: IconButton, src: "assets/icon-decline.png",
+                    name: "replyBarClose", kind: IconButton, src: "assets/icon-decline.svg",
                     classes: "reply-bar-close", ontap: "cancelReply"
                 }
             ]
@@ -140,11 +140,11 @@ module.exports = kind({
         {
             name: "footer", kind: Toolbar, classes: "conversation-bottom flex-row", components: [
                 {
-                    name: "attachButton", kind: IconButton, src: "assets/menu-icon-attach.png",
+                    name: "attachButton", kind: IconButton, src: "assets/menu-icon-attach.svg",
                     classes: "conversation-attach-btn", ontap: "openAttachmentPicker"
                 },
                 {
-                    name: "micButton", kind: IconButton, src: "assets/menu-icon-mic.png",
+                    name: "micButton", kind: IconButton, src: "assets/menu-icon-mic.svg",
                     classes: "conversation-mic-btn", ontap: "micButtonTapped"
                 },
                 { name: "vnTimer", classes: "conversation-vn-timer", showing: false },
@@ -162,7 +162,7 @@ module.exports = kind({
                     ]
                 },
                 {
-                    name: "sendButton", kind: IconButton, src: "assets/menu-icon-send.png",
+                    name: "sendButton", kind: IconButton, src: "assets/menu-icon-send.svg",
                     classes: "conversation-send-btn", ontap: "sendButtonTapped"
                 }
             ]
@@ -1257,7 +1257,7 @@ module.exports = kind({
 
     startVoiceNote: function () {
         this.recording = true;
-        this.$.micButton.setSrc("assets/menu-icon-mic-rec.png");
+        this.$.micButton.setSrc("assets/menu-icon-mic-rec.svg");
         this.$.micButton.addClass("recording");
         this.$.vnTimer.setShowing(true);
         this.startVoiceNoteTimer();
@@ -1265,7 +1265,7 @@ module.exports = kind({
 
     stopVoiceNote: function () {
         this.recording = false;
-        this.$.micButton.setSrc("assets/menu-icon-mic.png");
+        this.$.micButton.setSrc("assets/menu-icon-mic.svg");
         this.$.micButton.removeClass("recording");
         this.$.vnTimer.setShowing(false);
         this.stopVoiceNoteTimer();

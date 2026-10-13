@@ -31,7 +31,7 @@ var DefaultView = kind({
             fit: true, classes: "body-placeholder flex-column",
             style: "justify-content: center; align-items: center;",
             components: [
-                { kind: Image, src: "assets/icon-165x165.png" },
+                { kind: Image, src: "assets/icon-165x165.svg" },
                 {
                     style: "text-align: center; color: #797979; margin-top: 1rem;",
                     content: $L("Select a conversation to see its messages.")

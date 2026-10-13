@@ -33,7 +33,7 @@ module.exports = kind({
             // short to hold it, which a 720x720 panel is.
             fit: true, classes: "flex-column first-launch-body",
             components: [
-                { kind: Image, src: "assets/icon-165x165.png" },
+                { kind: Image, src: "assets/icon-165x165.svg" },
                 {
                     style: "text-align: center; margin-top: 1.5rem; font-size: 18px;",
                     content: $L("Send text messages and chat with your friends.")

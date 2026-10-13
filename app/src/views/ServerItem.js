@@ -25,7 +25,7 @@ module.exports = kind({
     components: [
         {
             name: "serverImage", kind: Image, classes: "contact-image",
-            src: "assets/menu-icon-servers.png"
+            src: "assets/menu-icon-servers.svg"
         },
         // The same status column as thread rows: the account's online dot above the last-message
         // sent/received arrow. It also supplies the gap between logo and title.
@@ -81,7 +81,7 @@ module.exports = kind({
      */
     updateServerImage: function (inServer) {
         var icon = this.getServiceIcon(inServer && inServer.serviceName);
-        this.$.serverImage.setAttribute("src", icon || "assets/menu-icon-servers.png");
+        this.$.serverImage.setAttribute("src", icon || "assets/menu-icon-servers.svg");
         // Provider logos carry their own rounded edges and read bright at full bleed, so reuse
         // ThreadItem's softened frameless treatment. Recycled rows must clear it when falling back.
         this.$.serverImage.addRemoveClass("contact-image-service", Boolean(icon));

@@ -59,7 +59,7 @@ module.exports = kind({
             name: "chosenBar", showing: false, classes: "attachment-chip", components: [
                 { name: "chosenLabel", classes: "attachment-chip-label" },
                 {
-                    name: "chosenClear", kind: IconButton, src: "assets/icon-decline.png",
+                    name: "chosenClear", kind: IconButton, src: "assets/icon-decline.svg",
                     ontap: "clearRecipient"
                 }
             ]
@@ -75,7 +75,7 @@ module.exports = kind({
                     ]
                 },
                 {
-                    name: "sendButton", kind: IconButton, src: "assets/menu-icon-send.png",
+                    name: "sendButton", kind: IconButton, src: "assets/menu-icon-send.svg",
                     classes: "conversation-send-btn", ontap: "sendTapped"
                 }
             ]

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="64" viewBox="0 0 32 64">
+  <defs>
+    <linearGradient id="fdn" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ababab"/><stop offset="1" stop-color="#878787"/>
+    </linearGradient>
+    <linearGradient id="fup" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#adadad"/><stop offset="1" stop-color="#909090"/>
+    </linearGradient>
+    <mask id="mdn"><rect width="32" height="32" fill="url(#fdn)"/></mask>
+    <mask id="mup"><rect width="32" height="32" fill="url(#fup)"/></mask>
+    <filter id="sdn" x="-35%" y="-35%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="1" stdDeviation="1.0" flood-color="#000000" flood-opacity="0.22"/>
+    </filter>
+    <filter id="sup" x="-35%" y="-35%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="1" stdDeviation="1.2" flood-color="#000000" flood-opacity="0.38"/>
+    </filter>
+  </defs>
+  <g fill="#000000" color="#000000" mask="url(#mdn)" filter="url(#sdn)"><path d="M27,5.5 L3.5,15.4 L12.6,18.8 L25.3,8.2 L15.6,20.4 L15.6,27 L19.4,22.6 L23.3,24.1 Z"/></g>
+  <g fill="#ffffff" color="#ffffff" mask="url(#mup)" filter="url(#sup)"
+     transform="translate(0,32)"><path d="M27,5.5 L3.5,15.4 L12.6,18.8 L25.3,8.2 L15.6,20.4 L15.6,27 L19.4,22.6 L23.3,24.1 Z"/></g>
+</svg>

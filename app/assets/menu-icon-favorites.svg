@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="44" height="64" viewBox="0 0 44 64">
+  <defs>
+    <linearGradient id="fdn" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#818181"/><stop offset="1" stop-color="#747474"/>
+    </linearGradient>
+    <linearGradient id="fup" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#989898"/><stop offset="1" stop-color="#6e6e6e"/>
+    </linearGradient>
+    <mask id="mdn"><rect width="44" height="32" fill="url(#fdn)"/></mask>
+    <mask id="mup"><rect width="44" height="32" fill="url(#fup)"/></mask>
+    <filter id="sdn" x="-35%" y="-35%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="1" stdDeviation="1.0" flood-color="#000000" flood-opacity="0.22"/>
+    </filter>
+    <filter id="sup" x="-35%" y="-35%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="1" stdDeviation="1.2" flood-color="#000000" flood-opacity="0.38"/>
+    </filter>
+  </defs>
+  <g fill="#000000" color="#000000" mask="url(#mdn)" filter="url(#sdn)"><polygon points="22.00,2.50 18.41,11.86 8.40,12.38 16.20,18.69 13.59,28.37 22.00,22.90 30.41,28.37 27.80,18.69 35.60,12.38 25.59,11.86"/></g>
+  <g fill="#ffffff" color="#ffffff" mask="url(#mup)" filter="url(#sup)"
+     transform="translate(0,32)"><polygon points="22.00,2.50 18.41,11.86 8.40,12.38 16.20,18.69 13.59,28.37 22.00,22.90 30.41,28.37 27.80,18.69 35.60,12.38 25.59,11.86"/></g>
+</svg>

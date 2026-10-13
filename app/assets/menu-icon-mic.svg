@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="64" viewBox="0 0 32 64">
+  <defs>
+    <linearGradient id="fdn" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d7d7d7"/><stop offset="1" stop-color="#bfbfbf"/>
+    </linearGradient>
+    <linearGradient id="fup" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6b6b6b"/><stop offset="1" stop-color="#626262"/>
+    </linearGradient>
+    <mask id="mdn"><rect width="32" height="32" fill="url(#fdn)"/></mask>
+    <mask id="mup"><rect width="32" height="32" fill="url(#fup)"/></mask>
+    <filter id="sdn" x="-35%" y="-35%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="1" stdDeviation="1.0" flood-color="#000000" flood-opacity="0.22"/>
+    </filter>
+    <filter id="sup" x="-35%" y="-35%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="1" stdDeviation="1.2" flood-color="#000000" flood-opacity="0.38"/>
+    </filter>
+  </defs>
+  <g fill="#000000" color="#000000" mask="url(#mdn)" filter="url(#sdn)"><rect x="12.5" y="2" width="7" height="15.5" rx="3.5"/><path d="M9.5,14.5 C9.5,20.6 12.5,23.5 16,23.5 C19.5,23.5 22.5,20.6 22.5,14.5" fill="none" stroke-width="2.4" stroke-linecap="round" stroke="currentColor"/><rect x="14.7" y="23" width="2.6" height="5"/><rect x="10.5" y="27.6" width="11" height="2.6" rx="1.3"/></g>
+  <g fill="#ffffff" color="#ffffff" mask="url(#mup)" filter="url(#sup)"
+     transform="translate(0,32)"><rect x="12.5" y="2" width="7" height="15.5" rx="3.5"/><path d="M9.5,14.5 C9.5,20.6 12.5,23.5 16,23.5 C19.5,23.5 22.5,20.6 22.5,14.5" fill="none" stroke-width="2.4" stroke-linecap="round" stroke="currentColor"/><rect x="14.7" y="23" width="2.6" height="5"/><rect x="10.5" y="27.6" width="11" height="2.6" rx="1.3"/></g>
+</svg>

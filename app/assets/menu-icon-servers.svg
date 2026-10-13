@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="44" height="64" viewBox="0 0 44 64">
+  <defs>
+    <linearGradient id="fdn" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fbfbfb"/><stop offset="1" stop-color="#fbfbfb"/>
+    </linearGradient>
+    <linearGradient id="fup" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7a7a7a"/><stop offset="1" stop-color="#7a7a7a"/>
+    </linearGradient>
+    <mask id="mdn"><rect width="44" height="32" fill="url(#fdn)"/></mask>
+    <mask id="mup"><rect width="44" height="32" fill="url(#fup)"/></mask>
+    <filter id="sdn" x="-35%" y="-35%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="1" stdDeviation="1.0" flood-color="#000000" flood-opacity="0.22"/>
+    </filter>
+    <filter id="sup" x="-35%" y="-35%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="1" stdDeviation="1.2" flood-color="#000000" flood-opacity="0.38"/>
+    </filter>
+  </defs>
+  <g fill="#000000" color="#000000" mask="url(#mdn)" filter="url(#sdn)"><rect x="6.6" y="2" width="32.8" height="8" rx="1.8"/><path d="M10,5.25 h1.5 v-1.5 h1.5 v1.5 h1.5 v1.5 h-1.5 v1.5 h-1.5 v-1.5 h-1.5 Z" fill="#ffffff"/><rect x="6.6" y="12" width="32.8" height="8" rx="1.8"/><path d="M10,15.25 h1.5 v-1.5 h1.5 v1.5 h1.5 v1.5 h-1.5 v1.5 h-1.5 v-1.5 h-1.5 Z" fill="#ffffff"/><rect x="6.6" y="22" width="32.8" height="8" rx="1.8"/><path d="M10,25.25 h1.5 v-1.5 h1.5 v1.5 h1.5 v1.5 h-1.5 v1.5 h-1.5 v-1.5 h-1.5 Z" fill="#ffffff"/></g>
+  <g fill="#ffffff" color="#ffffff" mask="url(#mup)" filter="url(#sup)"
+     transform="translate(0,32)"><rect x="6.6" y="2" width="32.8" height="8" rx="1.8"/><path d="M10,5.25 h1.5 v-1.5 h1.5 v1.5 h1.5 v1.5 h-1.5 v1.5 h-1.5 v-1.5 h-1.5 Z" fill="#ffffff"/><rect x="6.6" y="12" width="32.8" height="8" rx="1.8"/><path d="M10,15.25 h1.5 v-1.5 h1.5 v1.5 h1.5 v1.5 h-1.5 v1.5 h-1.5 v-1.5 h-1.5 Z" fill="#ffffff"/><rect x="6.6" y="22" width="32.8" height="8" rx="1.8"/><path d="M10,25.25 h1.5 v-1.5 h1.5 v1.5 h1.5 v1.5 h-1.5 v1.5 h-1.5 v-1.5 h-1.5 Z" fill="#ffffff"/></g>
+</svg>
