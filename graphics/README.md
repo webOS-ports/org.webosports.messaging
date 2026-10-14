@@ -56,12 +56,20 @@ Mean per-pixel distance from the art each one replaces, worst first, out of 255:
 
 | | |
 |---|---|
-| 19-34 | `attach-location` 33, `menu-icon-attach` 27, `msg-read` 26, `search-input` 23, `phone-icon` 22, `icon-decline` 20, `menu-icon-buddies` 20, `menu-icon-conversation-plus` 20, `video-call-icon` 20, `icon-165x165` 20, `menu-icon-servers` 19 |
-| 10-18 | `menu-icon-conversation` 16, `menu-icon-send` 16, `favorites-star-blue` 14, `menu-icon-favorites` 13, `menu-icon-mic-rec` 13, `list-unread` 12, `menu-icon-mic` 12, `msg-delivered` 21, `header-warning-icon` 10 |
+| 19-34 | `attach-location` 33, `menu-icon-attach` 27, `msg-read` 26, `search-input` 23, `phone-icon` 22, `icon-decline` 20, `menu-icon-buddies` 20, `menu-icon-conversation-plus` 20, `video-call-icon` 20, `menu-icon-servers` 19 |
+| 10-18 | `icon-165x165` 16, `menu-icon-conversation` 16, `menu-icon-send` 16, `favorites-star-blue` 14, `menu-icon-favorites` 13, `menu-icon-mic-rec` 13, `list-unread` 12, `menu-icon-mic` 12, `msg-delivered` 21, `header-warning-icon` 10 |
 | under 10 | `online-status` 9.6, `menuitem-arrow-dark` 8.2, `chat-balloon-error-shape` 7.9, `incoming-outgoing` 7.9, `chat-balloon-received-error-shape` 7.8, `dialogbg` 7.1, `list-view-avatar-frame` 5.4, `chat-balloon-received-shape` 4.0, `attach-doc` 3.7, `mini-player-icon-play` 3.2, `attach-ppt` 3.1, `attach-xls` 2.6, `chat-balloon-sent-shape` 2.4, `loading-bg` 1.9, `mini-player-icon-pause` 1.9, `list-avatar-default` 1.5, `defaultview-panel-tile` 0.8, the two chrome shadows 0.3 |
 
 `icon-165x165` is counted against a worn stamp it deliberately does not copy:
-the rings and legend are drawn clean, and the legend says LuneOS.
+the rings and legend are drawn clean, and the legend says LuneOS. Everything
+else about it is measured - the two ring radii and weights, the legend's baseline
+radius and size (from Prelude's own ascender and descender against the original's
+ink extent), the 32 degree turn of the legend ring, and both balloons' ellipses
+fitted to the original's edge. Rendering it here the way the device will needs
+Prelude, which is not a host font: pull it off a device with
+`adb pull /usr/share/fonts/Prelude-Medium.ttf` and point fontconfig at it through
+`FONTCONFIG_FILE`, or the sheet silently falls back and the legend comes out the
+wrong width.
 
 What is still visibly off, and why: `menu-icon-send`'s upper fold,
 `menu-icon-attach`'s wire clip and `menu-icon-buddies`' shoulders are one- and
