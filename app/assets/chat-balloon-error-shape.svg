@@ -1,3 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="8" height="14" viewBox="0 0 8 14">
-<polygon points="0,0 8,7 0,14" fill="#f4f4f4" stroke="#d4d4d4" stroke-width="1" stroke-linejoin="miter"/>
+<path d="M0,-3.50 L10.50,7 L0,17.50 Z M0,-2.50 L9.50,7 L0,16.50 Z" fill-rule="evenodd" fill="#ffffff" fill-opacity="0.15"/>
+<path d="M0,-2.50 L9.50,7 L0,16.50 Z M0,-1.50 L8.50,7 L0,15.50 Z" fill-rule="evenodd" fill="#fbfbfb" fill-opacity="0.32"/>
+<path d="M0,-1.50 L8.50,7 L0,15.50 Z M0,-0.50 L7.50,7 L0,14.50 Z" fill-rule="evenodd" fill="#a8a8a8" fill-opacity="0.32"/>
+<path d="M0,-0.50 L7.50,7 L0,14.50 Z M0,0.50 L6.50,7 L0,13.50 Z" fill-rule="evenodd" fill="#d7d7d7" fill-opacity="0.61"/>
+<path d="M0,0.50 L6.50,7 L0,13.50 Z" fill="#f4f4f4"/>
 </svg>

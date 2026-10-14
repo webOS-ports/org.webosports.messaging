@@ -1,4 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
-<polygon points="7,5 27,16.5 7,28.5" fill="#ffffff" fill-opacity="0.50"
-         stroke="#212121" stroke-opacity="0.33" stroke-width="1"/>
+<!-- White at 0.50 with a lit pixel inside the edge and a dark one outside it, both measured
+     off the original: a flat triangle with a single hairline misses the bevel entirely. The
+     two rings are masked to one side of the shape so neither bleeds into the fill. -->
+<defs>
+  <linearGradient id="pl-edge" gradientUnits="userSpaceOnUse" x1="0" y1="5.5" x2="0" y2="28">
+    <stop offset="0" stop-color="#3d3d3d"/><stop offset="1" stop-color="#000000"/>
+  </linearGradient>
+  <linearGradient id="pl-cast" gradientUnits="userSpaceOnUse" x1="0" y1="5.5" x2="0" y2="28">
+    <stop offset="0" stop-color="#000000" stop-opacity="0"/>
+    <stop offset="0.55" stop-color="#000000" stop-opacity="0"/>
+    <stop offset="1" stop-color="#000000" stop-opacity="0.17"/>
+  </linearGradient>
+  <mask id="pl-out">
+    <rect width="32" height="32" fill="#ffffff"/>
+    <path d="M7,5.5 L26,16.8 L7,27.8 Z" fill="#000000"/>
+  </mask>
+  <mask id="pl-in"><path d="M7,5.5 L26,16.8 L7,27.8 Z" fill="#ffffff"/></mask>
+</defs>
+<path d="M7,5.5 L26,16.8 L7,27.8 Z" fill="none" stroke="url(#pl-cast)"
+      stroke-width="5" mask="url(#pl-out)"/>
+<path d="M7,5.5 L26,16.8 L7,27.8 Z" fill="none" stroke="url(#pl-edge)" stroke-opacity="0.33"
+      stroke-width="2" mask="url(#pl-out)"/>
+<path d="M7,5.5 L26,16.8 L7,27.8 Z" fill="#ffffff" fill-opacity="0.502"/>
+<path d="M7,5.5 L26,16.8 L7,27.8 Z" fill="none" stroke="#ffffff" stroke-opacity="0.078"
+      stroke-width="2" mask="url(#pl-in)"/>
 </svg>

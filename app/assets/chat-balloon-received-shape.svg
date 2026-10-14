@@ -1,3 +1,4 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="8" height="14" viewBox="0 0 8 14">
-<polygon points="8,0 0,7 8,14" fill="#d6edff" stroke="#b3d9f2" stroke-width="1" stroke-linejoin="miter"/>
+<polygon points="8,-1.60 -1.00,7 8,15.60" fill="#b3d9f2"/>
+<polygon points="8,-0.20 0.80,7 8,14.20" fill="#d6edff"/>
 </svg>

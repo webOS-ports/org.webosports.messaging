@@ -1,20 +1,30 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="17" height="34" viewBox="0 0 17 34">
+<!-- Two arrows, engraved rather than drawn: the original is black at 0.11 through the middle
+     rising to 0.22 against its own outline, with a white pixel off the lower-left edge. The
+     geometry is the original's - shaft x 1..9.5 over y 5..11, head from (9.5,2.3) to the tip
+     at (15.8,8.4) - which is a pixel right of where this sat before. -->
 <defs>
-  <mask id="cut" maskUnits="userSpaceOnUse" x="-1" y="0" width="19" height="17">
-    <rect x="-1" y="0" width="19" height="17" fill="#ffffff"/>
-    <path d="M0,5.5 H9.5 V2 L16.5,8.5 L9.5,15 V11.5 H0 Z" fill="#000000"/>
+  <path id="io-arrow" d="M1,5 L9.5,5 L9.5,2.3 L16.2,8.4 L9.5,14.5 L9.5,11 L1,11 Z"/>
+  <mask id="io-out">
+    <rect x="-3" y="-3" width="24" height="24" fill="#ffffff"/>
+    <use href="#io-arrow" fill="#000000"/>
   </mask>
+  <mask id="io-in"><use href="#io-arrow" fill="#ffffff"/></mask>
 </defs>
 <g>
-  <path d="M0,5.5 H9.5 V2 L16.5,8.5 L9.5,15 V11.5 H0 Z" fill="#ffffff" fill-opacity="0.72" transform="translate(-1,1)"
-        mask="url(#cut)"/>
-  <path d="M0,5.5 H9.5 V2 L16.5,8.5 L9.5,15 V11.5 H0 Z" fill="#000000" fill-opacity="0.15" stroke="#000000"
-        stroke-opacity="0.11" stroke-width="1"/>
+  <g mask="url(#io-out)">
+    <use href="#io-arrow" fill="#ffffff" fill-opacity="0.18" transform="translate(-1,1)"/>
+  </g>
+  <use href="#io-arrow" fill="#000000" fill-opacity="0.14"/>
+  <use href="#io-arrow" fill="none" stroke="#000000" stroke-opacity="0.05" stroke-width="2.6"
+       mask="url(#io-in)"/>
 </g>
 <g transform="translate(17,34) rotate(180)">
-  <path d="M0,5.5 H9.5 V2 L16.5,8.5 L9.5,15 V11.5 H0 Z" fill="#ffffff" fill-opacity="0.72" transform="translate(-1,1)"
-        mask="url(#cut)"/>
-  <path d="M0,5.5 H9.5 V2 L16.5,8.5 L9.5,15 V11.5 H0 Z" fill="#000000" fill-opacity="0.15" stroke="#000000"
-        stroke-opacity="0.11" stroke-width="1"/>
+  <g mask="url(#io-out)">
+    <use href="#io-arrow" fill="#ffffff" fill-opacity="0.18" transform="translate(-1,1)"/>
+  </g>
+  <use href="#io-arrow" fill="#000000" fill-opacity="0.14"/>
+  <use href="#io-arrow" fill="none" stroke="#000000" stroke-opacity="0.05" stroke-width="2.6"
+       mask="url(#io-in)"/>
 </g>
 </svg>

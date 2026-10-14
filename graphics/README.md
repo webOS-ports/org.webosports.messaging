@@ -42,28 +42,34 @@ Sizes and sprite layouts are not free: `.sent-received` is a 17x17 window onto a
 `menuitem-arrow-dark` holds a closed and an open frame. The root `width` and
 `height` have to stay exactly what the stylesheet expects.
 
-## Still to draw
+## Where it stands
 
-Done: the chrome, the balloon tails, presence, the list glyphs, the media
-player controls, the delivery receipts, the default avatar and its frame - 20
-assets, all SVG.
+Everything the app loads through a web view is SVG and drawn here - 39 files.
+Four marks stay PNG whatever happens, because sam and notificationmgr read those
+paths out of `appinfo.json` and are not web views: `messaging-48x48`,
+`notification-small`, `notification-large-messaging`, `notification-large-failed`,
+plus `attach-contact`, `attach-event`, `attach-pdf`, `header-icon-contacts` and
+`app/icon.png`, which come off the community masters through `from-masters.py`.
+`render.py` is what produces the rasters from the SVG.
 
-Not yet, and still Palm's:
+Mean per-pixel distance from the art each one replaces, worst first, out of 255:
 
 | | |
 |---|---|
-| `attach-{contact,doc,event,location,pdf,ppt,xls}.png` | 41x41 attachment-type badges |
-| `menu-icon-{attach,buddies,conversation,conversation-plus,favorites,mic,mic-rec,send,servers}.png` | toolbar icons, two frames each |
-| `phone-icon.png`, `video-call-icon.png`, `icon-decline.png` | call controls, two frames each |
-| `header-icon-contacts.png` | 32x32 |
-| `icon-165x165.png` | the watermark on the empty conversation view |
-| `messaging-48x48.png`, `notification-small.png`, `notification-large-messaging.png`, `notification-large-failed.png` | the app and notification marks |
-| `loading-bg.png`, `dialogbg.png` | the spinner strip and the dialog border-image |
-| `app/icon.png` | the launcher icon |
+| 19-34 | `attach-location` 33, `menu-icon-attach` 27, `msg-read` 26, `search-input` 23, `phone-icon` 22, `icon-decline` 20, `menu-icon-buddies` 20, `menu-icon-conversation-plus` 20, `video-call-icon` 20, `icon-165x165` 20, `menu-icon-servers` 19 |
+| 10-18 | `menu-icon-conversation` 16, `menu-icon-send` 16, `favorites-star-blue` 14, `menu-icon-favorites` 13, `menu-icon-mic-rec` 13, `list-unread` 12, `menu-icon-mic` 12, `msg-delivered` 21, `header-warning-icon` 10 |
+| under 10 | `online-status` 9.6, `menuitem-arrow-dark` 8.2, `chat-balloon-error-shape` 7.9, `incoming-outgoing` 7.9, `chat-balloon-received-error-shape` 7.8, `dialogbg` 7.1, `list-view-avatar-frame` 5.4, `chat-balloon-received-shape` 4.0, `attach-doc` 3.7, `mini-player-icon-play` 3.2, `attach-ppt` 3.1, `attach-xls` 2.6, `chat-balloon-sent-shape` 2.4, `loading-bg` 1.9, `mini-player-icon-pause` 1.9, `list-avatar-default` 1.5, `defaultview-panel-tile` 0.8, the two chrome shadows 0.3 |
 
-The last group stays PNG whatever happens: sam and notificationmgr read those
-paths out of `appinfo.json` and are not web views. `render.py` is what produces
-them from the SVG.
+`icon-165x165` is counted against a worn stamp it deliberately does not copy:
+the rings and legend are drawn clean, and the legend says LuneOS.
+
+What is still visibly off, and why: `menu-icon-send`'s upper fold,
+`menu-icon-attach`'s wire clip and `menu-icon-buddies`' shoulders are one- and
+two-pixel separations that survive only in the antialiasing of a 32px bitmap.
+Deriving them from the bitmap cannot recover them - `menu-icon-conversation-plus`
+proved that, where a 2px cross traced as a four-pointed star at every tolerance
+and had to be authored from measurement instead. These three want the same
+treatment.
 
 The house style to follow is the community's redrawn webOS source art in the
 [`graphics`](https://github.com/webOS-ports/graphics) repository - the same

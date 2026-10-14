@@ -1,6 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
-<g fill="#ffffff" fill-opacity="0.50" stroke="#212121" stroke-opacity="0.33" stroke-width="1">
-  <rect x="6.7" y="3.4" width="6.2" height="26.8" rx="3.1"/>
-  <rect x="18.7" y="3.4" width="6.2" height="26.8" rx="3.1"/>
-</g>
+<!-- Two bars at the original's own measure: 6 by 25 from (7,4) and (19,4), radius 3, white at
+     0.50 with a lit pixel inside the edge and a dark one outside. -->
+<defs>
+  <linearGradient id="pa-edge" gradientUnits="userSpaceOnUse" x1="0" y1="4" x2="0" y2="29">
+    <stop offset="0" stop-color="#3d3d3d"/><stop offset="1" stop-color="#000000"/>
+  </linearGradient>
+  <path id="pa-bars" d="M10,4 m-3,3 a3,3 0 0 1 6,0 v19 a3,3 0 0 1 -6,0 z
+                        M22,4 m-3,3 a3,3 0 0 1 6,0 v19 a3,3 0 0 1 -6,0 z"/>
+  <mask id="pa-out">
+    <rect width="32" height="32" fill="#ffffff"/>
+    <use href="#pa-bars" fill="#000000"/>
+  </mask>
+  <mask id="pa-in"><use href="#pa-bars" fill="#ffffff"/></mask>
+</defs>
+<use href="#pa-bars" fill="none" stroke="url(#pa-edge)" stroke-opacity="0.33"
+     stroke-width="2" mask="url(#pa-out)"/>
+<use href="#pa-bars" fill="#ffffff" fill-opacity="0.502"/>
+<use href="#pa-bars" fill="none" stroke="#ffffff" stroke-opacity="0.078"
+     stroke-width="2" mask="url(#pa-in)"/>
 </svg>
