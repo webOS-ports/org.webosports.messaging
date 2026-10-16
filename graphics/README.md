@@ -170,24 +170,63 @@ the original is made of is usually simple and usually measurable:
   wrong cap by shaving the widths. The cap and the widths had to move together, and then it
   went to 2.80.
 
-  Nothing on this glyph is engraved. The rest of the toolbar carries a line of the opposite
+  Nothing **hangs below** this glyph. The rest of the toolbar carries a line of the opposite
   tone a pixel below its lower edge; the mic does not, in either state. The original holds
-  **exactly zero** ink below the foot in both halves, and the foot is a plain rectangle whose
-  own coverage accounts for its alpha to within 8 of 255 - so this is one case where the
-  tuner driving a feature to zero was the artwork talking, not the metric deleting detail.
-  The rim machinery is gone from the file rather than left at opacity 0.
+  **exactly zero** ink below the foot in both halves, and the foot's own coverage accounts
+  for its alpha to within 8 of 255 - so this is one case where the tuner driving a feature
+  to zero was the artwork talking, not the metric deleting detail. The engraved-line
+  machinery is gone from the file rather than left at opacity 0.
+
+  That is about what hangs *below* the outline. Inside it the glyph is anything but flat -
+  see the three tones and the rim below.
 
 - `menu-icon-mic`'s cradle is **not a half-ellipse**. Its sides stay vertical for seven rows
   before they turn - x 9.9..11.7 from row 13 to row 19 - where an ellipse through the same
   endpoints bows out at the top and in at the bottom. It is two straight runs and a bottom
   curve. Fitting the ellipse also let the stroke thin to 1.46 to buy back the error the wrong
   shape was costing; at the right shape it is 1.72 and the glyph goes 4.9 to 3.4.
-- `menu-icon-mic` and `menu-icon-mic-rec` are **one mark in two colours**. Their alpha channels
-  are byte for byte identical across all 2048 pixels, and across every opaque pixel the grey
-  value is 0.607 of the red one's red channel. So the grey gradient is derived from the red
-  one rather than fitted on its own: two independent fits had already started to drift, with
-  the ratio wandering between 0.55 and 0.61 from stop to stop. When two assets share a
-  silhouette exactly, check whether they share the shading too before fitting both.
+- `menu-icon-mic` and `menu-icon-mic-rec` are **one mark in two colours**, and the two are a
+  **subtraction, not a ratio**. Their alpha channels are byte for byte identical across all
+  2048 pixels, and in every interior row the grey value is the red one's red channel **minus
+  90 exactly** - 143 under 233 at the top of the capsule, 150 under 240 at the foot. The file
+  had been scaling one from the other at 0.607, which cannot hold both ends of a ramp at
+  once; that is why two independent fits had drifted, the ratio wandering between 0.55 and
+  0.61 from stop to stop. When two assets share a silhouette exactly, check whether they
+  share the shading too before fitting both - and check *how* it is shared.
+
+- `menu-icon-mic` is **three tones and a rim**, not one fill, and getting that wrong is what
+  made it read faint. Measured on interior pixels only - alpha 255 with four opaque
+  neighbours:
+
+  - The **microphone**, capsule and stem, is one straight ramp: red = 230.1 + 0.4926*y, rms
+    0.61 of 255 over rows 4..19 and never more than 1.06 out, holding its last value below
+    the capsule. It had twelve fitted stops that wandered between `#7f` and `#8f` and sagged
+    over the lower half, leaving the bottom two thirds of the glyph a dozen levels too dark.
+    This is the same disease as `menu-icon-conversation`'s bent gradient: a ramp fitted with
+    a structural feature missing bends to pay for it.
+  - The **stand** is darker and **lit from below**. The cradle holds 112 down its straight
+    sides and brightens to 139 where it curves under the capsule; the foot runs 118 through
+    its middle to 127 along its bottom edge. Measuring the cradle's straight section alone
+    gives one flat 112 for the whole stand, which is 36 under the microphone's ramp and
+    looks right in the numbers - and makes cradle and foot **disappear** against the bar.
+    The score barely noticed: 1.87 flat against 1.90 with the stand drawn properly. The
+    sheet noticed immediately.
+  - Every **upward-facing cut** takes the same step down, about 45 off *its own part's* tone,
+    not off one shared colour: the capsule reads 101 at its edge against the 145 inside, the
+    foot 71 across its top against its own 118, and the two arms end on 70 and 75 against
+    their 112. The sides and the lower edges have no such step.
+
+  Two things about drawing that rim. It has to be **the shape in the rim tone with the shape
+  inset over it**, not a stroke clipped to the outline: a clipped stroke and the fill beneath
+  it are antialiased separately along the same edge, so their coverages composite instead of
+  adding and the silhouette puts on alpha it has no business having - 113 to 157 down the
+  capsule's edge column. Insetting is exact here because every part is a round rect: drop the
+  inset off each side and off the corner radius.
+
+  And once a glyph is drawn in layers, the **half that makes the lit state goes on the group,
+  not on each layer**. Three half-transparent layers over one another come out at 1-(1-a)^3,
+  which took the foot under the stem to alpha 223 where the original has 127. The original's
+  lit half is its resting half with every alpha halved and no colour touched, byte for byte.
 - `video-call-icon` is **one shape in both states**. The original's two silhouettes agree row
   for row - x 1..27 from row 6 to row 23 in each - and only the light on it differs: the
   resting glyph over a hard copy of itself 2px lower, the lit one over a blur of itself. The
@@ -230,7 +269,7 @@ Mean per-pixel distance from the Palm art each one replaces, worst first, out of
 | over 12 | `header-icon-contacts` 36, `menu-icon-attach` 26, `attach-contact` 18, `icon-165x165` 16, `attach-event` 16, `messaging-48x48` 16, `phone-icon` 14, `attach-location` 13, `menu-icon-send` 13, `notification-large-failed` 13, `notification-small` 12, `video-call-icon` 12 |
 | 8-12 | `msg-read` 11.5, `menu-icon-buddies` 10.6, `header-warning-icon` 10.5, `online-status` 9.6, `notification-large-messaging` 9.5, `msg-delivered` 8.9, `menuitem-arrow-dark` 8.2, `menu-icon-favorites` 8.2 |
 | 4-8 | `incoming-outgoing` 7.9, `chat-balloon-error-shape` 7.9, `chat-balloon-received-error-shape` 7.8, `dialogbg` 7.1, `search-input` 6.0, `list-view-avatar-frame` 5.4, `menu-icon-conversation-plus` 5.3, `icon-decline` 4.4, `menu-icon-conversation` 4.0, `chat-balloon-received-shape` 4.0 |
-| under 4 | `attach-doc` 3.7, `mini-player-icon-play` 3.2, `attach-ppt` 3.1, `menu-icon-mic-rec` 2.9, `list-unread` 2.9, `menu-icon-mic` 2.8, `attach-xls` 2.6, `chat-balloon-sent-shape` 2.4, `loading-bg` 1.9, `mini-player-icon-pause` 1.9, `list-avatar-default` 1.5, `favorites-star-blue` 1.4, `menu-icon-servers` 1.3, `defaultview-panel-tile` 0.8, `light_chrome_drop_shadow_header` 0.3, `light_chrome_drop_shadow_footer` 0.3 |
+| under 4 | `attach-doc` 3.7, `mini-player-icon-play` 3.2, `attach-ppt` 3.1, `list-unread` 2.9, `attach-xls` 2.6, `chat-balloon-sent-shape` 2.4, `menu-icon-mic-rec` 2.1, `loading-bg` 1.9, `mini-player-icon-pause` 1.9, `menu-icon-mic` 1.9, `list-avatar-default` 1.5, `favorites-star-blue` 1.4, `menu-icon-servers` 1.3, `defaultview-panel-tile` 0.8, `light_chrome_drop_shadow_header` 0.3, `light_chrome_drop_shadow_footer` 0.3 |
 
 `attach-pdf` is the one exception to that table. It follows the community's `Icon-pdf-variant1`
 rather than Palm's flat red tile, so its distance from Palm's art - 118 - measures a different

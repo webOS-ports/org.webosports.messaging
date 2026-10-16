@@ -7,51 +7,73 @@
      original keeps its sides vertical over those rows, where an ellipse bows out at the
      top and in at the bottom. The stem and foot are rectangles, and every part is
      centred on x 16.00.
-     Nothing here is engraved. The rest of the toolbar carries a line of the opposite
-     tone a pixel below its lower edge; this glyph does not, in either state - the
-     original holds exactly zero ink below the foot, and the foot is a plain rectangle
-     whose own coverage accounts for its alpha to within 8 of 255. -->
+     Nothing hangs below the glyph. The rest of the toolbar carries an engraved line of
+     the opposite tone along its lower edge; this one does not, in either state - the
+     original holds exactly zero ink below the foot.
+     What it does carry is three tones, each read off the original rather than fitted,
+     and a rim. The microphone - capsule and stem - is one straight ramp: over every
+     interior pixel, alpha 255 with four opaque neighbours, the red channel is
+     230.2 + 0.4925*y, rms 0.61 of 255 and never more than 1.06 out, and the grey
+     mark is that minus 90 exactly in every row. It had twelve fitted stops before,
+     wandering between #7f and #8f and sagging over the lower half, which left the
+     bottom two thirds of the glyph a dozen levels too dark.
+     The stand is darker and lit from below. The cradle holds 112 down its straight
+     sides and brightens to 140 where it curves under the capsule; the foot runs
+     112 at its top to 130 along its bottom edge. One flat tone for the pair - which
+     is what the arms alone measure - makes both vanish against the bar.
+     Every upward-facing cut takes the same step down, about 45 off its own part: the
+     capsule reads 101 at its edge against the 145 inside, the foot 71 across its top
+     against its own 118, and the two arms end on 70 and 75 against their 112. It is
+     drawn as the shape in the rim tone with the shape inset 0.450 laid over it, not as
+     a stroke clipped to the outline - a clipped stroke and the fill beneath it are
+     antialiased separately along the same edge, so their coverages composite instead
+     of adding and the silhouette puts on alpha it has no business having, 113 to 157
+     down the capsule's edge column.
+     The lit state is the resting one at exactly half alpha: byte for byte the
+     original's lower half is its upper half with every alpha halved and no colour
+     touched. The half goes on the group, not on each layer - three half-transparent
+     layers over one another come out at 1-(1-a)^3, which took the foot under the stem
+     to 223 where the original has 127. -->
   <defs>
-    <linearGradient id="fdn" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="32">
-      <stop offset="0.000" stop-color="#d12c2c" stop-opacity="1.0"/>
-      <stop offset="0.091" stop-color="#d12c2c" stop-opacity="1.0"/>
-      <stop offset="0.182" stop-color="#ea3434" stop-opacity="1.0"/>
-      <stop offset="0.273" stop-color="#ec3535" stop-opacity="1.0"/>
-      <stop offset="0.364" stop-color="#ec3535" stop-opacity="1.0"/>
-      <stop offset="0.455" stop-color="#e03131" stop-opacity="1.0"/>
-      <stop offset="0.545" stop-color="#e33232" stop-opacity="1.0"/>
-      <stop offset="0.636" stop-color="#e33232" stop-opacity="1.0"/>
-      <stop offset="0.727" stop-color="#e33232" stop-opacity="1.0"/>
-      <stop offset="0.818" stop-color="#ea3535" stop-opacity="1.0"/>
-      <stop offset="0.909" stop-color="#de2f2f" stop-opacity="1.0"/>
-      <stop offset="1.000" stop-color="#da3838" stop-opacity="0.824"/>
+    <linearGradient id="cf" gradientUnits="userSpaceOnUse" x1="0" y1="0.000" x2="0" y2="22.000">
+      <stop offset="0" stop-color="#e63333"/>
+      <stop offset="1" stop-color="#f13838"/>
     </linearGradient>
-    <linearGradient id="fup" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="32">
-      <stop offset="0.000" stop-color="#d12c2c" stop-opacity="0.498"/>
-      <stop offset="0.091" stop-color="#d12c2c" stop-opacity="0.498"/>
-      <stop offset="0.182" stop-color="#ea3434" stop-opacity="0.498"/>
-      <stop offset="0.273" stop-color="#ec3535" stop-opacity="0.498"/>
-      <stop offset="0.364" stop-color="#ec3535" stop-opacity="0.498"/>
-      <stop offset="0.455" stop-color="#e03131" stop-opacity="0.498"/>
-      <stop offset="0.545" stop-color="#e33232" stop-opacity="0.498"/>
-      <stop offset="0.636" stop-color="#e33232" stop-opacity="0.498"/>
-      <stop offset="0.727" stop-color="#e33232" stop-opacity="0.498"/>
-      <stop offset="0.818" stop-color="#ea3535" stop-opacity="0.498"/>
-      <stop offset="0.909" stop-color="#de2f2f" stop-opacity="0.498"/>
-      <stop offset="1.000" stop-color="#da3838" stop-opacity="0.412"/>
+    <linearGradient id="ck" gradientUnits="userSpaceOnUse" x1="0" y1="0.000" x2="0" y2="22.000">
+      <stop offset="0" stop-color="#b92828"/>
+      <stop offset="1" stop-color="#c42d2d"/>
     </linearGradient>
-  
-    <path id="g" d="M16.000,2.031 L16.000,2.031 A3.393,3.393 0 0 1 19.393,5.424 L19.393,18.982 A3.393,3.393 0 0 1 16.000,22.375 L16.000,22.375 A3.393,3.393 0 0 1 12.607,18.982 L12.607,5.424 A3.393,3.393 0 0 1 16.000,2.031 Z M14.738,23.425 L17.262,23.425 A0.000,0.000 0 0 1 17.262,23.425 L17.262,28.000 A0.000,0.000 0 0 1 17.262,28.000 L14.738,28.000 A0.000,0.000 0 0 1 14.738,28.000 L14.738,23.425 A0.000,0.000 0 0 1 14.738,23.425 Z M10.913,27.775 L21.087,27.775 A0.695,0.695 0 0 1 21.782,28.470 L21.782,29.155 A0.695,0.695 0 0 1 21.087,29.850 L10.913,29.850 A0.695,0.695 0 0 1 10.218,29.155 L10.218,28.470 A0.695,0.695 0 0 1 10.913,27.775 Z"/>
-    <path id="a" d="M10.88,13.16 L10.88,19.30 Q10.88,24.00 16.00,24.00 Q21.12,24.00 21.12,19.30 L21.12,13.16"/>
+    <linearGradient id="ca" gradientUnits="userSpaceOnUse" x1="0" y1="13.350" x2="0" y2="24.000">
+      <stop offset="0" stop-color="#9e2020"/>
+      <stop offset="0.0423" stop-color="#cb2b2b"/>
+      <stop offset="1" stop-color="#f23333"/>
+    </linearGradient>
+    <linearGradient id="ct" gradientUnits="userSpaceOnUse" x1="0" y1="27.663" x2="0" y2="29.812">
+      <stop offset="0" stop-color="#d32222"/>
+      <stop offset="1" stop-color="#dd3d3d"/>
+    </linearGradient>
+    <linearGradient id="cb" gradientUnits="userSpaceOnUse" x1="0" y1="27.663" x2="0" y2="29.812">
+      <stop offset="0" stop-color="#a61717"/>
+      <stop offset="1" stop-color="#b03232"/>
+    </linearGradient>
+    <path id="g" d="M16.000,1.956 L16.000,1.956 A3.393,3.393 0 0 1 19.393,5.349 L19.393,18.982 A3.393,3.393 0 0 1 16.000,22.375 L16.000,22.375 A3.393,3.393 0 0 1 12.607,18.982 L12.607,5.349 A3.393,3.393 0 0 1 16.000,1.956 Z M14.700,23.425 L17.300,23.425 A0.000,0.000 0 0 1 17.300,23.425 L17.300,29.100 A0.000,0.000 0 0 1 17.300,29.100 L14.700,29.100 A0.000,0.000 0 0 1 14.700,29.100 L14.700,23.425 A0.000,0.000 0 0 1 14.700,23.425 Z"/>
+    <path id="b" d="M10.939,27.663 L21.061,27.663 A0.740,0.740 0 0 1 21.801,28.402 L21.801,29.073 A0.740,0.740 0 0 1 21.061,29.812 L10.939,29.812 A0.740,0.740 0 0 1 10.199,29.073 L10.199,28.402 A0.740,0.740 0 0 1 10.939,27.663 Z"/>
+    <path id="a" d="M10.88,13.35 L10.88,19.30 Q10.88,24.00 16.00,24.00 Q21.12,24.00 21.12,19.30 L21.12,13.35"/>
+    <path id="i" d="M16.000,2.406 L16.000,2.406 A2.943,2.943 0 0 1 18.943,5.349 L18.943,18.982 A2.943,2.943 0 0 1 16.000,21.925 L16.000,21.925 A2.943,2.943 0 0 1 13.057,18.982 L13.057,5.349 A2.943,2.943 0 0 1 16.000,2.406 Z M15.150,23.875 L16.850,23.875 A0.000,0.000 0 0 1 16.850,23.875 L16.850,29.100 A0.000,0.000 0 0 1 16.850,29.100 L15.150,29.100 A0.000,0.000 0 0 1 15.150,29.100 L15.150,23.875 A0.000,0.000 0 0 1 15.150,23.875 Z"/>
+    <path id="j" d="M10.939,28.113 L21.061,28.113 A0.290,0.290 0 0 1 21.351,28.402 L21.351,29.073 A0.740,0.740 0 0 1 20.611,29.812 L11.389,29.812 A0.740,0.740 0 0 1 10.649,29.073 L10.649,28.402 A0.290,0.290 0 0 1 10.939,28.113 Z"/>
   </defs>
   <g>
-    <use href="#g" fill="url(#fdn)" fill-opacity="1.000"/>
-    <use href="#a" fill="none" stroke="url(#fdn)" stroke-opacity="1.000"
-         stroke-width="1.59"/>
+    <use href="#b" fill="url(#cb)"/>
+    <use href="#j" fill="url(#ct)"/>
+    <use href="#a" fill="none" stroke="url(#ca)" stroke-width="1.59"/>
+    <use href="#g" fill="url(#ck)"/>
+    <use href="#i" fill="url(#cf)"/>
   </g>
-  <g transform="translate(0,32)">
-    <use href="#g" fill="url(#fup)" fill-opacity="1.000"/>
-    <use href="#a" fill="none" stroke="url(#fup)" stroke-opacity="1.000"
-         stroke-width="1.59"/>
+  <g transform="translate(0,32)" opacity="0.498">
+    <use href="#b" fill="url(#cb)"/>
+    <use href="#j" fill="url(#ct)"/>
+    <use href="#a" fill="none" stroke="url(#ca)" stroke-width="1.59"/>
+    <use href="#g" fill="url(#ck)"/>
+    <use href="#i" fill="url(#cf)"/>
   </g>
 </svg>
