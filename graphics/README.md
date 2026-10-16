@@ -73,12 +73,18 @@ the original is made of is usually simple and usually measurable:
   glyph is one stroked path with `stroke-linecap="round"`. Its two states are lit differently
   as well, and not by the same trick: the resting glyph casts a *soft shadow outside* itself,
   a blurred copy a pixel and a half lower masked to where the glyph is not, and the pressed
-  one is cut into the surface and has **two** bands inside itself, not one: a shadow down
-  every edge that faces up and a white line along every one that faces down. Read the original
-  across an arm and both are there - at row 41 the left arm runs #e9e9e9 at its outer edge,
-  black through the middle, then a138 of shadow where it meets the notch. Each band is the
-  glyph less a copy of itself offset the other way, blurred, then masked back to the glyph so
-  it cannot spill. Reading them as one shadow in two colours gets
+  one is cut into the surface: a light rim round the **whole** inside of it with a shadow over
+  that rim on the edges that face up. Read the original across an arm and both are there - at
+  row 41 the left arm runs #e9e9e9 at its outer edge, black through the middle, then a138 of
+  shadow where it meets the notch; at the waist it lights *both* sides at once. A band cut by
+  offsetting a copy of the glyph cannot do that last one, because at the waist the two arms
+  overlap and the offset copy fills the gap in - the rim has to come from a narrower stroke of
+  the same path, which erodes the union properly.
+
+  Watch out for `stroke-width` on `<use>` here. It is ignored outright when the referenced
+  element sets one, and Chromium will not reliably take it from the `<use>` either, so an icon
+  that wants its outline at three weights wants three `<path>` elements with the width baked
+  in. Silently getting one weight everywhere is what made the pressed cross read a size small. Reading them as one shadow in two colours gets
   all of it wrong, and getting the subtraction the wrong way round puts a band on the opposite
   edge, which looks like light from the other side of the room. The white body also brightens downward,
   #dcdcdc to #ffffff, rather than holding one tone; and the pressed frame is drawn with a
@@ -131,7 +137,7 @@ Mean per-pixel distance from the Palm art each one replaces, worst first, out of
 | | |
 |---|---|
 | over 12 | `header-icon-contacts` 36, `menu-icon-attach` 26, `notification-large-failed` 24, `attach-contact` 18, `attach-event` 16, `messaging-48x48` 17, `icon-165x165` 16, `notification-large-messaging` 16, `notification-small` 14, `phone-icon` 14, `attach-location` 13, `menu-icon-send` 13 |
-| 8-12 | `video-call-icon` 12, `msg-read` 12, `menu-icon-buddies` 11, `header-warning-icon` 11, `online-status` 9.6, `menu-icon-conversation-plus` 9.3, `msg-delivered` 8.9, `icon-decline` 7.6, `menuitem-arrow-dark` 8.2, `menu-icon-favorites` 8.2 |
+| 8-12 | `video-call-icon` 12, `msg-read` 12, `menu-icon-buddies` 11, `header-warning-icon` 11, `online-status` 9.6, `menu-icon-conversation-plus` 9.3, `msg-delivered` 8.9, `icon-decline` 6.9, `menuitem-arrow-dark` 8.2, `menu-icon-favorites` 8.2 |
 | 4-8 | `incoming-outgoing` 7.9, `chat-balloon-error-shape` 7.9, `chat-balloon-received-error-shape` 7.8, `dialogbg` 7.1, `menu-icon-conversation` 7.0, `search-input` 6.0, `list-view-avatar-frame` 5.4, `menu-icon-mic-rec` 3.6, `menu-icon-mic` 3.4, `chat-balloon-received-shape` 4.0 |
 | under 4 | `attach-doc` 3.7, `mini-player-icon-play` 3.2, `attach-ppt` 3.1, `list-unread` 2.9, `attach-xls` 2.6, `chat-balloon-sent-shape` 2.4, `mini-player-icon-pause` 1.9, `loading-bg` 1.9, `list-avatar-default` 1.5, `favorites-star-blue` 1.4, `menu-icon-servers` 1.3, `defaultview-panel-tile` 0.8, the two chrome shadows 0.3 |
 

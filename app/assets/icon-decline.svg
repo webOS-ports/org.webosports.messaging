@@ -1,61 +1,57 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="64" viewBox="0 0 32 64">
-<!-- Decline cross. Two 45-degree bars 5.28 across with round ends, not cut square: the
-     original's arm end reaches its furthest left midway down the end rather than at a corner,
-     which is a cap of r 2.64 about (7.24,7.24), so this is one stroked path.
-     This icon is the other way up from the rest of the toolbar: its resting state is a white
-     glyph that fades 0.96 to 0.64 down the shape, over a hard dark line on its lower edge,
-     and the pressed state is cut into the surface rather than laid on it: flat black at
-     0.23 with a shadow 2.40 deep down every edge that faces up and a white edge along every
-     one that faces down, both of them INSIDE the glyph. The resting state's line is the other
-     kind - a blurred copy 0.88 lower masked to where the glyph is not, so it falls outside.
-     Each band is the glyph less a copy of itself offset the other way, blurred, then masked
-     back to the glyph so it cannot spill. -->
+<!-- Decline cross. Two 45-degree bars with round ends, not cut square: the original's arm
+     reaches its furthest left midway down the end rather than at a corner, which is a cap.
+     So the glyph is one stroked path - and it is stroked at three widths, each baked into
+     its own <path>. A stroke-width on <use> is ignored when the referenced element sets one,
+     and the browser will not always take one from the <use> either, so the only way to get
+     three weights of the same outline that renders everywhere is three paths.
+     This icon is the other way up from the rest of the toolbar. The resting state is a white
+     glyph fading 0.97 to 0.62 down the shape, over a soft shadow cast OUTSIDE it - a blurred
+     copy 0.88 lower, masked to where the glyph is not. The pressed state is cut into the
+     surface instead: flat black at 0.235, a light rim 0.85 wide round the whole inside of it,
+     and a shadow 2.40 deep over that rim on the edges that face up. Every other edge stays
+     lit - at the waist the original lights both sides at once, which a band cut by a vertical
+     offset cannot do, because there the two arms overlap and the offset copy fills the gap. -->
   <defs>
-    <path id="g" d="M7.24,7.24 L24.84,24.84 M24.84,7.24 L7.24,24.84" fill="none" stroke-width="5.28" stroke-linecap="round"/>
-    <linearGradient id="fdn" gradientUnits="userSpaceOnUse" x1="0" y1="4.60" x2="0" y2="27.48">
-      <stop offset="0" stop-color="#dcdcdc" stop-opacity="0.960"/>
-      <stop offset="1" stop-color="#ffffff" stop-opacity="0.635"/>
+    <path id="gd" d="M7.46,7.46 L24.54,24.54 M24.54,7.46 L7.46,24.54" fill="none" stroke-width="5.24" stroke-linecap="round"/>
+    <path id="go" d="M7.46,7.46 L24.54,24.54 M24.54,7.46 L7.46,24.54" fill="none" stroke-width="5.94" stroke-linecap="round"/>
+    <path id="gi" d="M7.46,7.46 L24.54,24.54 M24.54,7.46 L7.46,24.54" fill="none" stroke-width="4.23" stroke-linecap="round"/>
+    <linearGradient id="fdn" gradientUnits="userSpaceOnUse" x1="0" y1="4.84" x2="0" y2="27.16">
+      <stop offset="0" stop-color="#dcdcdc" stop-opacity="0.975"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.620"/>
     </linearGradient>
     <mask id="out" maskUnits="userSpaceOnUse" x="-8" y="-8" width="48" height="80">
       <rect x="-8" y="-8" width="48" height="80" fill="#ffffff"/>
-      <use href="#g" stroke="#000000"/>
+      <use href="#gd" stroke="#000000"/>
     </mask>
     <mask id="body" maskUnits="userSpaceOnUse" x="-8" y="-8" width="48" height="80">
-      <use href="#g" stroke="#ffffff" stroke-width="5.98"/>
+      <use href="#go" stroke="#ffffff"/>
     </mask>
-    <mask id="lower" maskUnits="userSpaceOnUse" x="-8" y="-8" width="48" height="80">
-      <use href="#g" stroke="#ffffff" stroke-width="5.98"/>
-      <use href="#g" stroke="#000000" stroke-width="5.98" transform="translate(0,-0.85)"/>
+    <mask id="ring" maskUnits="userSpaceOnUse" x="-8" y="-8" width="48" height="80">
+      <use href="#go" stroke="#ffffff"/>
+      <use href="#gi" stroke="#000000"/>
     </mask>
     <mask id="upper" maskUnits="userSpaceOnUse" x="-8" y="-8" width="48" height="80">
-      <use href="#g" stroke="#ffffff" stroke-width="5.98"/>
-      <use href="#g" stroke="#000000" stroke-width="5.98" transform="translate(0,2.40)"/>
+      <use href="#go" stroke="#ffffff"/>
+      <use href="#go" stroke="#000000" transform="translate(0,2.40)"/>
     </mask>
-    <filter id="inblur" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="0.55"/>
-    </filter>
-    <filter id="upblur" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="0.25"/>
-    </filter>
     <filter id="blur" x="-30%" y="-30%" width="160%" height="160%">
       <feGaussianBlur stdDeviation="1.10"/>
     </filter>
+    <filter id="inblur" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="0.55"/>
+    </filter>
   </defs>
   <g>
-    <g mask="url(#out)"><use href="#g" stroke="#000000" stroke-opacity="0.615"
+    <g mask="url(#out)"><use href="#gd" stroke="#000000" stroke-opacity="0.720"
          filter="url(#blur)" transform="translate(0,0.88)"/></g>
-    <use href="#g" stroke="url(#fdn)"/>
+    <use href="#gd" stroke="url(#fdn)"/>
   </g>
-  <g transform="translate(0,32.60)">
-    <use href="#g" stroke="#000000" stroke-opacity="0.235"
-         stroke-width="5.98"/>
+  <g transform="translate(0,32.54)">
+    <use href="#go" stroke="#000000" stroke-opacity="0.235"/>
+    <g mask="url(#ring)"><use href="#go" stroke="#ffffff" stroke-opacity="0.555"/></g>
     <g mask="url(#body)"><g filter="url(#inblur)">
-      <g mask="url(#upper)"><use href="#g" stroke="#000000" stroke-opacity="0.360"
-           stroke-width="5.98"/></g>
-    </g></g>
-    <g mask="url(#body)"><g filter="url(#upblur)">
-      <g mask="url(#lower)"><use href="#g" stroke="#ffffff" stroke-opacity="0.995"
-           stroke-width="5.98"/></g>
+      <g mask="url(#upper)"><use href="#go" stroke="#000000" stroke-opacity="0.280"/></g>
     </g></g>
   </g>
 </svg>
