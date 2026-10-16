@@ -1,10 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="64" viewBox="0 0 32 64">
-<!-- Microphone, authored rather than traced. The capsule is a 6.7-wide rounded bar; the
-     cradle round it drops 5.03 either side of centre, runs straight for seven rows and
-     then curves into the stem, stroked 1.72. It is not a half-ellipse: the original
-     keeps its sides vertical over those rows, where an ellipse bows out at the top and
-     in at the bottom. The stem and foot are rectangles, and every part is centred on
-     x 16.00. -->
+<!-- Microphone, authored rather than traced. The capsule is a true pill 6.786 wide - its
+     corner radius is exactly half its width, fitted off the original's top four rows at
+     r 3.432 against a half-width of 3.443, which is a semicircle to a hundredth of a
+     pixel. The cradle round it drops 5.121 either side of centre, runs straight for seven
+     rows and then curves into the stem, stroked 1.59. It is not a half-ellipse: the
+     original keeps its sides vertical over those rows, where an ellipse bows out at the
+     top and in at the bottom. The stem and foot are rectangles, and every part is
+     centred on x 16.00.
+     Nothing here is engraved. The rest of the toolbar carries a line of the opposite
+     tone a pixel below its lower edge; this glyph does not, in either state - the
+     original holds exactly zero ink below the foot, and the foot is a plain rectangle
+     whose own coverage accounts for its alpha to within 8 of 255. -->
   <defs>
     <linearGradient id="fdn" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="32">
       <stop offset="0.000" stop-color="#d12c2c" stop-opacity="1.0"/>
@@ -35,34 +41,17 @@
       <stop offset="1.000" stop-color="#da3838" stop-opacity="0.412"/>
     </linearGradient>
   
-    <path id="g" d="M15.925,1.925 L16.075,1.925 A3.252,3.252 0 0 1 19.328,5.178 L19.328,19.122 A3.252,3.252 0 0 1 16.075,22.375 L15.925,22.375 A3.252,3.252 0 0 1 12.672,19.122 L12.672,5.178 A3.252,3.252 0 0 1 15.925,1.925 Z M14.812,23.425 L17.188,23.425 A0.000,0.000 0 0 1 17.188,23.425 L17.188,28.000 A0.000,0.000 0 0 1 17.188,28.000 L14.812,28.000 A0.000,0.000 0 0 1 14.812,28.000 L14.812,23.425 A0.000,0.000 0 0 1 14.812,23.425 Z M10.950,27.625 L21.050,27.625 A0.695,0.695 0 0 1 21.745,28.320 L21.745,29.005 A0.695,0.695 0 0 1 21.050,29.700 L10.950,29.700 A0.695,0.695 0 0 1 10.255,29.005 L10.255,28.320 A0.695,0.695 0 0 1 10.950,27.625 Z"/>
-    <path id="a" d="M10.97,13.16 L10.97,19.60 Q10.97,24.00 16.00,24.00 Q21.03,24.00 21.03,19.60 L21.03,13.16"/>
-    <mask id="m" maskUnits="userSpaceOnUse" x="-8" y="-8" width="48" height="80">
-      <rect x="-8" y="-8" width="48" height="80" fill="#ffffff"/>
-      <use href="#g" fill="#000000"/>
-      <use href="#a" fill="none" stroke="#000000" stroke-width="1.72"/>
-    </mask>
+    <path id="g" d="M16.000,2.031 L16.000,2.031 A3.393,3.393 0 0 1 19.393,5.424 L19.393,18.982 A3.393,3.393 0 0 1 16.000,22.375 L16.000,22.375 A3.393,3.393 0 0 1 12.607,18.982 L12.607,5.424 A3.393,3.393 0 0 1 16.000,2.031 Z M14.738,23.425 L17.262,23.425 A0.000,0.000 0 0 1 17.262,23.425 L17.262,28.000 A0.000,0.000 0 0 1 17.262,28.000 L14.738,28.000 A0.000,0.000 0 0 1 14.738,28.000 L14.738,23.425 A0.000,0.000 0 0 1 14.738,23.425 Z M10.913,27.775 L21.087,27.775 A0.695,0.695 0 0 1 21.782,28.470 L21.782,29.155 A0.695,0.695 0 0 1 21.087,29.850 L10.913,29.850 A0.695,0.695 0 0 1 10.218,29.155 L10.218,28.470 A0.695,0.695 0 0 1 10.913,27.775 Z"/>
+    <path id="a" d="M10.88,13.16 L10.88,19.30 Q10.88,24.00 16.00,24.00 Q21.12,24.00 21.12,19.30 L21.12,13.16"/>
   </defs>
   <g>
-    <g mask="url(#m)" transform="translate(0,0.94)" fill="#ffffff"
-       fill-opacity="0.345">
-      <use href="#g"/>
-      <use href="#a" fill="none" stroke="#ffffff" stroke-opacity="0.345"
-           stroke-width="1.72"/>
-    </g>
     <use href="#g" fill="url(#fdn)" fill-opacity="1.000"/>
     <use href="#a" fill="none" stroke="url(#fdn)" stroke-opacity="1.000"
-         stroke-width="1.72"/>
+         stroke-width="1.59"/>
   </g>
   <g transform="translate(0,32)">
-    <g mask="url(#m)" transform="translate(0,0.94)" fill="#000000"
-       fill-opacity="0.220">
-      <use href="#g"/>
-      <use href="#a" fill="none" stroke="#000000" stroke-opacity="0.220"
-           stroke-width="1.72"/>
-    </g>
     <use href="#g" fill="url(#fup)" fill-opacity="1.000"/>
     <use href="#a" fill="none" stroke="url(#fup)" stroke-opacity="1.000"
-         stroke-width="1.72"/>
+         stroke-width="1.59"/>
   </g>
 </svg>

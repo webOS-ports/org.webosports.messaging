@@ -107,6 +107,28 @@ the original is made of is usually simple and usually measurable:
   two halves row by row rather than down a column and that falls out of the arithmetic: both
   cross at local row 12, but the resting one parts again at row 20 and the pressed one holds to
   21, which is a heavier bar, not a moved one.
+- `menu-icon-mic`'s capsule is a **true pill**: integrating the original's top four rows
+  against a rounded bar puts its corner radius at 3.432 against a half-width of 3.443, a
+  semicircle to a hundredth of a pixel, with an rms of 0.029 over eight rows. It had been
+  drawn with a slightly flattened cap, 3.2525 against 3.3275, which reads as a blunt, wide
+  body. Its cradle was the other half of that: measured, the original's cradle stroke is
+  1.606 and ours was 1.737, and the extra thickness grew *inward*, so the dark channel
+  between cradle and capsule closed from 0.872 to 0.78 while the capsule itself came out
+  0.13 narrow. Two sub-pixel errors that compound into the middle of the glyph reading as
+  one lump. At the measured widths the geometry matches the original to 0.02px everywhere.
+
+  Worth remembering how that went: correcting the widths *alone*, with the flattened cap
+  still in place, made the score **worse** - 3.4 to 3.60. The metric had been paying for the
+  wrong cap by shaving the widths. The cap and the widths had to move together, and then it
+  went to 2.80.
+
+  Nothing on this glyph is engraved. The rest of the toolbar carries a line of the opposite
+  tone a pixel below its lower edge; the mic does not, in either state. The original holds
+  **exactly zero** ink below the foot in both halves, and the foot is a plain rectangle whose
+  own coverage accounts for its alpha to within 8 of 255 - so this is one case where the
+  tuner driving a feature to zero was the artwork talking, not the metric deleting detail.
+  The rim machinery is gone from the file rather than left at opacity 0.
+
 - `menu-icon-mic`'s cradle is **not a half-ellipse**. Its sides stay vertical for seven rows
   before they turn - x 9.9..11.7 from row 13 to row 19 - where an ellipse through the same
   endpoints bows out at the top and in at the bottom. It is two straight runs and a bottom
@@ -159,8 +181,8 @@ Mean per-pixel distance from the Palm art each one replaces, worst first, out of
 |---|---|
 | over 12 | `header-icon-contacts` 36, `menu-icon-attach` 26, `notification-large-failed` 24, `attach-contact` 18, `attach-event` 16, `messaging-48x48` 17, `icon-165x165` 16, `notification-large-messaging` 16, `notification-small` 14, `phone-icon` 14, `attach-location` 13, `menu-icon-send` 13 |
 | 8-12 | `video-call-icon` 12, `msg-read` 12, `menu-icon-buddies` 11, `header-warning-icon` 11, `online-status` 9.6, `menu-icon-conversation-plus` 9.3, `msg-delivered` 8.9, `menuitem-arrow-dark` 8.2, `menu-icon-favorites` 8.2 |
-| 4-8 | `incoming-outgoing` 7.9, `icon-decline` 4.4, `chat-balloon-error-shape` 7.9, `chat-balloon-received-error-shape` 7.8, `dialogbg` 7.1, `menu-icon-conversation` 7.0, `search-input` 6.0, `list-view-avatar-frame` 5.4, `menu-icon-mic-rec` 3.6, `menu-icon-mic` 3.4, `chat-balloon-received-shape` 4.0 |
-| under 4 | `attach-doc` 3.7, `mini-player-icon-play` 3.2, `attach-ppt` 3.1, `list-unread` 2.9, `attach-xls` 2.6, `chat-balloon-sent-shape` 2.4, `mini-player-icon-pause` 1.9, `loading-bg` 1.9, `list-avatar-default` 1.5, `favorites-star-blue` 1.4, `menu-icon-servers` 1.3, `defaultview-panel-tile` 0.8, the two chrome shadows 0.3 |
+| 4-8 | `incoming-outgoing` 7.9, `icon-decline` 4.4, `chat-balloon-error-shape` 7.9, `chat-balloon-received-error-shape` 7.8, `dialogbg` 7.1, `menu-icon-conversation` 7.0, `search-input` 6.0, `list-view-avatar-frame` 5.4, `chat-balloon-received-shape` 4.0 |
+| under 4 | `menu-icon-mic-rec` 2.9, `menu-icon-mic` 2.8, `attach-doc` 3.7, `mini-player-icon-play` 3.2, `attach-ppt` 3.1, `list-unread` 2.9, `attach-xls` 2.6, `chat-balloon-sent-shape` 2.4, `mini-player-icon-pause` 1.9, `loading-bg` 1.9, `list-avatar-default` 1.5, `favorites-star-blue` 1.4, `menu-icon-servers` 1.3, `defaultview-panel-tile` 0.8, the two chrome shadows 0.3 |
 
 `attach-pdf` is the one exception to that table. It follows the community's `Icon-pdf-variant1`
 rather than Palm's flat red tile, so its distance from Palm's art - 118 - measures a different
