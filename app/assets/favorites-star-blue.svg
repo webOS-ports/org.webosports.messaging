@@ -1,6 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-<defs><linearGradient id="s" x1="0" y1="0" x2="0" y2="1">
-  <stop offset="0" stop-color="#96c3e9"/><stop offset="1" stop-color="#87b1d3"/>
-</linearGradient></defs>
-<polygon points="12.00,1.10 9.18,8.52 1.25,8.91 7.43,13.88 5.36,21.54 12.00,17.20 18.64,21.54 16.57,13.88 22.75,8.91 14.82,8.52" fill="url(#s)"/>
+<!-- Favourite star. A regular five-pointed star - outer r 12.12, inner 4.62, ratio 0.381,
+     which is the regular one - about (12.49,12.78), under the original's own top-to-bottom
+     ramp from #96c3e9 to #84acce. -->
+<defs>
+  <linearGradient id="s" gradientUnits="userSpaceOnUse" x1="0" y1="0.65" x2="0" y2="22.58">
+    <stop offset="0" stop-color="#96c3e9"/><stop offset="1" stop-color="#84acce"/>
+  </linearGradient>
+</defs>
+<path d="M12.415,0.949 Q12.513,0.650 12.609,0.950 L15.154,8.853 Q15.214,9.039 15.409,9.039 L23.712,9.052 Q24.027,9.052 23.772,9.237 L17.041,14.099 Q16.883,14.213 16.943,14.399 L19.497,22.300 Q19.594,22.599 19.339,22.413 L12.635,17.515 Q12.478,17.400 12.320,17.514 L5.595,22.385 Q5.340,22.569 5.438,22.270 L8.025,14.380 Q8.086,14.195 7.928,14.080 L1.218,9.190 Q0.964,9.004 1.279,9.005 L9.582,9.027 Q9.777,9.028 9.837,8.842 Z" fill="url(#s)"/>
 </svg>

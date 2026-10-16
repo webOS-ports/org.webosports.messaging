@@ -1,58 +1,39 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="44" height="64" viewBox="0 0 44 64">
-<defs>
-    <linearGradient id="fdn" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="32">
-      <stop offset="0.000" stop-color="#6d6d6d" stop-opacity="1.0"/>
-      <stop offset="0.091" stop-color="#6d6d6d" stop-opacity="1.0"/>
-      <stop offset="0.182" stop-color="#727272" stop-opacity="1.0"/>
-      <stop offset="0.273" stop-color="#6b6b6b" stop-opacity="1.0"/>
-      <stop offset="0.364" stop-color="#6b6b6b" stop-opacity="1.0"/>
-      <stop offset="0.455" stop-color="#727272" stop-opacity="1.0"/>
-      <stop offset="0.545" stop-color="#6e6e6e" stop-opacity="1.0"/>
-      <stop offset="0.636" stop-color="#6b6b6b" stop-opacity="1.0"/>
-      <stop offset="0.727" stop-color="#6b6b6b" stop-opacity="1.0"/>
-      <stop offset="0.818" stop-color="#757575" stop-opacity="1.0"/>
-      <stop offset="0.909" stop-color="#6d6d6d" stop-opacity="1.0"/>
-      <stop offset="1.000" stop-color="#6b6b6b" stop-opacity="1.0"/>
-    </linearGradient>
-    <linearGradient id="fup" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="32">
-      <stop offset="0.000" stop-color="#cfcfcf" stop-opacity="0.478"/>
-      <stop offset="0.091" stop-color="#cfcfcf" stop-opacity="0.478"/>
-      <stop offset="0.182" stop-color="#f2f2f2" stop-opacity="0.478"/>
-      <stop offset="0.273" stop-color="#c1c1c1" stop-opacity="0.478"/>
-      <stop offset="0.364" stop-color="#8a8a8a" stop-opacity="0.478"/>
-      <stop offset="0.455" stop-color="#efefef" stop-opacity="0.478"/>
-      <stop offset="0.545" stop-color="#f4f4f4" stop-opacity="0.478"/>
-      <stop offset="0.636" stop-color="#c1c1c1" stop-opacity="0.478"/>
-      <stop offset="0.727" stop-color="#bdbdbd" stop-opacity="0.478"/>
-      <stop offset="0.818" stop-color="#efefef" stop-opacity="0.478"/>
-      <stop offset="0.909" stop-color="#f4f4f4" stop-opacity="0.478"/>
-      <stop offset="1.000" stop-color="#8a8a8a" stop-opacity="0.478"/>
-    </linearGradient>
-    <filter id="sdn" x="-35%" y="-35%" width="180%" height="180%">
-      <feDropShadow dx="0" dy="1" stdDeviation="0.5" flood-color="#000000" flood-opacity="0.26"/>
-    </filter>
-    <filter id="sup" x="-35%" y="-35%" width="180%" height="180%">
-      <feDropShadow dx="0" dy="1" stdDeviation="0.6" flood-color="#000000" flood-opacity="0.40"/>
-    </filter>
+<!-- Three server rows. Measured off the original rather than traced: each bar is 33 by 8
+     on whole pixels with corners of 2.46, repeated every 10, and the plus on it is a 1.4-wide
+     cross with 1.5 arms. The resting state is flat #6b6b6b with the plus knocked out white;
+     the lit state is white inside a 1px #8a8a8a rim with the plus in that same grey, the whole
+     thing at 0.478. Neither state is a vertical gradient, which is what the trace assumed. -->
+  <defs>
+    <path id="bar" d="M8.463,2.038 L36.575,2.038 A2.462,2.462 0 0 1 39.038,4.500 L39.038,7.612 A2.462,2.462 0 0 1 36.575,10.075 L8.463,10.075 A2.462,2.462 0 0 1 6.000,7.612 L6.000,4.500 A2.462,2.462 0 0 1 8.463,2.038 Z"/>
+    <path id="inner" d="M8.650,3.038 L36.388,3.038 A1.650,1.650 0 0 1 38.038,4.688 L38.038,7.425 A1.650,1.650 0 0 1 36.388,9.075 L8.650,9.075 A1.650,1.650 0 0 1 7.000,7.425 L7.000,4.688 A1.650,1.650 0 0 1 8.650,3.038 Z"/>
+    <path id="plus" d="M9.775,4.130 Q9.775,4.000 9.905,4.000 L11.095,4.000 Q11.225,4.000 11.225,4.130 L11.225,4.870 Q11.225,5.000 11.355,5.000 L11.885,5.000 Q12.015,5.000 12.015,5.130 L12.015,5.870 Q12.015,6.000 11.885,6.000 L11.355,6.000 Q11.225,6.000 11.225,6.130 L11.225,6.870 Q11.225,7.000 11.095,7.000 L9.905,7.000 Q9.775,7.000 9.775,6.870 L9.775,6.130 Q9.775,6.000 9.645,6.000 L9.115,6.000 Q8.985,6.000 8.985,5.870 L8.985,5.130 Q8.985,5.000 9.115,5.000 L9.645,5.000 Q9.775,5.000 9.775,4.870 Z"/>
   </defs>
-  <g fill="url(#fdn)" fill-rule="evenodd" filter="url(#sdn)">
-    <rect x="6.6" y="2" width="32.8" height="8" rx="1.6"/>
-    <rect x="6.6" y="12" width="32.8" height="8" rx="1.6"/>
-    <rect x="6.6" y="22" width="32.8" height="8" rx="1.6"/>
+  <g fill="#6b6b6b">
+    <use href="#bar" y="0.0"/>
+    <use href="#bar" y="10.0"/>
+    <use href="#bar" y="20.0"/>
   </g>
-  <g fill="#ffffff" fill-opacity="0.92">
-    <path d="M9.8,5.2 h1.6 v-1.6 h1.6 v1.6 h1.6 v1.6 h-1.6 v1.6 h-1.6 v-1.6 h-1.6 Z"/>
-    <path d="M9.8,15.2 h1.6 v-1.6 h1.6 v1.6 h1.6 v1.6 h-1.6 v1.6 h-1.6 v-1.6 h-1.6 Z"/>
-    <path d="M9.8,25.2 h1.6 v-1.6 h1.6 v1.6 h1.6 v1.6 h-1.6 v1.6 h-1.6 v-1.6 h-1.6 Z"/>
+  <g fill="#ffffff">
+    <use href="#plus" y="0.0"/>
+    <use href="#plus" y="10.0"/>
+    <use href="#plus" y="20.0"/>
   </g>
-  <g fill="url(#fup)" fill-rule="evenodd" filter="url(#sup)" transform="translate(0,32)">
-    <rect x="6.6" y="2" width="32.8" height="8" rx="1.6"/>
-    <rect x="6.6" y="12" width="32.8" height="8" rx="1.6"/>
-    <rect x="6.6" y="22" width="32.8" height="8" rx="1.6"/>
-  </g>
-  <g fill="#ffffff" fill-opacity="0.55" transform="translate(0,32)">
-    <path d="M9.8,5.2 h1.6 v-1.6 h1.6 v1.6 h1.6 v1.6 h-1.6 v1.6 h-1.6 v-1.6 h-1.6 Z"/>
-    <path d="M9.8,15.2 h1.6 v-1.6 h1.6 v1.6 h1.6 v1.6 h-1.6 v1.6 h-1.6 v-1.6 h-1.6 Z"/>
-    <path d="M9.8,25.2 h1.6 v-1.6 h1.6 v1.6 h1.6 v1.6 h-1.6 v1.6 h-1.6 v-1.6 h-1.6 Z"/>
+  <g transform="translate(0,32)" opacity="0.478">
+    <g fill="#8a8a8a">
+      <use href="#bar" y="0.0"/>
+      <use href="#bar" y="10.0"/>
+      <use href="#bar" y="20.0"/>
+    </g>
+    <g fill="#ffffff">
+      <use href="#inner" y="0.0"/>
+      <use href="#inner" y="10.0"/>
+      <use href="#inner" y="20.0"/>
+    </g>
+    <g fill="#8a8a8a">
+      <use href="#plus" y="0.0"/>
+      <use href="#plus" y="10.0"/>
+      <use href="#plus" y="20.0"/>
+    </g>
   </g>
 </svg>

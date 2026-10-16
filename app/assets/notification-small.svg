@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 48 48">
+<!-- The app's mini icon: the same balloon as the large mark, drawn once and shown at half
+     size, in the near-white the status bar wants rather than the teal, inside
+     the grey edge it needs to read against a light bar. -->
+<defs>
+  <linearGradient id="b" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="46">
+    <stop offset="0" stop-color="#fbfbfb"/><stop offset="1" stop-color="#e2e2e2"/>
+  </linearGradient>
+</defs>
+<g transform="translate(0.00,0.00) scale(1.0000)">
+  <path d="M0.075,21.312 A24.038,21.087 0 1 1 48.150,21.312 A24.038,21.087 0 1 1 0.075,21.312 Z M9.001,37.765 Q9.613,36.500 10.872,37.123 L18.215,40.752 Q19.475,41.375 18.279,42.113 L11.696,46.175 Q10.500,46.913 9.095,46.921 L5.967,46.941 Q4.562,46.950 5.174,45.685 Z" fill="url(#b)" stroke="#7a7a7a" stroke-width="0.00"/>
+</g>
+</svg>

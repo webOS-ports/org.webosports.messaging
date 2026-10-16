@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="41" height="41" viewBox="0 0 41 41">
+<!-- PDF badge, drawn rather than resampled: two white sheets behind a red one, punched
+     three times down its left edge and lettered P D F. The letters are paths built out of
+     a stem and a bowl, so nothing here depends on a font being installed, and the whole
+     badge is a redraw of the community artwork rather than a trace of its 41px bitmap. -->
+<defs>
+  <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dddddd"/>
+  </linearGradient>
+  <linearGradient id="red" x1="0" y1="0" x2="0.35" y2="1">
+    <stop offset="0" stop-color="#f51414"/><stop offset="0.6" stop-color="#e00000"/>
+    <stop offset="1" stop-color="#b71414"/>
+  </linearGradient>
+  <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
+    <feGaussianBlur stdDeviation="1.80"/>
+  </filter>
+</defs>
+<circle cx="20.80" cy="21.65" r="17.20" fill="#000000" fill-opacity="0.32"
+        filter="url(#soft)"/>
+<g transform="rotate(-12.65 20.50 11.12)">
+  <rect x="14.82" y="4.51" width="18.07" height="21.88" rx="0.8"
+        fill="url(#paper)" stroke="#c9c9c9" stroke-width="0.5"/>
+  <rect x="9.95" y="6.97" width="19.34" height="24.07" rx="0.8"
+        fill="url(#paper)" stroke="#c9c9c9" stroke-width="0.5"/>
+  <rect x="4.50" y="6.22" width="21.35" height="26.04" rx="1.00"
+        fill="url(#red)"/>
+  <g fill="#8e0a0a"><circle cx="7.83" cy="14.04" r="0.10"/><circle cx="7.83" cy="21.50" r="0.10"/><circle cx="7.83" cy="26.82" r="0.10"/></g>
+  <g fill="#ffffff" fill-rule="evenodd"><path d="M8.22,22.50 L10.77,22.50 A2.05,2.05 0 0 1 10.77,26.60 L8.81,26.60 L8.81,29.57 L8.22,29.57 Z M8.81,23.09 L10.77,23.09 A1.46,1.46 0 0 1 10.77,26.01 L8.81,26.01 Z"/><path d="M13.42,22.50 L14.49,22.50 A3.54,3.54 0 0 1 14.49,29.57 L13.42,29.57 Z M14.01,23.09 L14.49,23.09 A2.95,2.95 0 0 1 14.49,28.98 L14.01,28.98 Z"/><path d="M18.62,22.50 L23.23,22.50 L23.23,23.09 L19.21,23.09 L19.21,25.74 L22.30,25.74 L22.30,26.33 L19.21,26.33 L19.21,29.57 L18.62,29.57 Z"/></g>
+</g>
+</svg>

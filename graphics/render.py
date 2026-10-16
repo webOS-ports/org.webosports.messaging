@@ -19,6 +19,7 @@ it drops colour entirely.
     python3 graphics/render.py                 # 1x into graphics/render
     python3 graphics/render.py --scale 4       # 4x, for checking a glyph holds up
     python3 graphics/render.py --out DIR       # somewhere else
+    python3 graphics/render.py --rasters       # refresh the PNGs that ship beside the SVG
 """
 
 import argparse
@@ -34,6 +35,12 @@ SVG_DIR = os.path.normpath(os.path.join(HERE, '..', 'app', 'assets'))
 ASSETS = os.path.normpath(os.path.join(HERE, '..', 'app', 'assets'))
 
 CHROMIUM = ['chromium', 'chromium-browser', 'google-chrome', '/snap/bin/chromium']
+
+# The app's own artwork is SVG, but four of these marks are handed to sam and notificationmgr
+# as file paths out of appinfo.json and DashboardManager, and those are not web views. The SVG
+# is still the source; --rasters re-renders these four beside it at the size each is used at.
+RASTERS = ('messaging-48x48', 'notification-small',
+           'notification-large-messaging', 'notification-large-failed')
 
 
 def find_chromium():
@@ -83,6 +90,11 @@ def render(chromium, svg, out, scale):
             '<style>html,body{margin:0;padding:0;background:transparent}'
             'img{display:block;width:%gpx;height:%gpx}</style>'
             '<img src="art.svg">' % (width, height))
+        # Chromium exits 0 whether or not it wrote the screenshot, so a render that fails
+        # silently looks exactly like a successful render of whatever was there before.
+        # Removing the target first turns that into the missing-file error below.
+        if os.path.exists(out):
+            os.unlink(out)
         subprocess.run(
             [chromium, '--headless', '--disable-gpu', '--no-sandbox', '--hide-scrollbars',
              '--default-background-color=00000000',
@@ -99,6 +111,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--scale', type=float, default=1.0)
     ap.add_argument('--out', default=None)
+    ap.add_argument('--rasters', action='store_true',
+                    help='re-render the PNGs that ship beside the SVG, into app/assets')
     ap.add_argument('names', nargs='*', help='stems to render; default is all of them')
     args = ap.parse_args()
 
@@ -108,10 +122,10 @@ def main():
         print('render.py: need rsvg-convert or chromium to rasterise', file=sys.stderr)
         return 1
 
-    out_dir = args.out or os.path.join(HERE, 'render')
+    out_dir = args.out or (ASSETS if args.rasters else os.path.join(HERE, 'render'))
     os.makedirs(out_dir, exist_ok=True)
-    stems = args.names or sorted(
-        os.path.splitext(f)[0] for f in os.listdir(SVG_DIR) if f.endswith('.svg'))
+    stems = args.names or (list(RASTERS) if args.rasters else sorted(
+        os.path.splitext(f)[0] for f in os.listdir(SVG_DIR) if f.endswith('.svg')))
     for stem in stems:
         svg = os.path.join(SVG_DIR, stem + '.svg')
         suffix = '' if args.scale == 1 else '@%gx' % args.scale

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+<!-- Messaging balloon. The mark the app shows in a notification was the one image here that
+     was still a bitmap; this is the same drawing as a shape - an ellipse rx 24.04 ry 21.09 about
+     (24.11,21.31) with a stubby tail off its lower left - under the flat top-to-bottom ramp
+     the artwork has, measured off it rather than guessed. -->
+<defs>
+  <linearGradient id="b" gradientUnits="userSpaceOnUse" x1="0" y1="0.0" x2="0" y2="45.1">
+    <stop offset="0" stop-color="#7acdd2"/><stop offset="1" stop-color="#079aa2"/>
+  </linearGradient>
+</defs>
+<path d="M0.075,21.312 A24.038,21.087 0 1 1 48.150,21.312 A24.038,21.087 0 1 1 0.075,21.312 Z M9.001,37.765 Q9.613,36.500 10.872,37.123 L18.215,40.752 Q19.475,41.375 18.279,42.113 L11.696,46.175 Q10.500,46.913 9.095,46.921 L5.967,46.941 Q4.562,46.950 5.174,45.685 Z" fill="url(#b)"/>
+</svg>

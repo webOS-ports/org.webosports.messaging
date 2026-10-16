@@ -1,47 +1,26 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="64" viewBox="0 0 32 64">
+<!-- Decline cross. Two 45-degree bars 5.46 across, cut square against a box 22.45 wide
+     centred on (16.0,16.0) - the arm ends are a vertical and a horizontal edge, not points.
+     This icon is the other way up from the rest of the toolbar: its resting state is a white
+     glyph that fades 0.92 to 0.57 down the shape, over a hard dark line on its lower edge,
+     and the pressed state is flat black at 0.31 over a white one. Both of those lines are a
+     drop shadow with no blur, which is what the original has and a gradient cannot give. -->
   <defs>
-    <linearGradient id="fdn" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="32">
-      <stop offset="0.000" stop-color="#e8e8e8" stop-opacity="0.933"/>
-      <stop offset="0.091" stop-color="#e8e8e8" stop-opacity="0.933"/>
-      <stop offset="0.182" stop-color="#e8e8e8" stop-opacity="0.933"/>
-      <stop offset="0.273" stop-color="#eeeeee" stop-opacity="0.906"/>
-      <stop offset="0.364" stop-color="#f1f1f1" stop-opacity="0.878"/>
-      <stop offset="0.455" stop-color="#f4f4f4" stop-opacity="0.827"/>
-      <stop offset="0.545" stop-color="#f6f6f6" stop-opacity="0.792"/>
-      <stop offset="0.636" stop-color="#f2f2f2" stop-opacity="0.792"/>
-      <stop offset="0.727" stop-color="#ececec" stop-opacity="0.761"/>
-      <stop offset="0.818" stop-color="#ececec" stop-opacity="0.706"/>
-      <stop offset="0.909" stop-color="#dddddd" stop-opacity="0.788"/>
-      <stop offset="1.000" stop-color="#dddddd" stop-opacity="0.788"/>
+    <path id="g" d="M4.775,5.020 Q4.775,4.775 5.020,4.775 L8.390,4.775 Q8.635,4.775 8.808,4.948 L15.827,11.967 Q16.000,12.140 16.173,11.967 L23.192,4.948 Q23.365,4.775 23.610,4.775 L26.980,4.775 Q27.225,4.775 27.225,5.020 L27.225,8.390 Q27.225,8.635 27.052,8.808 L20.033,15.827 Q19.860,16.000 20.033,16.173 L27.052,23.192 Q27.225,23.365 27.225,23.610 L27.225,26.980 Q27.225,27.225 26.980,27.225 L23.610,27.225 Q23.365,27.225 23.192,27.052 L16.173,20.033 Q16.000,19.860 15.827,20.033 L8.808,27.052 Q8.635,27.225 8.390,27.225 L5.020,27.225 Q4.775,27.225 4.775,26.980 L4.775,23.610 Q4.775,23.365 4.948,23.192 L11.967,16.173 Q12.140,16.000 11.967,15.827 L4.948,8.808 Q4.775,8.635 4.775,8.390 Z"/>
+    <linearGradient id="fdn" gradientUnits="userSpaceOnUse" x1="0" y1="4.78" x2="0" y2="27.23">
+      <stop offset="0" stop-color="#f3f3f3" stop-opacity="0.915"/>
+      <stop offset="1" stop-color="#f1f1f1" stop-opacity="0.575"/>
     </linearGradient>
-    <linearGradient id="fup" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="32">
-      <stop offset="0.000" stop-color="#020202" stop-opacity="0.631"/>
-      <stop offset="0.091" stop-color="#020202" stop-opacity="0.631"/>
-      <stop offset="0.182" stop-color="#020202" stop-opacity="0.631"/>
-      <stop offset="0.273" stop-color="#3e3e3e" stop-opacity="0.553"/>
-      <stop offset="0.364" stop-color="#5d5d5d" stop-opacity="0.62"/>
-      <stop offset="0.455" stop-color="#afafaf" stop-opacity="0.627"/>
-      <stop offset="0.545" stop-color="#151515" stop-opacity="0.518"/>
-      <stop offset="0.636" stop-color="#2c2c2c" stop-opacity="0.545"/>
-      <stop offset="0.727" stop-color="#5d5d5d" stop-opacity="0.624"/>
-      <stop offset="0.818" stop-color="#878787" stop-opacity="0.624"/>
-      <stop offset="0.909" stop-color="#e1e1e1" stop-opacity="0.718"/>
-      <stop offset="1.000" stop-color="#e1e1e1" stop-opacity="0.718"/>
-    </linearGradient>
-    <filter id="sdn" x="-35%" y="-35%" width="180%" height="180%">
-      <feDropShadow dx="0" dy="1" stdDeviation="0.5" flood-color="#000000" flood-opacity="0.26"/>
+    <filter id="sdn" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0.55" stdDeviation="0" flood-color="#000000"
+                    flood-opacity="0.270"/>
     </filter>
-    <filter id="sup" x="-35%" y="-35%" width="180%" height="180%">
-      <feDropShadow dx="0" dy="1" stdDeviation="0.6" flood-color="#000000" flood-opacity="0.40"/>
+    <filter id="sup" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="1.00" stdDeviation="0" flood-color="#ffffff"
+                    flood-opacity="0.065"/>
     </filter>
   </defs>
-  <g fill="url(#fdn)" fill-rule="evenodd" filter="url(#sdn)">
-    <path d="M4.47,5.35 L4.47,5.35 Q4.67,5.00 5.00,4.78 L5.67,4.33 Q6.00,4.11 6.40,4.13 L7.60,4.20 Q8.00,4.22 8.33,4.45 L8.77,4.77 Q9.10,5.00 9.38,5.28 L14.72,10.62 Q15.00,10.90 15.40,10.90 L15.60,10.90 Q16.00,10.90 16.28,10.62 L21.64,5.28 Q21.93,5.00 22.25,4.77 L22.68,4.46 Q23.00,4.22 23.40,4.20 L24.60,4.13 Q25.00,4.10 25.33,4.32 L26.03,4.78 Q26.37,5.00 26.57,5.34 L26.76,5.66 Q26.96,6.00 26.93,6.40 L26.84,7.60 Q26.81,8.00 26.58,8.33 L26.23,8.85 Q26.00,9.18 25.72,9.46 L20.45,14.72 Q20.16,15.00 20.15,15.40 L20.14,15.60 Q20.12,16.00 20.40,16.28 L25.72,21.65 Q26.00,21.94 26.22,22.27 L26.48,22.67 Q26.69,23.00 26.81,23.38 L26.88,23.62 Q27.00,24.00 26.97,24.40 L26.96,24.60 Q26.93,25.00 26.71,25.33 L26.22,26.06 Q26.00,26.40 25.64,26.58 L25.36,26.73 Q25.00,26.91 24.60,26.96 L24.40,26.99 Q24.00,27.04 23.61,26.96 L23.39,26.91 Q23.00,26.83 22.71,26.55 L16.29,20.44 Q16.00,20.16 15.60,20.16 L15.40,20.16 Q15.00,20.16 14.71,20.44 L8.29,26.57 Q8.00,26.85 7.61,26.92 L7.39,26.96 Q7.00,27.04 6.60,26.98 L6.40,26.95 Q6.00,26.90 5.65,26.71 L5.35,26.55 Q5.00,26.36 4.79,26.02 L4.37,25.34 Q4.16,25.00 4.11,24.60 L4.09,24.40 Q4.04,24.00 4.15,23.62 L4.22,23.38 Q4.33,23.00 4.54,22.66 L4.78,22.29 Q5.00,21.95 5.28,21.67 L10.64,16.28 Q10.92,16.00 10.91,15.60 L10.90,15.40 Q10.89,15.00 10.61,14.72 L5.28,9.42 Q5.00,9.14 4.77,8.81 L4.45,8.33 Q4.22,8.00 4.13,7.61 L4.08,7.39 Q3.99,7.00 4.04,6.60 L4.07,6.40 Q4.12,6.00 4.31,5.65 Z"/>
-  </g>
-
-  <g fill="url(#fup)" fill-rule="evenodd" filter="url(#sup)"
-     transform="translate(0,32)">
-    <path d="M4.97,5.32 L4.97,5.32 Q5.20,5.00 5.53,4.77 L5.67,4.66 Q6.00,4.43 6.40,4.44 L7.60,4.49 Q8.00,4.50 8.28,4.78 L14.72,11.17 Q15.00,11.45 15.40,11.45 L15.60,11.45 Q16.00,11.45 16.28,11.17 L22.72,4.78 Q23.00,4.50 23.40,4.48 L24.60,4.44 Q25.00,4.42 25.33,4.65 L25.50,4.77 Q25.83,5.00 26.06,5.33 L26.30,5.67 Q26.53,6.00 26.53,6.40 L26.53,8.60 Q26.52,9.00 26.24,9.28 L19.78,15.72 Q19.50,16.00 19.78,16.28 L26.17,22.72 Q26.46,23.00 26.47,23.40 L26.56,25.60 Q26.58,26.00 26.35,26.33 L26.10,26.67 Q25.87,27.00 25.54,27.23 L25.33,27.38 Q25.00,27.62 24.60,27.60 L23.40,27.54 Q23.00,27.52 22.71,27.24 L16.29,20.92 Q16.00,20.64 15.60,20.64 L15.40,20.64 Q15.00,20.64 14.72,20.92 L8.28,27.26 Q8.00,27.54 7.60,27.56 L6.40,27.59 Q6.00,27.61 5.68,27.37 L5.48,27.23 Q5.16,27.00 4.92,26.68 L4.67,26.32 Q4.44,26.00 4.45,25.60 L4.54,23.40 Q4.56,23.00 4.84,22.72 L11.22,16.28 Q11.51,16.00 11.22,15.72 L4.77,9.28 Q4.49,9.00 4.49,8.60 L4.48,6.40 Q4.48,6.00 4.71,5.68 Z M7.32,7.12 L7.32,7.12 Q7.00,6.88 6.69,6.94 L6.69,6.94 Q6.38,7.00 6.19,7.19 L6.19,7.19 Q6.00,7.38 6.00,7.77 L6.00,7.77 Q6.00,8.17 6.28,8.45 L12.49,14.72 Q12.77,15.00 12.80,15.40 L12.87,16.60 Q12.90,17.00 12.75,17.37 L12.65,17.63 Q12.50,18.00 12.22,18.29 L6.28,24.36 Q6.00,24.64 6.00,24.97 L6.00,24.97 Q6.00,25.29 6.28,25.58 L6.42,25.72 Q6.71,26.00 6.92,26.00 L6.92,26.00 Q7.14,26.00 7.43,25.72 L14.71,18.64 Q15.00,18.36 15.40,18.36 L15.60,18.36 Q16.00,18.36 16.29,18.64 L22.49,24.72 Q22.77,25.00 23.07,25.27 L23.58,25.73 Q23.88,26.00 24.13,26.00 L24.13,26.00 Q24.38,26.00 24.67,25.72 L24.72,25.67 Q25.00,25.38 25.00,24.98 L25.00,24.98 Q25.00,24.58 24.72,24.30 L18.82,18.29 Q18.54,18.00 18.39,17.63 L18.29,17.37 Q18.14,17.00 18.13,16.60 L18.13,16.40 Q18.12,16.00 18.18,15.60 L18.21,15.40 Q18.26,15.00 18.54,14.72 L24.72,8.48 Q25.00,8.19 25.00,7.79 L25.00,7.69 Q25.00,7.29 24.86,7.14 L24.86,7.14 Q24.71,7.00 24.31,7.00 L24.02,7.00 Q23.62,7.00 23.33,7.28 L17.29,13.22 Q17.00,13.50 16.63,13.65 L16.37,13.75 Q16.00,13.90 15.60,13.90 L15.40,13.90 Q15.00,13.90 14.63,13.75 L14.37,13.65 Q14.00,13.50 13.72,13.22 L8.78,8.28 Q8.50,8.00 8.18,7.76 Z"/>
-  </g>
-
+  <use href="#g" fill="url(#fdn)" filter="url(#sdn)"/>
+  <use href="#g" fill="#000000" fill-opacity="0.310" filter="url(#sup)"
+       transform="translate(0,32)"/>
 </svg>

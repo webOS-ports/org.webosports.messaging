@@ -1,47 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="64" viewBox="0 0 32 64">
+<!-- Video camera: a 22.8 by 17.9 rounded body with the lens as a trapezoid off its right
+     side, both authored from the original's edges rather than traced - the trace put a seam
+     across the body where it broke the outline into two runs. The resting state is #1f1f1f
+     fading 0.76 to 0.32 down the shape over a 2.0px bar of its own at the foot; the
+     lit state is flat #6ec3ff with a 1.40 blur of itself behind, which is why its edge reads
+     soft while its middle stays solid. -->
   <defs>
-    <linearGradient id="fdn" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="32">
-      <stop offset="0.000" stop-color="#212121" stop-opacity="0.82"/>
-      <stop offset="0.091" stop-color="#212121" stop-opacity="0.82"/>
-      <stop offset="0.182" stop-color="#212121" stop-opacity="0.82"/>
-      <stop offset="0.273" stop-color="#202020" stop-opacity="0.718"/>
-      <stop offset="0.364" stop-color="#1e1e1e" stop-opacity="0.667"/>
-      <stop offset="0.455" stop-color="#1c1c1c" stop-opacity="0.561"/>
-      <stop offset="0.545" stop-color="#1b1b1b" stop-opacity="0.494"/>
-      <stop offset="0.636" stop-color="#1d1d1d" stop-opacity="0.627"/>
-      <stop offset="0.727" stop-color="#1f1f1f" stop-opacity="0.659"/>
-      <stop offset="0.818" stop-color="#1e1e1e" stop-opacity="0.639"/>
-      <stop offset="0.909" stop-color="#1e1e1e" stop-opacity="0.639"/>
-      <stop offset="1.000" stop-color="#1e1e1e" stop-opacity="0.639"/>
+    <path id="g" d="M2.442,5.638 L22.012,5.638 A1.637,1.637 0 0 1 23.650,7.275 L23.650,21.938 A1.637,1.637 0 0 1 22.012,23.575 L2.442,23.575 A1.637,1.637 0 0 1 0.805,21.938 L0.805,7.275 A1.637,1.637 0 0 1 2.442,5.638 Z M21.212,11.800 Q21.212,11.000 21.953,10.698 L27.834,8.302 Q28.575,8.000 28.575,8.800 L28.575,21.350 Q28.575,22.150 27.811,21.914 L21.977,20.111 Q21.212,19.875 21.212,19.075 Z"/>
+    <linearGradient id="fdn" gradientUnits="userSpaceOnUse" x1="0" y1="5.64" x2="0" y2="23.57">
+      <stop offset="0" stop-color="#222222" stop-opacity="0.760"/>
+      <stop offset="1" stop-color="#171717" stop-opacity="0.315"/>
     </linearGradient>
-    <linearGradient id="fup" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="32">
-      <stop offset="0.000" stop-color="#69baf3" stop-opacity="1.0"/>
-      <stop offset="0.091" stop-color="#69baf3" stop-opacity="1.0"/>
-      <stop offset="0.182" stop-color="#69baf3" stop-opacity="1.0"/>
-      <stop offset="0.273" stop-color="#6cbffa" stop-opacity="1.0"/>
-      <stop offset="0.364" stop-color="#6dc2fd" stop-opacity="1.0"/>
-      <stop offset="0.455" stop-color="#6dc1fd" stop-opacity="1.0"/>
-      <stop offset="0.545" stop-color="#6dc1fd" stop-opacity="1.0"/>
-      <stop offset="0.636" stop-color="#6dc1fc" stop-opacity="1.0"/>
-      <stop offset="0.727" stop-color="#6bbef8" stop-opacity="1.0"/>
-      <stop offset="0.818" stop-color="#589dcd" stop-opacity="0.651"/>
-      <stop offset="0.909" stop-color="#589dcd" stop-opacity="0.651"/>
-      <stop offset="1.000" stop-color="#589dcd" stop-opacity="0.651"/>
-    </linearGradient>
-    <filter id="sdn" x="-35%" y="-35%" width="180%" height="180%">
-      <feDropShadow dx="0" dy="1" stdDeviation="0.5" flood-color="#000000" flood-opacity="0.26"/>
-    </filter>
-    <filter id="sup" x="-35%" y="-35%" width="180%" height="180%">
-      <feDropShadow dx="0" dy="1" stdDeviation="0.6" flood-color="#000000" flood-opacity="0.40"/>
+    <filter id="sup" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="1.40"/>
     </filter>
   </defs>
-  <g fill="url(#fdn)" fill-rule="evenodd" filter="url(#sdn)">
-    <path d="M1.30,6.28 L1.30,6.28 Q1.58,6.00 1.95,5.85 L2.63,5.57 Q3.00,5.41 3.40,5.40 L3.60,5.40 Q4.00,5.39 4.40,5.39 L20.60,5.48 Q21.00,5.49 21.31,5.73 L22.61,6.75 Q22.92,7.00 23.03,7.38 L23.10,7.62 Q23.21,8.00 23.17,8.40 L23.16,8.60 Q23.12,9.00 23.38,9.30 L23.74,9.72 Q24.00,10.03 24.34,9.81 L26.78,8.22 Q27.12,8.00 27.42,8.27 L27.93,8.73 Q28.22,9.00 28.20,9.40 L27.67,18.60 Q27.64,19.00 27.75,19.39 L28.08,20.61 Q28.18,21.00 27.86,21.23 L27.33,21.59 Q27.00,21.82 26.66,21.61 L24.34,20.24 Q24.00,20.04 23.62,19.93 L23.38,19.86 Q23.00,19.75 22.82,19.88 L22.82,19.88 Q22.64,20.00 22.61,20.40 L22.60,20.60 Q22.57,21.00 22.75,21.36 L22.89,21.64 Q23.07,22.00 22.94,22.38 L22.85,22.62 Q22.72,23.00 22.45,23.29 L22.08,23.71 Q21.81,24.00 21.46,24.20 L21.35,24.27 Q21.00,24.47 20.60,24.47 L3.40,24.51 Q3.00,24.51 2.61,24.43 L2.39,24.38 Q2.00,24.30 1.72,24.02 L1.01,23.29 Q0.73,23.00 0.64,22.61 L0.59,22.39 Q0.49,22.00 0.55,21.60 L0.73,20.40 Q0.79,20.00 0.78,19.60 L0.40,8.40 Q0.39,8.00 0.47,7.61 L0.52,7.39 Q0.59,7.00 0.88,6.72 Z M3.39,21.46 L3.39,21.46 Q3.00,21.38 2.83,21.69 L2.83,21.69 Q2.66,22.00 2.83,22.08 L2.83,22.08 Q3.00,22.17 3.40,22.16 L20.67,22.00 Q21.07,22.00 21.03,21.84 L21.03,21.84 Q21.00,21.68 20.61,21.61 L20.39,21.57 Q20.00,21.50 19.60,21.50 L4.40,21.59 Q4.00,21.60 3.61,21.51 Z"/>
+  <use href="#g" fill="url(#fdn)"/>
+  <path d="M0.805,23.575 L23.650,23.575 A0.000,0.000 0 0 1 23.650,23.575 L23.650,24.575 A1.000,1.000 0 0 1 22.650,25.575 L1.805,25.575 A1.000,1.000 0 0 1 0.805,24.575 L0.805,23.575 A0.000,0.000 0 0 1 0.805,23.575 Z" fill="#1f1f1f" fill-opacity="0.630"/>
+  <g transform="translate(0,32)">
+    <use href="#g" fill="#6ec3ff" filter="url(#sup)"/>
+    <use href="#g" fill="#6ec3ff"/>
   </g>
-
-  <g fill="url(#fup)" fill-rule="evenodd" filter="url(#sup)"
-     transform="translate(0,32)">
-    <path d="M7.10,4.02 L7.10,4.02 Q7.50,4.00 7.90,4.00 L16.60,4.01 Q17.00,4.01 17.40,4.05 L18.60,4.19 Q19.00,4.24 19.38,4.36 L21.62,5.04 Q22.00,5.16 22.34,5.37 L24.66,6.80 Q25.00,7.01 25.38,7.14 L27.35,7.86 Q27.73,8.00 27.96,8.32 L28.22,8.68 Q28.46,9.00 28.54,9.39 L29.45,13.61 Q29.53,14.00 29.50,14.40 L29.40,15.60 Q29.37,16.00 29.27,16.39 L28.39,19.61 Q28.28,20.00 27.94,20.22 L27.34,20.61 Q27.00,20.83 26.61,20.90 L26.39,20.94 Q26.00,21.01 25.66,21.22 L22.34,23.26 Q22.00,23.47 21.61,23.57 L18.39,24.37 Q18.00,24.46 17.60,24.46 L6.40,24.52 Q6.00,24.52 5.61,24.43 L2.39,23.69 Q2.00,23.60 1.66,23.38 L1.40,23.21 Q1.06,23.00 0.84,22.67 L0.22,21.74 Q0.00,21.40 -0.05,21.01 L-0.25,19.40 Q-0.30,19.00 -0.30,18.60 L-0.35,11.40 Q-0.35,11.00 -0.31,10.60 L-0.00,7.40 Q0.03,7.00 0.26,6.67 L0.78,5.90 Q1.00,5.56 1.36,5.39 L2.64,4.80 Q3.00,4.63 3.39,4.54 L4.61,4.25 Q5.00,4.15 5.40,4.13 Z"/>
-  </g>
-
 </svg>

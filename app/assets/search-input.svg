@@ -1,6 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20">
-<g fill="none" stroke="#aaaaaa" transform="translate(-0.4,0.4)">
-  <circle cx="9" cy="8" r="5" stroke-width="3"/>
-  <line x1="12.4" y1="11.6" x2="18.0" y2="17.7" stroke-width="4" stroke-linecap="butt"/>
+<!-- Search glyph. The original is one flat #aaaaaa with no gradient and no outline: a ring
+     whose outer edge fits r 7.12 and inner edge r 3.93 about (8.95,8.65) - so a 3.19 stroke on
+     r 5.52 - and a handle at exactly 45 degrees with a round end at (16.73,17.21). -->
+<g fill="none" stroke="#aaaaaa" stroke-linecap="round">
+  <circle cx="8.95" cy="8.65" r="5.52" stroke-width="3.19"/>
+  <path d="M11.78,12.25 L16.73,17.21" stroke-width="3.34"/>
 </g>
 </svg>

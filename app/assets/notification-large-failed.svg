@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+<!-- The failed-message mark: the balloon with a warning triangle over its lower right. The
+     triangle's corners are filleted 1.41 and the bar inside it tapers, which is what the
+     artwork has; the mark inside is one path so it keeps its shape at any size. -->
+<defs>
+  <linearGradient id="b" gradientUnits="userSpaceOnUse" x1="0" y1="0.0" x2="0" y2="45.1">
+    <stop offset="0" stop-color="#7acdd2"/><stop offset="1" stop-color="#079aa2"/>
+  </linearGradient>
+  <linearGradient id="warn" gradientUnits="userSpaceOnUse" x1="0" y1="27.3" x2="0" y2="46.0">
+    <stop offset="0" stop-color="#fdd90d"/><stop offset="1" stop-color="#eec00a"/>
+  </linearGradient>
+</defs>
+<path d="M0.075,21.312 A24.038,21.087 0 1 1 48.150,21.312 A24.038,21.087 0 1 1 0.075,21.312 Z M9.001,37.765 Q9.613,36.500 10.872,37.123 L18.215,40.752 Q19.475,41.375 18.279,42.113 L11.696,46.175 Q10.500,46.913 9.095,46.921 L5.967,46.941 Q4.562,46.950 5.174,45.685 Z" fill="url(#b)"/>
+<path d="M36.505,28.508 Q37.237,27.300 37.944,28.523 L47.331,44.765 Q48.038,45.987 46.625,45.987 L27.312,45.987 Q25.900,45.987 26.633,44.780 Z" fill="url(#warn)"/>
+<path d="M36.56,33.40 L37.92,33.40 L37.79,42.40 L36.69,42.40 Z M36.287,44.300 A0.950,0.950 0 1 1 38.188,44.300 A0.950,0.950 0 1 1 36.287,44.300 Z" fill="#5f4c02"/>
+</svg>
