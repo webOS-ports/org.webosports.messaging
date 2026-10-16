@@ -7,33 +7,55 @@
      path. Placed by scale and offset alone the master paths track the original's own outlines
      to an rms of 0.17px (teal) and 0.31px (cream). The two carry their own scales because
      Palm's 48px mark re-laid them out rather than shrinking the launcher icon whole.
-     The dark rim under each fill, the vertical ramp measured down the middle of the original
-     and the specular gloss across the upper third are still fitted here, because the master
-     is a launcher icon and lights its balloons differently. -->
+     Neither balloon is shaded down the page. Subtract the colour each settles to at its foot
+     and what is left is a smooth blob - an elliptical highlight over a flat fill - and the
+     two are lit from different places: the teal one from a point above the icon entirely,
+     centred (21.1,-0.8) with radii (29.5,28.4), the cream one from its own upper right at
+     (32.0,17.0) with radii (20.8,18.0). Fitted that way they hold to an rms of 2.98 and 1.80
+     of 255; the stops below are then read off in bands of a tenth of the radius. A vertical
+     ramp is flat across a row where the original falls away in every direction, and that is
+     what this carried before.
+     Unlike the notification mark, neither balloon here carries a bright bounce along its
+     lower edge worth drawing: the teal one's is +8 of 255 against the +45 on the 48px mark,
+     and the cream one's lower edge is darker than its inside, not lighter - that is the gold
+     rim, not light coming back up. The dark rim under each fill and the specular gloss across
+     the upper third are still fitted, because the master is a launcher icon and lights its
+     balloons differently. -->
 <defs>
   <linearGradient id="disc" gradientUnits="userSpaceOnUse" x1="0" y1="3.0" x2="0" y2="46.8">
     <stop offset="0" stop-color="#ffffff" stop-opacity="0.385"/>
     <stop offset="0.45" stop-color="#9a9a9a" stop-opacity="0.115"/>
     <stop offset="1" stop-color="#000000" stop-opacity="0.070"/>
   </linearGradient>
-  <linearGradient id="teal" gradientUnits="userSpaceOnUse" x1="0" y1="6.9" x2="0" y2="37.6">
-    <stop offset="0" stop-color="#a7dddf"/><stop offset="0.09" stop-color="#91ecf1"/>
-    <stop offset="0.24" stop-color="#7fe2e7"/><stop offset="0.40" stop-color="#5ccad0"/>
-    <stop offset="0.60" stop-color="#37b2b9"/><stop offset="0.80" stop-color="#00969e"/>
-    <stop offset="1" stop-color="#01949b"/>
-  </linearGradient>
-  <linearGradient id="cream" gradientUnits="userSpaceOnUse" x1="0" y1="18.6" x2="0" y2="40.7">
-    <stop offset="0" stop-color="#fffbe4"/><stop offset="0.35" stop-color="#fdf4cb"/>
-    <stop offset="0.75" stop-color="#f6e9ae"/><stop offset="1" stop-color="#ecdc96"/>
-  </linearGradient>
+  <radialGradient id="teal" gradientUnits="userSpaceOnUse" cx="21.07" cy="-0.77" r="29.53"
+    gradientTransform="translate(21.07,-0.77) scale(1,0.9624) translate(-21.07,--0.77)">
+    <stop offset="0.30" stop-color="#c3e7e9"/>
+    <stop offset="0.40" stop-color="#addee0"/>
+    <stop offset="0.50" stop-color="#8ed1d5"/>
+    <stop offset="0.60" stop-color="#6fc5c9"/>
+    <stop offset="0.70" stop-color="#53babf"/>
+    <stop offset="0.80" stop-color="#37aeb4"/>
+    <stop offset="0.90" stop-color="#1ea4ab"/>
+    <stop offset="1.00" stop-color="#049aa2"/>
+  </radialGradient>
+  <radialGradient id="cream" gradientUnits="userSpaceOnUse" cx="32.02" cy="16.99" r="20.79"
+    gradientTransform="translate(32.02,16.99) scale(1,0.8668) translate(-32.02,-16.99)">
+    <stop offset="0.40" stop-color="#fcf6dc"/>
+    <stop offset="0.50" stop-color="#fcf5d6"/>
+    <stop offset="0.60" stop-color="#fbf2cd"/>
+    <stop offset="0.70" stop-color="#faf0c3"/>
+    <stop offset="0.80" stop-color="#f9edba"/>
+    <stop offset="0.90" stop-color="#f6e9b0"/>
+    <stop offset="1.00" stop-color="#f3e6a9"/>
+  </radialGradient>
   <radialGradient id="tg">
-    <stop offset="0" stop-color="#ffffff" stop-opacity="0.565"/>
-    <stop offset="0.7" stop-color="#ffffff" stop-opacity="0.198"/>
+    <stop offset="0" stop-color="#ffffff" stop-opacity="0.250"/>
+    <stop offset="0.7" stop-color="#ffffff" stop-opacity="0.087"/>
     <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
   </radialGradient>
   <radialGradient id="cg">
-    <stop offset="0" stop-color="#ffffff" stop-opacity="0.515"/>
-    <stop offset="0.7" stop-color="#ffffff" stop-opacity="0.180"/>
+    <stop offset="0" stop-color="#ffffff" stop-opacity="0.250"/>
+    <stop offset="0.7" stop-color="#ffffff" stop-opacity="0.087"/>
     <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
   </radialGradient>
   <clipPath id="tclip"><path d="M5.411,37.254 C5.411,37.254 7.394,36.260 8.194,34.713 C9.167,32.832 8.417,31.102 8.417,31.102 C8.417,31.102 8.417,31.102 8.417,31.102 C8.417,31.102 3.259,27.808 3.259,20.991 C3.259,12.154 13.064,6.898 20.346,6.898 C29.984,6.898 36.274,13.300 36.274,20.140 C36.274,25.226 33.553,30.098 27.113,33.280 C22.514,35.552 15.430,34.147 15.430,34.147 C15.430,34.147 13.756,36.201 10.781,37.153 C7.637,38.159 5.411,37.254 5.411,37.254 Z"/></clipPath>
