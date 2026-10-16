@@ -77,8 +77,16 @@ the original is made of is usually simple and usually measurable:
   *higher*, so what is left is the bottom band. Reading them as one shadow in two colours gets
   both wrong, and getting the subtraction the wrong way round puts the bevel on the top edge,
   which looks like a shadow from the other side. The white body also brightens downward,
-  #dcdcdc to #ffffff, rather than holding one tone; and the pressed frame sits 0.94px lower in
-  the sheet than the resting one, which is in the original and not an accident of drawing.
+  #dcdcdc to #ffffff, rather than holding one tone; and the pressed frame is drawn with a
+  stroke 0.7 wider than the resting one and sits 0.6px lower. Read the two halves row by row
+  rather than down a column and that falls out of the arithmetic: both cross at local row 12,
+  but the resting one parts again at row 20 and the pressed one holds to 21, which is a
+  heavier bar, not a moved one.
+- `menu-icon-mic`'s cradle is **not a half-ellipse**. Its sides stay vertical for seven rows
+  before they turn - x 9.9..11.7 from row 13 to row 19 - where an ellipse through the same
+  endpoints bows out at the top and in at the bottom. It is two straight runs and a bottom
+  curve. Fitting the ellipse also let the stroke thin to 1.46 to buy back the error the wrong
+  shape was costing; at the right shape it is 1.72 and the glyph goes 4.9 to 3.4.
 - `video-call-icon` is **one shape in both states**. The original's two silhouettes agree row
   for row - x 1..27 from row 6 to row 23 in each - and only the light on it differs: the
   resting glyph over a hard copy of itself 2px lower, the lit one over a blur of itself. The
@@ -119,8 +127,8 @@ Mean per-pixel distance from the Palm art each one replaces, worst first, out of
 | | |
 |---|---|
 | over 12 | `header-icon-contacts` 36, `menu-icon-attach` 26, `notification-large-failed` 24, `attach-contact` 18, `attach-event` 16, `messaging-48x48` 17, `icon-165x165` 16, `notification-large-messaging` 16, `notification-small` 14, `phone-icon` 14, `attach-location` 13, `menu-icon-send` 13 |
-| 8-12 | `video-call-icon` 12, `msg-read` 12, `menu-icon-buddies` 11, `header-warning-icon` 11, `online-status` 9.6, `menu-icon-conversation-plus` 9.3, `msg-delivered` 8.9, `icon-decline` 7.7, `menuitem-arrow-dark` 8.2, `menu-icon-favorites` 8.2 |
-| 4-8 | `incoming-outgoing` 7.9, `chat-balloon-error-shape` 7.9, `chat-balloon-received-error-shape` 7.8, `dialogbg` 7.1, `menu-icon-conversation` 7.0, `search-input` 6.0, `list-view-avatar-frame` 5.4, `menu-icon-mic-rec` 5.0, `menu-icon-mic` 4.9, `chat-balloon-received-shape` 4.0 |
+| 8-12 | `video-call-icon` 12, `msg-read` 12, `menu-icon-buddies` 11, `header-warning-icon` 11, `online-status` 9.6, `menu-icon-conversation-plus` 9.3, `msg-delivered` 8.9, `icon-decline` 8.3, `menuitem-arrow-dark` 8.2, `menu-icon-favorites` 8.2 |
+| 4-8 | `incoming-outgoing` 7.9, `chat-balloon-error-shape` 7.9, `chat-balloon-received-error-shape` 7.8, `dialogbg` 7.1, `menu-icon-conversation` 7.0, `search-input` 6.0, `list-view-avatar-frame` 5.4, `menu-icon-mic-rec` 3.6, `menu-icon-mic` 3.4, `chat-balloon-received-shape` 4.0 |
 | under 4 | `attach-doc` 3.7, `mini-player-icon-play` 3.2, `attach-ppt` 3.1, `list-unread` 2.9, `attach-xls` 2.6, `chat-balloon-sent-shape` 2.4, `mini-player-icon-pause` 1.9, `loading-bg` 1.9, `list-avatar-default` 1.5, `favorites-star-blue` 1.4, `menu-icon-servers` 1.3, `defaultview-panel-tile` 0.8, the two chrome shadows 0.3 |
 
 `attach-pdf` is the one exception to that table. It follows the community's `Icon-pdf-variant1`
