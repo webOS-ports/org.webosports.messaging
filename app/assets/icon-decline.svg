@@ -1,39 +1,71 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="64" viewBox="0 0 32 64">
 <!-- Decline cross. Two 45-degree bars with round ends, not cut square: the original's arm
      reaches its furthest left midway down the end rather than at a corner, which is a cap.
-     So the glyph is one stroked path - and it is stroked at three widths, each baked into
+     So the glyph is one stroked path - and it is stroked at several widths, each baked into
      its own <path>. A stroke-width on <use> is ignored when the referenced element sets one,
      and the browser will not always take one from the <use> either, so the only way to get
-     three weights of the same outline that renders everywhere is three paths.
+     several weights of the same outline that renders everywhere is several paths.
      This icon is the other way up from the rest of the toolbar. The resting state is a white
-     glyph fading 0.97 to 0.62 down the shape, over a soft shadow cast OUTSIDE it - a blurred
-     copy 0.88 lower, masked to where the glyph is not. The pressed state is cut into the
-     surface instead: flat black at 0.235, a light rim 0.85 wide round the whole inside of it,
-     and a shadow 2.40 deep over that rim on the edges that face up. Every other edge stays
-     lit - at the waist the original lights both sides at once, which a band cut by a vertical
-     offset cannot do, because there the two arms overlap and the offset copy fills the gap. -->
+     glyph of ONE colour, #f0f0f0, whose opacity falls 0.950 to 0.627 down the shape - measured
+     off the original, where the fill is grey 244 throughout and only the alpha ramps, dead
+     straight at -3.87 a row from 238 at the top to 152 at the bottom. It sits over a soft
+     shadow cast OUTSIDE it - a blurred copy 0.70 lower, masked to where the glyph is not.
+     The pressed state is cut into the surface and lit from below: flat black at 0.250, then
+     every face whose outward normal points DOWN carries a crisp near-white rim 0.90 wide,
+     and every face that points UP carries a soft black band 1.91 deep. Measured off the
+     original: body alpha 61, lit rim alpha 157 at grey 239, shadowed rim alpha 138 at grey 5.
+     So the two rims are opposite tones of equal weight, not one rim with a shadow laid over
+     part of it - over a 24% black body a white rim only ever darkens to grey.
+     Which face is which is settled per ARM, not for the cross as a whole: a vertical offset
+     taken on the union is wrong just below the waist, where the other arm's offset copy fills
+     the gap and leaves the lower arm's outer edge lit when the original has it dark. Each arm
+     therefore splits its own outline, and the result is trimmed to the other arm's eroded
+     body so the rims that are buried inside the crossing disappear - except the shadow at the
+     notch above the waist, which the erosion deliberately spares, because the original has a
+     dark blob there where the two arms' upper faces converge. -->
   <defs>
-    <path id="gd" d="M7.46,7.46 L24.54,24.54 M24.54,7.46 L7.46,24.54" fill="none" stroke-width="5.24" stroke-linecap="round"/>
-    <path id="go" d="M7.46,7.46 L24.54,24.54 M24.54,7.46 L7.46,24.54" fill="none" stroke-width="5.94" stroke-linecap="round"/>
-    <path id="gi" d="M7.46,7.46 L24.54,24.54 M24.54,7.46 L7.46,24.54" fill="none" stroke-width="4.23" stroke-linecap="round"/>
-    <linearGradient id="fdn" gradientUnits="userSpaceOnUse" x1="0" y1="4.84" x2="0" y2="27.16">
-      <stop offset="0" stop-color="#dcdcdc" stop-opacity="0.975"/>
-      <stop offset="1" stop-color="#ffffff" stop-opacity="0.620"/>
+    <path id="gd" d="M7.39,7.39 L24.61,24.61 M24.61,7.39 L7.39,24.61" fill="none" stroke-width="5.200" stroke-linecap="round"/>
+    <path id="go" d="M7.39,7.39 L24.61,24.61 M24.61,7.39 L7.39,24.61" fill="none" stroke-width="5.975" stroke-linecap="round"/>
+    <path id="gA" d="M7.39,7.39 L24.61,24.61" fill="none" stroke-width="5.975" stroke-linecap="round"/>
+    <path id="gB" d="M24.61,7.39 L7.39,24.61" fill="none" stroke-width="5.975" stroke-linecap="round"/>
+    <path id="gAi" d="M7.39,7.39 L24.61,24.61" fill="none" stroke-width="4.185" stroke-linecap="round"/>
+    <path id="gBi" d="M24.61,7.39 L7.39,24.61" fill="none" stroke-width="4.185" stroke-linecap="round"/>
+    <linearGradient id="fdn" gradientUnits="userSpaceOnUse" x1="0" y1="4.79" x2="0" y2="27.21">
+      <stop offset="0" stop-color="#f0f0f0" stop-opacity="0.950"/>
+      <stop offset="1" stop-color="#f0f0f0" stop-opacity="0.627"/>
     </linearGradient>
     <mask id="out" maskUnits="userSpaceOnUse" x="-8" y="-8" width="48" height="80">
       <rect x="-8" y="-8" width="48" height="80" fill="#ffffff"/>
       <use href="#gd" stroke="#000000"/>
     </mask>
-    <mask id="body" maskUnits="userSpaceOnUse" x="-8" y="-8" width="48" height="80">
+    <mask id="inside" maskUnits="userSpaceOnUse" x="-8" y="-8" width="48" height="80">
       <use href="#go" stroke="#ffffff"/>
     </mask>
-    <mask id="ring" maskUnits="userSpaceOnUse" x="-8" y="-8" width="48" height="80">
-      <use href="#go" stroke="#ffffff"/>
-      <use href="#gi" stroke="#000000"/>
+    <mask id="upA" maskUnits="userSpaceOnUse" x="-8" y="-8" width="48" height="80">
+      <use href="#gA" stroke="#ffffff"/>
+      <use href="#gA" stroke="#000000" transform="translate(0,1.91)"/>
+      <use href="#gBi" stroke="#000000"/>
     </mask>
-    <mask id="upper" maskUnits="userSpaceOnUse" x="-8" y="-8" width="48" height="80">
-      <use href="#go" stroke="#ffffff"/>
-      <use href="#go" stroke="#000000" transform="translate(0,2.40)"/>
+    <mask id="upB" maskUnits="userSpaceOnUse" x="-8" y="-8" width="48" height="80">
+      <use href="#gB" stroke="#ffffff"/>
+      <use href="#gB" stroke="#000000" transform="translate(0,1.91)"/>
+      <use href="#gAi" stroke="#000000"/>
+    </mask>
+    <mask id="rimA" maskUnits="userSpaceOnUse" x="-8" y="-8" width="48" height="80">
+      <use href="#gA" stroke="#ffffff"/>
+      <use href="#gAi" stroke="#000000"/>
+      <use href="#gBi" stroke="#000000"/>
+    </mask>
+    <mask id="rimB" maskUnits="userSpaceOnUse" x="-8" y="-8" width="48" height="80">
+      <use href="#gB" stroke="#ffffff"/>
+      <use href="#gBi" stroke="#000000"/>
+      <use href="#gAi" stroke="#000000"/>
+    </mask>
+    <mask id="litA" maskUnits="userSpaceOnUse" x="-8" y="-8" width="48" height="80">
+      <use href="#gA" stroke="#ffffff" transform="translate(0,2.70)"/>
+    </mask>
+    <mask id="litB" maskUnits="userSpaceOnUse" x="-8" y="-8" width="48" height="80">
+      <use href="#gB" stroke="#ffffff" transform="translate(0,2.70)"/>
     </mask>
     <filter id="blur" x="-30%" y="-30%" width="160%" height="160%">
       <feGaussianBlur stdDeviation="1.10"/>
@@ -43,15 +75,19 @@
     </filter>
   </defs>
   <g>
-    <g mask="url(#out)"><use href="#gd" stroke="#000000" stroke-opacity="0.720"
-         filter="url(#blur)" transform="translate(0,0.88)"/></g>
+    <g mask="url(#out)"><use href="#gd" stroke="#000000" stroke-opacity="0.765"
+         filter="url(#blur)" transform="translate(0,0.70)"/></g>
     <use href="#gd" stroke="url(#fdn)"/>
   </g>
-  <g transform="translate(0,32.54)">
-    <use href="#go" stroke="#000000" stroke-opacity="0.235"/>
-    <g mask="url(#ring)"><use href="#go" stroke="#ffffff" stroke-opacity="0.555"/></g>
-    <g mask="url(#body)"><g filter="url(#inblur)">
-      <g mask="url(#upper)"><use href="#go" stroke="#000000" stroke-opacity="0.280"/></g>
+  <g transform="translate(0,32.45)">
+    <use href="#go" stroke="#000000" stroke-opacity="0.250"/>
+    <g mask="url(#inside)"><g filter="url(#inblur)">
+      <g mask="url(#upA)"><use href="#gA" stroke="#000000" stroke-opacity="0.415"/></g>
+      <g mask="url(#upB)"><use href="#gB" stroke="#000000" stroke-opacity="0.415"/></g>
     </g></g>
+    <g mask="url(#rimA)"><g mask="url(#litA)">
+      <use href="#gA" stroke="#ffffff" stroke-opacity="0.615"/></g></g>
+    <g mask="url(#rimB)"><g mask="url(#litB)">
+      <use href="#gB" stroke="#ffffff" stroke-opacity="0.615"/></g></g>
   </g>
 </svg>

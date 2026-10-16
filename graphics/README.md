@@ -70,28 +70,43 @@ the original is made of is usually simple and usually measurable:
   earpiece and mouthpiece are discs at the ends of that sector.
 - `icon-decline` is two 45-degree bars with round ends. Its arm reaches its furthest left
   midway down the end rather than at a corner, which is a cap, not a square cut - so the whole
-  glyph is one stroked path with `stroke-linecap="round"`. Its two states are lit differently
-  as well, and not by the same trick: the resting glyph casts a *soft shadow outside* itself,
-  a blurred copy a pixel and a half lower masked to where the glyph is not, and the pressed
-  one is cut into the surface: a light rim round the **whole** inside of it with a shadow over
-  that rim on the edges that face up. Read the original across an arm and both are there - at
-  row 41 the left arm runs #e9e9e9 at its outer edge, black through the middle, then a138 of
-  shadow where it meets the notch; at the waist it lights *both* sides at once. A band cut by
-  offsetting a copy of the glyph cannot do that last one, because at the waist the two arms
-  overlap and the offset copy fills the gap in - the rim has to come from a narrower stroke of
-  the same path, which erodes the union properly.
+  glyph is one stroked path with `stroke-linecap="round"`. Its two states are lit differently,
+  and neither of them the way they first look.
+
+  The resting glyph is **one grey whose alpha ramps**, not a colour ramp. Over its 116 interior
+  pixels the fill measures grey 244 throughout - 235 to 252, no trend - while the alpha falls
+  dead straight at -3.87 a row, 238 at the top of the glyph to 152 at the bottom. It had been
+  drawn as `#dcdcdc` to `#ffffff` at a near-constant alpha, which is the same idea read off the
+  wrong channel, and the tuner could never correct it because only the two opacities were
+  parameters. Under it is a soft shadow *outside* the glyph, a blurred copy a pixel lower masked
+  to where the glyph is not: measured, it reaches alpha 69 one pixel below the outline and 43
+  one pixel above, dying by 3px.
+
+  The pressed glyph is cut into the surface and **lit from below, in two tones of equal weight**.
+  Read the original across an arm: the body is black at alpha 61, every face whose outward normal
+  points *down* carries a crisp rim of alpha 157 at grey 239, and every face that points *up*
+  carries a soft band of alpha 138 at grey 5. Those are two rims, not one rim with a shadow laid
+  over half of it - over a 24% black body a white rim only ever darkens to grey, so drawing it
+  that way leaves the top caps, the notch above the waist and the whole lower outline reading
+  grey 132 where the original is 5.
+
+  **Which face is which is settled per arm, not for the cross as a whole.** The natural way to
+  split lit from unlit is to offset a copy of the glyph downward and subtract, but taken on the
+  union that is wrong just below the waist: there the *other* arm's offset copy fills the gap,
+  and the lower arm's outer edge comes out lit where the original has it dark. Each arm therefore
+  splits its own outline, and the result is trimmed to the other arm's eroded body so the rims
+  buried inside the crossing disappear. The erosion is what spares the one piece that must
+  survive: a dark blob just below the notch above the waist, alpha 131 fading to 96, 66, 61,
+  where the two arms' upper faces converge and their shadows pile up.
 
   Watch out for `stroke-width` on `<use>` here. It is ignored outright when the referenced
   element sets one, and Chromium will not reliably take it from the `<use>` either, so an icon
-  that wants its outline at three weights wants three `<path>` elements with the width baked
-  in. Silently getting one weight everywhere is what made the pressed cross read a size small. Reading them as one shadow in two colours gets
-  all of it wrong, and getting the subtraction the wrong way round puts a band on the opposite
-  edge, which looks like light from the other side of the room. The white body also brightens downward,
-  #dcdcdc to #ffffff, rather than holding one tone; and the pressed frame is drawn with a
-  stroke 0.7 wider than the resting one and sits 0.6px lower. Read the two halves row by row
-  rather than down a column and that falls out of the arithmetic: both cross at local row 12,
-  but the resting one parts again at row 20 and the pressed one holds to 21, which is a
-  heavier bar, not a moved one.
+  that wants its outline at several weights wants several `<path>` elements with the width baked
+  in. Silently getting one weight everywhere is what made the pressed cross read a size small.
+  The pressed frame is a stroke 0.78 wider than the resting one and sits 0.45px lower. Read the
+  two halves row by row rather than down a column and that falls out of the arithmetic: both
+  cross at local row 12, but the resting one parts again at row 20 and the pressed one holds to
+  21, which is a heavier bar, not a moved one.
 - `menu-icon-mic`'s cradle is **not a half-ellipse**. Its sides stay vertical for seven rows
   before they turn - x 9.9..11.7 from row 13 to row 19 - where an ellipse through the same
   endpoints bows out at the top and in at the bottom. It is two straight runs and a bottom
@@ -143,8 +158,8 @@ Mean per-pixel distance from the Palm art each one replaces, worst first, out of
 | | |
 |---|---|
 | over 12 | `header-icon-contacts` 36, `menu-icon-attach` 26, `notification-large-failed` 24, `attach-contact` 18, `attach-event` 16, `messaging-48x48` 17, `icon-165x165` 16, `notification-large-messaging` 16, `notification-small` 14, `phone-icon` 14, `attach-location` 13, `menu-icon-send` 13 |
-| 8-12 | `video-call-icon` 12, `msg-read` 12, `menu-icon-buddies` 11, `header-warning-icon` 11, `online-status` 9.6, `menu-icon-conversation-plus` 9.3, `msg-delivered` 8.9, `icon-decline` 6.9, `menuitem-arrow-dark` 8.2, `menu-icon-favorites` 8.2 |
-| 4-8 | `incoming-outgoing` 7.9, `chat-balloon-error-shape` 7.9, `chat-balloon-received-error-shape` 7.8, `dialogbg` 7.1, `menu-icon-conversation` 7.0, `search-input` 6.0, `list-view-avatar-frame` 5.4, `menu-icon-mic-rec` 3.6, `menu-icon-mic` 3.4, `chat-balloon-received-shape` 4.0 |
+| 8-12 | `video-call-icon` 12, `msg-read` 12, `menu-icon-buddies` 11, `header-warning-icon` 11, `online-status` 9.6, `menu-icon-conversation-plus` 9.3, `msg-delivered` 8.9, `menuitem-arrow-dark` 8.2, `menu-icon-favorites` 8.2 |
+| 4-8 | `incoming-outgoing` 7.9, `icon-decline` 4.4, `chat-balloon-error-shape` 7.9, `chat-balloon-received-error-shape` 7.8, `dialogbg` 7.1, `menu-icon-conversation` 7.0, `search-input` 6.0, `list-view-avatar-frame` 5.4, `menu-icon-mic-rec` 3.6, `menu-icon-mic` 3.4, `chat-balloon-received-shape` 4.0 |
 | under 4 | `attach-doc` 3.7, `mini-player-icon-play` 3.2, `attach-ppt` 3.1, `list-unread` 2.9, `attach-xls` 2.6, `chat-balloon-sent-shape` 2.4, `mini-player-icon-pause` 1.9, `loading-bg` 1.9, `list-avatar-default` 1.5, `favorites-star-blue` 1.4, `menu-icon-servers` 1.3, `defaultview-panel-tile` 0.8, the two chrome shadows 0.3 |
 
 `attach-pdf` is the one exception to that table. It follows the community's `Icon-pdf-variant1`
