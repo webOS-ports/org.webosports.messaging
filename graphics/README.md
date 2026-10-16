@@ -68,8 +68,9 @@ the original is made of is usually simple and usually measurable:
 - `phone-icon` is **one arc**. Its outer edge fits a circle about (25.65,4.49)
   of r 25.75 to 0.07px, its inner edge is r 18.50 about the same point, and the
   earpiece and mouthpiece are discs at the ends of that sector.
-- `icon-decline` is two 45-degree bars cut square against a box, so its arm ends
-  are a vertical and a horizontal edge rather than points.
+- `icon-decline` is two 45-degree bars with round ends. Its arm reaches its furthest left
+  midway down the end rather than at a corner, which is a cap, not a square cut - so the whole
+  glyph is one stroked path with `stroke-linecap="round"`.
 - `msg-delivered` has no top-to-bottom gradient at all: the ramp runs *across*
   each arm, lit on the upper-left edge, so each arm needs its own perpendicular
   gradient and the two meet at a round join.
@@ -104,23 +105,22 @@ Mean per-pixel distance from the Palm art each one replaces, worst first, out of
 
 | | |
 |---|---|
-| over 12 | `menu-icon-attach` 26, `notification-large-failed` 25, `messaging-48x48` 17, `icon-165x165` 16, `notification-large-messaging` 16, `notification-small` 15, `phone-icon` 14, `attach-location` 13, `menu-icon-send` 13 |
-| 8-12 | `video-call-icon` 12, `msg-read` 12, `menu-icon-buddies` 11, `header-warning-icon` 11, `online-status` 9.6, `menu-icon-conversation-plus` 9.3, `icon-decline` 9.3, `msg-delivered` 8.9, `menuitem-arrow-dark` 8.2, `menu-icon-favorites` 8.2 |
+| over 12 | `header-icon-contacts` 36, `menu-icon-attach` 26, `notification-large-failed` 24, `attach-contact` 18, `attach-event` 16, `messaging-48x48` 17, `icon-165x165` 16, `notification-large-messaging` 16, `notification-small` 14, `phone-icon` 14, `attach-location` 13, `menu-icon-send` 13 |
+| 8-12 | `video-call-icon` 12, `msg-read` 12, `menu-icon-buddies` 11, `header-warning-icon` 11, `online-status` 9.6, `menu-icon-conversation-plus` 9.3, `msg-delivered` 8.9, `icon-decline` 8.4, `menuitem-arrow-dark` 8.2, `menu-icon-favorites` 8.2 |
 | 4-8 | `incoming-outgoing` 7.9, `chat-balloon-error-shape` 7.9, `chat-balloon-received-error-shape` 7.8, `dialogbg` 7.1, `menu-icon-conversation` 7.0, `search-input` 6.0, `list-view-avatar-frame` 5.4, `menu-icon-mic-rec` 5.0, `menu-icon-mic` 4.9, `chat-balloon-received-shape` 4.0 |
 | under 4 | `attach-doc` 3.7, `mini-player-icon-play` 3.2, `attach-ppt` 3.1, `list-unread` 2.9, `attach-xls` 2.6, `chat-balloon-sent-shape` 2.4, `mini-player-icon-pause` 1.9, `loading-bg` 1.9, `list-avatar-default` 1.5, `favorites-star-blue` 1.4, `menu-icon-servers` 1.3, `defaultview-panel-tile` 0.8, the two chrome shadows 0.3 |
 
-Four of them are not measured against Palm's art, because they are not meant to match it. The
-file-type badges and the contacts mark follow the community's redrawn 1024px masters in the
-[`graphics`](https://github.com/webOS-ports/graphics) repository instead - `Icon-contacts-1024`,
-`Icon-calendar-1024` and `Icon-pdf-variant1`. Those are drawn from here rather than resampled
-from there, which is what `from-masters.py` used to do and why it is gone: a Lanczos resample
-of a 1024px painting only exists at the size it was made for. Against those resamples:
-`attach-event` 21, `header-icon-contacts` 40, `attach-contact` 40, `attach-pdf` 45. They are
-redraws of the same composition in the same palette, not copies of it.
+`attach-pdf` is the one exception to that table. It follows the community's `Icon-pdf-variant1`
+rather than Palm's flat red tile, so its distance from Palm's art - 118 - measures a different
+drawing and means nothing. Everything else here is the original's composition, including what
+is *not* in it: none of the attachment badges sit on a disc. The 1024px masters do, because
+they are launcher icons; the badges the app shows never did, and putting one behind them is
+the single thing that made the first attempt at these read wrong.
 
-Flatten a master to look at while drawing with
-`convert psd/Icon-contacts-1024.psd[0] -background none -resize 410x410 out.png` - at 410 a
-pixel of the output is a tenth of a unit in a 41px viewBox, so measurements come straight off
+The masters are still the reference for how the parts are drawn - the chrome of a binder clip,
+the fall of a page corner, the figure on a contact card. Flatten one to look at while drawing
+with `convert psd/Icon-contacts-1024.psd[0] -background none -resize 410x410 out.png`: at 410
+a pixel of the output is a tenth of a unit in a 41px viewBox, so measurements come straight off
 it. ImageMagick is needed because Pillow cannot read the 16-bit PSDs.
 
 `icon-165x165` is counted against a worn stamp it deliberately does not copy: the rings and
