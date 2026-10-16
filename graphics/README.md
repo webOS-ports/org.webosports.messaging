@@ -97,6 +97,12 @@ the original is made of is usually simple and usually measurable:
   endpoints bows out at the top and in at the bottom. It is two straight runs and a bottom
   curve. Fitting the ellipse also let the stroke thin to 1.46 to buy back the error the wrong
   shape was costing; at the right shape it is 1.72 and the glyph goes 4.9 to 3.4.
+- `menu-icon-mic` and `menu-icon-mic-rec` are **one mark in two colours**. Their alpha channels
+  are byte for byte identical across all 2048 pixels, and across every opaque pixel the grey
+  value is 0.607 of the red one's red channel. So the grey gradient is derived from the red
+  one rather than fitted on its own: two independent fits had already started to drift, with
+  the ratio wandering between 0.55 and 0.61 from stop to stop. When two assets share a
+  silhouette exactly, check whether they share the shading too before fitting both.
 - `video-call-icon` is **one shape in both states**. The original's two silhouettes agree row
   for row - x 1..27 from row 6 to row 23 in each - and only the light on it differs: the
   resting glyph over a hard copy of itself 2px lower, the lit one over a blur of itself. The

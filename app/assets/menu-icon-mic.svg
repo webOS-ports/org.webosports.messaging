@@ -7,32 +7,32 @@
      x 16.00. -->
   <defs>
     <linearGradient id="fdn" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="32">
-      <stop offset="0.000" stop-color="#747474" stop-opacity="1.0"/>
-      <stop offset="0.091" stop-color="#747474" stop-opacity="1.0"/>
+      <stop offset="0.000" stop-color="#7f7f7f" stop-opacity="1.0"/>
+      <stop offset="0.091" stop-color="#7f7f7f" stop-opacity="1.0"/>
       <stop offset="0.182" stop-color="#8e8e8e" stop-opacity="1.0"/>
-      <stop offset="0.273" stop-color="#909090" stop-opacity="1.0"/>
-      <stop offset="0.364" stop-color="#909090" stop-opacity="1.0"/>
-      <stop offset="0.455" stop-color="#848484" stop-opacity="1.0"/>
-      <stop offset="0.545" stop-color="#878787" stop-opacity="1.0"/>
-      <stop offset="0.636" stop-color="#888888" stop-opacity="1.0"/>
-      <stop offset="0.727" stop-color="#848484" stop-opacity="1.0"/>
-      <stop offset="0.818" stop-color="#8c8c8c" stop-opacity="1.0"/>
-      <stop offset="0.909" stop-color="#808080" stop-opacity="1.0"/>
-      <stop offset="1.000" stop-color="#7e7e7e" stop-opacity="0.824"/>
+      <stop offset="0.273" stop-color="#8f8f8f" stop-opacity="1.0"/>
+      <stop offset="0.364" stop-color="#8f8f8f" stop-opacity="1.0"/>
+      <stop offset="0.455" stop-color="#888888" stop-opacity="1.0"/>
+      <stop offset="0.545" stop-color="#8a8a8a" stop-opacity="1.0"/>
+      <stop offset="0.636" stop-color="#8a8a8a" stop-opacity="1.0"/>
+      <stop offset="0.727" stop-color="#8a8a8a" stop-opacity="1.0"/>
+      <stop offset="0.818" stop-color="#8e8e8e" stop-opacity="1.0"/>
+      <stop offset="0.909" stop-color="#878787" stop-opacity="1.0"/>
+      <stop offset="1.000" stop-color="#848484" stop-opacity="0.824"/>
     </linearGradient>
     <linearGradient id="fup" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="32">
-      <stop offset="0.000" stop-color="#747474" stop-opacity="0.498"/>
-      <stop offset="0.091" stop-color="#747474" stop-opacity="0.498"/>
+      <stop offset="0.000" stop-color="#7f7f7f" stop-opacity="0.498"/>
+      <stop offset="0.091" stop-color="#7f7f7f" stop-opacity="0.498"/>
       <stop offset="0.182" stop-color="#8e8e8e" stop-opacity="0.498"/>
-      <stop offset="0.273" stop-color="#909090" stop-opacity="0.498"/>
-      <stop offset="0.364" stop-color="#909090" stop-opacity="0.498"/>
-      <stop offset="0.455" stop-color="#848484" stop-opacity="0.498"/>
-      <stop offset="0.545" stop-color="#878787" stop-opacity="0.498"/>
-      <stop offset="0.636" stop-color="#888888" stop-opacity="0.498"/>
-      <stop offset="0.727" stop-color="#848484" stop-opacity="0.498"/>
-      <stop offset="0.818" stop-color="#8c8c8c" stop-opacity="0.498"/>
-      <stop offset="0.909" stop-color="#808080" stop-opacity="0.498"/>
-      <stop offset="1.000" stop-color="#7e7e7e" stop-opacity="0.412"/>
+      <stop offset="0.273" stop-color="#8f8f8f" stop-opacity="0.498"/>
+      <stop offset="0.364" stop-color="#8f8f8f" stop-opacity="0.498"/>
+      <stop offset="0.455" stop-color="#888888" stop-opacity="0.498"/>
+      <stop offset="0.545" stop-color="#8a8a8a" stop-opacity="0.498"/>
+      <stop offset="0.636" stop-color="#8a8a8a" stop-opacity="0.498"/>
+      <stop offset="0.727" stop-color="#8a8a8a" stop-opacity="0.498"/>
+      <stop offset="0.818" stop-color="#8e8e8e" stop-opacity="0.498"/>
+      <stop offset="0.909" stop-color="#878787" stop-opacity="0.498"/>
+      <stop offset="1.000" stop-color="#848484" stop-opacity="0.412"/>
     </linearGradient>
   
     <path id="g" d="M15.925,1.925 L16.075,1.925 A3.252,3.252 0 0 1 19.328,5.178 L19.328,19.122 A3.252,3.252 0 0 1 16.075,22.375 L15.925,22.375 A3.252,3.252 0 0 1 12.672,19.122 L12.672,5.178 A3.252,3.252 0 0 1 15.925,1.925 Z M14.812,23.425 L17.188,23.425 A0.000,0.000 0 0 1 17.188,23.425 L17.188,28.000 A0.000,0.000 0 0 1 17.188,28.000 L14.812,28.000 A0.000,0.000 0 0 1 14.812,28.000 L14.812,23.425 A0.000,0.000 0 0 1 14.812,23.425 Z M10.950,27.625 L21.050,27.625 A0.695,0.695 0 0 1 21.745,28.320 L21.745,29.005 A0.695,0.695 0 0 1 21.050,29.700 L10.950,29.700 A0.695,0.695 0 0 1 10.255,29.005 L10.255,28.320 A0.695,0.695 0 0 1 10.950,27.625 Z"/>
