@@ -51,12 +51,26 @@ those numbers, not from a thumbnail.
 opposite tone along its lower edge - white under the dark resting glyph, black under the lit
 one - and that line is most of what makes them read as cut into the bar rather than laid on
 it. Both traced states had inherited a dark drop shadow instead, which is the opposite of
-what the resting one does. Drawing the line as a copy of the glyph a pixel lower, masked to
-where the glyph is not, keeps it its own colour instead of letting the half-transparent body
-tint it; adding it took `menu-icon-conversation` from 8.5 to 7.0, `menu-icon-buddies` from
-12.9 to 10.6, `icon-decline` from 11.9 to 9.3 and `menu-icon-conversation-plus` from 11.0 to
-9.3, and it is the single change that makes the set look like the original rather than like a
-set of silhouettes.
+what the resting one does. Adding it took `menu-icon-buddies` from 12.9 to 10.6 and
+`icon-decline` from 11.9 to 9.3, and it is the single change that makes the set look like the
+original rather than like a set of silhouettes.
+
+**Which side of the edge that line sits on matters, and it is INSIDE.** It had been drawn as
+a copy of the glyph a pixel lower, masked to where the glyph is not - that is, hanging below
+the body. On a glyph whose lower edge is horizontal the two are indistinguishable: a line
+below a body is a line inside a body one pixel taller, and the fitted geometry absorbs the
+difference. On a sloped or curved edge they are not. The test needs a body model that does
+not come from the raster being tested, which the vector master supplies: place the master
+path using only `menu-icon-conversation`'s rows 4-16, where a line along the bottom cannot
+reach, then predict the rest. The body alone predicts rows 17-24 to within 0.2px; the body
+unioned with a copy a pixel below is out by up to 1.16px. The line also REPLACES the body
+under it rather than sitting over it - it reads as pure white at alpha 159 against a body of
+111, and white over a 43% black body cannot do that. `toolbar.write(rim_in=True)` draws it
+that way, as the band `G minus G shifted up`, with the body knocked out beneath. The rest of
+the toolbar still hangs its line below and has not been retested; doing so needs a body model
+for each of those glyphs.
+
+**`menu-icon-mic` is the one glyph with no engraved line at all** - see its entry below.
 
 **Author the geometry; do not trace it.** Every glyph here that was traced off
 its 32px bitmap carries the resampling in its outline, and no amount of fitting
@@ -107,6 +121,40 @@ the original is made of is usually simple and usually measurable:
   two halves row by row rather than down a column and that falls out of the arithmetic: both
   cross at local row 12, but the resting one parts again at row 20 and the pressed one holds to
   21, which is a heavier bar, not a moved one.
+- The speech balloons are **not ellipses, and they are not ours to fit**. The webOS-Ports
+  graphics repository has `psd/Icon-messaging-1024.psd`, and the balloons in it are vector
+  SHAPE layers: the outlines live in the file's `vmsk` resources as Bezier knots in 8.24 fixed
+  point. That is the artwork itself. Read it (`psdpath.py` / `master.py` in the scratch tree)
+  and the body turns out to be four knots - three with axis-aligned tangents and a fourth, low
+  on the right, slanted - with the tail five more knots on the *same closed path*.
+
+  Everything here had been drawn as an ellipse with a tail grafted onto it, so there was a
+  seam exactly where the two met, which is the bottom of the balloon, which is where the error
+  always came back. Fitting harder could not fix it; a tilted ellipse fits the original's body
+  rows about three times better than an upright one, and that is still the wrong family of
+  curve. Placed by scale and offset alone, the master path tracks the originals' own outlines,
+  tails included: rms 0.21px on `notification-large-messaging` over 37 rows, 0.17 and 0.31 on
+  the two balloons of `messaging-48x48`, against 0.40 for the best ellipse on the body alone.
+  The scales come out uniform, which is the check that it really is the same drawing.
+
+  Palm's toolbar glyph is not a plain scaling of it. With a scale the body matches to 0.14px
+  but the tail is out by up to 1.7px; under a general affine - a slight skew - the whole
+  outline comes in at 0.29px. `master.path_affine` does that.
+
+  Two more things fell out of getting the shape right. `menu-icon-conversation-plus` is the
+  same balloon as `menu-icon-conversation`: row for row the two originals' edges agree to
+  0.000px everywhere the plus does not cover, so it inherits the shape, the line and the ramps
+  rather than carrying a second fit that can drift. And both bodies are one flat colour with a
+  straight alpha ramp - black 0.62 to 0.33 resting, white 0.94 to 0.27 lit, measured interior
+  pixel by interior pixel with the engraved line's own pixels excluded. The twelve-stop
+  gradients they replace had been fitted with the line missing and had to bend upward at the
+  bottom to make up for it, ending on `#838383` for a body that is pure black all the way
+  down. That one change, with nothing tuned, took `menu-icon-conversation` from 5.66 to 4.56.
+
+  `messaging-48x48` is on the master paths but its own ramps have NOT been re-measured this
+  way, and `icon-165x165` has not been touched at all - its balloons are still ellipses with
+  grafted tails.
+
 - `menu-icon-mic`'s capsule is a **true pill**: integrating the original's top four rows
   against a rounded bar puts its corner radius at 3.432 against a half-width of 3.443, a
   semicircle to a hundredth of a pixel, with an rms of 0.029 over eight rows. It had been
@@ -179,10 +227,10 @@ Mean per-pixel distance from the Palm art each one replaces, worst first, out of
 
 | | |
 |---|---|
-| over 12 | `header-icon-contacts` 36, `menu-icon-attach` 26, `notification-large-failed` 24, `attach-contact` 18, `attach-event` 16, `messaging-48x48` 17, `icon-165x165` 16, `notification-large-messaging` 16, `notification-small` 14, `phone-icon` 14, `attach-location` 13, `menu-icon-send` 13 |
-| 8-12 | `video-call-icon` 12, `msg-read` 12, `menu-icon-buddies` 11, `header-warning-icon` 11, `online-status` 9.6, `menu-icon-conversation-plus` 9.3, `msg-delivered` 8.9, `menuitem-arrow-dark` 8.2, `menu-icon-favorites` 8.2 |
-| 4-8 | `incoming-outgoing` 7.9, `icon-decline` 4.4, `chat-balloon-error-shape` 7.9, `chat-balloon-received-error-shape` 7.8, `dialogbg` 7.1, `menu-icon-conversation` 7.0, `search-input` 6.0, `list-view-avatar-frame` 5.4, `chat-balloon-received-shape` 4.0 |
-| under 4 | `menu-icon-mic-rec` 2.9, `menu-icon-mic` 2.8, `attach-doc` 3.7, `mini-player-icon-play` 3.2, `attach-ppt` 3.1, `list-unread` 2.9, `attach-xls` 2.6, `chat-balloon-sent-shape` 2.4, `mini-player-icon-pause` 1.9, `loading-bg` 1.9, `list-avatar-default` 1.5, `favorites-star-blue` 1.4, `menu-icon-servers` 1.3, `defaultview-panel-tile` 0.8, the two chrome shadows 0.3 |
+| over 12 | `header-icon-contacts` 36, `menu-icon-attach` 26, `attach-contact` 18, `icon-165x165` 16, `attach-event` 16, `messaging-48x48` 16, `phone-icon` 14, `attach-location` 13, `menu-icon-send` 13, `notification-large-failed` 13, `notification-small` 12, `video-call-icon` 12 |
+| 8-12 | `msg-read` 11.5, `menu-icon-buddies` 10.6, `header-warning-icon` 10.5, `online-status` 9.6, `notification-large-messaging` 9.5, `msg-delivered` 8.9, `menuitem-arrow-dark` 8.2, `menu-icon-favorites` 8.2 |
+| 4-8 | `incoming-outgoing` 7.9, `chat-balloon-error-shape` 7.9, `chat-balloon-received-error-shape` 7.8, `dialogbg` 7.1, `search-input` 6.0, `list-view-avatar-frame` 5.4, `menu-icon-conversation-plus` 5.3, `icon-decline` 4.4, `menu-icon-conversation` 4.0, `chat-balloon-received-shape` 4.0 |
+| under 4 | `attach-doc` 3.7, `mini-player-icon-play` 3.2, `attach-ppt` 3.1, `menu-icon-mic-rec` 2.9, `list-unread` 2.9, `menu-icon-mic` 2.8, `attach-xls` 2.6, `chat-balloon-sent-shape` 2.4, `loading-bg` 1.9, `mini-player-icon-pause` 1.9, `list-avatar-default` 1.5, `favorites-star-blue` 1.4, `menu-icon-servers` 1.3, `defaultview-panel-tile` 0.8, `light_chrome_drop_shadow_header` 0.3, `light_chrome_drop_shadow_footer` 0.3 |
 
 `attach-pdf` is the one exception to that table. It follows the community's `Icon-pdf-variant1`
 rather than Palm's flat red tile, so its distance from Palm's art - 118 - measures a different

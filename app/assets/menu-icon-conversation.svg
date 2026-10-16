@@ -1,52 +1,53 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="44" height="64" viewBox="0 0 44 64">
-<!-- Speech balloon, authored rather than traced. The body is an ellipse fitted to the
-     original - rx 14.10 ry 11.59 about (21.48,14.28) - and the tail is a flap that
-     leaves the ellipse at 121 and 72 degrees and hooks to a tip at (10.39,29.07),
-     rather than the straight wedge a trace of a 32px bitmap produces. -->
+<!-- Speech balloon, taken from the vector shape layer of Icon-messaging-1024.psd in the
+     webOS-Ports graphics repository and scaled onto this grid - the outline the designer
+     drew, not a fit to a rasterised copy of it.
+     The body is NOT an ellipse, which is why fitting one kept leaving the error at the
+     bottom of the balloon. It is four Bezier knots - three with axis-aligned tangents
+     and a fourth, low on the right, slanted - and the tail is five more knots on the
+     same closed path, so there is no seam where a separate tail is grafted on. Placed
+     by scale and offset alone the master path tracks this original's outline to an rms
+     of 0.14px.
+     Over it goes the engraved line this bar wants: the original's body is pure black
+     ramping 168 to 108 in alpha, and along its lower edge sits a line of pure WHITE at
+     alpha 191 - black at 125 in the lit state. That line had been fitted to zero and so
+     was missing entirely, which took the whole bottom edge with it.
+     Both bodies are one flat colour with a straight alpha ramp - black 0.62 to 0.33
+     resting, white 0.94 to 0.27 lit - measured interior pixel by interior pixel with
+     the line's own pixels left out. The twelve-stop gradients they replace had been
+     fitted with the line missing and had to bend upward at the bottom to make up for
+     it, ending on #838383 for a body that is pure black all the way down. -->
   <defs>
     <linearGradient id="fdn" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="32">
-      <stop offset="0.000" stop-color="#000000" stop-opacity="0.659"/>
-      <stop offset="0.091" stop-color="#000000" stop-opacity="0.659"/>
-      <stop offset="0.182" stop-color="#000000" stop-opacity="0.616"/>
-      <stop offset="0.273" stop-color="#000000" stop-opacity="0.561"/>
-      <stop offset="0.364" stop-color="#010101" stop-opacity="0.51"/>
-      <stop offset="0.455" stop-color="#030303" stop-opacity="0.486"/>
-      <stop offset="0.545" stop-color="#090909" stop-opacity="0.463"/>
-      <stop offset="0.636" stop-color="#141414" stop-opacity="0.451"/>
-      <stop offset="0.727" stop-color="#252525" stop-opacity="0.471"/>
-      <stop offset="0.818" stop-color="#838383" stop-opacity="0.706"/>
-      <stop offset="0.909" stop-color="#929292" stop-opacity="0.647"/>
-      <stop offset="1.000" stop-color="#929292" stop-opacity="0.647"/>
+      <stop offset="0" stop-color="#000000" stop-opacity="0.6196"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.3444"/>
     </linearGradient>
     <linearGradient id="fup" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="32">
-      <stop offset="0.000" stop-color="#f8f8f8" stop-opacity="0.922"/>
-      <stop offset="0.091" stop-color="#f8f8f8" stop-opacity="0.922"/>
-      <stop offset="0.182" stop-color="#fdfdfd" stop-opacity="0.816"/>
-      <stop offset="0.273" stop-color="#fefefe" stop-opacity="0.761"/>
-      <stop offset="0.364" stop-color="#fdfdfd" stop-opacity="0.722"/>
-      <stop offset="0.455" stop-color="#fcfcfc" stop-opacity="0.659"/>
-      <stop offset="0.545" stop-color="#fafafa" stop-opacity="0.592"/>
-      <stop offset="0.636" stop-color="#f3f3f3" stop-opacity="0.549"/>
-      <stop offset="0.727" stop-color="#e3e3e3" stop-opacity="0.486"/>
-      <stop offset="0.818" stop-color="#909090" stop-opacity="0.49"/>
-      <stop offset="0.909" stop-color="#a5a5a5" stop-opacity="0.51"/>
-      <stop offset="1.000" stop-color="#a5a5a5" stop-opacity="0.51"/>
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.9370"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.2714"/>
     </linearGradient>
   
-    <path id="g" d="M7.375,14.275 A14.100,11.588 0 1 1 35.575,14.275 A14.100,11.588 0 1 1 7.375,14.275 Z M25.771,25.312 Q12.137,27.350 10.387,29.075 Q7.325,26.400 14.221,24.211 Z"/>
-    <mask id="m" maskUnits="userSpaceOnUse" x="-8" y="-8" width="60" height="80">
+    <path id="g" d="M8.705,28.524 C8.705,28.524 10.423,27.679 11.130,26.365 C11.991,24.766 11.369,23.297 11.369,23.297 C11.369,23.297 11.369,23.297 11.369,23.297 C11.369,23.297 6.976,20.497 7.064,14.704 C7.178,7.195 15.675,2.728 21.936,2.728 C30.222,2.728 35.547,8.168 35.459,13.981 C35.394,18.303 32.991,22.443 27.414,25.147 C23.431,27.078 17.359,25.884 17.359,25.884 C17.359,25.884 15.893,27.629 13.323,28.438 C10.608,29.293 8.705,28.524 8.705,28.524 Z"/>
+    <mask id="e" maskUnits="userSpaceOnUse" x="-8" y="-8" width="60" height="80">
+      <use href="#g" fill="#ffffff" fill-rule="nonzero"/>
+      <use href="#g" fill="#000000" fill-rule="nonzero" transform="translate(0,-0.94)"/>
+    </mask>
+    <mask id="n" maskUnits="userSpaceOnUse" x="-8" y="-8" width="60" height="80">
       <rect x="-8" y="-8" width="60" height="80" fill="#ffffff"/>
-      <use href="#g" fill="#000000"/>
+      <use href="#g" fill="#000000" fill-rule="nonzero"/>
+      <use href="#g" fill="#ffffff" fill-rule="nonzero" transform="translate(0,-0.94)"/>
     </mask>
   </defs>
   <g>
-    <g mask="url(#m)"><use href="#g" fill="#ffffff" fill-opacity="0.000"
-         fill-rule="nonzero" transform="translate(0,1.00)"/></g>
-    <use href="#g" fill="url(#fdn)" fill-opacity="0.970" fill-rule="nonzero"/>
+    <g mask="url(#n)"><use href="#g" fill="url(#fdn)" fill-opacity="0.970"
+         fill-rule="nonzero"/></g>
+    <g mask="url(#e)"><use href="#g" fill="#ffffff" fill-opacity="0.894"
+         fill-rule="nonzero"/></g>
   </g>
   <g transform="translate(0,32)">
-    <g mask="url(#m)"><use href="#g" fill="#000000" fill-opacity="0.310"
-         fill-rule="nonzero" transform="translate(0,1.00)"/></g>
-    <use href="#g" fill="url(#fup)" fill-opacity="0.970" fill-rule="nonzero"/>
+    <g mask="url(#n)"><use href="#g" fill="url(#fup)" fill-opacity="1.000"
+         fill-rule="nonzero"/></g>
+    <g mask="url(#e)"><use href="#g" fill="#000000" fill-opacity="0.565"
+         fill-rule="nonzero"/></g>
   </g>
 </svg>

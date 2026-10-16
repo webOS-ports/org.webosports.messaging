@@ -2,7 +2,7 @@
 <!-- The failed-message mark: the balloon with a warning triangle over its lower right,
      corners filleted and the bar inside it tapering, the way the original has it. -->
 <defs>
-  <linearGradient id="b" gradientUnits="userSpaceOnUse" x1="0" y1="5.0" x2="0" y2="39.0">
+  <linearGradient id="b" gradientUnits="userSpaceOnUse" x1="0" y1="1.3" x2="0" y2="38.6">
     <stop offset="0" stop-color="#a7dddf"/><stop offset="0.09" stop-color="#91ecf1"/>
     <stop offset="0.21" stop-color="#7fe2e7"/><stop offset="0.32" stop-color="#68d2d8"/>
     <stop offset="0.44" stop-color="#50c2c8"/><stop offset="0.56" stop-color="#37b2b9"/>
@@ -10,25 +10,25 @@
     <stop offset="1" stop-color="#01949b"/>
   </linearGradient>
   <radialGradient id="gloss">
-    <stop offset="0" stop-color="#ffffff" stop-opacity="0.520"/>
-    <stop offset="0.7" stop-color="#ffffff" stop-opacity="0.182"/>
+    <stop offset="0" stop-color="#ffffff" stop-opacity="0.400"/>
+    <stop offset="0.7" stop-color="#ffffff" stop-opacity="0.140"/>
     <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
   </radialGradient>
-  <clipPath id="body"><path d="M3.325,22.562 A20.625,16.625 0 1 1 44.575,22.562 A20.625,16.625 0 1 1 3.325,22.562 Z M9.996,36.954 Q10.750,35.775 12.073,36.232 L16.777,37.856 Q18.100,38.312 16.972,39.142 L13.803,41.471 Q12.675,42.300 11.288,42.487 L7.387,43.013 Q6.000,43.200 6.754,42.021 Z"/></clipPath>
+  <clipPath id="body"><path d="M5.617,42.055 C5.617,42.055 8.124,40.871 9.136,39.029 C10.366,36.789 9.418,34.729 9.418,34.729 C9.418,34.729 9.418,34.729 9.418,34.729 C9.418,34.729 2.894,30.805 2.894,22.686 C2.894,12.162 15.295,5.902 24.504,5.902 C36.694,5.902 44.648,13.526 44.648,21.673 C44.648,27.731 41.207,33.533 33.062,37.323 C27.246,40.029 18.287,38.355 18.287,38.355 C18.287,38.355 16.170,40.801 12.407,41.935 C8.432,43.134 5.617,42.055 5.617,42.055 Z"/></clipPath>
   <filter id="soft" x="-30%" y="-30%" width="160%" height="170%">
-    <feGaussianBlur stdDeviation="1.30"/>
+    <feGaussianBlur stdDeviation="1.36"/>
   </filter>
-  <linearGradient id="w" gradientUnits="userSpaceOnUse" x1="0" y1="27.3" x2="0" y2="45.8">
+  <linearGradient id="w" gradientUnits="userSpaceOnUse" x1="0" y1="25.1" x2="0" y2="46.4">
     <stop offset="0" stop-color="#fdd90d"/><stop offset="1" stop-color="#eec00a"/>
   </linearGradient>
 </defs>
-<path d="M3.325,22.562 A20.625,16.625 0 1 1 44.575,22.562 A20.625,16.625 0 1 1 3.325,22.562 Z M9.996,36.954 Q10.750,35.775 12.073,36.232 L16.777,37.856 Q18.100,38.312 16.972,39.142 L13.803,41.471 Q12.675,42.300 11.288,42.487 L7.387,43.013 Q6.000,43.200 6.754,42.021 Z" fill="#000000" fill-opacity="0.340" filter="url(#soft)"
-      transform="translate(0,2.20)"/>
-<path d="M3.325,22.562 A20.625,16.625 0 1 1 44.575,22.562 A20.625,16.625 0 1 1 3.325,22.562 Z M9.996,36.954 Q10.750,35.775 12.073,36.232 L16.777,37.856 Q18.100,38.312 16.972,39.142 L13.803,41.471 Q12.675,42.300 11.288,42.487 L7.387,43.013 Q6.000,43.200 6.754,42.021 Z" fill="url(#b)" stroke="#013f45" stroke-opacity="0.850"
-      stroke-width="1.60" paint-order="stroke"/>
+<path d="M5.617,42.055 C5.617,42.055 8.124,40.871 9.136,39.029 C10.366,36.789 9.418,34.729 9.418,34.729 C9.418,34.729 9.418,34.729 9.418,34.729 C9.418,34.729 2.894,30.805 2.894,22.686 C2.894,12.162 15.295,5.902 24.504,5.902 C36.694,5.902 44.648,13.526 44.648,21.673 C44.648,27.731 41.207,33.533 33.062,37.323 C27.246,40.029 18.287,38.355 18.287,38.355 C18.287,38.355 16.170,40.801 12.407,41.935 C8.432,43.134 5.617,42.055 5.617,42.055 Z" fill="#000000" fill-opacity="0.415" filter="url(#soft)"
+      transform="translate(0,2.69)"/>
+<path d="M5.617,42.055 C5.617,42.055 8.124,40.871 9.136,39.029 C10.366,36.789 9.418,34.729 9.418,34.729 C9.418,34.729 9.418,34.729 9.418,34.729 C9.418,34.729 2.894,30.805 2.894,22.686 C2.894,12.162 15.295,5.902 24.504,5.902 C36.694,5.902 44.648,13.526 44.648,21.673 C44.648,27.731 41.207,33.533 33.062,37.323 C27.246,40.029 18.287,38.355 18.287,38.355 C18.287,38.355 16.170,40.801 12.407,41.935 C8.432,43.134 5.617,42.055 5.617,42.055 Z" fill="url(#b)" stroke="#013f45" stroke-opacity="0.790"
+      stroke-width="1.45" paint-order="stroke"/>
 <g clip-path="url(#body)">
-  <ellipse cx="23.20" cy="9.50" rx="15.00" ry="7.50" fill="url(#gloss)"/>
+  <ellipse cx="24.14" cy="4.70" rx="15.04" ry="7.50" fill="url(#gloss)"/>
 </g>
-<path d="M35.859,28.546 Q36.600,27.300 37.331,28.552 L46.669,44.548 Q47.400,45.800 45.950,45.800 L27.050,45.800 Q25.600,45.800 26.341,44.554 Z" fill="url(#w)"/>
-<path d="M33.90,33.00 L37.90,33.00 L36.90,41.20 L34.90,41.20 Z M34.750,44.100 A1.150,1.150 0 1 1 37.050,44.100 A1.150,1.150 0 1 1 34.750,44.100 Z" fill="#5f4c02"/>
+<path d="M35.260,26.362 Q36.038,25.050 36.818,26.360 L47.970,45.090 Q48.750,46.400 47.225,46.400 L24.912,46.400 Q23.387,46.400 24.165,45.088 Z" fill="url(#w)"/>
+<path d="M34.01,32.85 L38.16,32.85 L37.09,41.20 L35.09,41.20 Z M34.727,43.500 A1.360,1.360 0 1 1 37.447,43.500 A1.360,1.360 0 1 1 34.727,43.500 Z" fill="#5f4c02"/>
 </svg>
