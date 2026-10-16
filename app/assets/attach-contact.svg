@@ -1,29 +1,42 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="41" height="41" viewBox="0 0 41 41">
-<!-- Contact-card badge, drawn rather than resampled: three sheets of white paper fanned out
-     and tilted 8.4 degrees, the front one carrying the orange figure and the two connector
-     tabs, over the soft round shadow the artwork sits on. This is a redraw of the community
-     art it replaces rather than a trace of the 41px bitmap - tracing that keeps the
-     resampling, and the point of moving to SVG is to hold up at any size. -->
+<!-- Contact-card badge. Two cards of white paper fanned and tilted -9.1 degrees on the disc
+     the artwork sits in, each carrying an orange figure in a frame, the front one notched
+     with the two connector tabs along its lower edge. Drawn from the 1024px master in the
+     webOS-Ports graphics repository - resampling that to 41px is what this replaces, and a
+     drawing is the only form of it that holds up at another size. -->
 <defs>
-  <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="#ffffff"/><stop offset="0.75" stop-color="#f2f2f2"/>
-    <stop offset="1" stop-color="#dcdcdc"/>
+  <linearGradient id="disc" x1="0" y1="0" x2="0.15" y2="1">
+    <stop offset="0" stop-color="#ffffff" stop-opacity="0.420"/>
+    <stop offset="0.45" stop-color="#c8c8c8" stop-opacity="0.200"/>
+    <stop offset="1" stop-color="#000000" stop-opacity="0.200"/>
   </linearGradient>
-  <linearGradient id="who" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="#f8b358"/><stop offset="1" stop-color="#e8801a"/>
+  <linearGradient id="paper" x1="0" y1="0" x2="0.25" y2="1">
+    <stop offset="0" stop-color="#ffffff"/><stop offset="0.55" stop-color="#f4f4f4"/>
+    <stop offset="1" stop-color="#d7d7d7"/>
   </linearGradient>
-  <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
-    <feGaussianBlur stdDeviation="1.80"/>
+  <radialGradient id="who" cx="0.42" cy="0.3" r="0.8">
+    <stop offset="0" stop-color="#ffb039"/><stop offset="0.55" stop-color="#f58a12"/>
+    <stop offset="1" stop-color="#d96a00"/>
+  </radialGradient>
+  <linearGradient id="frame" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#d2d2d2"/><stop offset="1" stop-color="#f2f2f2"/>
+  </linearGradient>
+  <filter id="soft" x="-30%" y="-30%" width="160%" height="170%">
+    <feGaussianBlur stdDeviation="0.80"/>
+  </filter>
+  <filter id="dsoft" x="-20%" y="-20%" width="140%" height="140%">
+    <feGaussianBlur stdDeviation="0.55"/>
   </filter>
 </defs>
-<circle cx="20.00" cy="21.00" r="16.50" fill="#000000" fill-opacity="0.34"
-        filter="url(#soft)"/>
-<g transform="rotate(8.44 20.50 21.07)">
-  <rect x="14.50" y="5.40" width="20.50" height="19.15" rx="1.0" fill="url(#paper)" stroke="#c9c9c9" stroke-width="0.55"/>
-  <rect x="9.80" y="9.00" width="23.04" height="17.00" rx="1.0" fill="url(#paper)" stroke="#c9c9c9" stroke-width="0.55"/>
-  <rect x="5.50" y="13.00" width="26.00" height="19.00" rx="1.0" fill="url(#paper)" stroke="#c9c9c9" stroke-width="0.55"/>
-  <circle cx="12.60" cy="19.00" r="2.75" fill="url(#who)"/>
-  <path d="M11.200,21.800 L14.000,21.800 A2.400,2.400 0 0 1 16.400,24.200 L16.400,28.200 A0.000,0.000 0 0 1 16.400,28.200 L8.800,28.200 A0.000,0.000 0 0 1 8.800,28.200 L8.800,24.200 A2.400,2.400 0 0 1 11.200,21.800 Z" fill="url(#who)"/>
-  <rect x="12.20" y="27.40" width="4.30" height="3.60" rx="0.60" fill="#59595b"/><rect x="22.20" y="27.40" width="4.30" height="3.60" rx="0.60" fill="#59595b"/>
+<circle cx="20.31" cy="20.81" r="17.70" fill="url(#disc)" filter="url(#dsoft)"/>
+<g transform="rotate(-9.09 20.43 18.55)">
+  <path d="M4.500,3.000 L29.500,3.000 A1.000,1.000 0 0 1 30.500,4.000 L30.500,24.000 A1.000,1.000 0 0 1 29.500,25.000 L4.500,25.000 A1.000,1.000 0 0 1 3.500,24.000 L3.500,4.000 A1.000,1.000 0 0 1 4.500,3.000 Z" fill="#000000" fill-opacity="0.340" filter="url(#soft)"
+        transform="translate(0,1.10)"/>
+  <path d="M4.500,3.000 L29.500,3.000 A1.000,1.000 0 0 1 30.500,4.000 L30.500,24.000 A1.000,1.000 0 0 1 29.500,25.000 L4.500,25.000 A1.000,1.000 0 0 1 3.500,24.000 L3.500,4.000 A1.000,1.000 0 0 1 4.500,3.000 Z" fill="url(#paper)" stroke="#bdbdbd" stroke-width="0.45"/>
+  <rect x="6.10" y="6.10" width="7.00" height="8.00" fill="url(#frame)"/><rect x="6.60" y="6.60" width="6.00" height="7.00" fill="#ffffff"/><circle cx="9.60" cy="9.12" r="1.80" fill="url(#who)"/><path d="M8.600,10.800 L10.600,10.800 A1.400,1.400 0 0 1 12.000,12.200 L12.000,13.600 A0.000,0.000 0 0 1 12.000,13.600 L7.200,13.600 A0.000,0.000 0 0 1 7.200,13.600 L7.200,12.200 A1.400,1.400 0 0 1 8.600,10.800 Z" fill="url(#who)"/>
+  <path d="M6.000,10.500 L35.000,10.500 A1.000,1.000 0 0 1 36.000,11.500 L36.000,30.000 A1.000,1.000 0 0 1 35.000,31.000 L6.000,31.000 A1.000,1.000 0 0 1 5.000,30.000 L5.000,11.500 A1.000,1.000 0 0 1 6.000,10.500 Z M18.000,30.400 L22.400,30.400 A0.500,0.500 0 0 1 22.900,30.900 L22.900,34.100 A0.500,0.500 0 0 1 22.400,34.600 L18.000,34.600 A0.500,0.500 0 0 1 17.500,34.100 L17.500,30.900 A0.500,0.500 0 0 1 18.000,30.400 Z M29.000,30.400 L33.400,30.400 A0.500,0.500 0 0 1 33.900,30.900 L33.900,34.100 A0.500,0.500 0 0 1 33.400,34.600 L29.000,34.600 A0.500,0.500 0 0 1 28.500,34.100 L28.500,30.900 A0.500,0.500 0 0 1 29.000,30.400 Z" fill="#000000" fill-opacity="0.340" filter="url(#soft)"
+        transform="translate(0,1.10)"/>
+  <path d="M6.000,10.500 L35.000,10.500 A1.000,1.000 0 0 1 36.000,11.500 L36.000,30.000 A1.000,1.000 0 0 1 35.000,31.000 L6.000,31.000 A1.000,1.000 0 0 1 5.000,30.000 L5.000,11.500 A1.000,1.000 0 0 1 6.000,10.500 Z M18.000,30.400 L22.400,30.400 A0.500,0.500 0 0 1 22.900,30.900 L22.900,34.100 A0.500,0.500 0 0 1 22.400,34.600 L18.000,34.600 A0.500,0.500 0 0 1 17.500,34.100 L17.500,30.900 A0.500,0.500 0 0 1 18.000,30.400 Z M29.000,30.400 L33.400,30.400 A0.500,0.500 0 0 1 33.900,30.900 L33.900,34.100 A0.500,0.500 0 0 1 33.400,34.600 L29.000,34.600 A0.500,0.500 0 0 1 28.500,34.100 L28.500,30.900 A0.500,0.500 0 0 1 29.000,30.400 Z" fill="url(#paper)" stroke="#bdbdbd" stroke-width="0.45"/>
+  <rect x="9.00" y="13.50" width="11.00" height="12.50" fill="url(#frame)"/><rect x="9.50" y="14.00" width="10.00" height="11.50" fill="#ffffff"/><circle cx="14.50" cy="18.14" r="3.00" fill="url(#who)"/><path d="M12.800,20.900 L16.200,20.900 A2.300,2.300 0 0 1 18.500,23.200 L18.500,25.500 A0.000,0.000 0 0 1 18.500,25.500 L10.500,25.500 A0.000,0.000 0 0 1 10.500,25.500 L10.500,23.200 A2.300,2.300 0 0 1 12.800,20.900 Z" fill="url(#who)"/>
 </g>
 </svg>

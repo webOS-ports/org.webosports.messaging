@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="64" viewBox="0 0 32 64">
 <!-- Microphone, authored rather than traced. The capsule is a 6.7-wide rounded bar, the
-     cradle round it is a half-ellipse rx 5.46 ry 11.50 stroked 1.39 - an arc, not a
+     cradle round it is a half-ellipse rx 5.50 ry 11.43 stroked 1.46 - an arc, not a
      polygon of it - and the stem and foot are rectangles. Every part is centred on
      x 16.00, which the trace did not quite manage. -->
   <defs>
@@ -32,24 +32,35 @@
       <stop offset="0.909" stop-color="#808080" stop-opacity="0.498"/>
       <stop offset="1.000" stop-color="#7e7e7e" stop-opacity="0.412"/>
     </linearGradient>
-    <filter id="sdn" x="-35%" y="-35%" width="180%" height="180%">
-      <feDropShadow dx="0" dy="1" stdDeviation="0.5" flood-color="#000000" flood-opacity="0.26"/>
-    </filter>
-    <filter id="sup" x="-35%" y="-35%" width="180%" height="180%">
-      <feDropShadow dx="0" dy="1" stdDeviation="0.6" flood-color="#000000" flood-opacity="0.40"/>
-    </filter>
   
-    <path id="g" d="M15.756,2.000 L16.244,2.000 A3.103,3.103 0 0 1 19.346,5.103 L19.346,19.047 A3.103,3.103 0 0 1 16.244,22.150 L15.756,22.150 A3.103,3.103 0 0 1 12.654,19.047 L12.654,5.103 A3.103,3.103 0 0 1 15.756,2.000 Z M14.963,23.500 L17.038,23.500 A0.000,0.000 0 0 1 17.038,23.500 L17.038,28.000 A0.000,0.000 0 0 1 17.038,28.000 L14.963,28.000 A0.000,0.000 0 0 1 14.963,28.000 L14.963,23.500 A0.000,0.000 0 0 1 14.963,23.500 Z M11.066,27.400 L20.934,27.400 A0.830,0.830 0 0 1 21.764,28.230 L21.764,28.920 A0.830,0.830 0 0 1 20.934,29.750 L11.066,29.750 A0.830,0.830 0 0 1 10.236,28.920 L10.236,28.230 A0.830,0.830 0 0 1 11.066,27.400 Z"/>
-    <path id="a" d="M10.54,13.30 A5.46,11.50 0 0 0 21.46,13.30"/>
+    <path id="g" d="M15.812,1.925 L16.188,1.925 A3.140,3.140 0 0 1 19.328,5.065 L19.328,19.310 A3.140,3.140 0 0 1 16.188,22.450 L15.812,22.450 A3.140,3.140 0 0 1 12.672,19.310 L12.672,5.065 A3.140,3.140 0 0 1 15.812,1.925 Z M14.812,23.425 L17.188,23.425 A0.000,0.000 0 0 1 17.188,23.425 L17.188,28.000 A0.000,0.000 0 0 1 17.188,28.000 L14.812,28.000 A0.000,0.000 0 0 1 14.812,28.000 L14.812,23.425 A0.000,0.000 0 0 1 14.812,23.425 Z M10.950,27.625 L21.050,27.625 A0.695,0.695 0 0 1 21.745,28.320 L21.745,29.355 A0.695,0.695 0 0 1 21.050,30.050 L10.950,30.050 A0.695,0.695 0 0 1 10.255,29.355 L10.255,28.320 A0.695,0.695 0 0 1 10.950,27.625 Z"/>
+    <path id="a" d="M10.50,13.38 A5.50,11.43 0 0 0 21.50,13.38"/>
+    <mask id="m" maskUnits="userSpaceOnUse" x="-8" y="-8" width="48" height="80">
+      <rect x="-8" y="-8" width="48" height="80" fill="#ffffff"/>
+      <use href="#g" fill="#000000"/>
+      <use href="#a" fill="none" stroke="#000000" stroke-width="1.46"/>
+    </mask>
   </defs>
-  <g filter="url(#sdn)">
+  <g>
+    <g mask="url(#m)" transform="translate(0,0.94)" fill="#ffffff"
+       fill-opacity="0.345">
+      <use href="#g"/>
+      <use href="#a" fill="none" stroke="#ffffff" stroke-opacity="0.345"
+           stroke-width="1.46"/>
+    </g>
     <use href="#g" fill="url(#fdn)" fill-opacity="1.000"/>
     <use href="#a" fill="none" stroke="url(#fdn)" stroke-opacity="1.000"
-         stroke-width="1.39"/>
+         stroke-width="1.46"/>
   </g>
-  <g filter="url(#sup)" transform="translate(0,32)">
-    <use href="#g" fill="url(#fup)" fill-opacity="0.850"/>
-    <use href="#a" fill="none" stroke="url(#fup)" stroke-opacity="0.850"
-         stroke-width="1.39"/>
+  <g transform="translate(0,32)">
+    <g mask="url(#m)" transform="translate(0,0.94)" fill="#000000"
+       fill-opacity="0.220">
+      <use href="#g"/>
+      <use href="#a" fill="none" stroke="#000000" stroke-opacity="0.220"
+           stroke-width="1.46"/>
+    </g>
+    <use href="#g" fill="url(#fup)" fill-opacity="1.000"/>
+    <use href="#a" fill="none" stroke="url(#fup)" stroke-opacity="1.000"
+         stroke-width="1.46"/>
   </g>
 </svg>

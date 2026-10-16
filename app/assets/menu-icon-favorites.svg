@@ -31,16 +31,21 @@
       <stop offset="0.909" stop-color="#9f9f9f" stop-opacity="0.49"/>
       <stop offset="1.000" stop-color="#acacac" stop-opacity="0.361"/>
     </linearGradient>
-    <filter id="sdn" x="-35%" y="-35%" width="180%" height="180%">
-      <feDropShadow dx="0" dy="1" stdDeviation="0.5" flood-color="#000000" flood-opacity="0.26"/>
-    </filter>
-    <filter id="sup" x="-35%" y="-35%" width="180%" height="180%">
-      <feDropShadow dx="0" dy="1" stdDeviation="0.6" flood-color="#000000" flood-opacity="0.40"/>
-    </filter>
   
     <path id="g" d="M21.725,2.664 Q22.120,1.563 22.515,2.664 L25.408,10.740 Q25.715,11.596 26.625,11.623 L35.247,11.875 Q36.416,11.909 35.488,12.621 L28.659,17.858 Q27.937,18.411 28.194,19.284 L30.615,27.512 Q30.945,28.634 29.978,27.976 L22.862,23.131 Q22.109,22.619 21.357,23.131 L14.235,27.968 Q13.267,28.625 13.599,27.503 L16.028,19.278 Q16.286,18.405 15.565,17.851 L8.741,12.607 Q7.813,11.894 8.983,11.861 L17.605,11.618 Q18.515,11.593 18.823,10.736 Z"/>
+    <mask id="m" maskUnits="userSpaceOnUse" x="-8" y="-8" width="60" height="80">
+      <rect x="-8" y="-8" width="60" height="80" fill="#ffffff"/>
+      <use href="#g" fill="#000000"/>
+    </mask>
   </defs>
-  <use href="#g" fill="url(#fdn)" fill-opacity="0.820" fill-rule="nonzero" filter="url(#sdn)"/>
-  <use href="#g" fill="url(#fup)" fill-opacity="0.865" fill-rule="nonzero" filter="url(#sup)"
-       transform="translate(0,32)"/>
+  <g>
+    <g mask="url(#m)"><use href="#g" fill="#ffffff" fill-opacity="0.600"
+         fill-rule="nonzero" transform="translate(0,1.00)"/></g>
+    <use href="#g" fill="url(#fdn)" fill-opacity="0.955" fill-rule="nonzero"/>
+  </g>
+  <g transform="translate(0,32)">
+    <g mask="url(#m)"><use href="#g" fill="#000000" fill-opacity="0.550"
+         fill-rule="nonzero" transform="translate(0,1.00)"/></g>
+    <use href="#g" fill="url(#fup)" fill-opacity="0.985" fill-rule="nonzero"/>
+  </g>
 </svg>

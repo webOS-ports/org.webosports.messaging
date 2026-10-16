@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="64" viewBox="0 0 32 64">
 <!-- Paper plane. The silhouette is six measured corners, not a traced outline: the nose at
-     (25.43,4.71), the wing tip at (3.16,15.82), the root notch at (12.29,18.93) and
-     the trailing edge from (20.56,19.61) to (25.09,19.55). The upper fold is a line the
+     (25.50,4.71), the wing tip at (3.01,15.82), the root notch at (12.29,18.85) and
+     the trailing edge from (20.07,19.46) to (25.12,19.62). The upper fold is a line the
      resting state shows and the lit state does not, so it is drawn only on the resting one. -->
   <defs>
     <linearGradient id="fdn" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="32">
@@ -32,20 +32,23 @@
       <stop offset="0.909" stop-color="#ffffff" stop-opacity="0.957"/>
       <stop offset="1.000" stop-color="#ffffff" stop-opacity="0.957"/>
     </linearGradient>
-    <filter id="sdn" x="-35%" y="-35%" width="180%" height="180%">
-      <feDropShadow dx="0" dy="1" stdDeviation="0.5" flood-color="#000000" flood-opacity="0.26"/>
-    </filter>
-    <filter id="sup" x="-35%" y="-35%" width="180%" height="180%">
-      <feDropShadow dx="0" dy="1" stdDeviation="0.6" flood-color="#000000" flood-opacity="0.40"/>
-    </filter>
   
-    <path id="g" d="M25.423,5.000 Q25.430,4.710 25.171,4.840 L3.422,15.695 Q3.163,15.825 3.437,15.918 L12.013,18.832 Q12.287,18.925 12.328,19.212 L12.847,22.900 Q12.887,23.188 13.163,23.277 L15.724,24.110 Q16.000,24.200 16.204,23.994 L20.358,19.818 Q20.562,19.613 20.852,19.608 L24.798,19.554 Q25.087,19.550 25.094,19.260 Z"/>
+    <path id="g" d="M25.498,5.000 Q25.505,4.710 25.245,4.838 L3.272,15.697 Q3.013,15.825 3.288,15.915 L12.012,18.760 Q12.287,18.850 12.314,19.139 L12.673,22.974 Q12.700,23.262 12.982,23.330 L16.355,24.133 Q16.637,24.200 16.808,23.965 L19.905,19.697 Q20.075,19.462 20.365,19.472 L24.835,19.616 Q25.125,19.625 25.132,19.335 Z"/>
+    <mask id="m" maskUnits="userSpaceOnUse" x="-8" y="-8" width="48" height="80">
+      <rect x="-8" y="-8" width="48" height="80" fill="#ffffff"/>
+      <use href="#g" fill="#000000"/>
+    </mask>
   </defs>
-  <g filter="url(#sdn)">
-    <use href="#g" fill="url(#fdn)" fill-opacity="0.925"/>
+  <g>
+    <g mask="url(#m)"><use href="#g" fill="#000000" fill-opacity="0.650"
+         transform="translate(0,1.00)"/></g>
+    <use href="#g" fill="url(#fdn)" fill-opacity="0.955"/>
     <path d="M24.30,5.60 L17.32,19.43" fill="none"
           stroke="#000000" stroke-opacity="0.35" stroke-width="0.01"/>
   </g>
-  <use href="#g" fill="url(#fup)" fill-opacity="1.000" filter="url(#sup)"
-       transform="translate(0,32)"/>
+  <g transform="translate(0,32)">
+    <g mask="url(#m)"><use href="#g" fill="#000000" fill-opacity="0.000"
+         transform="translate(0,1.00)"/></g>
+    <use href="#g" fill="url(#fup)" fill-opacity="1.000"/>
+  </g>
 </svg>

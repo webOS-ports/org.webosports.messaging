@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="44" height="64" viewBox="0 0 44 64">
 <!-- Speech balloon, authored rather than traced. The body is an ellipse fitted to the
      original - rx 14.10 ry 11.59 about (21.48,14.28) - and the tail is a flap that
-     leaves the ellipse at 121 and 72 degrees and hooks to a tip at (10.24,29.07),
+     leaves the ellipse at 121 and 72 degrees and hooks to a tip at (10.39,29.07),
      rather than the straight wedge a trace of a 32px bitmap produces. -->
   <defs>
     <linearGradient id="fdn" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="32">
@@ -32,16 +32,21 @@
       <stop offset="0.909" stop-color="#a5a5a5" stop-opacity="0.51"/>
       <stop offset="1.000" stop-color="#a5a5a5" stop-opacity="0.51"/>
     </linearGradient>
-    <filter id="sdn" x="-35%" y="-35%" width="180%" height="180%">
-      <feDropShadow dx="0" dy="1" stdDeviation="0.5" flood-color="#000000" flood-opacity="0.26"/>
-    </filter>
-    <filter id="sup" x="-35%" y="-35%" width="180%" height="180%">
-      <feDropShadow dx="0" dy="1" stdDeviation="0.6" flood-color="#000000" flood-opacity="0.40"/>
-    </filter>
   
-    <path id="g" d="M7.375,14.275 A14.100,11.588 0 1 1 35.575,14.275 A14.100,11.588 0 1 1 7.375,14.275 Z M25.771,25.312 Q12.137,27.350 10.238,29.075 Q7.400,26.400 14.237,24.219 Z"/>
+    <path id="g" d="M7.375,14.275 A14.100,11.588 0 1 1 35.575,14.275 A14.100,11.588 0 1 1 7.375,14.275 Z M25.771,25.312 Q12.137,27.350 10.387,29.075 Q7.325,26.400 14.221,24.211 Z"/>
+    <mask id="m" maskUnits="userSpaceOnUse" x="-8" y="-8" width="60" height="80">
+      <rect x="-8" y="-8" width="60" height="80" fill="#ffffff"/>
+      <use href="#g" fill="#000000"/>
+    </mask>
   </defs>
-  <use href="#g" fill="url(#fdn)" fill-opacity="0.850" fill-rule="nonzero" filter="url(#sdn)"/>
-  <use href="#g" fill="url(#fup)" fill-opacity="0.850" fill-rule="nonzero" filter="url(#sup)"
-       transform="translate(0,32)"/>
+  <g>
+    <g mask="url(#m)"><use href="#g" fill="#ffffff" fill-opacity="0.000"
+         fill-rule="nonzero" transform="translate(0,1.00)"/></g>
+    <use href="#g" fill="url(#fdn)" fill-opacity="0.970" fill-rule="nonzero"/>
+  </g>
+  <g transform="translate(0,32)">
+    <g mask="url(#m)"><use href="#g" fill="#000000" fill-opacity="0.310"
+         fill-rule="nonzero" transform="translate(0,1.00)"/></g>
+    <use href="#g" fill="url(#fup)" fill-opacity="0.970" fill-rule="nonzero"/>
+  </g>
 </svg>

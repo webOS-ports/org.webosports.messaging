@@ -1,12 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="64" viewBox="0 0 32 64">
 <!-- Phone handset, fitted rather than traced. The shaft is an annular sector about
-     (25.91,4.30) between r 18.76 and r 25.68 - the original's outer edge fits that circle to
+     (26.29,4.26) between r 19.10 and r 25.60 - the original's outer edge fits that circle to
      0.07px - and the earpiece and mouthpiece are discs of r 5.35 and 5.68 at its ends, which
      bulge inward past the sector and so cut the notch between them. The resting state is
-     pure black ramping 0.710 to 0.275 down the glyph, not a grey gradient; the lit state is solid
+     pure black ramping 0.710 to 0.275 down the glyph over a white line along its lower
+     edge - the engraving the whole toolbar has - and the lit state is solid
      white behind a 1.50 blur of itself in #5cbbff, which is where its blue edge comes from. -->
   <defs>
-    <path id="g" d="M22.417,29.738 A25.675,25.675 0 0 1 0.935,10.247 L7.660,8.647 A18.762,18.762 0 0 0 23.358,22.890 Z M1.123,9.020 A5.350,5.350 0 1 1 11.822,9.020 A5.350,5.350 0 1 1 1.123,9.020 Z M17.175,23.350 A5.680,5.680 0 1 1 28.535,23.350 A5.680,5.680 0 1 1 17.175,23.350 Z"/>
+    <path id="g" d="M22.902,29.640 A25.600,25.600 0 0 1 1.387,10.209 L7.709,8.699 A19.100,19.100 0 0 0 23.761,23.197 Z M1.123,9.020 A5.350,5.350 0 1 1 11.822,9.020 A5.350,5.350 0 1 1 1.123,9.020 Z M17.175,23.350 A5.680,5.680 0 1 1 28.535,23.350 A5.680,5.680 0 1 1 17.175,23.350 Z"/>
     <linearGradient id="fdn" gradientUnits="userSpaceOnUse" x1="0" y1="1.69" x2="0" y2="29.00">
       <stop offset="0" stop-color="#000000" stop-opacity="0.710"/>
       <stop offset="1" stop-color="#000000" stop-opacity="0.275"/>
@@ -14,7 +15,13 @@
     <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
       <feGaussianBlur stdDeviation="1.50"/>
     </filter>
+    <mask id="m" maskUnits="userSpaceOnUse" x="-8" y="-8" width="48" height="80">
+      <rect x="-8" y="-8" width="48" height="80" fill="#ffffff"/>
+      <use href="#g" fill="#000000"/>
+    </mask>
   </defs>
+  <g mask="url(#m)"><use href="#g" fill="#ffffff" fill-opacity="0.330"
+       transform="translate(0,0.97)"/></g>
   <use href="#g" fill="url(#fdn)"/>
   <g transform="translate(0,32)">
     <use href="#g" fill="#5cbbff" fill-opacity="0.99" filter="url(#glow)"/>

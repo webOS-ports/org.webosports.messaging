@@ -1,26 +1,30 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="64" viewBox="0 0 32 64">
-<!-- Decline cross. Two 45-degree bars 5.46 across, cut square against a box 22.45 wide
+<!-- Decline cross. Two 45-degree bars 5.19 across, cut square against a box 22.45 wide
      centred on (16.0,16.0) - the arm ends are a vertical and a horizontal edge, not points.
      This icon is the other way up from the rest of the toolbar: its resting state is a white
-     glyph that fades 0.92 to 0.57 down the shape, over a hard dark line on its lower edge,
-     and the pressed state is flat black at 0.31 over a white one. Both of those lines are a
-     drop shadow with no blur, which is what the original has and a gradient cannot give. -->
+     glyph that fades 0.94 to 0.64 down the shape, over a hard dark line on its lower edge,
+     and the pressed state is flat black at 0.27 over a white one. Each of those lines is a copy of the
+     glyph a pixel lower, masked to where the glyph is not, so it keeps its own colour
+     instead of being tinted by the half-transparent body over it. -->
   <defs>
-    <path id="g" d="M4.775,5.020 Q4.775,4.775 5.020,4.775 L8.390,4.775 Q8.635,4.775 8.808,4.948 L15.827,11.967 Q16.000,12.140 16.173,11.967 L23.192,4.948 Q23.365,4.775 23.610,4.775 L26.980,4.775 Q27.225,4.775 27.225,5.020 L27.225,8.390 Q27.225,8.635 27.052,8.808 L20.033,15.827 Q19.860,16.000 20.033,16.173 L27.052,23.192 Q27.225,23.365 27.225,23.610 L27.225,26.980 Q27.225,27.225 26.980,27.225 L23.610,27.225 Q23.365,27.225 23.192,27.052 L16.173,20.033 Q16.000,19.860 15.827,20.033 L8.808,27.052 Q8.635,27.225 8.390,27.225 L5.020,27.225 Q4.775,27.225 4.775,26.980 L4.775,23.610 Q4.775,23.365 4.948,23.192 L11.967,16.173 Q12.140,16.000 11.967,15.827 L4.948,8.808 Q4.775,8.635 4.775,8.390 Z"/>
-    <linearGradient id="fdn" gradientUnits="userSpaceOnUse" x1="0" y1="4.78" x2="0" y2="27.23">
-      <stop offset="0" stop-color="#f3f3f3" stop-opacity="0.915"/>
-      <stop offset="1" stop-color="#f1f1f1" stop-opacity="0.575"/>
+    <path id="g" d="M4.738,5.028 Q4.738,4.738 5.028,4.738 L8.120,4.738 Q8.410,4.738 8.615,4.943 L15.757,12.085 Q15.963,12.290 16.168,12.085 L23.310,4.943 Q23.515,4.738 23.805,4.738 L26.898,4.738 Q27.188,4.738 27.188,5.028 L27.188,8.120 Q27.188,8.410 26.982,8.615 L19.840,15.757 Q19.635,15.963 19.840,16.168 L26.982,23.310 Q27.188,23.515 27.188,23.805 L27.188,26.898 Q27.188,27.188 26.898,27.188 L23.805,27.188 Q23.515,27.188 23.310,26.982 L16.168,19.840 Q15.963,19.635 15.757,19.840 L8.615,26.982 Q8.410,27.188 8.120,27.188 L5.028,27.188 Q4.738,27.188 4.738,26.898 L4.738,23.805 Q4.738,23.515 4.943,23.310 L12.085,16.168 Q12.290,15.963 12.085,15.757 L4.943,8.615 Q4.738,8.410 4.738,8.120 Z"/>
+    <linearGradient id="fdn" gradientUnits="userSpaceOnUse" x1="0" y1="4.74" x2="0" y2="27.19">
+      <stop offset="0" stop-color="#f3f3f3" stop-opacity="0.945"/>
+      <stop offset="1" stop-color="#f1f1f1" stop-opacity="0.635"/>
     </linearGradient>
-    <filter id="sdn" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="0.55" stdDeviation="0" flood-color="#000000"
-                    flood-opacity="0.270"/>
-    </filter>
-    <filter id="sup" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="1.00" stdDeviation="0" flood-color="#ffffff"
-                    flood-opacity="0.065"/>
-    </filter>
+    <mask id="m" maskUnits="userSpaceOnUse" x="-8" y="-8" width="48" height="80">
+      <rect x="-8" y="-8" width="48" height="80" fill="#ffffff"/>
+      <use href="#g" fill="#000000"/>
+    </mask>
   </defs>
-  <use href="#g" fill="url(#fdn)" filter="url(#sdn)"/>
-  <use href="#g" fill="#000000" fill-opacity="0.310" filter="url(#sup)"
-       transform="translate(0,32)"/>
+  <g>
+    <g mask="url(#m)"><use href="#g" fill="#000000" fill-opacity="0.615"
+         transform="translate(0,0.55)"/></g>
+    <use href="#g" fill="url(#fdn)"/>
+  </g>
+  <g transform="translate(0,32)">
+    <g mask="url(#m)"><use href="#g" fill="#ffffff" fill-opacity="0.845"
+         transform="translate(0,0.85)"/></g>
+    <use href="#g" fill="#000000" fill-opacity="0.265"/>
+  </g>
 </svg>

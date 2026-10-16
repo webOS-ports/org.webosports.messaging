@@ -1,30 +1,50 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="41" height="41" viewBox="0 0 41 41">
-<!-- PDF badge, drawn rather than resampled: two white sheets behind a red one, punched
-     three times down its left edge and lettered P D F. The letters are paths built out of
-     a stem and a bowl, so nothing here depends on a font being installed, and the whole
-     badge is a redraw of the community artwork rather than a trace of its 41px bitmap. -->
+<!-- PDF badge. Two ruled white sheets behind a red one on the disc the artwork sits in: the
+     red sheet punched three times down its left edge, its upper right corner folded back,
+     and lettered P D F. The letters are paths built from a stem and a bowl, so nothing here
+     depends on a font being installed. From the 1024px master in the webOS-Ports graphics
+     repository, drawn rather than resampled. -->
 <defs>
-  <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dddddd"/>
+  <linearGradient id="disc" x1="0" y1="0" x2="0.15" y2="1">
+    <stop offset="0" stop-color="#ffffff" stop-opacity="0.420"/>
+    <stop offset="0.45" stop-color="#c8c8c8" stop-opacity="0.200"/>
+    <stop offset="1" stop-color="#000000" stop-opacity="0.200"/>
   </linearGradient>
-  <linearGradient id="red" x1="0" y1="0" x2="0.35" y2="1">
-    <stop offset="0" stop-color="#f51414"/><stop offset="0.6" stop-color="#e00000"/>
-    <stop offset="1" stop-color="#b71414"/>
+  <linearGradient id="paper" x1="0" y1="0" x2="0.2" y2="1">
+    <stop offset="0" stop-color="#ffffff"/><stop offset="0.75" stop-color="#f6f6f6"/>
+    <stop offset="1" stop-color="#dedede"/>
   </linearGradient>
-  <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
-    <feGaussianBlur stdDeviation="1.80"/>
+  <linearGradient id="red" x1="0" y1="0" x2="0.4" y2="1">
+    <stop offset="0" stop-color="#ff1616"/><stop offset="0.55" stop-color="#ec0000"/>
+    <stop offset="1" stop-color="#c00606"/>
+  </linearGradient>
+  <linearGradient id="fold" x1="0" y1="0" x2="0.6" y2="1">
+    <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#d6d6d6"/>
+  </linearGradient>
+  <filter id="soft" x="-30%" y="-30%" width="160%" height="170%">
+    <feGaussianBlur stdDeviation="0.90"/>
+  </filter>
+  <filter id="dsoft" x="-20%" y="-20%" width="140%" height="140%">
+    <feGaussianBlur stdDeviation="0.55"/>
   </filter>
 </defs>
-<circle cx="20.80" cy="21.65" r="17.20" fill="#000000" fill-opacity="0.32"
-        filter="url(#soft)"/>
-<g transform="rotate(-12.65 20.50 11.12)">
-  <rect x="14.82" y="4.51" width="18.07" height="21.88" rx="0.8"
-        fill="url(#paper)" stroke="#c9c9c9" stroke-width="0.5"/>
-  <rect x="9.95" y="6.97" width="19.34" height="24.07" rx="0.8"
-        fill="url(#paper)" stroke="#c9c9c9" stroke-width="0.5"/>
-  <rect x="4.50" y="6.22" width="21.35" height="26.04" rx="1.00"
-        fill="url(#red)"/>
-  <g fill="#8e0a0a"><circle cx="7.83" cy="14.04" r="0.10"/><circle cx="7.83" cy="21.50" r="0.10"/><circle cx="7.83" cy="26.82" r="0.10"/></g>
-  <g fill="#ffffff" fill-rule="evenodd"><path d="M8.22,22.50 L10.77,22.50 A2.05,2.05 0 0 1 10.77,26.60 L8.81,26.60 L8.81,29.57 L8.22,29.57 Z M8.81,23.09 L10.77,23.09 A1.46,1.46 0 0 1 10.77,26.01 L8.81,26.01 Z"/><path d="M13.42,22.50 L14.49,22.50 A3.54,3.54 0 0 1 14.49,29.57 L13.42,29.57 Z M14.01,23.09 L14.49,23.09 A2.95,2.95 0 0 1 14.49,28.98 L14.01,28.98 Z"/><path d="M18.62,22.50 L23.23,22.50 L23.23,23.09 L19.21,23.09 L19.21,25.74 L22.30,25.74 L22.30,26.33 L19.21,26.33 L19.21,29.57 L18.62,29.57 Z"/></g>
+<circle cx="20.50" cy="20.43" r="17.43" fill="url(#disc)" filter="url(#dsoft)"/>
+<g transform="rotate(13.55 26.28 17.94)">
+  <rect x="17.73" y="6.44" width="17.11" height="23.00" rx="0.4"
+        fill="url(#paper)" stroke="#c9c9c9" stroke-width="0.35"/>
+  <g fill="#b9b9b9"><rect x="19.73" y="11.44" width="11.00" height="0.45" rx="0.23"/><rect x="19.73" y="13.14" width="11.00" height="0.45" rx="0.23"/><rect x="19.73" y="14.84" width="11.00" height="0.45" rx="0.23"/><rect x="19.73" y="16.54" width="11.00" height="0.45" rx="0.23"/><rect x="19.73" y="18.24" width="11.00" height="0.45" rx="0.23"/><rect x="19.73" y="19.94" width="11.00" height="0.45" rx="0.23"/></g>
+</g>
+<g transform="rotate(3.00 21.75 18.00)">
+  <rect x="13.00" y="6.00" width="17.50" height="24.00" rx="0.4"
+        fill="url(#paper)" stroke="#c9c9c9" stroke-width="0.35"/>
+  <g fill="#b9b9b9"><rect x="15.00" y="11.00" width="11.00" height="0.45" rx="0.23"/><rect x="15.00" y="12.70" width="11.00" height="0.45" rx="0.23"/><rect x="15.00" y="14.40" width="11.00" height="0.45" rx="0.23"/><rect x="15.00" y="16.10" width="11.00" height="0.45" rx="0.23"/><rect x="15.00" y="17.80" width="11.00" height="0.45" rx="0.23"/><rect x="15.00" y="19.50" width="11.00" height="0.45" rx="0.23"/></g>
+</g>
+<g transform="rotate(-6.00 14.00 20.00)">
+  <path d="M4.00,7.00 L15.00,7.00 Q19.95,11.50 24.00,16.00 L24.00,33.00 L4.00,33.00 Z" fill="#000000" fill-opacity="0.320" filter="url(#soft)"
+        transform="translate(0,1.00)"/>
+  <path d="M4.00,7.00 L15.00,7.00 Q19.95,11.50 24.00,16.00 L24.00,33.00 L4.00,33.00 Z" fill="url(#red)"/>
+  <path d="M15.00,7.00 Q19.95,11.50 24.00,16.00 Q21.30,8.08 15.00,7.00 Z" fill="url(#fold)"/>
+  <g fill="#8e0a0a" fill-opacity="0.85"><circle cx="6.60" cy="12.40" r="0.85"/><circle cx="6.60" cy="20.00" r="0.85"/><circle cx="6.60" cy="27.60" r="0.85"/></g>
+  <g fill="#ffffff" fill-rule="evenodd"><path d="M8.60,22.40 L10.96,22.40 A1.74,1.74 0 0 1 10.96,25.87 L10.05,25.87 L10.05,28.60 L8.60,28.60 Z M10.05,23.85 L10.96,23.85 A0.29,0.29 0 0 1 10.96,24.42 L10.05,24.42 Z"/><path d="M13.20,22.40 L14.20,22.40 A3.10,3.10 0 0 1 14.20,28.60 L13.20,28.60 Z M14.65,23.85 L14.20,23.85 A1.65,1.65 0 0 1 14.20,27.15 L14.65,27.15 Z"/><path d="M17.80,22.40 L21.90,22.40 L21.90,23.85 L19.25,23.85 L19.25,24.77 L21.16,24.77 L21.16,26.22 L19.25,26.22 L19.25,28.60 L17.80,28.60 Z"/></g>
 </g>
 </svg>

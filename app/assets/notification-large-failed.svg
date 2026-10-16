@@ -1,16 +1,34 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
-<!-- The failed-message mark: the balloon with a warning triangle over its lower right. The
-     triangle's corners are filleted 1.41 and the bar inside it tapers, which is what the
-     artwork has; the mark inside is one path so it keeps its shape at any size. -->
+<!-- The failed-message mark: the balloon with a warning triangle over its lower right,
+     corners filleted and the bar inside it tapering, the way the original has it. -->
 <defs>
-  <linearGradient id="b" gradientUnits="userSpaceOnUse" x1="0" y1="0.0" x2="0" y2="45.1">
-    <stop offset="0" stop-color="#7acdd2"/><stop offset="1" stop-color="#079aa2"/>
+  <linearGradient id="b" gradientUnits="userSpaceOnUse" x1="0" y1="5.0" x2="0" y2="39.0">
+    <stop offset="0" stop-color="#a7dddf"/><stop offset="0.09" stop-color="#91ecf1"/>
+    <stop offset="0.21" stop-color="#7fe2e7"/><stop offset="0.32" stop-color="#68d2d8"/>
+    <stop offset="0.44" stop-color="#50c2c8"/><stop offset="0.56" stop-color="#37b2b9"/>
+    <stop offset="0.68" stop-color="#23a6ad"/><stop offset="0.79" stop-color="#00969e"/>
+    <stop offset="1" stop-color="#01949b"/>
   </linearGradient>
-  <linearGradient id="warn" gradientUnits="userSpaceOnUse" x1="0" y1="27.3" x2="0" y2="46.0">
+  <radialGradient id="gloss">
+    <stop offset="0" stop-color="#ffffff" stop-opacity="0.520"/>
+    <stop offset="0.7" stop-color="#ffffff" stop-opacity="0.182"/>
+    <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+  </radialGradient>
+  <clipPath id="body"><path d="M3.137,22.712 A20.625,16.625 0 1 1 44.388,22.712 A20.625,16.625 0 1 1 3.137,22.712 Z M9.996,36.954 Q10.750,35.775 12.073,36.232 L16.777,37.856 Q18.100,38.312 16.972,39.142 L13.803,41.471 Q12.675,42.300 11.288,42.487 L7.387,43.013 Q6.000,43.200 6.754,42.021 Z"/></clipPath>
+  <filter id="soft" x="-30%" y="-30%" width="160%" height="170%">
+    <feGaussianBlur stdDeviation="1.30"/>
+  </filter>
+  <linearGradient id="w" gradientUnits="userSpaceOnUse" x1="0" y1="27.3" x2="0" y2="45.8">
     <stop offset="0" stop-color="#fdd90d"/><stop offset="1" stop-color="#eec00a"/>
   </linearGradient>
 </defs>
-<path d="M0.075,21.312 A24.038,21.087 0 1 1 48.150,21.312 A24.038,21.087 0 1 1 0.075,21.312 Z M9.001,37.765 Q9.613,36.500 10.872,37.123 L18.215,40.752 Q19.475,41.375 18.279,42.113 L11.696,46.175 Q10.500,46.913 9.095,46.921 L5.967,46.941 Q4.562,46.950 5.174,45.685 Z" fill="url(#b)"/>
-<path d="M36.505,28.508 Q37.237,27.300 37.944,28.523 L47.331,44.765 Q48.038,45.987 46.625,45.987 L27.312,45.987 Q25.900,45.987 26.633,44.780 Z" fill="url(#warn)"/>
-<path d="M36.56,33.40 L37.92,33.40 L37.79,42.40 L36.69,42.40 Z M36.287,44.300 A0.950,0.950 0 1 1 38.188,44.300 A0.950,0.950 0 1 1 36.287,44.300 Z" fill="#5f4c02"/>
+<path d="M3.137,22.712 A20.625,16.625 0 1 1 44.388,22.712 A20.625,16.625 0 1 1 3.137,22.712 Z M9.996,36.954 Q10.750,35.775 12.073,36.232 L16.777,37.856 Q18.100,38.312 16.972,39.142 L13.803,41.471 Q12.675,42.300 11.288,42.487 L7.387,43.013 Q6.000,43.200 6.754,42.021 Z" fill="#000000" fill-opacity="0.340" filter="url(#soft)"
+      transform="translate(0,2.20)"/>
+<path d="M3.137,22.712 A20.625,16.625 0 1 1 44.388,22.712 A20.625,16.625 0 1 1 3.137,22.712 Z M9.996,36.954 Q10.750,35.775 12.073,36.232 L16.777,37.856 Q18.100,38.312 16.972,39.142 L13.803,41.471 Q12.675,42.300 11.288,42.487 L7.387,43.013 Q6.000,43.200 6.754,42.021 Z" fill="url(#b)" stroke="#013f45" stroke-opacity="0.850"
+      stroke-width="1.60" paint-order="stroke"/>
+<g clip-path="url(#body)">
+  <ellipse cx="23.20" cy="9.50" rx="15.00" ry="7.50" fill="url(#gloss)"/>
+</g>
+<path d="M35.859,28.546 Q36.600,27.300 37.331,28.552 L46.669,44.548 Q47.400,45.800 45.950,45.800 L27.050,45.800 Q25.600,45.800 26.341,44.554 Z" fill="url(#w)"/>
+<path d="M35.95,33.40 L37.25,33.40 L37.15,42.40 L36.05,42.40 Z M35.650,44.300 A0.950,0.950 0 1 1 37.550,44.300 A0.950,0.950 0 1 1 35.650,44.300 Z" fill="#5f4c02"/>
 </svg>

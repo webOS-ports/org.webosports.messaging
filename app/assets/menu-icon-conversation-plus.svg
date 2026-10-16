@@ -31,16 +31,21 @@
       <stop offset="0.909" stop-color="#a5a5a5" stop-opacity="0.51"/>
       <stop offset="1.000" stop-color="#a5a5a5" stop-opacity="0.51"/>
     </linearGradient>
-    <filter id="sdn" x="-35%" y="-35%" width="180%" height="180%">
-      <feDropShadow dx="0" dy="1" stdDeviation="0.5" flood-color="#000000" flood-opacity="0.26"/>
-    </filter>
-    <filter id="sup" x="-35%" y="-35%" width="180%" height="180%">
-      <feDropShadow dx="0" dy="1" stdDeviation="0.6" flood-color="#000000" flood-opacity="0.40"/>
-    </filter>
   
-    <path id="g" d="M7.338,14.275 A14.100,11.588 0 1 1 35.538,14.275 A14.100,11.588 0 1 1 7.338,14.275 Z M25.486,25.374 Q12.475,27.200 9.750,29.300 Q7.588,25.950 14.664,24.438 Z M37.92,3.00 L40.08,3.00 L40.08,11.85 L37.92,11.85 Z M34.92,6.00 L43.08,6.00 L43.08,8.85 L34.92,8.85 Z"/>
+    <path id="g" d="M7.375,14.275 A14.062,11.588 0 1 1 35.500,14.275 A14.062,11.588 0 1 1 7.375,14.275 Z M25.476,25.374 Q12.550,27.050 10.463,29.300 Q7.287,25.950 14.698,24.445 Z M38.08,3.00 L39.92,3.00 L39.92,11.55 L38.08,11.55 Z M34.92,6.00 L43.08,6.00 L43.08,8.85 L34.92,8.85 Z"/>
+    <mask id="m" maskUnits="userSpaceOnUse" x="-8" y="-8" width="60" height="80">
+      <rect x="-8" y="-8" width="60" height="80" fill="#ffffff"/>
+      <use href="#g" fill="#000000"/>
+    </mask>
   </defs>
-  <use href="#g" fill="url(#fdn)" fill-opacity="0.850" fill-rule="nonzero" filter="url(#sdn)"/>
-  <use href="#g" fill="url(#fup)" fill-opacity="0.850" fill-rule="nonzero" filter="url(#sup)"
-       transform="translate(0,32)"/>
+  <g>
+    <g mask="url(#m)"><use href="#g" fill="#ffffff" fill-opacity="0.000"
+         fill-rule="nonzero" transform="translate(0,0.94)"/></g>
+    <use href="#g" fill="url(#fdn)" fill-opacity="0.970" fill-rule="nonzero"/>
+  </g>
+  <g transform="translate(0,32)">
+    <g mask="url(#m)"><use href="#g" fill="#000000" fill-opacity="0.355"
+         fill-rule="nonzero" transform="translate(0,0.94)"/></g>
+    <use href="#g" fill="url(#fup)" fill-opacity="0.970" fill-rule="nonzero"/>
+  </g>
 </svg>
