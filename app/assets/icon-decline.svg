@@ -1,31 +1,37 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="64" viewBox="0 0 32 64">
 <!-- Decline cross. Two 45-degree bars 5.28 across with round ends, not cut square: the
      original's arm end reaches its furthest left midway down the end rather than at a corner,
-     which is a cap of r 2.64 about (7.39,7.39), so this is one stroked path.
+     which is a cap of r 2.64 about (7.43,7.43), so this is one stroked path.
      This icon is the other way up from the rest of the toolbar: its resting state is a white
      glyph that fades 0.93 to 0.65 down the shape, over a hard dark line on its lower edge,
      and the pressed state is flat black at 0.25 over a white one. Each of those lines is a copy of the
      glyph a pixel lower, masked to where the glyph is not, so it keeps its own colour
      instead of being tinted by the half-transparent body over it. -->
   <defs>
-    <path id="g" d="M7.39,7.39 L24.61,24.61 M24.61,7.39 L7.39,24.61" fill="none" stroke-width="5.28" stroke-linecap="round"/>
-    <linearGradient id="fdn" gradientUnits="userSpaceOnUse" x1="0" y1="4.75" x2="0" y2="27.25">
+    <path id="g" d="M7.43,7.43 L24.65,24.65 M24.65,7.43 L7.43,24.65" fill="none" stroke-width="5.28" stroke-linecap="round"/>
+    <linearGradient id="fdn" gradientUnits="userSpaceOnUse" x1="0" y1="4.79" x2="0" y2="27.29">
       <stop offset="0" stop-color="#f3f3f3" stop-opacity="0.930"/>
       <stop offset="1" stop-color="#f1f1f1" stop-opacity="0.650"/>
     </linearGradient>
-    <mask id="m" maskUnits="userSpaceOnUse" x="-8" y="-8" width="48" height="80">
+    <mask id="out" maskUnits="userSpaceOnUse" x="-8" y="-8" width="48" height="80">
       <rect x="-8" y="-8" width="48" height="80" fill="#ffffff"/>
       <use href="#g" stroke="#000000"/>
     </mask>
+    <mask id="in" maskUnits="userSpaceOnUse" x="-8" y="-8" width="48" height="80">
+      <use href="#g" stroke="#ffffff"/>
+      <use href="#g" stroke="#000000" transform="translate(0,0.76)"/>
+    </mask>
+    <filter id="blur" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="1.10"/>
+    </filter>
   </defs>
   <g>
-    <g mask="url(#m)"><use href="#g" stroke="#000000" stroke-opacity="0.525"
-         transform="translate(0,0.97)"/></g>
+    <g mask="url(#out)"><use href="#g" stroke="#000000" stroke-opacity="0.675"
+         filter="url(#blur)" transform="translate(0,0.97)"/></g>
     <use href="#g" stroke="url(#fdn)"/>
   </g>
   <g transform="translate(0,32)">
-    <g mask="url(#m)"><use href="#g" stroke="#ffffff" stroke-opacity="0.950"
-         transform="translate(0,0.70)"/></g>
     <use href="#g" stroke="#000000" stroke-opacity="0.250"/>
+    <use href="#g" stroke="#ffffff" stroke-opacity="0.350" mask="url(#in)"/>
   </g>
 </svg>
