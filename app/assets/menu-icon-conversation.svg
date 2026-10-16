@@ -16,7 +16,16 @@
      resting, white 0.94 to 0.27 lit - measured interior pixel by interior pixel with
      the line's own pixels left out. The twelve-stop gradients they replace had been
      fitted with the line missing and had to bend upward at the bottom to make up for
-     it, ending on #838383 for a body that is pure black all the way down. -->
+     it, ending on #838383 for a body that is pure black all the way down.
+     Under both states goes a soft black halo. The committed file carried one as a
+     plain drop shadow and it was dropped wholesale when the engraved line went in, on
+     the grounds that a dark shadow is the opposite of what the resting state wants.
+     Half right: the LIT half of the original does carry black outside its outline -
+     alpha 5 to 21 at the shoulder, 26 to 66 round the lower left - and with nothing
+     there ours read hard-edged against a soft original. The resting half shows none
+     outside, but its alpha runs denser in the first pixel inside the edge than deeper
+     in, 157 against 135 at the shoulder and 168 against 136 across the top, which is
+     the same halo under a body that is itself black. -->
   <defs>
     <linearGradient id="fdn" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="32">
       <stop offset="0" stop-color="#000000" stop-opacity="0.6196"/>
@@ -27,6 +36,13 @@
       <stop offset="1" stop-color="#ffffff" stop-opacity="0.2714"/>
     </linearGradient>
   
+    <filter id="h" x="-40%%" y="-40%%" width="180%%" height="180%%">
+      <feGaussianBlur stdDeviation="1.10"/>
+    </filter>
+    <mask id="o" maskUnits="userSpaceOnUse" x="-8" y="-8" width="60" height="80">
+      <rect x="-8" y="-8" width="60" height="80" fill="#ffffff"/>
+      <use href="#g" fill="#000000" fill-rule="nonzero"/>
+    </mask>
     <path id="g" d="M8.705,28.524 C8.705,28.524 10.423,27.679 11.130,26.365 C11.991,24.766 11.369,23.297 11.369,23.297 C11.369,23.297 11.369,23.297 11.369,23.297 C11.369,23.297 6.976,20.497 7.064,14.704 C7.178,7.195 15.675,2.728 21.936,2.728 C30.222,2.728 35.547,8.168 35.459,13.981 C35.394,18.303 32.991,22.443 27.414,25.147 C23.431,27.078 17.359,25.884 17.359,25.884 C17.359,25.884 15.893,27.629 13.323,28.438 C10.608,29.293 8.705,28.524 8.705,28.524 Z"/>
     <mask id="e" maskUnits="userSpaceOnUse" x="-8" y="-8" width="60" height="80">
       <use href="#g" fill="#ffffff" fill-rule="nonzero"/>
@@ -39,12 +55,16 @@
     </mask>
   </defs>
   <g>
+    <g mask="url(#o)"><use href="#g" fill="#000000" fill-opacity="0.000"
+         fill-rule="nonzero" filter="url(#h)" transform="translate(0,0.46)"/></g>
     <g mask="url(#n)"><use href="#g" fill="url(#fdn)" fill-opacity="0.970"
          fill-rule="nonzero"/></g>
     <g mask="url(#e)"><use href="#g" fill="#ffffff" fill-opacity="0.894"
          fill-rule="nonzero"/></g>
   </g>
   <g transform="translate(0,32)">
+    <g mask="url(#o)"><use href="#g" fill="#000000" fill-opacity="0.455"
+         fill-rule="nonzero" filter="url(#h)" transform="translate(0,0.46)"/></g>
     <g mask="url(#n)"><use href="#g" fill="url(#fup)" fill-opacity="1.000"
          fill-rule="nonzero"/></g>
     <g mask="url(#e)"><use href="#g" fill="#000000" fill-opacity="0.565"
