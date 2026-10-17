@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="44" height="64" viewBox="0 0 44 64">
-<!-- Five-pointed star, authored rather than traced: outer radius 15.04 and inner 6.12 about (22.11,16.52),
-     squashed 0.995 vertically, with the points filleted 1.17 and the notches 0.91 - which is what the original
+<!-- Five-pointed star, authored rather than traced: outer radius 15.04 and inner 5.90 about (22.11,16.52),
+     squashed 0.995 vertically, with the points filleted 1.20 and the notches 0.83 - which is what the original
      has and a trace of a 32px bitmap cannot keep. -->
   <defs>
     <linearGradient id="fdn" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="32">
@@ -32,31 +32,35 @@
       <stop offset="1.000" stop-color="#acacac" stop-opacity="0.361"/>
     </linearGradient>
   
-    <filter id="h" x="-40%%" y="-40%%" width="180%%" height="180%%">
+    <path id="g" d="M21.730,2.699 Q22.116,1.563 22.502,2.699 L25.313,10.986 Q25.582,11.777 26.417,11.786 L35.215,11.891 Q36.415,11.905 35.451,12.619 L28.394,17.844 Q27.723,18.341 27.973,19.137 L30.589,27.487 Q30.948,28.632 29.968,27.940 L22.793,22.877 Q22.111,22.395 21.428,22.877 L14.251,27.936 Q13.270,28.627 13.630,27.483 L16.251,19.134 Q16.501,18.338 15.830,17.840 L8.776,12.612 Q7.812,11.898 9.012,11.884 L17.811,11.784 Q18.646,11.775 18.915,10.984 Z"/>
+    <path id="c" d="M-8,-8 H52 V72 H-8 Z M21.730,2.699 Q22.116,1.563 22.502,2.699 L25.313,10.986 Q25.582,11.777 26.417,11.786 L35.215,11.891 Q36.415,11.905 35.451,12.619 L28.394,17.844 Q27.723,18.341 27.973,19.137 L30.589,27.487 Q30.948,28.632 29.968,27.940 L22.793,22.877 Q22.111,22.395 21.428,22.877 L14.251,27.936 Q13.270,28.627 13.630,27.483 L16.251,19.134 Q16.501,18.338 15.830,17.840 L8.776,12.612 Q7.812,11.898 9.012,11.884 L17.811,11.784 Q18.646,11.775 18.915,10.984 Z"/>
+    <clipPath id="cg"><path d="M21.730,2.699 Q22.116,1.563 22.502,2.699 L25.313,10.986 Q25.582,11.777 26.417,11.786 L35.215,11.891 Q36.415,11.905 35.451,12.619 L28.394,17.844 Q27.723,18.341 27.973,19.137 L30.589,27.487 Q30.948,28.632 29.968,27.940 L22.793,22.877 Q22.111,22.395 21.428,22.877 L14.251,27.936 Q13.270,28.627 13.630,27.483 L16.251,19.134 Q16.501,18.338 15.830,17.840 L8.776,12.612 Q7.812,11.898 9.012,11.884 L17.811,11.784 Q18.646,11.775 18.915,10.984 Z" clip-rule="nonzero"/></clipPath>
+    <clipPath id="co"><path d="M-8,-8 H52 V72 H-8 Z M21.730,2.699 Q22.116,1.563 22.502,2.699 L25.313,10.986 Q25.582,11.777 26.417,11.786 L35.215,11.891 Q36.415,11.905 35.451,12.619 L28.394,17.844 Q27.723,18.341 27.973,19.137 L30.589,27.487 Q30.948,28.632 29.968,27.940 L22.793,22.877 Q22.111,22.395 21.428,22.877 L14.251,27.936 Q13.270,28.627 13.630,27.483 L16.251,19.134 Q16.501,18.338 15.830,17.840 L8.776,12.612 Q7.812,11.898 9.012,11.884 L17.811,11.784 Q18.646,11.775 18.915,10.984 Z" clip-rule="evenodd"/></clipPath>
+    <filter id="h" x="-40%" y="-40%" width="180%" height="180%">
       <feGaussianBlur stdDeviation="1.10"/>
     </filter>
-    <mask id="o" maskUnits="userSpaceOnUse" x="-8" y="-8" width="60" height="80">
-      <rect x="-8" y="-8" width="60" height="80" fill="#ffffff"/>
-      <use href="#g" fill="#000000" fill-rule="nonzero"/>
-    </mask>
-    <path id="g" d="M21.725,2.664 Q22.120,1.563 22.515,2.664 L25.408,10.740 Q25.715,11.596 26.625,11.623 L35.247,11.875 Q36.416,11.909 35.488,12.621 L28.659,17.858 Q27.937,18.411 28.194,19.284 L30.615,27.512 Q30.945,28.634 29.978,27.976 L22.862,23.131 Q22.109,22.619 21.357,23.131 L14.235,27.968 Q13.267,28.625 13.599,27.503 L16.028,19.278 Q16.286,18.405 15.565,17.851 L8.741,12.607 Q7.813,11.894 8.983,11.861 L17.605,11.618 Q18.515,11.593 18.823,10.736 Z"/>
-    <mask id="m" maskUnits="userSpaceOnUse" x="-8" y="-8" width="60" height="80">
-      <rect x="-8" y="-8" width="60" height="80" fill="#ffffff"/>
-      <use href="#g" fill="#000000"/>
-    </mask>
+    <filter id="j" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="1.20"/>
+    </filter>
+    <path id="d" d="M21.730 3.699 Q22.116 2.563 22.502 3.699 L25.313 11.986 Q25.582 12.777 26.417 12.786 L35.215 12.891 Q36.415 12.905 35.451 13.619 L28.394 18.844 Q27.723 19.341 27.973 20.137 L30.589 28.487 Q30.948 29.632 29.968 28.940 L22.793 23.877 Q22.111 23.395 21.428 23.877 L14.251 28.936 Q13.270 29.627 13.630 28.483 L16.251 20.134 Q16.501 19.338 15.830 18.840 L8.776 13.612 Q7.812 12.898 9.012 12.884 L17.811 12.784 Q18.646 12.775 18.915 11.984 Z"/>
+    <clipPath id="cn"><path d="M-8,-8 H52 V72 H-8 Z M21.730,2.699 Q22.116,1.563 22.502,2.699 L25.313,10.986 Q25.582,11.777 26.417,11.786 L35.215,11.891 Q36.415,11.905 35.451,12.619 L28.394,17.844 Q27.723,18.341 27.973,19.137 L30.589,27.487 Q30.948,28.632 29.968,27.940 L22.793,22.877 Q22.111,22.395 21.428,22.877 L14.251,27.936 Q13.270,28.627 13.630,27.483 L16.251,19.134 Q16.501,18.338 15.830,17.840 L8.776,12.612 Q7.812,11.898 9.012,11.884 L17.811,11.784 Q18.646,11.775 18.915,10.984 Z" clip-rule="evenodd"/></clipPath>
   </defs>
   <g>
-    <g mask="url(#o)"><use href="#g" fill="#000000" fill-opacity="0.000"
-         fill-rule="nonzero" filter="url(#h)" transform="translate(0,0.46)"/></g>
-    <g mask="url(#m)"><use href="#g" fill="#ffffff" fill-opacity="0.600"
-         fill-rule="nonzero" transform="translate(0,1.00)"/></g>
-    <use href="#g" fill="url(#fdn)" fill-opacity="0.955" fill-rule="nonzero"/>
+    <g clip-path="url(#co)"><use href="#g" fill="#000000" fill-opacity="0.010"
+         fill-rule="nonzero" filter="url(#h)" transform="translate(0,1.00)"/></g>
+    <g clip-path="url(#cn)"><use href="#d" fill="#ffffff" fill-opacity="0.720"
+         fill-rule="nonzero"/></g>
+    <use href="#g" fill="url(#fdn)" fill-opacity="0.850" fill-rule="nonzero"/>
+    <g clip-path="url(#cg)"><use href="#c" fill="#000000" fill-opacity="0.530"
+         fill-rule="evenodd" filter="url(#j)" transform="translate(0,0.82)"/></g>
   </g>
   <g transform="translate(0,32)">
-    <g mask="url(#o)"><use href="#g" fill="#000000" fill-opacity="0.450"
-         fill-rule="nonzero" filter="url(#h)" transform="translate(0,0.46)"/></g>
-    <g mask="url(#m)"><use href="#g" fill="#000000" fill-opacity="0.550"
-         fill-rule="nonzero" transform="translate(0,1.00)"/></g>
+    <g clip-path="url(#co)"><use href="#g" fill="#000000" fill-opacity="0.730"
+         fill-rule="nonzero" filter="url(#h)" transform="translate(0,1.00)"/></g>
+    <g clip-path="url(#cn)"><use href="#d" fill="#000000" fill-opacity="0.010"
+         fill-rule="nonzero"/></g>
     <use href="#g" fill="url(#fup)" fill-opacity="0.985" fill-rule="nonzero"/>
+    <g clip-path="url(#cg)"><use href="#c" fill="#000000" fill-opacity="0.020"
+         fill-rule="evenodd" filter="url(#j)" transform="translate(0,0.82)"/></g>
   </g>
 </svg>

@@ -137,9 +137,17 @@ the original is made of is usually simple and usually measurable:
   the two balloons of `messaging-48x48`, against 0.40 for the best ellipse on the body alone.
   The scales come out uniform, which is the check that it really is the same drawing.
 
-  Palm's toolbar glyph is not a plain scaling of it. With a scale the body matches to 0.14px
-  but the tail is out by up to 1.7px; under a general affine - a slight skew - the whole
-  outline comes in at 0.29px. `master.path_affine` does that.
+  Palm's toolbar glyph is not a plain scaling of it, and in the end it is not an affine of it
+  either: the launcher icon and the 32px toolbar glyph are two drawings, not one drawing at
+  two sizes. Under the best affine the master leaves a smooth, systematic error along the
+  balloon's bottom - 0.3px too high under the left of the body, 0.2px too low out to the
+  right of it, where noise elsewhere on the outline is 0.05px. On screen that reads as a long
+  flat run that turns up in a corner, where the original sweeps round in one arc. So
+  `menu-icon-conversation` now carries its own ten knots, started from the master under that
+  affine and then let go one at a time against the original's silhouette: bottom edge within
+  0.06px across the whole span, and a curve whose worst curvature is a quarter of the one it
+  replaces, so the extra freedom bought shape rather than wobble. The launcher balloons are
+  still the master's, unaltered.
 
   Two more things fell out of getting the shape right. `menu-icon-conversation-plus` is the
   same balloon as `menu-icon-conversation`: row for row the two originals' edges agree to
@@ -207,6 +215,46 @@ the original is made of is usually simple and usually measurable:
   shows straight through and darkens the paint instead of the bar behind it. Unmasked it made
   the glyph *worse* at every opacity tried (4.03 to 7.4 at a tenth of an opacity); masked, the
   same halo at 0.455 and a blur of 1.1 takes it to 3.07.
+
+- **Measure an engraved silhouette by coverage, not by a threshold.** Every pixel in these
+  glyphs is black body at the row's alpha over white line at a fixed alpha, composited over
+  nothing - so the premultiplied red channel carries only the line, and the two coverages
+  separate exactly:
+
+      c_line = r*a / (255*W)        c_body = (a - W*c_line) / L(y)
+
+  Their sum is the geometry, to a fraction of a pixel, with nothing to choose. That is what
+  made the refit above possible, and it is worth preferring to any threshold - see the
+  entry below for what thresholds do here. `sil.py` in the scratch tree has it, and
+  `fitsil.py` / `fitknot.py` fit against it.
+
+- **Luminance masks do not subtract coverage.** A band cut into an edge was built the obvious
+  way: a mask holding the glyph in white with a copy of itself a pixel higher in black over
+  it. That does not subtract the two. The renderer composites them into a grey first and then
+  takes that grey's *luminance*, and luminance is not linear in coverage. Measured against
+  Palm's original, whose engraved line is exactly 1.00 pixel of coverage in every column from
+  x 12 to 34, the mask delivered 0.82 and wandered between 0.75 and 0.96 column to column -
+  thin, and visibly dotted along the balloon's bottom. `color-interpolation` makes no
+  difference either way in Chromium.
+
+  Cut the band as a *path* instead - the glyph exclusive-or the glyph a line's width higher,
+  clipped to the glyph, which throws away the sliver the xor leaves above the top edge - and
+  it comes out at 1.00 everywhere. `clipPath` is geometry; it multiplies coverages rather
+  than passing them through a curve. Everything in `toolbar.py` is now built that way, and
+  the glyph it is cut into is the same copy raised by the same amount, so body and line meet
+  exactly. One consequence: a glyph assembled from overlapping subpaths cannot be cut this
+  way under `nonzero`, so the plus on `menu-icon-conversation-plus` is now a single
+  twelve-corner outline rather than two overlapping rectangles.
+
+- **The engraved line is a shadow cast into the glyph as well as a highlight along its foot.**
+  Take the vertical ramp out of `menu-icon-conversation`'s resting body and average what is
+  left round the whole outline by depth: +11 of 255 at half a pixel in, +15 at one pixel, +9
+  at one and a half, nothing past two and a half. That is not the outside halo seen through a
+  transparent body - the resting state has no halo outside at all. It is drawn as the blurred
+  OUTSIDE of the glyph clipped to the inside, for the same reason as above: no luminance mask,
+  so the falloff is the blur's own and not a gamma curve laid over it. Fitted, the resting
+  state takes it at 0.35 and the lit state at 0.01 - the lit one has its halo outside instead,
+  which is exactly how the two halves measure.
 
 - **Watch what level an outline is measured at.** Comparing our placement against the
   original by "where does coverage cross half its row's maximum" said our bottom-right
@@ -319,10 +367,10 @@ Mean per-pixel distance from the Palm art each one replaces, worst first, out of
 
 | | |
 |---|---|
-| over 12 | `header-icon-contacts` 36, `menu-icon-attach` 26, `attach-contact` 18, `icon-165x165` 16, `attach-event` 16, `messaging-48x48` 16, `phone-icon` 14, `attach-location` 13, `menu-icon-send` 13, `notification-large-failed` 13, `notification-small` 12, `video-call-icon` 12 |
-| 8-12 | `msg-read` 11.5, `menu-icon-buddies` 10.4, `header-warning-icon` 10.5, `online-status` 9.6, `notification-large-messaging` 6.6, `msg-delivered` 8.9, `menuitem-arrow-dark` 8.2, `menu-icon-favorites` 7.7 |
-| 4-8 | `incoming-outgoing` 7.9, `chat-balloon-error-shape` 7.9, `chat-balloon-received-error-shape` 7.8, `dialogbg` 7.1, `search-input` 6.0, `list-view-avatar-frame` 5.4, `menu-icon-conversation-plus` 3.9, `icon-decline` 4.4, `menu-icon-conversation` 3.1, `chat-balloon-received-shape` 4.0 |
-| under 4 | `attach-doc` 3.7, `mini-player-icon-play` 3.2, `attach-ppt` 3.1, `list-unread` 2.9, `attach-xls` 2.6, `chat-balloon-sent-shape` 2.4, `menu-icon-mic-rec` 2.1, `loading-bg` 1.9, `mini-player-icon-pause` 1.9, `menu-icon-mic` 1.9, `list-avatar-default` 1.5, `favorites-star-blue` 1.4, `menu-icon-servers` 1.3, `defaultview-panel-tile` 0.8, `light_chrome_drop_shadow_header` 0.3, `light_chrome_drop_shadow_footer` 0.3 |
+| over 12 | `header-icon-contacts` 36, `menu-icon-attach` 26, `attach-contact` 18, `icon-165x165` 16, `attach-event` 16, `phone-icon` 14, `attach-location` 13, `menu-icon-send` 13, `video-call-icon` 12 |
+| 8-12 | `msg-read` 11.5, `notification-small` 11.4, `messaging-48x48` 11.2, `header-warning-icon` 10.5, `menu-icon-buddies` 10.1, `notification-large-failed` 9.8, `online-status` 9.6, `msg-delivered` 8.9, `menuitem-arrow-dark` 8.2 |
+| 4-8 | `incoming-outgoing` 7.9, `chat-balloon-error-shape` 7.9, `chat-balloon-received-error-shape` 7.8, `dialogbg` 7.1, `notification-large-messaging` 6.6, `menu-icon-favorites` 6.5, `search-input` 6.0, `list-view-avatar-frame` 5.4, `icon-decline` 4.4, `chat-balloon-received-shape` 4.0 |
+| under 4 | `attach-doc` 3.7, `mini-player-icon-play` 3.2, `attach-ppt` 3.1, `menu-icon-conversation-plus` 3.0, `list-unread` 2.9, `attach-xls` 2.6, `chat-balloon-sent-shape` 2.4, `menu-icon-conversation` 2.4, `menu-icon-mic-rec` 2.1, `loading-bg` 1.9, `mini-player-icon-pause` 1.9, `menu-icon-mic` 1.9, `list-avatar-default` 1.5, `favorites-star-blue` 1.4, `menu-icon-servers` 1.3, `defaultview-panel-tile` 0.8, `light_chrome_drop_shadow_header` 0.3, `light_chrome_drop_shadow_footer` 0.3 |
 
 `attach-pdf` is the one exception to that table. It follows the community's `Icon-pdf-variant1`
 rather than Palm's flat red tile, so its distance from Palm's art - 118 - measures a different
