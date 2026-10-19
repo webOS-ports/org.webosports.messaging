@@ -15,11 +15,19 @@
 /*----------------------
 Toolbars
 ----------------------*/
+/* 54px, centred both ways: measured off the Enyo 1 app's own .enyo-toolbar, which computes to
+   height and min-height 54px, padding 0, box-sizing border-box, -webkit-box-pack: center and
+   -webkit-box-align: center. Ours was 48px with its contents against the top, which is most of
+   why these bars read wrong beside it. */
 .onyx-toolbar.messaging-availability,
 .onyx-toolbar.conversation-header,
 .onyx-toolbar.messaging-footer {
-  height: 48px;
+  height: 54px;
   padding: 0 8px;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
   background: #d0d0d0;
   background-image: -webkit-linear-gradient(top, #f2f2f2, #ababab);
   background-image: linear-gradient(to bottom, #f2f2f2, #ababab);
@@ -40,13 +48,46 @@ Toolbars
    the top of the window: the bottom 4px of the pane, and with it the bottom of the footer
    toolbar, fell outside the window on every device.
 
-   The toolbars are a fixed 48px and centre their contents themselves, so the vertical margin
+   The toolbars are a fixed 54px and centre their contents themselves, so the vertical margin
    was doing nothing to earn that. */
 .onyx-toolbar.messaging-availability > *,
 .onyx-toolbar.conversation-header > *,
 .onyx-toolbar.messaging-footer > * {
   margin-top: 0;
   margin-bottom: 0;
+}
+
+/* The status reads from the left edge of the column, as in the Enyo 1 app, where the row
+   filled the bar and the dot's own `padding: 0 8px` was the whole inset. Onyx's 6px child
+   margin on top of this toolbar's 8px padding had pushed it 14px further in. (The Enyo 1 app
+   renders that row starting at x 160 in a desktop browser, but that is its -webkit-box child
+   collapsing to zero width under a modern engine, not the layout Palm shipped - so it is not
+   copied here.) */
+.onyx-toolbar.messaging-availability {
+  padding-left: 0;
+}
+.onyx-toolbar.messaging-availability > * {
+  margin-left: 0;
+}
+
+/* Mojo centred the one button its footer carried: that toolbar is -webkit-box-pack: center,
+   and New Conversation lands at x 87 width 147 in a 320 column - centre 160.5, which is the
+   column's own centre. Ours had it hard against the left at x 8.
+
+   The app menu button has no counterpart there, because Mojo opened the app menu from the
+   system menu bar and Enyo 2 has no hook for it, so take it out of the flow and sit it against
+   the right edge where it cannot pull the centred button off centre. */
+.onyx-toolbar.messaging-footer {
+  position: relative;
+  -webkit-justify-content: center;
+  justify-content: center;
+}
+.onyx-toolbar.messaging-footer .app-menu-button {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  -webkit-transform: translateY(-50%);
+  transform: translateY(-50%);
 }
 
 /* The composer carries its hairline on top instead, and grows with the field. */
