@@ -140,14 +140,24 @@ module.exports = kind({
 
     watchMessages: function () {
         cancelRequests(this.$.messageWatch);
+        // com.palm.message:1 has no index spanning `folder` and `flags.read`, and none that
+        // orders a filtered set by localTimestamp, so the obvious query - unread in the inbox,
+        // newest first - is answered with "db: no index for query" and the watch never fires.
+        // Worse, the subscription re-sends on every failure, so the app retried every ~7s for
+        // as long as it was open and no incoming message ever raised a toast.
+        //
+        // `bynewincoming` is (folder, _rev), which is the index this is for: walk the revision
+        // order within the inbox and pick the unread ones out in gotMessages(). _rev rises with
+        // every write, so newest-first by _rev is the order we want anyway. Same trick as
+        // watchInvites() below.
         this.$.messageWatch.send({
             query: {
                 from: messagingUtils.message.dbKind,
                 where: [
                     { prop: "folder", op: "=", val: messagingUtils.message.FOLDERS.INBOX },
-                    { prop: "flags.read", op: "=", val: false }
+                    { prop: "_rev", op: ">", val: 0 }
                 ],
-                orderBy: "localTimestamp",
+                orderBy: "_rev",
                 desc: true,
                 limit: 20
             },
@@ -179,6 +189,10 @@ module.exports = kind({
             }
             this.seenMessageIds[message._id] = true;
 
+            // The query cannot filter on flags.read (no index), so do it here.
+            if (message.flags && message.flags.read) {
+                continue;
+            }
             if (!this.shouldNotify(message)) {
                 continue;
             }
