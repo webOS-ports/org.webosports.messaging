@@ -138,12 +138,16 @@ Tab strip
   width: 100%;
   -webkit-box-sizing: border-box;
   box-sizing: border-box;
-  margin-top: 0;
+  /* 49 tall, starting 3px up into the bar above: the Enyo 1 strip sits at y 51 under a bar that
+     ends at 54, so the selected tab's blue runs up under that edge. */
+  height: 49px;
+  margin-top: -3px;
 }
 
 .messaging-radiobuttons .onyx-tabbutton {
   /* 10 + 32 + 7 = the 49px strip the Mojo app draws. line-height:0 keeps the button from adding a
-     text line box around the icon, which is what made the strip taller than the glyph. */
+     text line box around the icon, which is what made the strip taller than the glyph.
+     palm-chrome.less repeats these two on a more specific selector; keep them in step. */
   padding: 10px 0 7px;
   height: 49px;
   line-height: 0;
@@ -439,15 +443,32 @@ List chrome
   text-transform: uppercase;
 }
 
-/* Search field above each list. */
+/* Search field above each list. 48px tall with the text starting 10px in, which is what the
+   Enyo 1 app's own input measures: [0,100,320,48] with its text box at x 10 and 18px type.
+   Ours was 56 tall at 20px starting at x 17, so it stood taller and further in, and pushed the
+   list below it down with it. */
 .messaging-search {
   background-color: #e4e4e2;
-  padding: 6px 8px;
+  height: 48px;
+  /* No padding of its own: the Enyo 1 field runs the full width of the column and its text
+     starts at x 10, which here is the input decorator's own 1px border plus 8px padding. Our
+     10px row padding on top of that had inset the field into a floating box 288 wide. */
+  padding: 0;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
   -webkit-box-sizing: border-box;
   box-sizing: border-box;
 }
 .messaging-search .onyx-input {
   width: 100%;
+  font-size: 18px;
+}
+.messaging-search .onyx-input-decorator {
+  width: 100%;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 /*----------------------

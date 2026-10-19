@@ -118,7 +118,10 @@ Toolbars
 Tab strip
 ----------------------*/
 .messaging-radiobuttons {
-  height: 44px;
+  /* 49, matching the strip in palm-app.less. This said 44 and, loading after that file at the
+     same specificity, it won - so the strip was short and the search row below it started at
+     y 95 instead of 100, carrying the whole list up with it. */
+  height: 49px;
   background: #dfdfdf;
   background-image: -webkit-linear-gradient(top, #e3e3e3, #dbdbdb);
   background-image: linear-gradient(to bottom, #e3e3e3, #dbdbdb);
@@ -129,8 +132,12 @@ Tab strip
    end caps. The caps in particular would land on the wrong cell, since the Servers tab is moved
    leftmost with flex ordering while staying first in the DOM. */
 .messaging-radiobuttons .onyx-radiobutton.onyx-tabbutton {
-  height: 44px;
-  padding: 6px 0;
+  /* 10 + 32 + 7 = 49, which is the strip the Enyo 1 app draws: its .enyo-tabbutton measures
+     [0,51,107,49] with a 44x32 icon at y 61. This rule used to say 44px and, being more
+     specific than the 49px in palm-app.less, it quietly won - so the strip was 5px short and
+     everything below it rode 5px high. */
+  height: 49px;
+  padding: 10px 0 7px;
   margin: 0;
   background: transparent;
   background-image: none;
@@ -163,10 +170,21 @@ Buttons on the light bars
 /* Onyx styles toolbar buttons for a dark bar - #555656 with #F2F2F2 text - which reads as a dark
    slab on the silver chrome. Mojo's are the same light silver as the bar with dark text; the
    gradient below is sampled from the device (#efefef -> #d8d8d8, text #2b2b2b). */
+/* Onyx's button is `padding: 6px 18px` with a 3px radius, which comes out 36px tall and 171
+   wide for New Conversation. The Enyo 1 button is `padding: 4px 8px` with a 5px radius: 28
+   tall and 147 wide for the same words at the same 16px. Ours read chunky beside it. */
 .onyx-toolbar.messaging-availability .onyx-button,
 .onyx-toolbar.conversation-header .onyx-button,
 .onyx-toolbar.conversation-bottom .onyx-button,
 .onyx-toolbar.messaging-footer .onyx-button {
+  padding: 4px 8px;
+  border-radius: 5px;
+  /* 28 overall, as the Enyo 1 button measures. Onyx leaves the height to the line box, which
+     came out 36 with our 1px border. */
+  height: 28px;
+  line-height: 18px;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
   color: #2b2b2b;
   background-color: #e4e4e4;
   background-image: -webkit-linear-gradient(top, #efefef, #d8d8d8);
