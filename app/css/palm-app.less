@@ -226,10 +226,13 @@ Tab strip
 /*----------------------
 Thread / Buddy / Favorite / Server rows
 ----------------------*/
-/* Sampled from the device: a thread row is 77px tall. */
+/* 12 + 48 + 12 = the 72px row the Enyo 1 app draws. Its .contactItem carries this same
+   `padding: 12px 5px 12px 16px` and no height at all, so the row is whatever the content needs;
+   run side by side on the same threads it measures 72 and pitches 72. Ours had a `min-height:
+   77px` noted as sampled from a device, which held every row 5px open and, over a screenful,
+   lost most of a row. */
 .contactItem {
   padding: 12px 5px 12px 16px;
-  min-height: 77px;
   border-bottom: 1px solid #d8d8d8;
   background-color: #fff;
   display: -webkit-flex;
@@ -448,7 +451,9 @@ List chrome
    Ours was 56 tall at 20px starting at x 17, so it stood taller and further in, and pushed the
    list below it down with it. */
 .messaging-search {
-  background-color: #e4e4e2;
+  /* White, edge to edge: sampled across the Enyo 1 row at 1024x698 it is 255,255,255 from x 2
+     to x 300, where ours was 228,228,226 - a grey band above a white list. */
+  background-color: #ffffff;
   height: 48px;
   /* No padding of its own: the Enyo 1 field runs the full width of the column and its text
      starts at x 10, which here is the input decorator's own 1px border plus 8px padding. Our
@@ -469,6 +474,11 @@ List chrome
   width: 100%;
   -webkit-box-sizing: border-box;
   box-sizing: border-box;
+  /* Flat, as the Enyo 1 field is. Onyx draws a rounded 1px box, which read as an inset control
+     floating in the row rather than the row itself being the field. */
+  background: transparent;
+  border: 0;
+  border-radius: 0;
 }
 
 /*----------------------
