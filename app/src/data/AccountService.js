@@ -170,12 +170,35 @@ module.exports = kind({
         return (account && account.icon) || null;
     },
 
-    /** The 48x48 (or 32x32) icon path for a service, or null. */
+    /**
+     * The 48x48 (or 32x32) icon path for a service, or null when there is none the app can
+     * actually load.
+     *
+     * The accounts service answers with its own absolute path, e.g.
+     * /usr/palm/public/accounts/com.palm.palmprofile/images/sms-48x48.png. The file is there, but
+     * WAM will not let an app read a file:// outside its own directory: the request comes back
+     * "Access is blocked to resource" / ERR_BLOCKED_BY_CLIENT and the <img> renders as nothing.
+     * Every caller already has a fallback for a missing icon and none of them can see a failed
+     * load, so drop the path we know will not load and let them use it.
+     */
     getIconPath: function (serviceName) {
         var icon = this.getIcons(serviceName);
         if (!icon) { return null; }
-        if (typeof icon === "string") { return icon; }
-        return icon.loc_48x48 || icon.loc_32x32 || null;
+        var path = (typeof icon === "string") ? icon : (icon.loc_48x48 || icon.loc_32x32);
+        return this.isLoadablePath(path) ? path : null;
+    },
+
+    /** Can the app read this path? Its own directory only - see getIconPath above. */
+    isLoadablePath: function (path) {
+        if (!path) { return false; }
+        if (path.indexOf("/") !== 0 && path.indexOf("file://") !== 0) {
+            return true;    // relative, so it is one of the app's own assets
+        }
+        var base = window.location && window.location.href;
+        if (!base) { return false; }
+        var root = base.replace(/[^\/]*$/, "");            // .../org.webosports.app.messaging/
+        var abs = (path.indexOf("file://") === 0) ? path : "file://" + path;
+        return abs.indexOf(root) === 0;
     },
 
     getDbKinds: function (serviceName) {
