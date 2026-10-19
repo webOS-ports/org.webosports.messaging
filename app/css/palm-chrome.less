@@ -32,6 +32,23 @@ Toolbars
   box-sizing: border-box;
 }
 
+/* Onyx gives every toolbar child `margin: 4px 6px 5px` on the assumption that it is an
+   inline-block, where a margin cannot collapse. ImStatus's root is a flex container, and these
+   three toolbars have had their top padding and their border taken away just above - so there
+   was nothing left to contain that top margin. It collapsed out through the toolbar and out
+   through .messaging-pane, which left the pane at top: 4 with height: 100% still measured from
+   the top of the window: the bottom 4px of the pane, and with it the bottom of the footer
+   toolbar, fell outside the window on every device.
+
+   The toolbars are a fixed 48px and centre their contents themselves, so the vertical margin
+   was doing nothing to earn that. */
+.onyx-toolbar.messaging-availability > *,
+.onyx-toolbar.conversation-header > *,
+.onyx-toolbar.messaging-footer > * {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
 /* The composer carries its hairline on top instead, and grows with the field. */
 .onyx-toolbar.conversation-bottom {
   min-height: 53px;
