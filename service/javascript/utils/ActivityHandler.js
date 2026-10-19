@@ -27,7 +27,17 @@ var ActivityHandler = (function () {
 			},
 			trigger: {
 				key: "fired",
-				method: "luna://com.webos.service.db/watch",
+				// com.palm.db, not com.webos.service.db. activitymanager checks up front that the
+				// creator may call the trigger method, and db8's ACGs only ever name the legacy
+				// alias: database.operation lists com.palm.db/watch and there is no
+				// com.webos.service.db/* entry in com.webos.service.db.api.json at all. Asking for
+				// the modern name therefore asks for a method no group covers, and the create is
+				// refused with "'org.webosports.service.messaging' doesn't have rights to call
+				// callback/trigger" - so the watch was never installed, no message ever had
+				// conversations assigned, and no chat thread appeared. The rest of this service
+				// reaches db8 through Foundations.Data.DB, which uses palm://com.palm.db and has
+				// always worked; this trigger was the one place that disagreed.
+				method: "luna://com.palm.db/watch",
 				params: { query: messageQuery }
 			},
 			callback: {
@@ -64,7 +74,7 @@ var ActivityHandler = (function () {
 				var result = checkResult(future);
 				ActivityHandler.setRev(newRev);
 				activityObject.setTrigger("fired",
-										  "luna://com.webos.service.db/watch",
+										  "luna://com.palm.db/watch",
 										  { query: messageQuery });
 				Log.debug("Rev: ", newRev, " query: ", messageQuery);
 				activityObject.setCallback("luna://org.webosports.service.messaging/assignMessages",
