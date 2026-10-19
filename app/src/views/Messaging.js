@@ -5,6 +5,10 @@
  * Tab values are 0..3 (Chats, Buddies, Favorites, Servers) and drive the pane index directly. The
  * Servers tab is moved to the LEFT visually with CSS ordering rather than by reordering the
  * components, so the value routing stays correct.
+ *
+ * All four are offered on every device. The form factor decides how many panes the app has -
+ * see util/formFactor - but not how many tabs: a phone gets the same strip, and drilling into a
+ * server's channels works there the same way selecting a thread does, by taking over the pane.
  */
 
 var kind = require('enyo/kind'),
@@ -22,7 +26,6 @@ var kind = require('enyo/kind'),
     FavoriteList = require('./FavoriteList'),
     ServerList = require('./ServerList'),
     messagingUtils = require('../util/messagingUtils'),
-    formFactor = require('../util/formFactor'),
     mockDb = require('../data/mockDb'),
     $L = require('enyo/i18n').$L;
 
@@ -153,34 +156,6 @@ module.exports = kind({
         this._curTab = TAB_CHATS;
         this.person = null;
         this.buttons = [this.$.conversationBtn, this.$.buddyBtn, this.$.favoriteBtn];
-        this.applyFormFactor();
-    },
-
-    /**
-     * Servers is a wide-layout tab. Four tabs plus a drill-down into a server's channels is more
-     * than a single pane carries, and a phone has only the one, so the strip offers three and
-     * the app menu offers Servers - see showServers() for the way in.
-     *
-     * The tab itself comes back while the server list is what is showing, so the strip says
-     * where you are and the other three are the way out of it.
-     *
-     * Called again on every resize, because a tablet can be turned over.
-     */
-    applyFormFactor: function () {
-        var show = formFactor.isWide() || this._curTab === TAB_SERVERS;
-        this.$.serversTab.setShowing(show);
-    },
-
-    /** Open the server list. The app menu's way in on a phone, where the tab is not offered. */
-    showServers: function () {
-        this.$.serversTab.setShowing(true);
-        this.menuToggle(this, TAB_SERVERS);
-        this.highlightTabButton(TAB_SERVERS);
-    },
-
-    /** Is the Servers tab currently offered in the strip? MainView asks before showing its item. */
-    serversTabShowing: function () {
-        return this.$.serversTab.getShowing();
     },
 
     // --- tabs ----------------------------------------------------------------------------
@@ -197,11 +172,6 @@ module.exports = kind({
         this._curTab = inValue;
         this.$.pane.setIndex(inValue);
         this.updateButtons(inValue);
-        // Moving off Servers on a phone puts the tab away again; it is the app menu's, not the
-        // strip's. applyFormFactor() keeps it while Servers is what is showing.
-        if (inValue !== TAB_SERVERS) {
-            this.applyFormFactor();
-        }
     },
 
     highlightTabButton: function (inValue) {

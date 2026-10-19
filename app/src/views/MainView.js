@@ -99,12 +99,6 @@ module.exports = kind({
                     content: $L("Show Offline Buddies"), ontap: "updateOfflinePrefs"
                 },
                 {
-                    // The way to the server list where the tab strip does not offer it - a
-                    // phone, or a tablet in portrait. Hidden when the tab is there to be tapped.
-                    name: "serversMenuItem", kind: MenuItem,
-                    content: $L("Servers"), ontap: "showServers", showing: false
-                },
-                {
                     name: "prefsAccntsMenuItem", kind: MenuItem,
                     content: $L("Preferences & Accounts"), ontap: "openPreferences"
                 },
@@ -177,8 +171,8 @@ module.exports = kind({
 
     /**
      * A rotation changes the answer on a tablet, so re-apply it. The narrow class is picked once
-     * when the Panels is built, so re-pick it here too, and let the list pane put its tabs back
-     * or take them away.
+     * when the Panels is built, so re-pick it here too. The tab strip does not change - all four
+     * tabs are offered on every device - only the number of panes does.
      *
      * handleResize, not resize: resize() is what *sends* the onresize waterfall from
      * enyo/master, and overriding it here only runs if somebody calls this control's resize()
@@ -192,9 +186,6 @@ module.exports = kind({
             this.$.slidingGroup.removeClass('enyo-panels-force-narrow');
             this.$.slidingGroup.narrowFitChanged();
             this.$.slidingGroup.reflow();
-        }
-        if (this.$.messaging) {
-            this.$.messaging.applyFormFactor();
         }
         // Coming back to one pane with the conversation showing would otherwise leave the list
         // unreachable, since there is no Back affordance until a thread is open.
@@ -402,8 +393,6 @@ module.exports = kind({
 
     openAppMenu: function (inSender, inEvent) {
         this.setOfflineMenuItem();
-        // Offer Servers here exactly when the tab strip is not offering it.
-        this.$.serversMenuItem.setShowing(!this.$.messaging.serversTabShowing());
         this.$.appMenu.showAtEvent(inEvent || {});
         return true;
     },
@@ -587,12 +576,6 @@ module.exports = kind({
         this.$.slidingGroup.setIndex(0);
         this.$.views.setIndex(0);
         this.$.messaging.windowShownHandler();
-        return true;
-    },
-
-    showServers: function () {
-        this.$.appMenu.hide();
-        this.$.messaging.showServers();
         return true;
     },
 
