@@ -22,10 +22,15 @@ var kind = require('enyo/kind'),
     AddBuddyDialog = require('./AddBuddyDialog'),
     messagingUtils = require('../util/messagingUtils'),
     appState = require('../util/appState'),
+    formFactor = require('../util/formFactor'),
     mockDb = require('../data/mockDb'),
     $L = require('enyo/i18n').$L;
 
 var DB_SERVICE = 'luna://com.webos.service.db';
+
+// Before any Panels instance exists, so the first arrangement is already the right one: this
+// points Panels' narrow-screen test at the form factor rather than at the viewport width.
+formFactor.install();
 
 module.exports = kind({
     name: "messaging.MainView",
@@ -94,6 +99,12 @@ module.exports = kind({
                     content: $L("Show Offline Buddies"), ontap: "updateOfflinePrefs"
                 },
                 {
+                    // The way to the server list where the tab strip does not offer it - a
+                    // phone, or a tablet in portrait. Hidden when the tab is there to be tapped.
+                    name: "serversMenuItem", kind: MenuItem,
+                    content: $L("Servers"), ontap: "showServers", showing: false
+                },
+                {
                     name: "prefsAccntsMenuItem", kind: MenuItem,
                     content: $L("Preferences & Accounts"), ontap: "openPreferences"
                 },
@@ -160,6 +171,36 @@ module.exports = kind({
         if (appState.accountService) {
             appState.accountService.register(this, this.accountsChanged.bind(this));
         }
+
+        formFactor.apply(this);
+    },
+
+    /**
+     * A rotation changes the answer on a tablet, so re-apply it. The narrow class is picked once
+     * when the Panels is built, so re-pick it here too, and let the list pane put its tabs back
+     * or take them away.
+     *
+     * handleResize, not resize: resize() is what *sends* the onresize waterfall from
+     * enyo/master, and overriding it here only runs if somebody calls this control's resize()
+     * directly, which nothing does. handleResize is the end that receives it.
+     */
+    handleResize: function () {
+        this.inherited(arguments);
+        var wide = formFactor.apply(this);
+        if (this.$.slidingGroup && this.$.slidingGroup.narrowFitChanged) {
+            this.$.slidingGroup.removeClass('enyo-panels-fit-narrow');
+            this.$.slidingGroup.removeClass('enyo-panels-force-narrow');
+            this.$.slidingGroup.narrowFitChanged();
+            this.$.slidingGroup.reflow();
+        }
+        if (this.$.messaging) {
+            this.$.messaging.applyFormFactor();
+        }
+        // Coming back to one pane with the conversation showing would otherwise leave the list
+        // unreachable, since there is no Back affordance until a thread is open.
+        if (!wide && this.$.slidingGroup && !appState.selectedThread) {
+            this.$.slidingGroup.setIndex(0);
+        }
     },
 
     destroy: function () {
@@ -174,6 +215,9 @@ module.exports = kind({
 
     rendered: function () {
         this.inherited(arguments);
+        // Again here, not only in create(): FittableLayout reflows this control as it renders,
+        // and the class has to be on the node the stylesheet will match against.
+        formFactor.apply(this);
         this.handleLaunchParam();
     },
 
@@ -358,6 +402,8 @@ module.exports = kind({
 
     openAppMenu: function (inSender, inEvent) {
         this.setOfflineMenuItem();
+        // Offer Servers here exactly when the tab strip is not offering it.
+        this.$.serversMenuItem.setShowing(!this.$.messaging.serversTabShowing());
         this.$.appMenu.showAtEvent(inEvent || {});
         return true;
     },
@@ -541,6 +587,12 @@ module.exports = kind({
         this.$.slidingGroup.setIndex(0);
         this.$.views.setIndex(0);
         this.$.messaging.windowShownHandler();
+        return true;
+    },
+
+    showServers: function () {
+        this.$.appMenu.hide();
+        this.$.messaging.showServers();
         return true;
     },
 

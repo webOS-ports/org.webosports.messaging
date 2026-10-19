@@ -18,6 +18,8 @@ var APP = path.resolve(__dirname, '..', '..', 'app');
 
 var LIBRARIES = {
     'enyo/i18n': path.join(__dirname, 'stubs', 'enyo-i18n.js'),
+    'enyo/dom': path.join(__dirname, 'stubs', 'enyo-dom.js'),
+    'layout/Panels': path.join(__dirname, 'stubs', 'layout-panels.js'),
     'moment': path.join(APP, 'lib', 'moment', 'moment.js')
 };
 
@@ -35,7 +37,31 @@ Module._resolveFilename = function (request) {
  * loads the packed app from, so the emoji assertions see the paths the device would.
  */
 global.window = {
-    location: { href: 'file:///usr/palm/applications/org.webosports.app.messaging/index.html' }
+    location: { href: 'file:///usr/palm/applications/org.webosports.app.messaging/index.html' },
+    // formFactor measures these and puts its answer on the body; a test sets them per case.
+    innerWidth: 1024,
+    innerHeight: 698,
+    screen: { width: 1024, height: 768 },
+    document: { body: { classList: new Set() } }
+};
+
+/**
+ * Pretend to be a given device: the panel PalmSystem would report, and the window the app would
+ * be given. `panel` is the physical panel in CSS pixels; `win` is [width, height] of the window.
+ */
+exports.asDevice = function (panel, win) {
+    global.window.innerWidth = win[0];
+    global.window.innerHeight = win[1];
+    global.window.screen = { width: panel[0], height: panel[1] };
+    global.window.PalmSystem = {
+        deviceInfo: JSON.stringify({ screenWidth: panel[0], screenHeight: panel[1] })
+    };
+    global.window.document.body.classList = {
+        _set: new Set(),
+        add: function (c) { this._set.add(c); },
+        remove: function (c) { this._set.delete(c); },
+        contains: function (c) { return this._set.has(c); }
+    };
 };
 
 /** require() an app module by its path under app/src. */

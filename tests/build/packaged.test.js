@@ -92,15 +92,32 @@ describe('the packed page', function () {
 });
 
 describe('the packed stylesheet', function () {
-    it('pins the thread-list column only where there is room for two panes', function () {
+    it('pins the thread-list column only in the wide layout', function () {
         // Unscoped, this rule overrode enyo-panels-fit-narrow and kept the two-pane arrangement on
         // a phone: on a 450px viewport the list took 320px and the conversation got the other 130.
+        // The scope is util/formFactor's body class, not a width query - a phone turned on its
+        // side is still a phone, and the MindPhone's 480x800 panel is exactly 800 wide in
+        // landscape, so a `min-width: 801px` gate held only by a single pixel.
         var style = html.slice(html.indexOf('<style'), html.indexOf('</style>'));
         var always = cssOutsideMediaQueries(style);
-        assert.doesNotMatch(always, /\.messaging-pane\s*{[^}]*width\s*:\s*320px/,
-            '.messaging-pane is given a fixed width at every screen size');
-        assert.match(style, /@media[^{]*min-width\s*:\s*801px[^{]*{[^}]*\.messaging-pane/,
-            'no wide-screen media query for .messaging-pane');
+        // every rule that gives the pane its column has to be scoped to the wide layout
+        var columnRules = always.match(/[^{}]*\.messaging-pane[^{}]*{[^}]*}/g) || [];
+        var unscoped = columnRules.filter(function (rule) {
+            return /width\s*:\s*320px/.test(rule) &&
+                rule.split('{')[0].split(',').some(function (sel) {
+                    return /\.messaging-pane/.test(sel) && !/\.layout-wide/.test(sel);
+                });
+        });
+        assert.deepEqual(unscoped, [],
+            '.messaging-pane is given its column whatever the device: ' + unscoped.join(' '));
+        assert.match(style, /\.layout-wide\s+\.messaging-pane\s*{[^}]*width\s*:\s*320px/,
+            'no .layout-wide rule giving .messaging-pane its column');
+    });
+
+    it('does not gate the layout on viewport width any more', function () {
+        var style = html.slice(html.indexOf('<style'), html.indexOf('</style>'));
+        assert.doesNotMatch(style, /@media[^{]*min-width\s*:\s*801px[^{]*{[^}]*\.messaging-pane/,
+            '.messaging-pane is still scoped to a width media query');
     });
 });
 

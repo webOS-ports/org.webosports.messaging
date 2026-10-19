@@ -23,31 +23,34 @@ img {
   background-color: #EAEAEA;
 }
 
-/* The panels size themselves: on a wide screen the messaging pane is a fixed 320px column and
-   the conversation pane is the arranger's `fit` panel, so it takes whatever is left.
-
-   Below that, the column has to go. Panels' own narrow handling - the enyo-panels-fit-narrow
-   class and its `max-width: 800px` media query - gives every panel the full container width, and
-   CollapsingArranger then parks the conversation offscreen until it is selected and slides it
-   over the list. MainView already drives that: threadSelected() calls slidingGroup.setIndex(1)
-   when Panels.isScreenNarrow(), and Back returns to 0.
+/* The panels size themselves: in the wide layout the messaging pane is a fixed 320px column and
+   the conversation pane is the arranger's `fit` panel, so it takes whatever is left. In the
+   single-pane layout the column has to go: Panels' own narrow handling gives every panel the
+   full container width, and CollapsingArranger then parks the conversation offscreen until it is
+   selected and slides it over the list. MainView drives that - selectThread() calls
+   slidingGroup.setIndex(1) when Panels.isScreenNarrow(), and Back returns to 0.
 
    An unconditional width here overrode the narrow rule - same specificity, later in the cascade -
    so the arranger kept the two-pane arrangement on screens with no room for it. On the Q25's
    720x720 panel at devicePixelRatio 1.6 the viewport is 450px: the list took 320 of it and the
-   conversation was left a 130px sliver reading "Select a co". Scope the column to the widths
-   where Panels itself still lays out wide, so the two agree. */
+   conversation was left a 130px sliver reading "Select a co".
+
+   This was then scoped to `min-width: 801px` to match Panels.isScreenNarrow(), which made the
+   two agree but put the decision on the viewport. That is the wrong question - a phone turned on
+   its side is still a phone - and it only gave the right answer by luck: the MindPhone's panel is
+   480x800, so in landscape it is exactly 800 wide and stayed single-pane by one pixel. The
+   decision now comes from util/formFactor, which asks the device, and arrives here as a class on
+   the body. See that module for the rule. */
 
 .messaging-pane {
   height: 100%;
 }
 
-/* The left pane is a fixed 320px column, as in the Mojo app's SlidingPane. */
-@media all and (min-width: 801px) {
-  .messaging-pane {
-    width: 320px;
-    min-width: 320px;
-  }
+/* The left pane is a fixed 320px column, as in the Mojo app's SlidingPane. Only in the wide
+   layout: a tablet held in landscape. */
+.layout-wide .messaging-pane {
+  width: 320px;
+  min-width: 320px;
 }
 
 /* Panels position their children but do not give them a height, and every view in this app is a
