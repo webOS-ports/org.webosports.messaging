@@ -21,6 +21,7 @@ python3 graphics/render.py --scale 4  # ... at 4x, to check a glyph holds up
 python3 graphics/render.py --rasters  # refresh the four PNGs that ship beside the SVG
 python3 graphics/compare.py REFDIR    # measure the renders against the originals
 python3 graphics/compare.py REFDIR --mask NAME   # one asset's alpha mask, as text
+python3 graphics/sheets.py REFDIR OUTDIR         # original | ours | difference, worst first
 ```
 
 `render.py` uses `rsvg-convert` when it is installed and headless Chromium
@@ -46,6 +47,13 @@ weight, which is what happened to the first attempt at these. `compare.py`
 prints where the ink sits, how much of it there is and how far the two are apart
 per pixel, and an alpha mask is usually enough to read a shape off. Work from
 those numbers, not from a thumbnail.
+
+Numbers are not the whole job either, and `sheets.py` is the other half of it.
+A score says one asset is 13 and another is 16; a sheet says both attachment
+tiles are missing the same bevel, which is one fix and not two. It reads the
+set worst first and amplifies the difference column three times, because an
+error of five counts is invisible at true scale and is still an error. Look
+after measuring, not instead of it.
 
 **The toolbar glyphs are engraved, not flat.** Each original has a one-pixel line of the
 opposite tone along its lower edge - white under the dark resting glyph, black under the lit
