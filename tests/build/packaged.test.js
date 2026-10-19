@@ -128,6 +128,15 @@ describe('the packed appinfo', function () {
         assert.equal(appinfo.main, 'index.html');
     });
 
+    it('is trusted, so WAM lets it read the account templates\' icons', function () {
+        // Every IM template points its icon at /usr/palm/public/accounts/<service>/images/...
+        // A web app at the default trust level cannot read a file:// outside its own directory:
+        // loading one from this app on a MindPhone is refused with ERR_BLOCKED_BY_CLIENT, while
+        // the same URL loads from com.palm.app.accounts, which is trusted. Without this every
+        // service badge - thread rows, server rows, the Preferences list - falls back.
+        assert.equal(appinfo.trustLevel, 'trusted');
+    });
+
     it('requests every ACG the app calls out to', function () {
         // Dropping one of these is silent until a call is denied at runtime.
         ['accountsservice.management', 'accountsservice.operation', 'database.operation',

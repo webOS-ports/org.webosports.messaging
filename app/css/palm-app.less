@@ -446,6 +446,12 @@ List chrome
   text-transform: uppercase;
 }
 
+/* The reason an account could not sign in, under its name in the status popup. Red rather
+   than the usual grey, because it is a fault and not a status message. */
+.login-error {
+  color: #a32020;
+}
+
 /* Search field above each list. 48px tall with the text starting 10px in, which is what the
    Enyo 1 app's own input measures: [0,100,320,48] with its text box at x 10 and 18px type.
    Ours was 56 tall at 20px starting at x 17, so it stood taller and further in, and pushed the

@@ -128,11 +128,18 @@ var AccountLoginState = module.exports = kind({
         this.$.statuses.set('availability', [availability]);
         this.$.statuses.set('invisibilitySupported', this.loginState.supportsInvisibleStatus);
 
-        if (availability <= messagingUtils.im.availability.BUSY) {
+        // An account that failed to sign in has no custom message to show and every reason to
+        // say why instead. Without this the row is a presence dot and a blank line, which is
+        // all the app had to offer for "AcctMgr_Credentials_Not_Found" - signed out, no hint.
+        var error = messagingUtils.imLoginState.getErrorMessage(this.loginState);
+        if (error) {
+            this.$.customMessage.setContent(error);
+        } else if (availability <= messagingUtils.im.availability.BUSY) {
             this.$.customMessage.setContent(this.loginState.customMessage || "");
         } else {
             this.$.customMessage.setContent("");
         }
+        this.$.customMessage.addRemoveClass("login-error", Boolean(error));
         this.updateStatusClass();
     },
 

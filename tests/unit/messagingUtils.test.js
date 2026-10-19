@@ -685,3 +685,37 @@ describe('message.summarizeMedia', function () {
         assert.equal(message.summarizeMedia(''), '');
     });
 });
+
+describe('imLoginState.getErrorMessage', function () {
+    var ls = utils.imLoginState;
+
+    it('says nothing when the account is fine', function () {
+        assert.equal(ls.getErrorMessage({}), '');
+        assert.equal(ls.getErrorMessage({ errorCode: '' }), '');
+        assert.equal(ls.getErrorMessage({ errorCode: 'AcctMgr_No_Error' }), '');
+        assert.equal(ls.getErrorMessage(null), '');
+    });
+
+    it('explains the code a WhatsApp account actually came back with', function () {
+        // Observed on a MindPhone: the account was created but the transport gave up before
+        // attempting a login, and the app showed nothing but a warning triangle.
+        var msg = ls.getErrorMessage({ errorCode: 'AcctMgr_Credentials_Not_Found' });
+        assert.match(msg, /sign in again/i);
+    });
+
+    it('has a line for every code the transport can emit', function () {
+        // The set is what `strings /usr/sbin/imlibpurpleservice` carries.
+        ['AcctMgr_Bad_Username', 'AcctMgr_Bad_Password', 'AcctMgr_Bad_Authentication',
+            'AcctMgr_Credentials_Not_Found', 'AcctMgr_Name_In_Use', 'AcctMgr_Network_Error',
+            'AcctMgr_Generic_Error'
+        ].forEach(function (code) {
+            var msg = ls.getErrorMessage({ errorCode: code });
+            assert.ok(msg && msg !== code, 'no message for ' + code);
+        });
+    });
+
+    it('shows an unknown code as itself rather than swallowing it', function () {
+        assert.equal(ls.getErrorMessage({ errorCode: 'AcctMgr_Something_New' }),
+                     'AcctMgr_Something_New');
+    });
+});

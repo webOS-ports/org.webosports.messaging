@@ -144,6 +144,40 @@ var messaging = module.exports = {
         getAvailability: function (loginState) {
             return loginState.state === this.TRANSPORT_STATE.OFFLINE ?
                 messaging.im.availability.OFFLINE : loginState.availability;
+        },
+
+        /**
+         * What imlibpurpletransport puts in a login state's errorCode. The set is the one the
+         * service itself carries - `strings /usr/sbin/imlibpurpleservice` - not a guess.
+         *
+         * Credentials_Not_Found is the one worth knowing: the transport's getCredentialsResult
+         * treats an EMPTY stored password as "no credentials" and gives up before it ever
+         * attempts a login, so the account sits offline having never tried. The validators work
+         * around it by storing a non-empty sentinel.
+         */
+        ERRORS: {
+            "AcctMgr_No_Error": "",
+            "AcctMgr_Bad_Username": $L("That user name was not accepted."),
+            "AcctMgr_Bad_Password": $L("That password was not accepted."),
+            "AcctMgr_Bad_Authentication": $L("Sign-in was refused."),
+            "AcctMgr_Credentials_Not_Found": $L("No saved sign-in. Sign in again."),
+            "AcctMgr_Name_In_Use": $L("This account is signed in somewhere else."),
+            "AcctMgr_Network_Error": $L("Could not reach the service."),
+            "AcctMgr_Generic_Error": $L("Sign-in failed.")
+        },
+
+        /**
+         * A line explaining why an account is not signed in, or "" when there is nothing to
+         * explain. An unrecognised code is shown as itself rather than swallowed, so a new one
+         * is still diagnosable from the screen.
+         */
+        getErrorMessage: function (loginState) {
+            var code = loginState && loginState.errorCode;
+            if (!code || code === "AcctMgr_No_Error") {
+                return "";
+            }
+            var known = this.ERRORS[code];
+            return known === undefined ? code : known;
         }
     },
 
