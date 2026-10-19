@@ -1,0 +1,29 @@
+# Assets reviewed beside the original on a sheet and accepted.
+#
+# One name per line. Everything in app/assets that is not listed here is still
+# open, whatever it scores - the list is the record of what has been looked at,
+# not of what measures well. `sheets.py --open` sheets the remainder.
+#
+# Accepted 2026-10-19.
+
+attach-pdf
+phone-icon
+msg-read
+notification-small
+online-status
+msg-delivered
+chat-balloon-error-shape
+chat-balloon-received-error-shape
+notification-large-messaging
+icon-decline
+chat-balloon-received-shape
+attach-doc
+mini-player-icon-play
+attach-ppt
+mini-player-icon-pause
+favorites-star-blue
+menu-icon-servers
+defaultview-panel-tile
+light_chrome_drop_shadow_header
+light_chrome_drop_shadow_footer
+icon

@@ -17,6 +17,7 @@ is invisible at true scale and is still a real error.
 
     python3 graphics/render.py                      # rasterise first
     python3 graphics/sheets.py REFDIR OUTDIR        # every asset, 8 to a sheet
+    python3 graphics/sheets.py --open REFDIR OUTDIR # only what status.txt has not accepted
     python3 graphics/sheets.py REFDIR OUTDIR NAME.. # only these, in that order
     python3 graphics/sheets.py REFDIR OUTDIR 'menu-icon-attach=still a trace'
 
@@ -44,6 +45,15 @@ RENDER = os.path.join(HERE, 'render')
 BG = (118, 118, 118)        # the toolbar grey most of these sit on
 PAPER = (40, 40, 40)
 PAD, LAB, PER_SHEET = 10, 34, 8
+STATUS = os.path.join(HERE, 'status.txt')
+
+
+def accepted():
+    """The assets status.txt records as reviewed and accepted."""
+    if not os.path.exists(STATUS):
+        return set()
+    return {ln.strip() for ln in open(STATUS)
+            if ln.strip() and not ln.startswith('#')}
 
 
 def font(size):
@@ -129,13 +139,20 @@ def sheet(rows, path, cell):
 
 
 def main():
-    if len(sys.argv) < 3:
+    argv = sys.argv[1:]
+    only_open = '--open' in argv
+    if only_open:
+        argv.remove('--open')
+    if len(argv) < 2:
         raise SystemExit(__doc__)
-    ref_dir, out_dir = sys.argv[1], sys.argv[2]
+    ref_dir, out_dir = argv[0], argv[1]
     cell = int(os.environ.get('CELL', '320'))
-    specs = sys.argv[3:] or [f[:-4] for f in sorted(os.listdir(ref_dir))
-                             if f.endswith('.png')]
-    ordered = not sys.argv[3:]
+    specs = argv[2:] or [f[:-4] for f in sorted(os.listdir(ref_dir))
+                         if f.endswith('.png')]
+    ordered = not argv[2:]
+    if only_open:
+        done = accepted()
+        specs = [sp for sp in specs if sp.partition('=')[0] not in done]
 
     rows = []
     for spec in specs:
