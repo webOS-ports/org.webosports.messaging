@@ -371,7 +371,10 @@ Every image the app ships is now SVG - 47 files. Nothing is a bitmap drawing any
 `app/icon.png` is the community's launcher artwork and the only PNG left that is not a render
 of an SVG in this directory.
 
-Mean per-pixel distance from the Palm art each one replaces, worst first, out of 255:
+Mean per-pixel distance from the Palm art each one replaces, worst first, out of 255. A score
+is not a sign-off: it says how far two images are apart, not whether the redraw is right. Each
+one is judged by looking at it beside the original on a sheet, and until that has happened the
+asset is work in progress whatever its distance says.
 
 | | |
 |---|---|
@@ -379,6 +382,22 @@ Mean per-pixel distance from the Palm art each one replaces, worst first, out of
 | 8-12 | `msg-read` 11.5, `notification-small` 11.4, `messaging-48x48` 11.2, `header-warning-icon` 10.5, `menu-icon-buddies` 10.1, `notification-large-failed` 9.8, `online-status` 9.6, `msg-delivered` 8.9, `menuitem-arrow-dark` 8.2 |
 | 4-8 | `incoming-outgoing` 7.9, `chat-balloon-error-shape` 7.9, `chat-balloon-received-error-shape` 7.8, `dialogbg` 7.1, `notification-large-messaging` 6.6, `menu-icon-favorites` 6.5, `search-input` 6.0, `list-view-avatar-frame` 5.4, `icon-decline` 4.4, `chat-balloon-received-shape` 4.0 |
 | under 4 | `attach-doc` 3.7, `mini-player-icon-play` 3.2, `attach-ppt` 3.1, `menu-icon-conversation-plus` 3.0, `list-unread` 2.9, `attach-xls` 2.6, `chat-balloon-sent-shape` 2.4, `menu-icon-conversation` 2.4, `menu-icon-mic-rec` 2.1, `loading-bg` 1.9, `mini-player-icon-pause` 1.9, `menu-icon-mic` 1.9, `list-avatar-default` 1.5, `favorites-star-blue` 1.4, `menu-icon-servers` 1.3, `defaultview-panel-tile` 0.8, `light_chrome_drop_shadow_header` 0.3, `light_chrome_drop_shadow_footer` 0.3 |
+
+`icon` is not in that table. It is unchanged since `e0409a0`, has no SVG behind it, and scores
+nothing against the reference set because it *is* the reference.
+
+What the sheets have shown so far about the ones furthest off. The attachment badges -
+`attach-contact`, `attach-event`, `attach-location`, `attach-doc`, `attach-ppt` and
+`attach-xls` - all sit on the same rounded tile, and the error in every one of them is that
+tile's bevel and drop shadow rather than the artwork on it, which is one fix and not six;
+`attach-xls` scores well only because its green hides what the pale ones show.
+`menu-icon-attach` is still a traced outline and has never been fitted to a measurement.
+`header-icon-contacts`, the worst of the set, is wrong across the whole lower half of the
+paper stack and not only along its edges.
+
+Smaller, and known: the plus on `menu-icon-conversation-plus` is lit flat where Palm's is not.
+Its stem ramps 169 to 112 against our 146 to 131, and its arms read darker than its stem at
+the same rows, 159 against 135 - the plus is lit separately from the balloon under it.
 
 `attach-pdf` is the one exception to that table. It follows the community's `Icon-pdf-variant1`
 rather than Palm's flat red tile, so its distance from Palm's art - 118 - measures a different
