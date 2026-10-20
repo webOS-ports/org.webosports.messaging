@@ -1,0 +1,596 @@
+/**
+ * Port of com.palm.app.messaging/stylesheets/app.css.
+ *
+ * The class names on the rows (contactItem, contact-name, status, unread-count, ...) are kept
+ * identical to the Mojo app so the ported views translate one-for-one. Where the Mojo rules keyed
+ * off Mojo framework classes (.enyo-tabbutton, .enyo-swipeableitem, ...) they key off the Onyx
+ * equivalents here instead.
+ *
+ * Image paths point at ../assets, which holds the sprites copied from the Mojo app.
+ */
+
+/*---------
+Background
+-----------*/
+.body-placeholder {
+  background: #F9f9f9 url(../assets/defaultview-panel-tile.svg) bottom left repeat-x;
+}
+
+.loading-background {
+  background: url(../assets/loading-bg.svg) top left repeat-x;
+}
+
+/*----------------------
+Status Availability
+----------------------*/
+.status {
+  margin-left: 5px;
+  margin-right: 6px;
+  width: 16px;
+  height: 16px;
+}
+
+.status-available,
+.status-available-partial,
+.status-away,
+.status-away-partial,
+.status-invisible,
+.status-no-presence,
+.status-offline {
+  background: url(../assets/online-status.svg) left top no-repeat;
+}
+
+.status-available-partial { background-position: left -16px; }
+.status-away             { background-position: left -32px; }
+.status-away-partial     { background-position: left -48px; }
+.status-invisible        { background-position: left -64px; }
+.status-offline          { background-position: left -80px; }
+.status-no-presence      { background-position: left -80px; }
+
+.status-button {
+  padding: 6px 7px 1px 5px;
+  margin-right: 10px;
+}
+
+.messaging-availability .status {
+  margin-left: 0;
+  padding: 0 8px;
+}
+
+.status-spinner {
+  margin-left: 6px;
+}
+
+.messaging-availability {
+  .onyx-input {
+    width: 255px;
+    color: #222;
+    font-size: 20px;
+  }
+}
+
+.commitbutton {
+  display: block;
+  position: absolute;
+  right: 10px;
+}
+
+/* Per-account rows in the login-states popup */
+.individual-account .custom-status .onyx-menu-item {
+  padding-left: 53px;
+  border-bottom: none;
+}
+.individual-account .available-status {
+  border-top: 1px solid rgba(255, 255, 255, 0.5);
+}
+.all-accounts .available-status {
+  border-top: none;
+}
+.available-status .onyx-menu-item {
+  border-top: none;
+}
+.individual-account .av-status {
+  margin: 0 10px 0 17px;
+}
+.individual-account .av-arrow {
+  margin-right: -10px;
+}
+.all-accounts .av-status {
+  margin-top: -2px;
+  margin-left: -5px;
+}
+.all-accounts .av-arrow {
+  margin-right: -10px;
+}
+.all-accounts .custom-status .onyx-menu-item {
+  padding-left: 30px;
+}
+.account-login-state .menu-item-arrow {
+  background-image: url(../assets/menuitem-arrow-dark.svg);
+}
+.menu-item-arrow {
+  margin-top: 0;
+  margin-right: 0;
+  position: absolute;
+  left: 92%;
+}
+.availability-text {
+  width: 12em;
+  font-style: italic;
+  margin-top: 0;
+}
+.adjust-text-for-no-spinner {
+  margin-left: -18px;
+  width: 13em;
+}
+
+/*----------------------
+Tab strip
+----------------------*/
+.messaging-radiobuttons {
+  /* The tab strip must span the pane so the centred layout has room to work. */
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-flow: row;
+  flex-flow: row;
+  -webkit-justify-content: center;
+  justify-content: center;
+  width: 100%;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  /* 49 tall, starting 3px up into the bar above: the Enyo 1 strip sits at y 51 under a bar that
+     ends at 54, so the selected tab's blue runs up under that edge. */
+  height: 49px;
+  margin-top: -3px;
+}
+
+.messaging-radiobuttons .onyx-tabbutton {
+  /* 10 + 32 + 7 = the 49px strip the Mojo app draws. line-height:0 keeps the button from adding a
+     text line box around the icon, which is what made the strip taller than the glyph.
+     palm-chrome.less repeats these two on a more specific selector; keep them in step. */
+  padding: 10px 0 7px;
+  height: 49px;
+  line-height: 0;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  -webkit-flex: 1 1 0;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.messaging-radiobuttons .tab-button-icon {
+  display: block;
+  /* Centre the fixed-width icon within its (wider) tab cell. */
+  margin: 0 auto;
+  width: 44px;
+  height: 32px;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  /* Anchors the unread count, which is drawn on top of the bubble glyph. */
+  position: relative;
+}
+
+.messaging-radiobuttons .onyx-tabbutton.active .tab-button-icon,
+.messaging-radiobuttons .onyx-tabbutton.pressed .tab-button-icon {
+  background-position: 0 -32px;
+}
+
+.chat-button {
+  background-image: url(../assets/menu-icon-conversation.svg);
+}
+.chat-button-plus {
+  background-image: url(../assets/menu-icon-conversation-plus.svg);
+}
+.buddies-button {
+  background-image: url(../assets/menu-icon-buddies.svg);
+}
+.favorites-button {
+  background-image: url(../assets/menu-icon-favorites.svg);
+}
+.servers-button {
+  background-image: url(../assets/menu-icon-servers.svg);
+}
+
+/* The count is overlaid on the bubble glyph, so it is taken out of flow and centred over the
+   icon's 44x32 box rather than stacked under it. */
+.chat-button-text {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* Sits slightly above centre, inside the bubble rather than over its tail. */
+  height: 26px;
+  line-height: 26px;
+  text-align: center;
+  color: #fff;
+  /* Prelude is the webOS system face; pin it so the count does not fall back to another face. */
+  font-family: Prelude, 'Prelude Medium', 'Segoe UI', Arial, Helvetica, sans-serif;
+  font-size: 15px;
+}
+
+.messaging-radiobuttons .onyx-tabbutton.active .chat-button-text,
+.messaging-radiobuttons .onyx-tabbutton.pressed .chat-button-text {
+  color: #234766;
+}
+
+/* The Servers tab keeps its component index (index drives value routing) but is shown leftmost. */
+.messaging-radiobuttons .onyx-tabbutton {
+  -webkit-order: 2;
+  order: 2;
+}
+.messaging-radiobuttons .onyx-tabbutton.servers-tab-left {
+  -webkit-order: 1;
+  order: 1;
+}
+
+/*----------------------
+Thread / Buddy / Favorite / Server rows
+----------------------*/
+/* 12 + 48 + 12 = the 72px row the Enyo 1 app draws. Its .contactItem carries this same
+   `padding: 12px 5px 12px 16px` and no height at all, so the row is whatever the content needs;
+   run side by side on the same threads it measures 72 and pitches 72. Ours had a `min-height:
+   77px` noted as sampled from a device, which held every row 5px open and, over a screenful,
+   lost most of a row. */
+.contactItem {
+  padding: 12px 5px 12px 16px;
+  border-bottom: 1px solid #d8d8d8;
+  background-color: #fff;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-flow: row;
+  flex-flow: row;
+  -webkit-align-items: flex-start;
+  align-items: flex-start;
+  position: relative;
+  text-align: left;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+.contactItem.enyo-first,
+.contactItem.enyo-last {
+  border-top: none;
+}
+.contactItem.enyo-item-selected {
+  background-color: #d1e5f5;
+}
+.contactItem .contact-image {
+  margin-right: 3px;
+}
+.contactItem .contact-name {
+  overflow: hidden;
+  padding-bottom: 3px;
+}
+
+.status-box {
+  padding: 6px 3px 5px 0;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-flow: column;
+  flex-flow: column;
+  -webkit-justify-content: space-between;
+  justify-content: space-between;
+  -webkit-align-items: center;
+  align-items: center;
+}
+.status-buddy {
+  margin-top: 6px;
+  margin-right: 9px;
+}
+
+.sent-received {
+  width: 17px;
+  height: 17px;
+  background: url(../assets/incoming-outgoing.svg) left top no-repeat;
+}
+.message-outgoing {
+  background-position: left bottom;
+}
+
+.message-summary {
+  -webkit-flex: 1 1 auto;
+  flex: 1 1 auto;
+  min-width: 0;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-flow: column;
+  flex-flow: column;
+}
+
+.contact-name-box {
+  height: 24px;
+  margin-bottom: 4px;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-flow: row;
+  flex-flow: row;
+  -webkit-align-items: center;
+  align-items: center;
+}
+.contact-name {
+  font-size: 18px;
+}
+.status-message,
+.message-preview {
+  font-size: 14px;
+  color: #333333;
+}
+.contact-message {
+  font-size: 14px;
+  font-style: italic;
+  color: #888888;
+}
+.contact-name,
+.status-message,
+.message-preview,
+.contact-message {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  max-width: 190px;
+  white-space: nowrap;
+}
+.contact-name-unread-favorite {
+  font-weight: bold;
+  max-width: 150px;
+}
+.contact-name-no-messaging-account {
+  color: #888888;
+}
+.contact-name-unread {
+  font-weight: bold;
+  max-width: 170px;
+}
+.contact-name-favorite {
+  max-width: 175px;
+}
+
+.contact-image {
+  height: 50px;
+  width: 50px;
+  margin: 1px 0 -4px 1px;
+  -webkit-border-radius: 4px;
+  border-radius: 4px;
+}
+.contact-image-border {
+  position: absolute;
+  height: 52px;
+  width: 52px;
+  background: url(../assets/list-view-avatar-frame.svg) left top no-repeat;
+}
+/* Group-chat provider logos carry their own rounded edges, so ThreadItem hides the square photo
+ * frame for them and tags them with this class. Keep the same footprint as a real photo so rows
+ * line up; just tone the logo down so it does not read at full brightness. */
+.contact-image.contact-image-service {
+  opacity: 0.82;
+  height: 52px;
+  width: 52px;
+  margin: 0 0 -4px 0;
+}
+
+.unread-count {
+  padding: 0 6px;
+  color: #f2f2f2;
+  text-align: center;
+  vertical-align: middle;
+  font-family: Prelude, 'Prelude Medium', 'Segoe UI', Arial, Helvetica, sans-serif;
+  font-size: 15px;
+  line-height: 23px;
+  height: 24px;
+  width: 24px;
+  -webkit-border-radius: 12px;
+  border-radius: 12px;
+  background: url(../assets/list-unread.svg) center center no-repeat;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  -webkit-flex: none;
+  flex: none;
+}
+
+/* Server/channel rows put the unread badge flush right and their aggregate counts run large
+ * ("99+"), which would clip inside the fixed 24px circle - so render those as a grey pill that
+ * grows with its content instead. */
+.server-unread,
+.channel-unread {
+  margin-left: 8px;
+  margin-right: 8px;
+  width: auto;
+  min-width: 24px;
+  padding: 0 9px;
+  background: #8f8f8f;
+}
+
+.favorite-icon {
+  margin-left: 6px;
+  background: url(../assets/favorites-star-blue.svg) left top no-repeat;
+  width: 24px;
+  height: 24px;
+  -webkit-flex: none;
+  flex: none;
+}
+
+/*----------------------
+List chrome
+----------------------*/
+.messageTexts,
+.messaging-listsDivider {
+  background-color: #e4e4e2;
+}
+.messageTexts {
+  color: #797979;
+  font-size: 16px;
+  padding: 14px;
+}
+
+/* Section dividers above the first row of each bucket/group. The caption is followed by a rule
+ * that runs to the edge of the pane, which is how the framework Divider draws on device. */
+.messaging-divider {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+  background-color: #fff;
+  color: #2d6c94;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 5px 14px 4px;
+}
+.messaging-divider:after {
+  content: "";
+  -webkit-flex: 1;
+  flex: 1;
+  height: 1px;
+  margin-left: 8px;
+  background-color: #8ab4d8;
+}
+.threadList-Divider,
+.buddyList-Divider {
+  text-transform: uppercase;
+}
+
+/* The reason an account could not sign in, under its name in the status popup. Red rather
+   than the usual grey, because it is a fault and not a status message. */
+.login-error {
+  color: #a32020;
+}
+
+/* Search field above each list. 48px tall with the text starting 10px in, which is what the
+   Enyo 1 app's own input measures: [0,100,320,48] with its text box at x 10 and 18px type.
+   Ours was 56 tall at 20px starting at x 17, so it stood taller and further in, and pushed the
+   list below it down with it. */
+.messaging-search {
+  /* White, edge to edge: sampled across the Enyo 1 row at 1024x698 it is 255,255,255 from x 2
+     to x 300, where ours was 228,228,226 - a grey band above a white list. */
+  background-color: #ffffff;
+  height: 48px;
+  /* No padding of its own: the Enyo 1 field runs the full width of the column and its text
+     starts at x 10, which here is the input decorator's own 1px border plus 8px padding. Our
+     10px row padding on top of that had inset the field into a floating box 288 wide. */
+  padding: 0;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+.messaging-search .onyx-input {
+  width: 100%;
+  font-size: 18px;
+}
+.messaging-search .onyx-input-decorator {
+  width: 100%;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  /* Flat, as the Enyo 1 field is. Onyx draws a rounded 1px box, which read as an inset control
+     floating in the row rather than the row itself being the field. */
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+
+/*----------------------
+Swipe-to-delete
+----------------------*/
+.swipeable-item {
+  position: relative;
+  overflow: hidden;
+}
+
+/* The sliding wrapper sits between a row and its contents, so it has to be transparent to layout:
+ * without this the row's children are its grandchildren, and a row styled as a flex row ends up
+ * with a single child that stacks everything vertically. It also has to grow, since as a flex item
+ * it would otherwise shrink to its content — which is what left the message bubbles narrow. */
+.swipeable-item-content {
+  position: relative;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-flow: row;
+  flex-flow: row;
+  -webkit-align-items: flex-start;
+  align-items: flex-start;
+  -webkit-flex: 1 1 auto;
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  -webkit-transition: -webkit-transform 0.2s ease-out;
+  transition: transform 0.2s ease-out;
+}
+.swipeable-confirm {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #e4e4e2;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-justify-content: flex-end;
+  justify-content: flex-end;
+  padding-right: 12px;
+}
+.swipeable-confirm .onyx-button {
+  min-width: 100px;
+}
+
+/*----------------------
+Add buddy dialog
+----------------------*/
+.account-username-text {
+  font-size: 12px;
+  color: #797979;
+  overflow: hidden;
+}
+.skype-directory-search {
+  height: 320px;
+  width: 280px;
+}
+
+/*----------------------
+First launch / Preferences & Accounts
+----------------------*/
+.connect-phone {
+  margin-top: 30px;
+}
+
+/*----------------------
+Preferences & Accounts
+Port of com.palm.app.messaging/stylesheets/preferences.css, plus the row layout the Mojo view got
+from RowGroup, which Onyx has no direct equivalent of.
+----------------------*/
+.accounts-header {
+  padding-left: 12px;
+}
+
+.prefs-body {
+  padding: 6px 12px 18px;
+}
+
+.prefs-group-caption {
+  color: #6a6a6a;
+  font-size: 13px;
+  font-weight: bold;
+  text-transform: uppercase;
+  padding: 18px 4px 6px;
+}
+
+.prefs-row {
+  background-color: #fff;
+  border-bottom: 1px solid #d8d8d8;
+  padding: 10px 12px;
+  min-height: 48px;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  /* The plain row labels render at the webOS default list-row text size; pin the picker value to
+     match so the two sides of a row do not sit at different sizes. */
+  font-size: 18px;
+}
+.prefs-row .onyx-picker-button {
+  font-size: 18px;
+}
+
+.accounts-btn {
+  margin: 18px 4px 0;
+}

@@ -8,7 +8,7 @@ html(lang="en")
 			title [DEVELOPMENT] #{title}
 		else
 			title= title
-		link(rel="shortcut icon", href="assets/header-icon-contacts.png")
+		link(rel="shortcut icon", href="assets/header-icon-contacts.svg")
 		each stylesheet in stylesheets
 			if stylesheet.href
 				link(rel="stylesheet", href=stylesheet.href)

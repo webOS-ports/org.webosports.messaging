@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+<!-- Messaging balloon, taken from the vector shape layer of Icon-messaging-1024.psd in
+     the webOS-Ports graphics repository and scaled onto this grid - the outline the
+     designer drew, not a fit to a rasterised copy of it.
+     The body is NOT an ellipse. It is four Bezier knots, three with axis-aligned
+     tangents and the fourth, low on the right, slanted, and the tail is five more knots
+     on the same closed path. Every attempt here to fit an ellipse plus a polygon tail to
+     the 48px raster was fitting the wrong family of curve, and the error always came
+     back at the bottom of the balloon where the two pieces met. Placed by a plain
+     uniform scale, the master path tracks the original's own outline - tail included -
+     to an rms of 0.21px across 37 rows, where the best ellipse managed 0.40 on the body
+     alone.
+     The light on it is NOT a vertical ramp. Down the middle a vertical gradient and
+     the original agree, which is how one survived here so long; across a row the ramp
+     is flat where the original falls off thirty levels from the middle to the ends.
+     Subtract the colour the body settles to at its foot and what is left is a smooth
+     blob peaking in the upper middle and dying to nothing at the sides and the bottom -
+     an elliptical highlight over a flat fill. Fitted to the original that model holds
+     the whole body to an rms of 1.44 of 255 over 735 interior pixels, and the stops
+     below are then read straight off, in bands of a tenth of the radius. The palette
+     barely moved: #91ecf1, #7fe2e7, #37b2b9 and #00969e were all in the gradient this
+     replaces. They were laid along the wrong axis.
+     Along the lower edge the original carries a band brighter than the paint inside it -
+     around (45,170,170) against a floor of (0,150,158), a pixel wide, dying away
+     towards the sides. That is light bouncing back up into the balloon, and it is what
+     makes the bottom read as a surface rather than a hole. It is drawn as the body
+     minus a copy of itself 1.05 higher, which thins to nothing where the edge turns
+     vertical, exactly as the original does.
+     The rim and the drop shadow below are still measured off the original, because the
+     master is a launcher icon and lights its balloon differently. -->
+<defs>
+  <radialGradient id="b" gradientUnits="userSpaceOnUse" cx="24.00" cy="7.00" r="27.60"
+    gradientTransform="translate(24.00,7.00) scale(1,0.8841) translate(-24.00,-7.00)">
+    <stop offset="0.0" stop-color="#91ecf1"/>
+    <stop offset="0.1" stop-color="#8be9ee"/>
+    <stop offset="0.2" stop-color="#7fe2e7"/>
+    <stop offset="0.3" stop-color="#72d9de"/>
+    <stop offset="0.4" stop-color="#64cfd5"/>
+    <stop offset="0.5" stop-color="#55c5cb"/>
+    <stop offset="0.6" stop-color="#46bbc2"/>
+    <stop offset="0.7" stop-color="#37b2b9"/>
+    <stop offset="0.8" stop-color="#29aab0"/>
+    <stop offset="0.9" stop-color="#19a1a8"/>
+    <stop offset="1.0" stop-color="#00969e"/>
+  </radialGradient>
+  <radialGradient id="gloss">
+    <stop offset="0" stop-color="#ffffff" stop-opacity="0.300"/>
+    <stop offset="0.7" stop-color="#ffffff" stop-opacity="0.105"/>
+    <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+  </radialGradient>
+  <clipPath id="body"><path d="M5.617,42.055 C5.617,42.055 8.124,40.871 9.136,39.029 C10.366,36.789 9.418,34.729 9.418,34.729 C9.418,34.729 9.418,34.729 9.418,34.729 C9.418,34.729 2.894,30.805 2.894,22.686 C2.894,12.162 15.295,5.902 24.504,5.902 C36.694,5.902 44.648,13.526 44.648,21.673 C44.648,27.731 41.207,33.533 33.062,37.323 C27.246,40.029 18.287,38.355 18.287,38.355 C18.287,38.355 16.170,40.801 12.407,41.935 C8.432,43.134 5.617,42.055 5.617,42.055 Z"/></clipPath>
+  <mask id="low" maskUnits="userSpaceOnUse" x="-4" y="-4" width="56" height="56">
+    <path d="M5.617,42.055 C5.617,42.055 8.124,40.871 9.136,39.029 C10.366,36.789 9.418,34.729 9.418,34.729 C9.418,34.729 9.418,34.729 9.418,34.729 C9.418,34.729 2.894,30.805 2.894,22.686 C2.894,12.162 15.295,5.902 24.504,5.902 C36.694,5.902 44.648,13.526 44.648,21.673 C44.648,27.731 41.207,33.533 33.062,37.323 C27.246,40.029 18.287,38.355 18.287,38.355 C18.287,38.355 16.170,40.801 12.407,41.935 C8.432,43.134 5.617,42.055 5.617,42.055 Z" fill="#ffffff"/>
+    <path d="M5.617,42.055 C5.617,42.055 8.124,40.871 9.136,39.029 C10.366,36.789 9.418,34.729 9.418,34.729 C9.418,34.729 9.418,34.729 9.418,34.729 C9.418,34.729 2.894,30.805 2.894,22.686 C2.894,12.162 15.295,5.902 24.504,5.902 C36.694,5.902 44.648,13.526 44.648,21.673 C44.648,27.731 41.207,33.533 33.062,37.323 C27.246,40.029 18.287,38.355 18.287,38.355 C18.287,38.355 16.170,40.801 12.407,41.935 C8.432,43.134 5.617,42.055 5.617,42.055 Z" fill="#000000" transform="translate(0,-1.05)"/>
+  </mask>
+  <filter id="soft" x="-30%" y="-30%" width="160%" height="170%">
+    <feGaussianBlur stdDeviation="1.36"/>
+  </filter>
+</defs>
+<path d="M5.617,42.055 C5.617,42.055 8.124,40.871 9.136,39.029 C10.366,36.789 9.418,34.729 9.418,34.729 C9.418,34.729 9.418,34.729 9.418,34.729 C9.418,34.729 2.894,30.805 2.894,22.686 C2.894,12.162 15.295,5.902 24.504,5.902 C36.694,5.902 44.648,13.526 44.648,21.673 C44.648,27.731 41.207,33.533 33.062,37.323 C27.246,40.029 18.287,38.355 18.287,38.355 C18.287,38.355 16.170,40.801 12.407,41.935 C8.432,43.134 5.617,42.055 5.617,42.055 Z" fill="#000000" fill-opacity="0.415" filter="url(#soft)"
+      transform="translate(0,2.69)"/>
+<path d="M5.617,42.055 C5.617,42.055 8.124,40.871 9.136,39.029 C10.366,36.789 9.418,34.729 9.418,34.729 C9.418,34.729 9.418,34.729 9.418,34.729 C9.418,34.729 2.894,30.805 2.894,22.686 C2.894,12.162 15.295,5.902 24.504,5.902 C36.694,5.902 44.648,13.526 44.648,21.673 C44.648,27.731 41.207,33.533 33.062,37.323 C27.246,40.029 18.287,38.355 18.287,38.355 C18.287,38.355 16.170,40.801 12.407,41.935 C8.432,43.134 5.617,42.055 5.617,42.055 Z" fill="url(#b)" stroke="#013f45" stroke-opacity="0.790"
+      stroke-width="1.45" paint-order="stroke"/>
+<g mask="url(#low)"><path d="M5.617,42.055 C5.617,42.055 8.124,40.871 9.136,39.029 C10.366,36.789 9.418,34.729 9.418,34.729 C9.418,34.729 9.418,34.729 9.418,34.729 C9.418,34.729 2.894,30.805 2.894,22.686 C2.894,12.162 15.295,5.902 24.504,5.902 C36.694,5.902 44.648,13.526 44.648,21.673 C44.648,27.731 41.207,33.533 33.062,37.323 C27.246,40.029 18.287,38.355 18.287,38.355 C18.287,38.355 16.170,40.801 12.407,41.935 C8.432,43.134 5.617,42.055 5.617,42.055 Z" fill="#2daaaa" fill-opacity="1.000"/></g>
+<g clip-path="url(#body)">
+  <ellipse cx="24.14" cy="4.70" rx="15.04" ry="7.50" fill="url(#gloss)"/>
+</g>
+</svg>

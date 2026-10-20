@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="8" height="14" viewBox="0 0 8 14">
+<path d="M8,-3.50 L-2.50,7 L8,17.50 Z M8,-2.50 L-1.50,7 L8,16.50 Z" fill-rule="evenodd" fill="#ffffff" fill-opacity="0.15"/>
+<path d="M8,-2.50 L-1.50,7 L8,16.50 Z M8,-1.50 L-0.50,7 L8,15.50 Z" fill-rule="evenodd" fill="#fbfbfb" fill-opacity="0.32"/>
+<path d="M8,-1.50 L-0.50,7 L8,15.50 Z M8,-0.50 L0.50,7 L8,14.50 Z" fill-rule="evenodd" fill="#a8a8a8" fill-opacity="0.32"/>
+<path d="M8,-0.50 L0.50,7 L8,14.50 Z M8,0.50 L1.50,7 L8,13.50 Z" fill-rule="evenodd" fill="#d7d7d7" fill-opacity="0.61"/>
+<path d="M8,0.50 L1.50,7 L8,13.50 Z" fill="#f4f4f4"/>
+</svg>

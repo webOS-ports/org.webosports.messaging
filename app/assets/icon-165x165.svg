@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="165" height="165" viewBox="0 0 165 165">
+  <!-- The watermark behind an empty conversation, measured off the one it replaces.
+
+       Two rings and not four: r 80 stroke 5.3 and r 55 stroke 3.3. The 71 and 63.5 rings
+       never existed.
+
+       The legend sits between them on a baseline at r 62.1. The original's ink runs r 59 to
+       73.5; Prelude's ascender is 0.73em and its descender 0.20em, so that is 15.6px with the
+       baseline 0.20em up from 59. At that size "Messaging by LuneOS" is 10.06em = 157px, and
+       the original's copy subtends 143 degrees = 155px, so there is no letter spacing to add.
+       The ring is turned 32 degrees, which is where the original's sits: its two copies centre
+       on 121.5 and 301.5 rather than 90 and 270, and a correlation of the two ink profiles
+       agrees.
+
+       Two balloons: the back one an outline interrupted around the front one, the front one a
+       solid fill. Both tails are curved - the original's hook out of the body rather than
+       meeting it in a corner.
+
+       The whole mark is one group at 0.70 rather than each shape at 0.70, so the places where
+       two of them overlap stay one shade instead of doubling up. #d4d4d4, as measured. Palm's
+       legend said "Messaging by webOS"; this one says LuneOS, in the app's own Prelude, and it
+       is drawn clean rather than worn. -->
+  <defs>
+    <path id="legend-top" d="M20.4,82.5 A62.1,62.1 0 0 1 144.6,82.5"/>
+    <path id="legend-bottom" d="M144.6,82.5 A62.1,62.1 0 0 1 20.4,82.5"/>
+    <!-- Front balloon: body fitted to the original's edge at cx 95.3, cy 89.8, rx 23.7,
+         ry 19.25 (rms 0.04 over 117 samples), written as two radii so the rendered edge lands
+         there; the tail is the flap under its lower right, curved rather than a wedge. -->
+    <path id="front" d="M95.3,70.2 a24.05,19.6 0 1 0 0.01,0 Z
+                        M92,104 Q94,108.5 99,109.5 Q106,111 113.5,112.8
+                                Q111,105.5 107,100 Z"/>
+    <!-- the gap the front balloon opens in whatever runs behind it -->
+    <mask id="interrupt">
+      <rect width="165" height="165" fill="#ffffff"/>
+      <use href="#front" fill="#000000" stroke="#000000" stroke-width="9"
+           stroke-linejoin="round"/>
+    </mask>
+  </defs>
+  <g opacity="0.70" fill="#d4d4d4">
+    <g fill="none" stroke="#d4d4d4">
+      <circle cx="82.5" cy="82.5" r="80" stroke-width="5.3"/>
+      <circle cx="82.5" cy="82.5" r="55" stroke-width="3.3"/>
+    </g>
+    <g transform="rotate(32,82.5,82.5)">
+      <circle cx="16.3" cy="82.5" r="2.4"/>
+      <circle cx="148.7" cy="82.5" r="2.4"/>
+      <g font-family="Prelude, 'Prelude Medium', 'Segoe UI', Arial, Helvetica, sans-serif"
+         font-size="15.6" text-anchor="middle">
+        <text><textPath href="#legend-top" startOffset="50%">Messaging by LuneOS</textPath></text>
+        <text><textPath href="#legend-bottom" startOffset="50%">Messaging by LuneOS</textPath></text>
+      </g>
+    </g>
+    <!-- Back balloon: an outline, with the tail a spur off it and the rest of the way round
+         taken out by the interrupt mask. Written as an ellipse, not an arc between two points:
+         an A command derives its own centre from its endpoints, and endpoints that were a
+         fraction off the ellipse put the whole ring four pixels right of where the original's
+         sits. Fitted to the original's outer boundary - cx 80.2, cy 75.05, rx 34.7, ry 28.8
+         at an rms of 0.05 over 114 samples - less half of the 5.4 stroke. -->
+    <g mask="url(#interrupt)" fill="none" stroke="#d4d4d4"
+       stroke-linecap="round" stroke-linejoin="round">
+      <ellipse cx="80.2" cy="75.05" rx="32" ry="26.1" stroke-width="5.4"/>
+      <path d="M58,95.5 Q60,99 54,107.2 Q66.5,103.5 70,98.5" stroke-width="3.4"/>
+    </g>
+    <use href="#front"/>
+  </g>
+</svg>

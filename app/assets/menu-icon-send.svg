@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="64" viewBox="0 0 32 64">
+<!-- Paper plane. The silhouette is six measured corners, not a traced outline: the nose at
+     (25.50,4.71), the wing tip at (3.01,15.82), the root notch at (12.29,18.85) and
+     the trailing edge from (20.07,19.46) to (25.12,19.62). The upper fold is a line the
+     resting state shows and the lit state does not, so it is drawn only on the resting one. -->
+  <defs>
+    <linearGradient id="fdn" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="32">
+      <stop offset="0.000" stop-color="#b7b7b7" stop-opacity="0.863"/>
+      <stop offset="0.091" stop-color="#b7b7b7" stop-opacity="0.863"/>
+      <stop offset="0.182" stop-color="#b7b7b7" stop-opacity="0.863"/>
+      <stop offset="0.273" stop-color="#d4d4d4" stop-opacity="0.937"/>
+      <stop offset="0.364" stop-color="#e4e4e4" stop-opacity="0.91"/>
+      <stop offset="0.455" stop-color="#ebebeb" stop-opacity="0.878"/>
+      <stop offset="0.545" stop-color="#e9e9e9" stop-opacity="0.804"/>
+      <stop offset="0.636" stop-color="#dadada" stop-opacity="0.776"/>
+      <stop offset="0.727" stop-color="#dadada" stop-opacity="0.706"/>
+      <stop offset="0.818" stop-color="#949494" stop-opacity="0.678"/>
+      <stop offset="0.909" stop-color="#949494" stop-opacity="0.678"/>
+      <stop offset="1.000" stop-color="#949494" stop-opacity="0.678"/>
+    </linearGradient>
+    <linearGradient id="fup" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="32">
+      <stop offset="0.000" stop-color="#ffffff" stop-opacity="0.976"/>
+      <stop offset="0.091" stop-color="#ffffff" stop-opacity="0.976"/>
+      <stop offset="0.182" stop-color="#ffffff" stop-opacity="0.976"/>
+      <stop offset="0.273" stop-color="#ffffff" stop-opacity="1.0"/>
+      <stop offset="0.364" stop-color="#ffffff" stop-opacity="1.0"/>
+      <stop offset="0.455" stop-color="#ffffff" stop-opacity="1.0"/>
+      <stop offset="0.545" stop-color="#ffffff" stop-opacity="1.0"/>
+      <stop offset="0.636" stop-color="#ffffff" stop-opacity="1.0"/>
+      <stop offset="0.727" stop-color="#ffffff" stop-opacity="0.957"/>
+      <stop offset="0.818" stop-color="#ffffff" stop-opacity="0.957"/>
+      <stop offset="0.909" stop-color="#ffffff" stop-opacity="0.957"/>
+      <stop offset="1.000" stop-color="#ffffff" stop-opacity="0.957"/>
+    </linearGradient>
+  
+    <path id="g" d="M25.498,5.000 Q25.505,4.710 25.245,4.838 L3.272,15.697 Q3.013,15.825 3.288,15.915 L12.012,18.760 Q12.287,18.850 12.314,19.139 L12.673,22.974 Q12.700,23.262 12.982,23.330 L16.355,24.133 Q16.637,24.200 16.808,23.965 L19.905,19.697 Q20.075,19.462 20.365,19.472 L24.835,19.616 Q25.125,19.625 25.132,19.335 Z"/>
+    <mask id="m" maskUnits="userSpaceOnUse" x="-8" y="-8" width="48" height="80">
+      <rect x="-8" y="-8" width="48" height="80" fill="#ffffff"/>
+      <use href="#g" fill="#000000"/>
+    </mask>
+  </defs>
+  <g>
+    <g mask="url(#m)"><use href="#g" fill="#000000" fill-opacity="0.650"
+         transform="translate(0,1.00)"/></g>
+    <use href="#g" fill="url(#fdn)" fill-opacity="0.955"/>
+    <path d="M24.30,5.60 L17.32,19.43" fill="none"
+          stroke="#000000" stroke-opacity="0.35" stroke-width="0.01"/>
+  </g>
+  <g transform="translate(0,32)">
+    <g mask="url(#m)"><use href="#g" fill="#000000" fill-opacity="0.000"
+         transform="translate(0,1.00)"/></g>
+    <use href="#g" fill="url(#fup)" fill-opacity="1.000"/>
+  </g>
+</svg>

@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="96" viewBox="0 0 16 96">
+<defs>
+  <linearGradient id="s-green" gradientUnits="userSpaceOnUse" x1="0" y1="2.1" x2="0" y2="14.9">
+    <stop offset="0" stop-color="#39ad00"/><stop offset="0.50" stop-color="#4be400"/></linearGradient>
+  <linearGradient id="s-orange" gradientUnits="userSpaceOnUse" x1="0" y1="2.1" x2="0" y2="14.9">
+    <stop offset="0" stop-color="#b24301"/><stop offset="0.50" stop-color="#e55701"/></linearGradient>
+  <linearGradient id="s-grey" gradientUnits="userSpaceOnUse" x1="0" y1="2.1" x2="0" y2="14.9">
+    <stop offset="0" stop-color="#666666"/><stop offset="0.52" stop-color="#a8a8a8"/></linearGradient>
+  <linearGradient id="s-shadow" gradientUnits="userSpaceOnUse" x1="0" y1="2.1" x2="0" y2="14.9">
+    <stop offset="0" stop-color="#000000" stop-opacity="0.4"/>
+    <stop offset="0.52" stop-color="#000000" stop-opacity="0"/></linearGradient>
+  <linearGradient id="s-bevel" gradientUnits="userSpaceOnUse" x1="0" y1="2.1" x2="0" y2="14.9">
+    <stop offset="0.45" stop-color="#ffffff" stop-opacity="0"/>
+    <stop offset="1" stop-color="#ffffff" stop-opacity="1.0"/></linearGradient>
+  <linearGradient id="s-rim" gradientUnits="userSpaceOnUse" x1="0" y1="2.1" x2="0" y2="14.9">
+    <stop offset="0" stop-color="#000000" stop-opacity="0.30"/>
+    <stop offset="0.50" stop-color="#8a8a8a" stop-opacity="0.52"/>
+    <stop offset="1" stop-color="#ffffff" stop-opacity="0.78"/></linearGradient>
+  <clipPath id="s-disc"><circle cx="8" cy="8.5" r="6.2"/></clipPath>
+</defs>
+<g transform="translate(0,0)">
+  <circle cx="8" cy="8.5" r="6.2" fill="#000000" fill-opacity="0.07"/>
+  <circle cx="8" cy="8.5" r="5.9" fill="none" stroke="url(#s-shadow)" stroke-width="1.1"/>
+  <circle cx="8" cy="8.5" r="6.2" fill="url(#s-green)" fill-opacity="0.7"/>
+  <circle cx="8" cy="8.5" r="5.9" fill="none" stroke="url(#s-bevel)" stroke-width="1.1"/>
+</g>
+<g transform="translate(0,16)">
+  <circle cx="8" cy="8.5" r="6.2" fill="#000000" fill-opacity="0.07"/>
+  <circle cx="8" cy="8.5" r="5.9" fill="none" stroke="url(#s-shadow)" stroke-width="1.1"/>
+  <path d="M8,2.3 A6.2,6.2 0 0 0 8,14.7 Z" fill="url(#s-green)" fill-opacity="0.7"/>
+  <g clip-path="url(#s-disc)">
+    <rect x="7" y="2.1" width="1" height="12.8" fill="url(#s-green)"/>
+    <rect x="7" y="2.1" width="1" height="12.8" fill="#ffffff" fill-opacity="0.30"/>
+  </g>
+  <circle cx="8" cy="8.5" r="5.9" fill="none" stroke="url(#s-bevel)" stroke-width="1.1"/>
+</g>
+<g transform="translate(0,32)">
+  <circle cx="8" cy="8.5" r="6.2" fill="#000000" fill-opacity="0.07"/>
+  <circle cx="8" cy="8.5" r="5.9" fill="none" stroke="url(#s-shadow)" stroke-width="1.1"/>
+  <circle cx="8" cy="8.5" r="6.2" fill="url(#s-orange)" fill-opacity="0.7"/>
+  <circle cx="8" cy="8.5" r="5.9" fill="none" stroke="url(#s-bevel)" stroke-width="1.1"/>
+</g>
+<g transform="translate(0,48)">
+  <circle cx="8" cy="8.5" r="6.2" fill="#000000" fill-opacity="0.07"/>
+  <circle cx="8" cy="8.5" r="5.9" fill="none" stroke="url(#s-shadow)" stroke-width="1.1"/>
+  <path d="M8,2.3 A6.2,6.2 0 0 0 8,14.7 Z" fill="url(#s-orange)" fill-opacity="0.7"/>
+  <g clip-path="url(#s-disc)">
+    <rect x="7" y="2.1" width="1" height="12.8" fill="url(#s-orange)"/>
+    <rect x="7" y="2.1" width="1" height="12.8" fill="#ffffff" fill-opacity="0.30"/>
+  </g>
+  <circle cx="8" cy="8.5" r="5.9" fill="none" stroke="url(#s-bevel)" stroke-width="1.1"/>
+</g>
+<g transform="translate(0,64)">
+  <circle cx="8" cy="8.5" r="6.2" fill="#000000" fill-opacity="0.07"/>
+  <circle cx="8" cy="8.5" r="5.9" fill="none" stroke="url(#s-shadow)" stroke-width="1.1"/>
+  <circle cx="8" cy="8.5" r="6.2" fill="url(#s-grey)" fill-opacity="0.91"/>
+  <circle cx="8" cy="8.5" r="5.9" fill="none" stroke="url(#s-bevel)" stroke-width="1.1"/>
+</g>
+<g transform="translate(0,80)">
+  <circle cx="8" cy="8.5" r="6.2" fill="#000000" fill-opacity="0.07"/>
+  <circle cx="8" cy="8.5" r="5.9" fill="none" stroke="url(#s-rim)" stroke-width="1.1"/>
+</g>
+</svg>

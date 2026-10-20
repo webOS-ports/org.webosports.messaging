@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="41" height="41" viewBox="0 0 41 41">
+<!-- Map pin. A teardrop is two circles and their common tangents, so that is how this is
+     drawn: the head is r 13.05 about (20.58,15.30), the tip is r
+     4.05 about (20.58,34.64), and the sides are the tangents
+     between them. Insetting both radii by the same amount walks the whole outline inward,
+     which is what gives the dark rim and the lit bevel inside it their even width.
+     Measured off the original: head r 12.94 at (20.02,16.39), ball r 8.89 at (20.06,15.41),
+     body #c45e13 brightening and gaining opacity toward the tip. -->
+<defs>
+  <linearGradient id="body" x1="0" y1="2.25" x2="0" y2="38.69"
+                  gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#b3550a" stop-opacity="0.000"/>
+    <stop offset="0.55" stop-color="#c45e13" stop-opacity="0.670"/>
+    <stop offset="1" stop-color="#cf661b" stop-opacity="1.000"/>
+  </linearGradient>
+  <filter id="halo" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur stdDeviation="1.40"/>
+  </filter>
+</defs>
+<path d="M32.134,21.380 L24.167,36.523 A4.050,4.050 0 0 1 16.998,36.523 L9.031,21.380 A13.053,13.053 0 1 1 32.134,21.380 Z" fill="#7d7d7d" fill-opacity="0.760" filter="url(#halo)"/>
+<path d="M32.134,21.380 L24.167,36.523 A4.050,4.050 0 0 1 16.998,36.523 L9.031,21.380 A13.053,13.053 0 1 1 32.134,21.380 Z" fill="#13171a" fill-opacity="0.180"/>
+<path d="M30.740,20.646 L22.773,35.790 A2.475,2.475 0 0 1 18.392,35.790 L10.425,20.646 A11.478,11.478 0 1 1 30.740,20.646 Z" fill="#e0a271" fill-opacity="0.530"/>
+<path d="M29.780,20.141 L21.813,35.285 A1.390,1.390 0 0 1 19.352,35.285 L11.385,20.141 A10.393,10.393 0 1 1 29.780,20.141 Z" fill="url(#body)"/>
+<circle cx="20.59" cy="15.56" r="9.09" fill="#ffffff"/>
+</svg>

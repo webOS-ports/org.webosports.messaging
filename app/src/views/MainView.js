@@ -1,136 +1,446 @@
-/**  */
+/**
+ * The app shell: the messaging pane on the left, the conversation pane on the right, plus the app
+ * menu, preferences, first launch and launch-parameter handling.
+ * Ported from com.palm.app.messaging/app/MessagingApp.js.
+ */
 
 var kind = require('enyo/kind'),
     FittableRows = require('layout/FittableRows'),
     Panels = require('layout/Panels'),
-    Image = require('enyo/Image'),
-    CardArranger = require('layout/CardArranger'),
     CollapsingArranger = require('layout/CollapsingArranger'),
-    Toolbar = require('onyx/Toolbar'),
-    RadioGroup = require('onyx/RadioGroup'),
-    ThreadList = require('./ThreadList'),
-    BuddyList = require('./BuddyList'),
-    ThreadView = require('./ThreadView'),
+    CardArranger = require('layout/CardArranger'),
     Signals = require('enyo/Signals'),
-    utils = require('enyo/utils'),
+    Popup = require('onyx/Popup'),
+    Button = require('onyx/Button'),
+    Menu = require('onyx/Menu'),
+    MenuItem = require('onyx/MenuItem'),
     LunaService = require('enyo-webos/LunaService'),
-    $L = require('enyo/i18n').$L,   // no-op placeholder
-    showErrorBanner = require('../util/showErrorBanner'),
-    ThreadModel = require('../data/ThreadModel'),
-    enyoLuneos = require('enyo-luneos');
+    Messaging = require('./Messaging'),
+    ChatView = require('./ChatView'),
+    PreferencesView = require('./PreferencesView'),
+    FirstLaunch = require('./FirstLaunch'),
+    AddBuddyDialog = require('./AddBuddyDialog'),
+    messagingUtils = require('../util/messagingUtils'),
+    appState = require('../util/appState'),
+    formFactor = require('../util/formFactor'),
+    mockDb = require('../data/mockDb'),
+    $L = require('enyo/i18n').$L;
 
+var DB_SERVICE = 'luna://com.webos.service.db';
+
+// Before any Panels instance exists, so the first arrangement is already the right one: this
+// points Panels' narrow-screen test at the form factor rather than at the viewport width.
+formFactor.install();
 
 module.exports = kind({
     name: "messaging.MainView",
     kind: FittableRows,
-    bindings:[
-        {from:".app.$.globalThreadCollection.status", to:".globalThreadCollectionStatus"}
-    ],
-    launchParamsHandled: false,
+
     components: [
         {
-            name: "main",
-            kind: Panels,
-            arrangerKind: CollapsingArranger,
-            draggable: false,
-            classes: "app-panels",
-            fit: true,
-            narrowFit: false, //collapses to one panel only if width < 800px
+            // CardArranger, not CollapsingArranger: these are alternative whole-screen views, so
+            // exactly one shows at a time. A collapsing arranger lays its panels side by side,
+            // which put first launch and preferences on screen next to the app.
+            // animate:false matches Mojo, whose Pane used transitions.Simple - an instant swap.
+            // Enyo 2 defaults to an animated cross-fade, which reads as a flicker on every switch.
+            name: "views", kind: Panels, arrangerKind: CardArranger, fit: true,
+            draggable: false, animate: false, classes: "app-panels",
             components: [
                 {
-                    kind: FittableRows,
-                    fit: true,
-                    style: "height: 100%; width: 38.2%;",   /* golden ratio */
-                    components:[
-                        {
-                            name: "toolbar",
-                            kind: Toolbar,
-                            classes: 'flex-row',
-                            components: [
-                                {classes: 'flex-auto'},
-                                {
-                                    name: "tabs",
-                                    kind: RadioGroup,
-                                    classes: 'flex-none',
-                                    controlClasses: "onyx-tabbutton",
-                                    onActivate: "paneChange",
-                                    components: [
-                                        { name: "conversations", content: $L("Conversations"), index: 0, active: true },
-                                        { name: "buddies", content: $L("Buddies"), index: 1 }
-                                    ]
-                                },
-                                {classes: 'flex-auto'}
-                            ]
-                        },
-                        {
-                            name:"viewPanel",
-                            kind: Panels,
-                            arrangerKind: CardArranger,
-                            fit:true,
-                            draggable:false,
-                            components:[
-                                { name: "threadList", kind: ThreadList,
-                                        onSelectThread: "showThread", onDeleteThread:"deleteThread", onCreateThread:"createThread",
-                                        style:"width:100%; width:100%;"},
-                                { name: "buddyList", kind:BuddyList, onSelectThread: "showThread"}
-                            ]
-                        }
-
-                    ]
-                },
-                {
-                    name: "threadPanel",
-                    kind: Panels,
-                    arrangerKind: CardArranger,
-                    fit: true,
-                    draggable: false,
-                    classes: "details",
+                    // narrowFit is left at its default: it adds the class that makes each panel
+                    // fill the width once the screen is narrow, which is how the conversation
+                    // takes over the screen on a small display. Forcing it off kept the
+                    // conversation pinned to its wide-layout width.
+                    name: "slidingGroup", kind: Panels, arrangerKind: CollapsingArranger,
+                    fit: true, draggable: false, classes: "app-panels",
                     components: [
                         {
-                            name: "empty",
-                            style: 'display: flex; flex-direction: column; justify-content: center; align-items: center',
-                            components: [
-                                {kind: Image, src: 'assets/notification-large-messaging-mult.png'},
-                                {
-                                    style: "text-align: center; color: darkGray",
-                                    content: $L("Select a thread on the left to see its messages.")
-                                }
-                            ]
+                            name: "messaging", kind: Messaging,
+                            onSelectThread: "threadSelected",
+                            onDeleteThread: "deleteThread",
+                            onThreadLocked: "threadLocked",
+                            onOpenComposeView: "openComposeView",
+                            onNewBuddy: "addBuddy",
+                            onNewFavorite: "showAddFavoriteList",
+                            onLoginStatesChange: "loginStatesChange",
+                            onAddAccount: "showAddAccountDialog",
+                            onOpenAppMenu: "openAppMenu"
                         },
-                        { name: "threadView", kind: ThreadView, onSelectThread: "showThread", onDeleteThread:"deleteThread"}
+                        {
+                            name: "chatView", kind: ChatView, fit: true,
+                            onSelectThread: "chatViewSelectedThread",
+                            onClearUnreadCount: "clearUnreadCount"
+                        }
                     ]
+                },
+                { name: "firstLaunch", kind: FirstLaunch, onFirstLaunchDone: "doneFirstLaunch" },
+                {
+                    name: "preferencesView", kind: PreferencesView,
+                    onClosePreferences: "closePreferences"
                 }
             ]
         },
         {
             kind: Signals,
             onbackgesture: "goBack",
-            onwebOSRelaunch: "handleRelaunch"
+            onwebOSRelaunch: "handleRelaunch",
+            onwindowactivated: "windowActivatedHandler",
+            onwindowdeactivated: "windowDeactivatedHandler",
+            onwindowhidden: "windowHiddenHandler",
+            onwindowshown: "windowShownHandler"
+        },
+
+        { name: "buddyDialog", kind: AddBuddyDialog },
+        {
+            name: "appMenu", kind: Menu, floating: true, components: [
+                { name: "addBuddyMenuItem", kind: MenuItem, content: $L("Add Buddy"), ontap: "addBuddy" },
+                {
+                    name: "showOfflineMenuItem", kind: MenuItem,
+                    content: $L("Show Offline Buddies"), ontap: "updateOfflinePrefs"
+                },
+                {
+                    name: "prefsAccntsMenuItem", kind: MenuItem,
+                    content: $L("Preferences & Accounts"), ontap: "openPreferences"
+                },
+                { name: "helpMenuItem", kind: MenuItem, content: $L("Help"), ontap: "openHelp" }
+            ]
         },
         {
-            name: 'deleteChatthreadService', kind: LunaService,
-            service: 'luna://org.webosports.service.messaging', method: 'deleteChatthread',
-            mock: ! ('PalmSystem' in window),
-            onError: 'deleteChatthreadErr'
+            name: "noAccountDialog", kind: Popup, centered: true, floating: true, modal: true,
+            components: [
+                {
+                    content: $L("Add a messaging account to set your online status."),
+                    style: "padding-bottom: 22px; text-align: center;"
+                },
+                {
+                    classes: "flex-row", components: [
+                        { kind: Button, content: $L("OK"), ontap: "closeNoAccountDialog" },
+                        { classes: "flex-auto" },
+                        {
+                            kind: Button, content: $L("Add an Account"),
+                            ontap: "addAccountClicked"
+                        }
+                    ]
+                }
+            ]
+        },
+
+        {
+            name: 'threadFinder', kind: LunaService, service: DB_SERVICE, method: 'get',
+            onResponse: 'gotThread', onError: 'serviceErr'
+        },
+        {
+            name: 'threadMerge', kind: LunaService, service: DB_SERVICE, method: 'merge',
+            onError: 'serviceErr'
+        },
+        {
+            name: 'readMessageMerger', kind: LunaService, service: DB_SERVICE, method: 'merge',
+            onError: 'serviceErr'
+        },
+        {
+            name: 'launchApp', kind: LunaService,
+            service: 'luna://com.webos.applicationManager', method: 'launch', onError: 'serviceErr'
+        },
+        {
+            name: 'openApp', kind: LunaService,
+            service: 'luna://com.webos.applicationManager', method: 'open', onError: 'serviceErr'
         }
     ],
+
     create: function () {
         this.inherited(arguments);
-
-    },
-    handleRelaunch: function(inSender, inEvent) {
-        this.log();
         this.launchParamsHandled = false;
+        this.prefs = null;
+
+        this.$.views.setIndex(0);
+
+        if (window.PalmSystem && PalmSystem.keepAlive) {
+            // Mark the card cacheable off-screen, so throwing it away usually does not close it.
+            PalmSystem.keepAlive(true);
+        }
+
+        if (appState.prefsHandler) {
+            appState.prefsHandler.register(this, this.prefsUpdated.bind(this));
+        }
+        if (appState.accountService) {
+            appState.accountService.register(this, this.accountsChanged.bind(this));
+        }
+
+        formFactor.apply(this);
+    },
+
+    /**
+     * A rotation changes the answer on a tablet, so re-apply it. The narrow class is picked once
+     * when the Panels is built, so re-pick it here too. The tab strip does not change - all four
+     * tabs are offered on every device - only the number of panes does.
+     *
+     * handleResize, not resize: resize() is what *sends* the onresize waterfall from
+     * enyo/master, and overriding it here only runs if somebody calls this control's resize()
+     * directly, which nothing does. handleResize is the end that receives it.
+     */
+    handleResize: function () {
+        this.inherited(arguments);
+        var wide = formFactor.apply(this);
+        if (this.$.slidingGroup && this.$.slidingGroup.narrowFitChanged) {
+            this.$.slidingGroup.removeClass('enyo-panels-fit-narrow');
+            this.$.slidingGroup.removeClass('enyo-panels-force-narrow');
+            this.$.slidingGroup.narrowFitChanged();
+            this.$.slidingGroup.reflow();
+        }
+        // Coming back to one pane with the conversation showing would otherwise leave the list
+        // unreachable, since there is no Back affordance until a thread is open.
+        if (!wide && this.$.slidingGroup && !appState.selectedThread) {
+            this.$.slidingGroup.setIndex(0);
+        }
+    },
+
+    destroy: function () {
+        if (appState.prefsHandler) {
+            appState.prefsHandler.unregister(this);
+        }
+        if (appState.accountService) {
+            appState.accountService.unregister(this);
+        }
+        this.inherited(arguments);
+    },
+
+    rendered: function () {
+        this.inherited(arguments);
+        // Again here, not only in create(): FittableLayout reflows this control as it renders,
+        // and the class has to be on the node the stylesheet will match against.
+        formFactor.apply(this);
         this.handleLaunchParam();
     },
-    /** called after threads loaded or reloaded, and on relaunch */
-    handleLaunchParam: function handleLaunchParam() {
-        var callerName = handleLaunchParam.caller && (handleLaunchParam.caller.displayName || handleLaunchParam.caller.name);
-        this.log("called by: “" + callerName + "”");
+
+    // --- preferences -----------------------------------------------------------------------
+
+    prefsUpdated: function (prefs) {
+        this.prefs = prefs;
+        if (!prefs) {
+            return;
+        }
+        this.setOfflineMenuItem();
+        this.$.messaging.setOfflinePrefs(prefs);
+
+        if (window.PalmSystem && prefs.firstUseMode) {
+            this.handleFirstLaunch();
+        }
+    },
+
+    updateOfflinePrefs: function () {
+        if (!this.prefs) {
+            return true;
+        }
+        this.prefs.showOnlineBuddiesOnly = !this.prefs.showOnlineBuddiesOnly;
+        if (appState.prefsHandler) {
+            appState.prefsHandler.setPrefs(this.prefs);
+        }
+        return true;
+    },
+
+    setOfflineMenuItem: function () {
+        if (!this.$.showOfflineMenuItem || !this.prefs) {
+            return;
+        }
+        this.$.showOfflineMenuItem.setContent(this.prefs.showOnlineBuddiesOnly ?
+            $L("Show Offline Buddies") : $L("Hide Offline Buddies"));
+    },
+
+    // --- accounts --------------------------------------------------------------------------
+
+    accountsChanged: function () {
+        // The presence bar and every list re-read their own data when accounts change; nothing to do
+        // here beyond keeping the menu labels current.
+        this.setOfflineMenuItem();
+    },
+
+    showAddAccountDialog: function () {
+        this.$.noAccountDialog.show();
+        return true;
+    },
+
+    closeNoAccountDialog: function () {
+        this.$.noAccountDialog.hide();
+        return true;
+    },
+
+    addAccountClicked: function () {
+        this.$.noAccountDialog.hide();
+        this.openPreferences();
+        return true;
+    },
+
+    // --- thread selection --------------------------------------------------------------------
+
+    threadSelected: function (inSender, inEvent) {
+        this.selectThread(this.$.messaging, inEvent && inEvent.thread);
+        return true;
+    },
+
+    chatViewSelectedThread: function (inSender, inEvent) {
+        this.selectThread(this.$.chatView, inEvent && inEvent.thread);
+        return true;
+    },
+
+    selectThread: function (source, thread) {
+        appState.setSelectedThread(thread);
+
+        if (source === this.$.messaging) {
+            this.$.chatView.setChatThread(thread);
+        } else if (source === this.$.chatView) {
+            this.$.messaging.setSelection(thread);
+        } else {
+            this.$.chatView.setChatThread(thread);
+            this.$.messaging.setSelection(thread);
+        }
+
+        if (thread && Panels.isScreenNarrow()) {
+            this.$.slidingGroup.setIndex(1);
+        }
+    },
+
+    deleteThread: function (inSender, inEvent) {
+        var thread = inEvent && inEvent.thread;
+        this.$.chatView.setDeletedChatThread(thread);
+        if (appState.selectedThread && thread && appState.selectedThread._id === thread._id) {
+            appState.setSelectedThread(null);
+        }
+        return true;
+    },
+
+    threadLocked: function (inSender, inEvent) {
+        this.$.chatView.threadLocked(inEvent && inEvent.thread);
+        return true;
+    },
+
+    openComposeView: function () {
+        if (appState.selectedThread) {
+            this.selectThread(null, null);
+        }
+        this.$.chatView.openComposeView(this, {});
+        if (Panels.isScreenNarrow()) {
+            this.$.slidingGroup.setIndex(1);
+        }
+        return true;
+    },
+
+    loginStatesChange: function (inSender, inEvent) {
+        this.$.chatView.set('loginStates', (inEvent && inEvent.loginStates) || []);
+        return true;
+    },
+
+    // --- unread counts -----------------------------------------------------------------------
+
+    clearUnreadCount: function (inSender, inEvent) {
+        var threadId = inEvent && inEvent.threadId;
+        if (!threadId) {
+            return true;
+        }
+        this.clearUnreadCountForThread(threadId);
+        this.setThreadMessagesRead(threadId);
+        return true;
+    },
+
+    clearUnreadCountForThread: function (threadId) {
+        var record = { _id: threadId, _kind: messagingUtils.thread.dbKind, unreadCount: 0 };
+        if (mockDb.enabled) {
+            mockDb.merge([record]);
+            return;
+        }
+        this.$.threadMerge.send({ objects: [record] });
+    },
+
+    setThreadMessagesRead: function (threadId) {
+        if (mockDb.enabled) {
+            var messages = mockDb.store[messagingUtils.message.dbKind] || [];
+            for (var i = 0; i < messages.length; i++) {
+                if (messages[i].conversations && messages[i].conversations.indexOf(threadId) >= 0 &&
+                        messages[i].folder === messagingUtils.message.FOLDERS.INBOX) {
+                    messages[i].flags = messages[i].flags || {};
+                    messages[i].flags.read = true;
+                }
+            }
+            return;
+        }
+        this.$.readMessageMerger.send({
+            query: {
+                from: messagingUtils.message.dbKind,
+                where: [
+                    { prop: "conversations", op: "=", val: threadId },
+                    { prop: "folder", op: "=", val: messagingUtils.message.FOLDERS.INBOX }
+                ]
+            },
+            props: { flags: { read: true } }
+        });
+    },
+
+    // --- buddies & favorites -------------------------------------------------------------------
+
+    addBuddy: function () {
+        this.$.buddyDialog.show();
+        return true;
+    },
+
+    showAddFavoriteList: function () {
+        // Favorites are a Contacts concept, so adding one hands off to that app.
+        this.$.launchApp.send({
+            id: "com.palm.app.contacts", params: { launchType: "pickPerson", mode: "noFavoritesOnly" }
+        });
+        return true;
+    },
+
+    // --- menus & views ---------------------------------------------------------------------
+
+    openAppMenu: function (inSender, inEvent) {
+        this.setOfflineMenuItem();
+        this.$.appMenu.showAtEvent(inEvent || {});
+        return true;
+    },
+
+    openHelp: function () {
+        this.$.openApp.send({ target: "http://help.palm.com/messaging/index.html" });
+        return true;
+    },
+
+    openPreferences: function () {
+        this.$.views.setIndex(2);
+        return true;
+    },
+
+    closePreferences: function () {
+        this.$.views.setIndex(0);
+        return true;
+    },
+
+    handleFirstLaunch: function () {
+        this.$.views.setIndex(1);
+        // Land on the buddies tab after first launch, as the Mojo app did.
+        this.$.messaging.menuToggle(this, 1);
+        this.$.messaging.highlightTabButton(1);
+    },
+
+    doneFirstLaunch: function () {
+        if (this.prefs && appState.prefsHandler) {
+            this.prefs.firstUseMode = false;
+            appState.prefsHandler.setPrefs(this.prefs);
+        }
+        this.$.views.setIndex(0);
+        return true;
+    },
+
+    // --- launch parameters ---------------------------------------------------------------------
+
+    handleRelaunch: function () {
+        this.launchParamsHandled = false;
+        this.handleLaunchParam();
+        return true;
+    },
+
+    handleLaunchParam: function () {
         setTimeout(this.processParams.bind(this), 0);
     },
+
     processParams: function () {
-        this.log("launchParamsHandled:", this.launchParamsHandled);
         if (this.launchParamsHandled) {
             return;
         }
@@ -145,62 +455,63 @@ module.exports = kind({
             }
         } catch (err) {
             this.error(err);
-            showErrorBanner(err);
+            return;
+        }
+        if (!params) {
             return;
         }
 
-        this.log(params);
-        var threadParam;
         try {
-            if (typeof(params.threadId) !== 'undefined') {
-                var model = this.app.$.globalThreadCollection.find(function (candidate) {
-                    return (candidate.get("_id") === params.threadId);
-                });
-                if (model) {
-                    this.showThread({name: "Relaunch Handler"}, {thread: model});
-                } else {
-                    PalmSystem.addBannerMessage($L("File a detailed bug report:") + " unknown thread");
-                }
-            } else if (params.compose && (params.compose.ims || params.compose.messageText)) {
-                // this branch is probably obsolete - DR
-                threadParam = {};
-                if (params.compose.ims && params.compose.ims.length > 0) {
-                    threadParam.recipientName = params.compose.ims[0].value || params.compose.ims[0].addr;
-                }
-                if (params.compose.messageText) {
-                    threadParam.messageText = params.compose.messageText;
-                }
-                this.createThread(this, threadParam);
+            if (params.threadId !== undefined) {
+                this.findThread(params.threadId);
+            } else if (params.message && params.message.conversations) {
+                // Tapped a notification: open the thread the message belongs to.
+                this.findThread(params.message.conversations[0]);
+            } else if (params.compose) {
+                this.$.chatView.preHandleLaunch(params.compose);
+            } else if (params.personId || params.messageText ||
+                    (params.composeRecipients && params.composeRecipients.length)) {
+                this.$.chatView.preHandleLaunch(params);
             } else if (params.target) {
-                var parsedUrl = this.parseUrl(params.target);
-                this.log(parsedUrl);
-                switch (parsedUrl.protocol) {
-                    case 'im:':
-                        threadParam = parsedUrl.searchParam;
-                        threadParam.recipientName = parsedUrl.pathname;
-                        threadParam.messageText = parsedUrl.searchParam.body;
-                        this.createThread(this, threadParam);
-                        break;
-                    case 'sms:':
-                        threadParam = parsedUrl.searchParam;
-                        var numbers = parsedUrl.pathname.split(",");
-                        threadParam.recipientName = numbers[0];   // TODO: use all numbers
-                        threadParam.messageText = parsedUrl.searchParam.body;
-                        this.createThread(this, threadParam);
-                        break;
-                }
+                this.handleUrlTarget(params.target);
             }
         } catch (err) {
             this.error(err);
         }
     },
+
+    /** Handles the im: and sms: URLs the app registers, as documented in the README. */
+    handleUrlTarget: function (target) {
+        var parsed = this.parseUrl(target);
+        var composeParams;
+
+        switch (parsed.protocol) {
+            case 'im:':
+                composeParams = {
+                    ims: [{ value: parsed.pathname, type: parsed.searchParam.type }],
+                    messageText: parsed.searchParam.body
+                };
+                this.$.chatView.preHandleLaunch(composeParams);
+                break;
+            case 'sms:':
+                // Several numbers can be given; the compose view takes the first.
+                var numbers = parsed.pathname.split(",");
+                composeParams = {
+                    phoneNumbers: [{ value: numbers[0], type: "sms" }],
+                    messageText: parsed.searchParam.body
+                };
+                this.$.chatView.preHandleLaunch(composeParams);
+                break;
+        }
+    },
+
     parseUrl: function (url) {
         var parser = document.createElement('a'),
             searchParam = {},
             pairs, split, i;
         parser.href = url;
         pairs = parser.search.replace(/^\?/, '').split('&');
-        for (i = 0; i < pairs.length; i++ ) {
+        for (i = 0; i < pairs.length; i++) {
             split = pairs[i].split('=');
             if (split[0] && split[1]) {
                 searchParam[decodeURIComponent(split[0])] = decodeURIComponent(split[1]);
@@ -208,83 +519,79 @@ module.exports = kind({
         }
         return {
             protocol: parser.protocol,
-            host: parser.host,
-            hostname: parser.hostname,
-            port: parser.port,
             pathname: decodeURIComponent(parser.pathname),
-            search: decodeURIComponent(parser.search),
-            searchParam: searchParam,
-            hash: decodeURIComponent(parser.hash)
+            searchParam: searchParam
         };
     },
-    showThread: function (inSender, inEvent) {
-        this.log(inSender && inSender.name, inEvent && inEvent.thread && inEvent.thread.attributes);
 
-        if (!inEvent || !inEvent.thread) {
-            this.$.threadPanel.setIndex(0);
-            this.$.main.setIndex(0);
+    findThread: function (threadId) {
+        if (mockDb.enabled) {
+            this.gotThread(null, mockDb.get([threadId]));
+            return;
+        }
+        this.$.threadFinder.send({ ids: [threadId] });
+    },
+
+    gotThread: function (inSender, inResponse) {
+        var thread = inResponse && inResponse.results && inResponse.results[0];
+        if (thread) {
+            this.selectThread(null, thread);
+        }
+        return true;
+    },
+
+    // --- window lifecycle ----------------------------------------------------------------------
+
+    windowActivatedHandler: function () {
+        appState.setAppDeactivated(false);
+        if (appState.selectedThread) {
+            this.clearUnreadCount(this, { threadId: appState.selectedThread._id });
+        }
+        return true;
+    },
+
+    windowDeactivatedHandler: function () {
+        appState.setAppDeactivated(true);
+        if (appState.selectedThread) {
+            this.clearUnreadCount(this, { threadId: appState.selectedThread._id });
+        }
+        return true;
+    },
+
+    windowHiddenHandler: function () {
+        if (this.prefs && this.prefs.firstUseMode) {
             return true;
         }
+        this.$.messaging.windowHiddenHandler();
+        this.$.chatView.windowHiddenHandler();
+        this.$.appMenu.hide();
+        appState.setSelectedThread(null);
+        return true;
+    },
 
-        this.$.threadView.setThread(inEvent.thread);
-
-        if (inSender !== this.$.threadList) {
-            this.$.threadList.forceSelectThread(inEvent.thread);
+    windowShownHandler: function () {
+        if (this.prefs && this.prefs.firstUseMode) {
+            return true;
         }
-        this.$.threadPanel.setIndex(1);
-        if (Panels.isScreenNarrow()) {
-            this.$.main.setIndex(1);
-        }
+        this.$.slidingGroup.setIndex(0);
+        this.$.views.setIndex(0);
+        this.$.messaging.windowShownHandler();
+        return true;
     },
 
-    createThread: function(s,e){
-        this.log("recipientName:" + e.recipientName, "type:" + e.type,
-                "personId:" + e.personId, "messageText:" + e.messageText);
-        this.$.threadView.setMessageText('');
-        var emptyThread = new ThreadModel();
-        this.app.$.globalThreadCollection.add(emptyThread, {index: 0});
-        this.showThread(this, {thread: emptyThread});
-        if (e) {
-            if (e.messageText) {
-                this.$.threadView.setMessageText(e.messageText);
-            }
-            if (e.recipientName) {
-                this.$.threadView.setRecipientAddr(e.recipientName);
-            }
-            // TODO: use personId to select an exact recipient
-        }
-    },
-
-    deleteThread: function(s,e){
-        var thread = e.thread|| e.originator.thread;
-        this.log("thread to be deleted is", thread && thread.toJSON());
-        if (thread) {
-            if (thread.get('_id')) {
-                this.$.deleteChatthreadService.send({threadId:thread.get('_id')});
-            }
-            this.app.$.globalThreadCollection.remove(thread);
-            this.showThread(s, {});
-        } else {
-            var msg = $L("No conversation selected");
-            this.warn(msg);
-            if (window.PalmSystem) { PalmSystem.addBannerMessage(msg, '{ }', "icon.png", "alerts"); }
-        }
-
-    },
-    deleteChatthreadErr: function (inSender, inError) {
-        this.error(inError.errorText || inError);
-        var msg = inError.errorText || inError.toString();
-        if (window.PalmSystem) { PalmSystem.addBannerMessage(msg, '{ }', "icon.png", "alerts"); }
-    },
-
-    paneChange: function(inSender, inEvent){
-        //console.log("paneChange", inSender, inEvent);
-        inEvent&&inEvent.originator&&inEvent.originator.active?this.$.viewPanel.setIndex(inEvent.originator.index||0):null;
-    },
     goBack: function () {
-        this.log(Panels.isScreenNarrow());
-        if (Panels.isScreenNarrow()) {
-            this.$.main.setIndex(0);
+        if (this.$.views.getIndex() !== 0) {
+            this.$.views.setIndex(0);
+            return true;
         }
+        if (Panels.isScreenNarrow()) {
+            this.$.slidingGroup.setIndex(0);
+        }
+        return true;
+    },
+
+    serviceErr: function (inSender, inError) {
+        this.error("shell service failed:", inError && (inError.errorText || inError));
+        return true;
     }
 });

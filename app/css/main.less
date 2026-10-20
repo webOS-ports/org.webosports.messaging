@@ -1,26 +1,104 @@
 /*
     Put anything you reference with "url()" in ../assets/
     This way, you can minify your application, and just remove the "source" folder for production
+
+    Row, balloon and list styling lives in palm-app.less / palm-conversation.less, which are ports
+    of com.palm.app.messaging's own stylesheets. This file keeps the app-shell layout, the shared
+    flex helpers, and the address-picker styling.
 */
+
+body {
+  background: transparent;
+  font-family: 'Segoe UI', 'Helvetica Neue', 'Nimbus Sans L', pt-sans-n4, pt-sans, Prelude, Prelude Medium, Segoe UI, Arial, Helvetica, Sans-Serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+img {
+  vertical-align: middle;
+}
+
+/*** app shell ***/
 
 .app-panels > * {
   background-color: #EAEAEA;
 }
 
-@media all and (max-width: 800px) {
-  .app-panels > * {
-    min-width: 100%;
-  }
+/* The panels size themselves: in the wide layout the messaging pane is a fixed 320px column and
+   the conversation pane is the arranger's `fit` panel, so it takes whatever is left. In the
+   single-pane layout the column has to go: Panels' own narrow handling gives every panel the
+   full container width, and CollapsingArranger then parks the conversation offscreen until it is
+   selected and slides it over the list. MainView drives that - selectThread() calls
+   slidingGroup.setIndex(1) when Panels.isScreenNarrow(), and Back returns to 0.
+
+   An unconditional width here overrode the narrow rule - same specificity, later in the cascade -
+   so the arranger kept the two-pane arrangement on screens with no room for it. On the Q25's
+   720x720 panel at devicePixelRatio 1.6 the viewport is 450px: the list took 320 of it and the
+   conversation was left a 130px sliver reading "Select a co".
+
+   This was then scoped to `min-width: 801px` to match Panels.isScreenNarrow(), which made the
+   two agree but put the decision on the viewport. That is the wrong question - a phone turned on
+   its side is still a phone - and it only gave the right answer by luck: the MindPhone's panel is
+   480x800, so in landscape it is exactly 800 wide and stayed single-pane by one pixel. The
+   decision now comes from util/formFactor, which asks the device, and arrives here as a class on
+   the body. See that module for the rule. */
+
+.messaging-pane {
+  height: 100%;
 }
 
-@media all and (min-width: 800px) {
-  .app-panels > * {
-    min-width: auto!important;
-    box-shadow: -6px -4px 3px 1px rgba(0,0,0,0.4);
+/* The left pane is a fixed 320px column, as in the Mojo app's SlidingPane. Only in the wide
+   layout: a tablet held in landscape. */
+.layout-wide .messaging-pane {
+  width: 320px;
+  min-width: 320px;
+}
+
+/* Panels position their children but do not give them a height, and every view in this app is a
+   FittableRows whose `fit` child needs a definite one to size against. Pin it explicitly rather
+   than relying on the arranger. */
+.conversation-pane {
+  background-color: #fff;
+  height: 100%;
+}
+
+.conversationList {
+  height: 100%;
+}
+
+/* The first-run screen's middle row. Centred, but "safe" centred: plain `center` overflows a box
+   that is too small in BOTH directions, and the part above the top edge cannot be scrolled to, so
+   on a short screen the Add An Account button disappeared under the footer with no way to reach
+   it. The Q25's 720x720 panel is 380px of viewport once the toolbars are taken off, which is not
+   enough for the 165px watermark, two paragraphs and a button. */
+.first-launch-body {
+  -webkit-justify-content: safe center;
+  justify-content: safe center;
+  -webkit-align-items: center;
+  align-items: center;
+  overflow-y: auto;
+  padding: 2rem;
+}
+
+/* A flex column shrinks its children before it overflows, which squashed the Add An Account
+   button to a 13px sliver. None of these should ever be smaller than their content. */
+.first-launch-body > * {
+  -webkit-flex-shrink: 0;
+  flex-shrink: 0;
+}
+
+@media all and (max-height: 480px) {
+  .first-launch-body {
+    padding: 1rem;
+  }
+  /* The watermark is decoration and it is 165px of a 380px screen. Drop it there and the title,
+     the explanation and the button fit without scrolling. */
+  .first-launch-body > img {
+    display: none;
   }
 }
 
 /*** general-purpose styling ***/
+
 .onyx-background {
   background-color: @onyx-background;
 }
@@ -36,9 +114,20 @@
   -webkit-align-items: center;
   align-items: center;
 }
+.flex-column {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-flow: column;
+  flex-flow: column;
+}
 .flex-auto {
   -webkit-flex: auto;
   flex: auto;
+}
+.flex-one {
+  -webkit-flex: 1 1 auto;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 .flex-none {
   -webkit-flex: none;
@@ -51,228 +140,17 @@
   text-overflow: ellipsis;
 }
 
-/***  ***/
+/*** lists ***/
 
-.onyx-radiobutton.onyx-tabbutton {
-  font-size: 14px;
-}
-/****************
-
-ContactsUI CSS
-
-****************/
 .threads-list {
-    background-color:#e4e4e2;
+  background-color: #e4e4e2;
 }
 
-.threads-list .contacts-search {
-    /* margin:0 0 -3px; /* blend shadow from bg_search.png */
-    /* border-image:url(../../assets/bg_search.png) 0 15 repeat;
-    border-width:0 15px;
-    height:44px;*/
-    width: 100%;
-}
-.threads-list .contacts-search .onyx-input {
-    /* margin:0 0 -3px; /* blend shadow from bg_search.png */
-    /* border-image:url(../../assets/bg_search.png) 0 15 repeat;
-    border-width:0 15px;
-    height:44px;*/
-    float:left;
-    width:91%;
-}
-.threads-list .contacts-search img {
-    /* margin:0 0 -3px; /* blend shadow from bg_search.png */
-    /* border-image:url(../../assets/bg_search.png) 0 15 repeat;
-    border-width:0 15px;
-    height:44px;*/
-    float:right;
-}
-.threads-list .contacts-search.input .input-input {
-    margin:0 7px;
-    height:40px;
+.threads-contactslist {
+  background-color: #e4e4e2;
 }
 
-.threads-list .thread-item.folder {
-  background-color:lightgray;
-}
-
-.threads-list .thread-item.folder.inbox{
-  background-color:rgba(67,100,200,0.3);
-  margin-right:50px;
-
-  background: -moz-linear-gradient(left,  rgba(140,199,216,1) 0%, rgba(140,199,216,1) 1%, rgba(125,185,232,0) 100%); /* FF3.6+ */
-  background: -webkit-gradient(linear, left top, right top, color-stop(0%,rgba(140,199,216,1)), color-stop(1%,rgba(140,199,216,1)), color-stop(100%,rgba(125,185,232,0))); /* Chrome,Safari4+ */
-  background: -webkit-linear-gradient(left,  rgba(140,199,216,1) 0%,rgba(140,199,216,1) 1%,rgba(125,185,232,0) 100%); /* Chrome10+,Safari5.1+ */
-  background: -o-linear-gradient(left,  rgba(140,199,216,1) 0%,rgba(140,199,216,1) 1%,rgba(125,185,232,0) 100%); /* Opera 11.10+ */
-  background: -ms-linear-gradient(left,  rgba(140,199,216,1) 0%,rgba(140,199,216,1) 1%,rgba(125,185,232,0) 100%); /* IE10+ */
-  background: linear-gradient(to right,  rgba(140,199,216,1) 0%,rgba(140,199,216,1) 1%,rgba(125,185,232,0) 100%); /* W3C */
-  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#8cc7d8', endColorstr='#007db9e8',GradientType=1 ); /* IE6-9 */
-}
-
-.threads-list .thread-item.folder.sent{
-  background-color:#abd56e;
-  margin-left:50px;
-  background: -moz-linear-gradient(left,  rgba(255,255,255,0.2) 0%, rgba(150,219,142,1) 100%); /* FF3.6+ */
-  background: -webkit-gradient(linear, left top, right top, color-stop(0%,rgba(255,255,255,0.2)), color-stop(100%,rgba(150,219,142,1))); /* Chrome,Safari4+ */
-  background: -webkit-linear-gradient(left,  rgba(255,255,255,0.2) 0%,rgba(150,219,142,1) 100%); /* Chrome10+,Safari5.1+ */
-  background: -o-linear-gradient(left,  rgba(255,255,255,0.2) 0%,rgba(150,219,142,1) 100%); /* Opera 11.10+ */
-  background: -ms-linear-gradient(left,  rgba(255,255,255,0.2) 0%,rgba(150,219,142,1) 100%); /* IE10+ */
-  background: linear-gradient(to right,  rgba(255,255,255,0.2) 0%,rgba(150,219,142,1) 100%); /* W3C */
-  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#33ffffff', endColorstr='#96db8e',GradientType=1 ); /* IE6-9 */
-}
-
-.threads-list .thread-item.folder.outbox{
-  background-color:lightyellow;
-  margin-left:50px;
-}
-
-/* items */
-.threads-list .no-srch-results-msg {
-    color:#666;
-    padding:13px 0;
-    min-height:0
-}
-.threads-list .gal-message {
-    font-size:16px;
-}
-.threads-list .thread-item-groupheader {
-    padding:10px;
-    color:gray;
-    font-weight:bold;
-    border-top:2px solid gray;
-}
-
-.threads-list .thread-item {
-    padding:7px;
-    min-height: 50px;
-    border-width:1px 0;
-    border-style:solid none solid none;
-    border-top-color:rgba(255,255,255,0.5);
-    border-bottom-color:rgba(0,0,0,0.1);
-    border-radius: 5px;
-    background-color: white;
-    margin: 5px;
-    position: relative;
-    text-align: left;
-}
-.threads-list .thread-item div {
-    vertical-align:middle;
-}
-.threads-list .thread-item.first {
-    border-top:0;
-}
-.threads-list .thread-item.last {
-    border-bottom:0;
-}
-.threads-list .thread-item.selected, .selected>.thread-item {
-    background-color:#d1e5f5;
-    border-color:#B3d9f2
-}
-.threads-list .thread-item > .icon {
-    height:50px;
-    width:50px;
-    margin:0px;
-}
-.threads-list .thread-item > .icon .mask {
-    position:absolute;
-    top:0;
-    left:0;
-    height:100%;
-    width:100%;
-    background:url(../assets/bg_icon_mask.png) no-repeat 0 0;
-}
-.threads-list .thread-item > .icon .img {
-    border-radius: 3px;
-    height:100%;
-    width:100%;
-    background-position:50% 50%;
-    background-repeat: no-repeat;
-    background-color:#f1f1f1;
-    background-image:url(../assets/bg_icon_img.png);
-    background-size: cover;
-}
-.threads-list .thread-item .name {
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-    text-align: left;
-    font-weight: bold;
-    margin-top: 1px;
-    margin-bottom:5px;
-}
-.threads-list .thread-item .summary {
-    color: #333333;
-    font-size: 0.8rem;
-    text-align: left;
-    height: 32px;
-    margin: 0 auto;
-    line-height: 1.3;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: inherit;
-}
-
-.threads-list .thread-item .unreadcount {
-  color: #555;
-  font-size: 0.9rem;
-  font-weight:bold;
-  border-radius:20px;
-  width:25px;
-  height:23px;
-  background-color:#ccc;
-  text-align:center;
-  padding-top:2px;
-  margin-left:5px;
-}
-
-/** Favorites list **/
-.threads-list .header.favorites {
-    background:none;
-    border-bottom-color:rgba(0,0,0,0.30);
-}
-
-.threads-list .thread-item .message-text{
-  height:auto;
-}
-
-.threads-list .thread-item .message-timestamp{
-  //float: right;
-  vertical-align: bottom;
-  font-size: 0.8rem;
-  color: #444;
-  position:absolute;
-  bottom:7px;
-  right:7px;
-}
-
-.threads-list .thread-item .message-timestamp-container {
-  position: relative;
-  height: 30px;
-}
-
-/* BottomToolbar */
-.unpaddedToolbar {
-  height: 52px;
-  padding: 0;
-}
-.onyx-toolbar-inline.unpaddedToolbar > * {
-  margin: 0;
-  box-sizing: border-box;
-  height:52px;
-  width:52px;
-  padding: 10px 8px;
-  background-repeat: no-repeat;
-  background-clip: content-box;
-  background-position: center 10px;
-}
-.onyx-toolbar-inline.unpaddedToolbar > .pressed {
-  background-position: center -22px;
-}
-
-
-/* Message Address Picker */
+/*** message address picker (compose / new conversation) ***/
 
 input.search-input {
   font-size: @onyx-font-size;
@@ -299,14 +177,12 @@ input.search-input {
 .msg-addr-header > :last-child {
   flex: 1 1;
   min-width: 0;
-
   margin-left: 9px;
   border-color: #1c94fd;
 }
 
 .msg-addr-wrapper {
   height: 48px;
-
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -315,104 +191,32 @@ input.search-input {
   flex: 1 1;
   min-width: 0;
   padding-left: 1em;
-
   font-size: 18px;
 }
 .msg-addr-wrapper > :last-child {
   margin-right: 1em;
-
   color: #1879cd;
   font-weight: normal;
   text-transform: uppercase;
   font-size: 16px;
 }
 
-/* ??? */
-.contacts-pointpickerlist .label {
-    color:#1879cd;
-    font-weight:normal;
-    text-transform: uppercase;
-    font-size:0.7rem;
-}
-.contacts-details .label {
-    color:#1879cd;
-    font-weight:normal;
-    text-transform: uppercase;
-    font-size:0.7rem;
-}
-.contacts-details .value {
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.contacts-details .button-arrow {
-    height:42px;
-    width:32px;
-    background: url(../assets/bg_details_input_skype.png) no-repeat 50% 50%
-}
-.contacts-details .button.action .button-icon {
-    margin:-6px -8px -10px
-}
-.contacts-details .contacts-actions .button {
-    margin:0 0 10px;
-}
-
-.toolbar-status {
-  //height: 20px;
-  width:20px;
-  background: url(../assets/status-blank.png) no-repeat 0 0;
-  background-size: cover;
-}
-
-.toolbar-status.status-busy, .toolbar-status.status-away{
-    background: url(../assets/status-away.png) no-repeat 0 0;
-}
-.toolbar-status.status-offline, .toolbar-status.status-unknown {
-  background: url(../assets/status-offline.png) no-repeat 0 0;
-}
-.toolbar-status.status-available{
-  background: url(../assets/status-available.png) no-repeat 0 0;
-}
-
-.toolbar-status.button{
-  background: url(../assets/status-button.png) no-repeat 0 0;
-  background-size: cover;
-}
-
-
-.details .textareaBtn{
-  box-sizing: border-box;
-  height:52px;
-  width:52px;
-  padding: 10px 8px;
-  background-size: initial;   /* Onyx/Icon sets this */
-  background-repeat: no-repeat;
-  background-clip: content-box;
-  background-position: center 10px;
-}
-.details .textareaBtn.pressed {
-  background-position: center -22px;
-}
-
-
-/* TODO: temporary styling to be replaced...all GAL styling TDB*/
-.contacts-GAL-message {
-    margin-top:10px;
-    margin-bottom:10px;
-    margin-left:14px;
-    color: #2d6c94;
-}
-.contacts-gal-person {
-    padding: 10px 10px;
-}
 .msg-addr-item.selected {
-    background-color:#d1e5f5;
-    //border-color:#B3d9f2
+  background-color: #d1e5f5;
 }
+
+/*** empty-state panel on the right ***/
+
+.details-placeholder {
+  background: #F9f9f9 url(../assets/defaultview-panel-tile.svg) bottom left repeat-x;
+}
+
+/*** contacts picker dialog ***/
 
 .contactsui-peoplepicker {
   width: 320px;
   border-width: 24px;
-  border-image: url(../assets/dialogbg.png) 24 stretch stretch;
+  border-image: url(../assets/dialogbg.svg) 24 stretch stretch;
 }
 
 .contactsui-peoplepicker-container {
@@ -422,477 +226,4 @@ input.search-input {
 
 .contactsui-peoplepicker .iframe {
   background-color: #ccc;
-}
-
-
-
-/****************
-
-Contacts App CSS
-
-****************/
-
-
-body {
-    background: transparent;
-    font-family:'Segoe UI','Helvetica Neue', 'Nimbus Sans L', pt-sans-n4, pt-sans, Prelude, Prelude Medium, Segoe UI, Arial, Helvetica, Sans-Serif;
-    -webkit-font-smoothing: antialiased;
-}
-
-/*.leftpane {
-    background-color: #e4e4e2;
-}*/
-
-img {
-    vertical-align: middle;
-}
-
-/* add favorite styles to global enyo list */
-.threads-list .favorites .item .favorite,
-.threads-list .favorites .divider-alpha {
-    display: none;
-}
-
-.threads-list .favorites .item {
-    border-width: 1px 0;
-}
-
-.threads-list .favorites .item .icon {
-    height: 100px;
-    width: 100px;
-}
-
-.threads-list .favorites .item .icon .mask {
-    background: url(../assets/bg_favorites_icon_mask.png) no-repeat 0 0;
-}
-
-.threads-list .favorites .item .icon .img {
-    height: 100%;
-    width: 100%;
-    border-radius: 6px;
-}
-
-/* Global - copying all over the place, will clean up reduntant things */
-.favorite {
-    width: 34px;
-    height: 34px;
-    background: url(../assets/bg_favorite.png) no-repeat 0 0;
-}
-
-/* Contact photos: icon to list is as avatar to detail */
-.mask {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    width: 100%;
-}
-
-.icon {
-    height: 50px;
-    margin: 10px 15px 10px 10px;
-    width: 50px;
-    position: relative;
-}
-
-.icon .mask {
-    background: url(../assets/bg_icon_mask.png) no-repeat 0 0;
-}
-
-.icon .img {
-    border-radius: 3px;
-    width: 100%;
-    height: 100%;
-}
-
-.avatar {
-    width: 222px;
-    position: relative;
-    height: 222px;
-}
-
-.avatar .img {
-    height: 196px;
-    width: 196px;
-    top: 13px;
-    position: absolute;
-    left: 13px;
-    background-color: #f1f1f1;
-    background-repeat: no-repeat;
-    background-position: 50% 50%;
-}
-
-.avatar .mask {
-    background: url(../assets/bg_avatar_mask.png) no-repeat 0 0;
-}
-
-/* Edit */
-.edit-toolbar .switch-account.button {
-    height: 38px;
-}
-
-.edit-toolbar .switch-account.button .listselector-arrow {
-    margin: -6px 0;
-}
-
-.edit-toolbar .switch-account.button img {
-    margin: -8px 0 -6px -4px;
-    padding: 0
-}
-
-.edit .avatar {
-    margin: 0 15px 0 0;
-}
-
-.edit .avatar .mask {
-    background: url(../assets/bg_edit_mask.png) no-repeat 0 0;
-}
-
-.edit .avatar .change {
-    position: absolute;
-    bottom: 13px;
-    left: 13px
-}
-
-.edit .avatar .change .button-icon {
-    margin: -4px -8px -10px;
-}
-
-.edit .item {
-    /* border-bottom-color:#d8d8d8; */
-}
-
-.edit .item .input.birthday {
-    min-height: 49px;
-    font-size: 18px;
-}
-
-.edit .item .input.notes {
-    min-height: 49px;
-}
-
-.edit .field-button {
-    border: 12px;
-    float: left;
-    border-image: url(../assets/bg_prefix.png) 12 repeat;
-}
-
-.edit .field-button-inner {
-    width: 32px;
-    height: 32px;
-    margin: -9px;
-}
-
-.edit .field-button .favorite {
-    background: url(../assets/bg_edit_favorite.png) no-repeat 0 0;
-}
-
-.edit .field-button .favorite.true {
-    background-position: 0 -32px;
-}
-
-.edit .field-button .prefix {
-    background: url(../assets/bg_edit_prefix.png) no-repeat 0 0;
-}
-
-.edit .editable-field-button {
-    height: 40px;
-    margin: -6px 0;
-}
-
-.edit .editable-label {
-    border: 12px;
-    margin: 0 0 0 13px;
-    border-image: url(../assets/bg_prefix.png) 12 repeat;
-}
-
-.edit .label,
-.edit .editable-label .menucheckitem-caption {
-    color: #1879cd;
-    padding: 0;
-    font-weight: normal;
-    text-transform: uppercase;
-    font-size: 14px;
-}
-
-.edit .editable-label .listselector-label {
-    display: none;
-}
-
-.edit .item > .listselector {
-    margin: 0 0;
-    padding: 0 0;
-}
-
-.edit .new.input .swipeableitem {
-    background: url(../assets/bg_field_new.png) no-repeat 0 50%;
-    padding-left: 25px;
-
-}
-
-.edit .input .swipeableitem {
-    border: 0;
-    min-height: 0;
-    padding: 0;
-}
-
-.edit .item.middle,
-.edit .item.last {
-    /*
-border-top:1px solid;
-border-top-color:rgba(255,255,255,0.5);
-*/
-}
-
-/* Details */
-.details {
-    background: url(../assets/bg_body.png) 0 0 repeat;
-    border-left: 1px solid #a8a8a8;
-}
-
-.details .container {
-    border-style: solid;
-    border-image: url(../assets/bg_details.png) 9 repeat;
-    border-width: 9px;
-    background-color: #fff;
-}
-
-.details .content {
-    margin: -3px;
-}
-
-.details .header {
-    padding: 5px 13px 10px 5px;
-    border-bottom: 1px solid #d8d8d8;
-}
-
-.details .avatar {
-    width: 222px;
-    position: relative;
-    height: 222px;
-    margin: 0 8px 0 0;
-}
-
-.details .avatar .img {
-    height: 196px;
-    width: 196px;
-    top: 13px;
-    position: absolute;
-    left: 13px;
-    background-color: #f1f1f1;
-    background-repeat: no-repeat;
-    background-position: 50% 50%;
-}
-
-.details .avatar .mask {
-    background: url(../assets/bg_avatar_mask.png) no-repeat 0 0;
-}
-
-.details .nameinfo {
-    width: 100%;
-}
-
-.details .nameinfo div {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    position: relative;
-    top: 50px;
-    padding-top: 5px;
-}
-
-.details .name {
-    font-size: 34px;
-    color: #222;
-    padding: 0 0 0.3em;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-family: PreludeWGL-Light, "Prelude Light", Prelude, "Prelude Medium", "Segoe UI", Arial, Helvetica, sans-serif;
-}
-
-.portrait .details .nameinfo .name {
-    font-size: 26px;
-    white-space: normal;
-}
-
-.details .nickname {
-    color: #555;
-    font-size: 0.9em;
-}
-
-.portrait .details .nameinfo .nickname {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    width: 100%;
-    white-space: nowrap;
-}
-
-.details .position {
-    color: #888;
-    font-size: 0.9em;
-}
-
-.portrait .details .nameinfo .position {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    width: 100%;
-    white-space: nowrap;
-}
-
-.details .favorite {
-    width: 34px;
-    height: 34px;
-    margin: 10px 0 0 10px;
-    /*background: url(../../assets/bg_details_favorite.png) no-repeat 0 0;*/
-}
-
-.details .favorite.true {
-    background-position: 0 -33px;
-}
-
-.details .profiles-button {
-    padding: 3px 30px 3px 10px;
-    background: url(../assets/btn_linked_profiles.png) no-repeat 95% 3px;
-    margin: 3px 0 0 0;
-}
-
-.details .profiles-button.button-depressed {
-    background-position: 95% -17px;
-    background-color: rgba(255, 255, 255, 0.8);
-}
-
-.details .profiles {
-    background: #f4f4f4;
-}
-
-.details .profiles .item {
-    border-top: 1px dashed #ccc;
-    border-bottom: 0;
-    height: 73px;
-    color: #222;
-    font-weight: normal;
-    padding: 0 14px;
-}
-
-.details .profiles .icon .img {
-    background-position: 50% 50%;
-    background-repeat: no-repeat;
-    background-color: #f1f1f1;
-    background-image: url(../assets/bg_icon_img.png)
-}
-
-.details .group {
-    border-image: none;
-    border: 0;
-    border-bottom: 1px solid #d8d8d8;
-    border-radius: 0;
-    margin: 0;
-}
-
-.details .group-inner {
-    margin: 0;
-}
-
-.details .group .thread-item {
-    padding: 0.5rem 0.7rem;
-    color: #222;
-    font-size: 0.9rem;
-    border-bottom: 1px solid #d8d8d8;
-}
-
-
-.details .label {
-    color: #1879cd;
-    font-weight: normal;
-    text-transform: uppercase;
-    font-size: 0.7rem;
-}
-
-.details .value {
-    overflow: hidden;
-    margin: 0 0 0.2rem;
-    text-overflow: ellipsis;
-}
-
-.details .button-arrow {
-    height: 42px;
-    width: 32px;
-    background: url(../assets/bg_details_input_skype.png) no-repeat 50% 50%
-}
-
-.details .button.action .button-icon {
-    margin: -6px -8px -10px
-}
-
-/* this isn't ideal */
-.details-toolbar .border {
-    border-left: 1px solid #A8A8A8;
-    float: left;
-    height: 100%;
-    left: -4px;
-    position: absolute;
-    width: 1px;
-}
-
-/* less than ideal stuff ends here */
-/* Preferences */
-.contacts-preferences {
-    padding: 6px 0;
-}
-
-.contacts-preferences .group {
-    margin: 18px 0 0 0;
-}
-
-.contacts-preferences .instructional {
-    padding: 18px 0 12px;
-    color: #333;
-    font-size: 0.9em;
-}
-
-.contacts-preferences .footnote {
-    padding: 12px 0 6px;
-    color: #666;
-    font-size: 0.8em;
-}
-
-.details-placeholder {
-    background: #F9f9f9 url(../assets/defaultview-panel-tile.png) bottom left repeat-x;
-}
-
-
-
-.threads-contactslist > .contacts-list .contacts-item {
-  min-height: 35px;
-}
-
-.threads-contactslist > .contacts-list .contacts-item .icon {
-  width: 78px;   /* 50+2*14 */
-  height:45px;
-}
-.threads-contactslist > .contacts-list .contacts-item .icon .list-mask {
-  position: absolute;
-  top: 2px;
-  left: 14px;
-  height: 40px;
-  width: 40px;
-  background:url(../assets/bg_icon_mask.png) no-repeat 0 0;
-  background-size:40px;
-}
-.threads-contactslist > .contacts-list .contacts-item .icon .list-img {
-  position: absolute;
-  top: 2px;
-  left: 14px;
-  width: 40px;
-  height: 40px;
-  border-radius: 3px;
-  background-position:50% 50%;
-  background-repeat: no-repeat;
-  background-color:#f1f1f1;
-  background-image:url(../assets/bg_icon_img.png);
-  background-size: cover;
-}
-
-.threads-contactslist > .contacts-list .contacts-item .name {
-  font-size: 18px;
 }

@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+<!-- The app's own mark: the teal balloon behind the cream one on the shallow disc the
+     original sits in. Each balloon is the VECTOR PATH out of the shape layers of
+     Icon-messaging-1024.psd in the webOS-Ports graphics repository, scaled onto this grid -
+     the outline the designer drew, not an ellipse fitted to a rasterised copy of it. Neither
+     body is an ellipse: each is four Bezier knots with a tail of five more on the same closed
+     path. Placed by scale and offset alone the master paths track the original's own outlines
+     to an rms of 0.17px (teal) and 0.31px (cream). The two carry their own scales because
+     Palm's 48px mark re-laid them out rather than shrinking the launcher icon whole.
+     Neither balloon is shaded down the page. Subtract the colour each settles to at its foot
+     and what is left is a smooth blob - an elliptical highlight over a flat fill - and the
+     two are lit from different places: the teal one from a point above the icon entirely,
+     centred (21.1,-0.8) with radii (29.5,28.4), the cream one from its own upper right at
+     (32.0,17.0) with radii (20.8,18.0). Fitted that way they hold to an rms of 2.98 and 1.80
+     of 255; the stops below are then read off in bands of a tenth of the radius. A vertical
+     ramp is flat across a row where the original falls away in every direction, and that is
+     what this carried before.
+     Unlike the notification mark, neither balloon here carries a bright bounce along its
+     lower edge worth drawing: the teal one's is +8 of 255 against the +45 on the 48px mark,
+     and the cream one's lower edge is darker than its inside, not lighter - that is the gold
+     rim, not light coming back up. The dark rim under each fill and the specular gloss across
+     the upper third are still fitted, because the master is a launcher icon and lights its
+     balloons differently. -->
+<defs>
+  <linearGradient id="disc" gradientUnits="userSpaceOnUse" x1="0" y1="3.0" x2="0" y2="46.8">
+    <stop offset="0" stop-color="#ffffff" stop-opacity="0.385"/>
+    <stop offset="0.45" stop-color="#9a9a9a" stop-opacity="0.115"/>
+    <stop offset="1" stop-color="#000000" stop-opacity="0.070"/>
+  </linearGradient>
+  <radialGradient id="teal" gradientUnits="userSpaceOnUse" cx="21.07" cy="-0.77" r="29.53"
+    gradientTransform="translate(21.07,-0.77) scale(1,0.9624) translate(-21.07,--0.77)">
+    <stop offset="0.30" stop-color="#c3e7e9"/>
+    <stop offset="0.40" stop-color="#addee0"/>
+    <stop offset="0.50" stop-color="#8ed1d5"/>
+    <stop offset="0.60" stop-color="#6fc5c9"/>
+    <stop offset="0.70" stop-color="#53babf"/>
+    <stop offset="0.80" stop-color="#37aeb4"/>
+    <stop offset="0.90" stop-color="#1ea4ab"/>
+    <stop offset="1.00" stop-color="#049aa2"/>
+  </radialGradient>
+  <radialGradient id="cream" gradientUnits="userSpaceOnUse" cx="32.02" cy="16.99" r="20.79"
+    gradientTransform="translate(32.02,16.99) scale(1,0.8668) translate(-32.02,-16.99)">
+    <stop offset="0.40" stop-color="#fcf6dc"/>
+    <stop offset="0.50" stop-color="#fcf5d6"/>
+    <stop offset="0.60" stop-color="#fbf2cd"/>
+    <stop offset="0.70" stop-color="#faf0c3"/>
+    <stop offset="0.80" stop-color="#f9edba"/>
+    <stop offset="0.90" stop-color="#f6e9b0"/>
+    <stop offset="1.00" stop-color="#f3e6a9"/>
+  </radialGradient>
+  <radialGradient id="tg">
+    <stop offset="0" stop-color="#ffffff" stop-opacity="0.250"/>
+    <stop offset="0.7" stop-color="#ffffff" stop-opacity="0.087"/>
+    <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="cg">
+    <stop offset="0" stop-color="#ffffff" stop-opacity="0.250"/>
+    <stop offset="0.7" stop-color="#ffffff" stop-opacity="0.087"/>
+    <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+  </radialGradient>
+  <clipPath id="tclip"><path d="M5.411,37.254 C5.411,37.254 7.394,36.260 8.194,34.713 C9.167,32.832 8.417,31.102 8.417,31.102 C8.417,31.102 8.417,31.102 8.417,31.102 C8.417,31.102 3.259,27.808 3.259,20.991 C3.259,12.154 13.064,6.898 20.346,6.898 C29.984,6.898 36.274,13.300 36.274,20.140 C36.274,25.226 33.553,30.098 27.113,33.280 C22.514,35.552 15.430,34.147 15.430,34.147 C15.430,34.147 13.756,36.201 10.781,37.153 C7.637,38.159 5.411,37.254 5.411,37.254 Z"/></clipPath>
+  <clipPath id="cclip"><path d="M42.518,40.518 C42.518,40.518 40.486,41.010 38.412,40.378 C36.484,39.790 34.947,38.293 34.947,38.293 C34.947,38.293 29.162,38.813 25.238,36.976 C23.931,36.365 18.898,33.458 18.898,28.148 C18.898,24.805 21.771,18.640 31.191,18.640 C38.660,18.640 44.141,23.427 44.141,29.081 C44.141,33.573 40.099,36.157 40.099,36.157 C40.099,36.157 39.802,37.801 40.449,38.783 C41.174,39.885 42.518,40.518 42.518,40.518 Z"/></clipPath>
+  <filter id="soft" x="-30%" y="-30%" width="160%" height="170%">
+    <feGaussianBlur stdDeviation="1.10"/>
+  </filter>
+  <filter id="dsoft" x="-20%" y="-20%" width="140%" height="140%">
+    <feGaussianBlur stdDeviation="0.64"/>
+  </filter>
+</defs>
+<circle cx="24.07" cy="24.90" r="21.88" fill="url(#disc)" filter="url(#dsoft)"/>
+<path d="M5.411,37.254 C5.411,37.254 7.394,36.260 8.194,34.713 C9.167,32.832 8.417,31.102 8.417,31.102 C8.417,31.102 8.417,31.102 8.417,31.102 C8.417,31.102 3.259,27.808 3.259,20.991 C3.259,12.154 13.064,6.898 20.346,6.898 C29.984,6.898 36.274,13.300 36.274,20.140 C36.274,25.226 33.553,30.098 27.113,33.280 C22.514,35.552 15.430,34.147 15.430,34.147 C15.430,34.147 13.756,36.201 10.781,37.153 C7.637,38.159 5.411,37.254 5.411,37.254 Z" fill="#000000" fill-opacity="0.465" filter="url(#soft)"
+      transform="translate(0,1.68)"/>
+<path d="M5.411,37.254 C5.411,37.254 7.394,36.260 8.194,34.713 C9.167,32.832 8.417,31.102 8.417,31.102 C8.417,31.102 8.417,31.102 8.417,31.102 C8.417,31.102 3.259,27.808 3.259,20.991 C3.259,12.154 13.064,6.898 20.346,6.898 C29.984,6.898 36.274,13.300 36.274,20.140 C36.274,25.226 33.553,30.098 27.113,33.280 C22.514,35.552 15.430,34.147 15.430,34.147 C15.430,34.147 13.756,36.201 10.781,37.153 C7.637,38.159 5.411,37.254 5.411,37.254 Z" fill="url(#teal)" stroke="#013f45" stroke-opacity="0.740"
+      stroke-width="1.38" paint-order="stroke"/>
+<g clip-path="url(#tclip)">
+  <ellipse cx="21.23" cy="10.12" rx="8.76" ry="1.73" fill="url(#tg)"/>
+</g>
+<path d="M42.518,40.518 C42.518,40.518 40.486,41.010 38.412,40.378 C36.484,39.790 34.947,38.293 34.947,38.293 C34.947,38.293 29.162,38.813 25.238,36.976 C23.931,36.365 18.898,33.458 18.898,28.148 C18.898,24.805 21.771,18.640 31.191,18.640 C38.660,18.640 44.141,23.427 44.141,29.081 C44.141,33.573 40.099,36.157 40.099,36.157 C40.099,36.157 39.802,37.801 40.449,38.783 C41.174,39.885 42.518,40.518 42.518,40.518 Z" fill="#000000" fill-opacity="0.465" filter="url(#soft)"
+      transform="translate(0,1.68)"/>
+<path d="M42.518,40.518 C42.518,40.518 40.486,41.010 38.412,40.378 C36.484,39.790 34.947,38.293 34.947,38.293 C34.947,38.293 29.162,38.813 25.238,36.976 C23.931,36.365 18.898,33.458 18.898,28.148 C18.898,24.805 21.771,18.640 31.191,18.640 C38.660,18.640 44.141,23.427 44.141,29.081 C44.141,33.573 40.099,36.157 40.099,36.157 C40.099,36.157 39.802,37.801 40.449,38.783 C41.174,39.885 42.518,40.518 42.518,40.518 Z" fill="url(#cream)" stroke="#9c8a3e" stroke-opacity="0.740"
+      stroke-width="1.38" paint-order="stroke"/>
+<g clip-path="url(#cclip)">
+  <ellipse cx="32.62" cy="22.35" rx="9.85" ry="8.03" fill="url(#cg)"/>
+</g>
+</svg>

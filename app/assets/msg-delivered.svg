@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="31" height="23" viewBox="0 0 31 23">
+<!-- Delivery tick. Measured off the original: both arms run at exactly 45 degrees, the stroke
+     is 6.12 across the outside of the dark keyline, the ends are round caps and the vertex is
+     a round join. The colour is not a top-to-bottom gradient - it is a ramp ACROSS each arm,
+     lit on the upper-left edge and shaded on the lower-right - so each arm carries its own
+     perpendicular gradient, and their round caps meet at the vertex to form the join. -->
+<defs>
+  <linearGradient id="l" gradientUnits="userSpaceOnUse" x1="6.63" y1="16.17" x2="9.65" y2="13.11">
+    <stop offset="0" stop-color="#9ed2ea"/><stop offset="0.22" stop-color="#d3edf8"/><stop offset="0.24" stop-color="#71c5e9"/>
+    <stop offset="0.56" stop-color="#6cc3e8"/><stop offset="0.75" stop-color="#72c6e9"/><stop offset="0.90" stop-color="#5598b5"/><stop offset="1" stop-color="#3d7a94"/>
+  </linearGradient>
+  <linearGradient id="r" gradientUnits="userSpaceOnUse" x1="17.52" y1="9.13" x2="20.54" y2="12.18">
+    <stop offset="0" stop-color="#9ed2ea"/><stop offset="0.22" stop-color="#d3edf8"/><stop offset="0.24" stop-color="#71c5e9"/>
+    <stop offset="0.56" stop-color="#6cc3e8"/><stop offset="0.75" stop-color="#72c6e9"/><stop offset="0.90" stop-color="#5598b5"/><stop offset="1" stop-color="#3d7a94"/>
+  </linearGradient>
+</defs>
+  <g fill="none" stroke-linecap="round">
+    <path d="M26.47,3.27 L11.59,18.04 L4.70,11.23"
+          stroke="#002a3b" stroke-opacity="0.95" stroke-width="6.12"
+          stroke-linejoin="round"/>
+    <path d="M4.70,11.23 L11.59,18.04"
+          stroke="url(#l)" stroke-width="4.29"/>
+    <path d="M26.47,3.27 L11.59,18.04"
+          stroke="url(#r)" stroke-width="4.29"/>
+  </g>
+</svg>

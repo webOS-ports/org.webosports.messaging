@@ -1,0 +1,204 @@
+/**
+ * Light chrome, to match com.palm.app.messaging.
+ *
+ * The Mojo app dresses every bar with "enyo-toolbar-light": a silver gradient with dark text.
+ * Onyx's Toolbar is the opposite — a dark #4C4C4C bar with white text — and its RadioButton brings
+ * its own gradient, borders, inset shadows and first/last-child rounding. None of that is
+ * overridable through variables at this point in the build, so the affected pieces are restyled
+ * here.
+ *
+ * The colours and sizes below are sampled from a device screenshot of the Mojo app rather than
+ * guessed: toolbars run #f2f2f2 -> #ababab over 48px with a #878787 hairline, the tab strip is
+ * #e3e3e3 -> #dbdbdb over 44px, and the selected tab is a #306ba3 -> #6ca6ce blue.
+ */
+
+/*----------------------
+Toolbars
+----------------------*/
+/* 54px, centred both ways: measured off the Enyo 1 app's own .enyo-toolbar, which computes to
+   height and min-height 54px, padding 0, box-sizing border-box, -webkit-box-pack: center and
+   -webkit-box-align: center. Ours was 48px with its contents against the top, which is most of
+   why these bars read wrong beside it. */
+.onyx-toolbar.messaging-availability,
+.onyx-toolbar.conversation-header,
+.onyx-toolbar.messaging-footer {
+  height: 54px;
+  padding: 0 8px;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+  background: #d0d0d0;
+  background-image: -webkit-linear-gradient(top, #f2f2f2, #ababab);
+  background-image: linear-gradient(to bottom, #f2f2f2, #ababab);
+  border: 0;
+  border-bottom: 1px solid #878787;
+  color: #222222;
+  text-shadow: none;
+  box-shadow: none;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+/* Onyx gives every toolbar child `margin: 4px 6px 5px` on the assumption that it is an
+   inline-block, where a margin cannot collapse. ImStatus's root is a flex container, and these
+   three toolbars have had their top padding and their border taken away just above - so there
+   was nothing left to contain that top margin. It collapsed out through the toolbar and out
+   through .messaging-pane, which left the pane at top: 4 with height: 100% still measured from
+   the top of the window: the bottom 4px of the pane, and with it the bottom of the footer
+   toolbar, fell outside the window on every device.
+
+   The toolbars are a fixed 54px and centre their contents themselves, so the vertical margin
+   was doing nothing to earn that. */
+.onyx-toolbar.messaging-availability > *,
+.onyx-toolbar.conversation-header > *,
+.onyx-toolbar.messaging-footer > * {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+/* The status reads from the left edge of the column, as in the Enyo 1 app, where the row
+   filled the bar and the dot's own `padding: 0 8px` was the whole inset. Onyx's 6px child
+   margin on top of this toolbar's 8px padding had pushed it 14px further in. (The Enyo 1 app
+   renders that row starting at x 160 in a desktop browser, but that is its -webkit-box child
+   collapsing to zero width under a modern engine, not the layout Palm shipped - so it is not
+   copied here.) */
+.onyx-toolbar.messaging-availability {
+  padding-left: 0;
+}
+.onyx-toolbar.messaging-availability > * {
+  margin-left: 0;
+}
+
+/* Mojo centred the one button its footer carried: that toolbar is -webkit-box-pack: center,
+   and New Conversation lands at x 87 width 147 in a 320 column - centre 160.5, which is the
+   column's own centre. Ours had it hard against the left at x 8.
+
+   The app menu button has no counterpart there, because Mojo opened the app menu from the
+   system menu bar and Enyo 2 has no hook for it, so take it out of the flow and sit it against
+   the right edge where it cannot pull the centred button off centre. */
+.onyx-toolbar.messaging-footer {
+  position: relative;
+  -webkit-justify-content: center;
+  justify-content: center;
+}
+.onyx-toolbar.messaging-footer .app-menu-button {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  -webkit-transform: translateY(-50%);
+  transform: translateY(-50%);
+}
+
+/* The composer carries its hairline on top instead, and grows with the field. */
+.onyx-toolbar.conversation-bottom {
+  min-height: 53px;
+  padding: 6px 8px;
+  background: #e2e2e2;
+  background-image: -webkit-linear-gradient(top, #f6f6f6, #cfcfcf);
+  background-image: linear-gradient(to bottom, #f6f6f6, #cfcfcf);
+  border: 0;
+  border-top: 1px solid #b2b2b2;
+  color: #222222;
+  text-shadow: none;
+  box-shadow: none;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+/* Onyx colours toolbar text and inputs for a dark bar. */
+.onyx-toolbar.messaging-availability .onyx-input,
+.onyx-toolbar.conversation-header .onyx-input,
+.onyx-toolbar.conversation-bottom .onyx-input {
+  color: #222222;
+  text-shadow: none;
+}
+
+/*----------------------
+Tab strip
+----------------------*/
+.messaging-radiobuttons {
+  /* 49, matching the strip in palm-app.less. This said 44 and, loading after that file at the
+     same specificity, it won - so the strip was short and the search row below it started at
+     y 95 instead of 100, carrying the whole list up with it. */
+  height: 49px;
+  background: #dfdfdf;
+  background-image: -webkit-linear-gradient(top, #e3e3e3, #dbdbdb);
+  background-image: linear-gradient(to bottom, #e3e3e3, #dbdbdb);
+  border-bottom: 1px solid #9c9c9c;
+}
+
+/* Strip the Onyx radiobutton chrome: its gradient, hairlines, inset highlight and the rounded
+   end caps. The caps in particular would land on the wrong cell, since the Servers tab is moved
+   leftmost with flex ordering while staying first in the DOM. */
+.messaging-radiobuttons .onyx-radiobutton.onyx-tabbutton {
+  /* 10 + 32 + 7 = 49, which is the strip the Enyo 1 app draws: its .enyo-tabbutton measures
+     [0,51,107,49] with a 44x32 icon at y 61. This rule used to say 44px and, being more
+     specific than the 49px in palm-app.less, it quietly won - so the strip was 5px short and
+     everything below it rode 5px high. */
+  height: 49px;
+  padding: 10px 0 7px;
+  margin: 0;
+  background: transparent;
+  background-image: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  text-shadow: none;
+  color: #333333;
+}
+
+.messaging-radiobuttons .onyx-radiobutton.onyx-tabbutton.active {
+  background: #4a86b8;
+  background-image: -webkit-linear-gradient(top, #306ba3, #6ca6ce);
+  background-image: linear-gradient(to bottom, #306ba3, #6ca6ce);
+  border: 0;
+  box-shadow: none;
+  color: #ffffff;
+}
+
+/*----------------------
+Bottom toolbar of the messaging pane
+----------------------*/
+.messaging-footer .onyx-button {
+  text-shadow: none;
+}
+
+/*----------------------
+Buttons on the light bars
+----------------------*/
+/* Onyx styles toolbar buttons for a dark bar - #555656 with #F2F2F2 text - which reads as a dark
+   slab on the silver chrome. Mojo's are the same light silver as the bar with dark text; the
+   gradient below is sampled from the device (#efefef -> #d8d8d8, text #2b2b2b). */
+/* Onyx's button is `padding: 6px 18px` with a 3px radius, which comes out 36px tall and 171
+   wide for New Conversation. The Enyo 1 button is `padding: 4px 8px` with a 5px radius: 28
+   tall and 147 wide for the same words at the same 16px. Ours read chunky beside it. */
+.onyx-toolbar.messaging-availability .onyx-button,
+.onyx-toolbar.conversation-header .onyx-button,
+.onyx-toolbar.conversation-bottom .onyx-button,
+.onyx-toolbar.messaging-footer .onyx-button {
+  padding: 4px 8px;
+  border-radius: 5px;
+  /* 28 overall, as the Enyo 1 button measures. Onyx leaves the height to the line box, which
+     came out 36 with our 1px border. */
+  height: 28px;
+  line-height: 18px;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  color: #2b2b2b;
+  background-color: #e4e4e4;
+  background-image: -webkit-linear-gradient(top, #efefef, #d8d8d8);
+  background-image: linear-gradient(to bottom, #efefef, #d8d8d8);
+  border: 1px solid #a8a8a8;
+  border-color: #a8a8a8;
+  text-shadow: none;
+}
+
+/* The block/delete bar sits on the conversation background rather than a toolbar. */
+.block-delete-box .onyx-button {
+  color: #333333;
+  background-color: #f3f3f3;
+  background-image: none;
+  border: 1px solid #cfcfcf;
+  text-shadow: none;
+}

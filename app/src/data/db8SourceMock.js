@@ -1163,7 +1163,7 @@ module.exports = kind({
                 "photos": {
                     "accountId": "lkfdjlfjdsfljds+6",
                     "bigPhotoId": "129",
-                    "bigPhotoPath": "assets/kris_kringle.jpg",
+                    "bigPhotoPath": "assets/list-avatar-default.svg",
                     "contactId": "ldjfldjfdfoo",
                     "listPhotoPath": "",
                     "listPhotoSource": "",
@@ -1989,7 +1989,7 @@ module.exports = kind({
                 photos: {
                     accountId: "lkfdjlfjdsfljds+6",
                     bigPhotoId: "129",
-                    bigPhotoPath: "assets/kris_kringle.jpg",
+                    bigPhotoPath: "assets/list-avatar-default.svg",
                     contactId: "ldjfldjfdfoo",
                     listPhotoPath: "",
                     listPhotoSource: "",

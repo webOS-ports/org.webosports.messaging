@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="21" height="19" viewBox="0 0 21 19">
+<!-- Measured off the original: a triangle from (10.5,-1.21) to y=17, graded #ffd200 at the
+     apex to #ddae00 at the foot, with a lit pixel inside each slope, a darker bar under the
+     base and the cast shadow below that. The mark is a tapering stem and a dot, both graded
+     - a flat slab of one dark colour is what made it read soft. -->
+<defs>
+  <linearGradient id="hw-fill" gradientUnits="userSpaceOnUse" x1="0" y1="-1.2" x2="0" y2="17">
+    <stop offset="0" stop-color="#ffd200"/>
+    <stop offset="0.53" stop-color="#f6c700"/>
+    <stop offset="1" stop-color="#ddae00"/>
+  </linearGradient>
+  <linearGradient id="hw-rim" gradientUnits="userSpaceOnUse" x1="0" y1="-1.2" x2="0" y2="17">
+    <stop offset="0" stop-color="#fffa28"/>
+    <stop offset="1" stop-color="#f3c40e"/>
+  </linearGradient>
+  <linearGradient id="hw-mark" gradientUnits="userSpaceOnUse" x1="0" y1="5.2" x2="0" y2="12.8">
+    <stop offset="0" stop-color="#2a2200"/>
+    <stop offset="1" stop-color="#6b5a18"/>
+  </linearGradient>
+  <mask id="hw-in"><path d="M10.5,-1.21 L21.15,17 L-0.15,17 Z" fill="#ffffff"/></mask>
+</defs>
+<rect x="1.2" y="18" width="18.6" height="1" fill="#000000" fill-opacity="0.22"/>
+<rect x="0.9" y="17" width="19.0" height="1" fill="#c29600" fill-opacity="0.85"/>
+<path d="M10.5,-1.21 L21.15,17 L-0.15,17 Z" fill="url(#hw-fill)"/>
+<path d="M-0.15,17 L10.5,-1.21 L21.15,17" fill="none" stroke="url(#hw-rim)"
+      stroke-width="3.2" mask="url(#hw-in)"/>
+<path d="M9.20,5.2 L11.80,5.2 L11.60,12.8 L9.40,12.8 Z" fill="url(#hw-mark)"/>
+<rect x="9.80" y="14.1" width="1.4" height="2.2" rx="0.3" fill="#352b00"/>
+</svg>

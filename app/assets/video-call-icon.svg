@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="64" viewBox="0 0 32 64">
+<!-- Video camera: a 22.9 by 17.9 rounded body with the lens as a trapezoid off its right
+     side, both authored from the original's edges rather than traced - the trace put a seam
+     across the body where it broke the outline into two runs. The resting state is #1f1f1f
+     fading 0.76 to 0.32 down the shape over a 2.0px bar of its own at the foot; the
+     lit state is flat #6ec3ff with a 1.40 blur of itself behind, which is why its edge reads
+     soft while its middle stays solid. -->
+  <defs>
+    <path id="g" d="M3.840,5.638 L20.975,5.638 A2.900,2.900 0 0 1 23.875,8.537 L23.875,20.638 A2.900,2.900 0 0 1 20.975,23.538 L3.840,23.538 A2.900,2.900 0 0 1 0.940,20.638 L0.940,8.537 A2.900,2.900 0 0 1 3.840,5.638 Z M21.438,11.950 Q21.438,11.150 22.168,10.824 L27.769,8.326 Q28.500,8.000 28.500,8.800 L28.500,20.188 Q28.500,20.988 27.710,20.863 L22.228,19.999 Q21.438,19.875 21.438,19.075 Z"/>
+    <mask id="out" maskUnits="userSpaceOnUse" x="-8" y="-8" width="48" height="80">
+      <rect x="-8" y="-8" width="48" height="80" fill="#ffffff"/>
+      <use href="#g" fill="#000000"/>
+    </mask>
+    <linearGradient id="fdn" gradientUnits="userSpaceOnUse" x1="0" y1="5.64" x2="0" y2="23.54">
+      <stop offset="0" stop-color="#222222" stop-opacity="0.760"/>
+      <stop offset="1" stop-color="#171717" stop-opacity="0.315"/>
+    </linearGradient>
+    <filter id="sup" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="1.40"/>
+    </filter>
+  </defs>
+  <g mask="url(#out)"><use href="#g" fill="#1f1f1f" fill-opacity="0.630"
+       transform="translate(0,2.00)"/></g>
+  <use href="#g" fill="url(#fdn)"/>
+  <g transform="translate(0,32)">
+    <use href="#g" fill="#6ec3ff" filter="url(#sup)"/>
+    <use href="#g" fill="#6ec3ff"/>
+  </g>
+</svg>

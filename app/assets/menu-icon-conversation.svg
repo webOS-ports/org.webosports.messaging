@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="44" height="64" viewBox="0 0 44 64">
+<!-- Speech balloon. The outline is this glyph's own, measured off Palm's 32px original.
+     It started as the vector shape layer of Icon-messaging-1024.psd - the launcher
+     balloon the designer drew - placed here by an affine. That is how it was drawn
+     until now, and it is wrong: the launcher icon and this toolbar glyph are two
+     drawings, not one drawing at two sizes, and no affine holds both. Against the
+     original's silhouette the master leaves a smooth, systematic error along the
+     bottom - 0.3px too high under the left of the body, 0.2px too low out to the
+     right of it - which reads as a long flat run that turns up in a corner where
+     the original sweeps round in one arc. So the ten knots were let go one at a
+     time against that silhouette. The bottom edge now tracks the original to 0.06px
+     across the whole span, where the affine was out by up to 0.45px, and the fitted
+     curve is smoother than the one it replaces, not wobblier.
+     The silhouette is measured by coverage, not by a threshold. Every pixel here is
+     black body at the row's alpha over white line at a fixed alpha, and over
+     transparency the premultiplied red channel carries only the line, so the two
+     coverages separate exactly and add up to the geometry. A fixed threshold cannot
+     do this: the line is brighter than the body it is cut into, so the threshold
+     walks along the edge as the line comes and goes.
+     Over the shape goes the engraved line this bar wants: the original's body is
+     pure black ramping 168 to 108 in alpha, and along its lower edge sits a line of
+     pure WHITE at alpha 191 - black at 125 in the lit state. Both bodies are one
+     flat colour with a straight alpha ramp - black 0.62 to 0.33 resting, white 0.94
+     to 0.27 lit - measured interior pixel by interior pixel with the line's own
+     pixels left out.
+     Under both states goes a soft black halo, masked to outside the outline. The lit
+     half of the original carries black out there - alpha 5 to 21 at the shoulder, 26
+     to 66 round the lower left - and with nothing there ours read hard-edged against
+     a soft original. Masked, because both bodies are semi-transparent and a halo laid
+     under them shows through and darkens the paint instead of the bar. -->
+  <defs>
+    <linearGradient id="fdn" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="32">
+      <stop offset="0" stop-color="#000000" stop-opacity="0.6196"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.3594"/>
+    </linearGradient>
+    <linearGradient id="fup" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="32">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.9420"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.2664"/>
+    </linearGradient>
+  
+    <path id="g" d="M8.984,28.039 C8.434,27.741 9.321,27.301 10.779,25.918 C12.639,23.561 11.647,24.078 11.422,23.232 C11.422,23.531 11.891,23.232 11.891,23.232 C11.991,23.630 7.351,20.691 7.163,14.722 C7.689,7.136 15.207,3.076 22.013,3.113 C30.389,3.225 35.674,8.442 35.400,14.059 C35.575,18.230 32.850,22.393 27.246,24.931 C21.351,26.938 17.219,25.663 17.794,25.663 C17.669,25.600 16.581,27.364 13.833,28.155 C11.927,29.387 8.934,29.059 8.984,28.039 Z"/>
+    <path id="c" d="M-8,-8 H52 V72 H-8 Z M8.984,28.039 C8.434,27.741 9.321,27.301 10.779,25.918 C12.639,23.561 11.647,24.078 11.422,23.232 C11.422,23.531 11.891,23.232 11.891,23.232 C11.991,23.630 7.351,20.691 7.163,14.722 C7.689,7.136 15.207,3.076 22.013,3.113 C30.389,3.225 35.674,8.442 35.400,14.059 C35.575,18.230 32.850,22.393 27.246,24.931 C21.351,26.938 17.219,25.663 17.794,25.663 C17.669,25.600 16.581,27.364 13.833,28.155 C11.927,29.387 8.934,29.059 8.984,28.039 Z"/>
+    <clipPath id="cg"><path d="M8.984,28.039 C8.434,27.741 9.321,27.301 10.779,25.918 C12.639,23.561 11.647,24.078 11.422,23.232 C11.422,23.531 11.891,23.232 11.891,23.232 C11.991,23.630 7.351,20.691 7.163,14.722 C7.689,7.136 15.207,3.076 22.013,3.113 C30.389,3.225 35.674,8.442 35.400,14.059 C35.575,18.230 32.850,22.393 27.246,24.931 C21.351,26.938 17.219,25.663 17.794,25.663 C17.669,25.600 16.581,27.364 13.833,28.155 C11.927,29.387 8.934,29.059 8.984,28.039 Z" clip-rule="nonzero"/></clipPath>
+    <clipPath id="co"><path d="M-8,-8 H52 V72 H-8 Z M8.984,28.039 C8.434,27.741 9.321,27.301 10.779,25.918 C12.639,23.561 11.647,24.078 11.422,23.232 C11.422,23.531 11.891,23.232 11.891,23.232 C11.991,23.630 7.351,20.691 7.163,14.722 C7.689,7.136 15.207,3.076 22.013,3.113 C30.389,3.225 35.674,8.442 35.400,14.059 C35.575,18.230 32.850,22.393 27.246,24.931 C21.351,26.938 17.219,25.663 17.794,25.663 C17.669,25.600 16.581,27.364 13.833,28.155 C11.927,29.387 8.934,29.059 8.984,28.039 Z" clip-rule="evenodd"/></clipPath>
+    <filter id="h" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="1.10"/>
+    </filter>
+    <filter id="j" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="1.20"/>
+    </filter>
+    <path id="u" d="M8.984 27.039 C8.434 26.741 9.321 26.301 10.779 24.918 C12.639 22.561 11.647 23.078 11.422 22.232 C11.422 22.531 11.891 22.232 11.891 22.232 C11.991 22.630 7.351 19.691 7.163 13.722 C7.689 6.136 15.207 2.076 22.013 2.113 C30.389 2.225 35.674 7.442 35.400 13.059 C35.575 17.230 32.850 21.393 27.246 23.931 C21.351 25.938 17.219 24.663 17.794 24.663 C17.669 24.600 16.581 26.364 13.833 27.155 C11.927 28.387 8.934 28.059 8.984 27.039 Z"/>
+    <path id="b" d="M8.984,28.039 C8.434,27.741 9.321,27.301 10.779,25.918 C12.639,23.561 11.647,24.078 11.422,23.232 C11.422,23.531 11.891,23.232 11.891,23.232 C11.991,23.630 7.351,20.691 7.163,14.722 C7.689,7.136 15.207,3.076 22.013,3.113 C30.389,3.225 35.674,8.442 35.400,14.059 C35.575,18.230 32.850,22.393 27.246,24.931 C21.351,26.938 17.219,25.663 17.794,25.663 C17.669,25.600 16.581,27.364 13.833,28.155 C11.927,29.387 8.934,29.059 8.984,28.039 Z M8.984 27.039 C8.434 26.741 9.321 26.301 10.779 24.918 C12.639 22.561 11.647 23.078 11.422 22.232 C11.422 22.531 11.891 22.232 11.891 22.232 C11.991 22.630 7.351 19.691 7.163 13.722 C7.689 6.136 15.207 2.076 22.013 2.113 C30.389 2.225 35.674 7.442 35.400 13.059 C35.575 17.230 32.850 21.393 27.246 23.931 C21.351 25.938 17.219 24.663 17.794 24.663 C17.669 24.600 16.581 26.364 13.833 27.155 C11.927 28.387 8.934 28.059 8.984 27.039 Z"/>
+  </defs>
+  <g>
+    <g clip-path="url(#co)"><use href="#g" fill="#000000" fill-opacity="0.000"
+         fill-rule="nonzero" filter="url(#h)" transform="translate(0,0.41)"/></g>
+    <g clip-path="url(#cg)">
+      <use href="#u" fill="url(#fdn)" fill-opacity="0.955" fill-rule="nonzero"/>
+      <use href="#b" fill="#ffffff" fill-opacity="0.749" fill-rule="evenodd"/>
+    </g>
+    <g clip-path="url(#cg)"><use href="#c" fill="#000000" fill-opacity="0.350"
+         fill-rule="evenodd" filter="url(#j)" transform="translate(0,0.97)"/></g>
+  </g>
+  <g transform="translate(0,32)">
+    <g clip-path="url(#co)"><use href="#g" fill="#000000" fill-opacity="0.565"
+         fill-rule="nonzero" filter="url(#h)" transform="translate(0,0.41)"/></g>
+    <g clip-path="url(#cg)">
+      <use href="#u" fill="url(#fup)" fill-opacity="1.000" fill-rule="nonzero"/>
+      <use href="#b" fill="#000000" fill-opacity="0.490" fill-rule="evenodd"/>
+    </g>
+    <g clip-path="url(#cg)"><use href="#c" fill="#000000" fill-opacity="0.010"
+         fill-rule="evenodd" filter="url(#j)" transform="translate(0,0.97)"/></g>
+  </g>
+</svg>

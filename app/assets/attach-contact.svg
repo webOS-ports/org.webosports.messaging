@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="41" height="41" viewBox="0 0 41 41">
+<!-- Contact-card badge, drawn to the original: the attachment tile, two cards of white paper
+     stepped rather than fanned, the orange figure on the front one and the two connector tabs
+     through its lower edge. The 1024px master in the webOS-Ports graphics repository is the
+     reference for how the figure and the paper are drawn; the composition is the original's,
+     which is also why there is no disc - the badge never had one. -->
+<defs>
+  <linearGradient id="tile" x1="0" y1="0" x2="0.2" y2="1">
+    <stop offset="0" stop-color="#ffffff" stop-opacity="0.380"/>
+    <stop offset="0.55" stop-color="#ededed" stop-opacity="0.380"/>
+    <stop offset="1" stop-color="#cfcfcf" stop-opacity="0.380"/>
+  </linearGradient>
+  <linearGradient id="paper" x1="0" y1="0" x2="0.15" y2="1">
+    <stop offset="0" stop-color="#ffffff"/><stop offset="0.7" stop-color="#fbfbfb"/>
+    <stop offset="1" stop-color="#e7e7e7"/>
+  </linearGradient>
+  <radialGradient id="who" cx="0.4" cy="0.3" r="0.85">
+    <stop offset="0" stop-color="#ffb866"/><stop offset="0.5" stop-color="#f79a3e"/>
+    <stop offset="1" stop-color="#e8823a"/>
+  </radialGradient>
+  <linearGradient id="tab" x1="0" y1="0" x2="0.2" y2="1">
+    <stop offset="0" stop-color="#5c5c5c" stop-opacity="0.82"/>
+    <stop offset="1" stop-color="#1c1c1c" stop-opacity="0.82"/>
+  </linearGradient>
+</defs>
+<path d="M8.910,0.030 L32.100,0.030 A8.300,8.300 0 0 1 40.400,8.330 L40.400,32.125 A8.300,8.300 0 0 1 32.100,40.425 L8.910,40.425 A8.300,8.300 0 0 1 0.610,32.125 L0.610,8.330 A8.300,8.300 0 0 1 8.910,0.030 Z" fill="url(#tile)" stroke="#b9b9b9" stroke-width="0.42"
+      stroke-opacity="0.5"/>
+<path d="M6.237,9.550 L30.137,9.550 A0.800,0.800 0 0 1 30.938,10.350 L30.938,27.350 A0.800,0.800 0 0 1 30.137,28.150 L6.237,28.150 A0.800,0.800 0 0 1 5.438,27.350 L5.438,10.350 A0.800,0.800 0 0 1 6.237,9.550 Z" fill="url(#paper)" stroke="#b9b9b9" stroke-width="0.42"/>
+<path d="M10.300,13.500 L35.200,13.500 A0.800,0.800 0 0 1 36.000,14.300 L36.000,31.700 A0.800,0.800 0 0 1 35.200,32.500 L10.300,32.500 A0.800,0.800 0 0 1 9.500,31.700 L9.500,14.300 A0.800,0.800 0 0 1 10.300,13.500 Z" fill="url(#paper)" stroke="#b9b9b9" stroke-width="0.42"/>
+<circle cx="17.50" cy="17.60" r="2.70" fill="url(#who)"/>
+<path d="M15.400,21.600 L19.600,21.600 A2.000,2.000 0 0 1 21.600,23.600 L21.600,25.600 A0.000,0.000 0 0 1 21.600,25.600 L13.400,25.600 A0.000,0.000 0 0 1 13.400,25.600 L13.400,23.600 A2.000,2.000 0 0 1 15.400,21.600 Z" fill="url(#who)"/>
+<path d="M15.300,27.500 L19.100,27.500 A0.500,0.500 0 0 1 19.600,28.000 L19.600,30.100 A0.500,0.500 0 0 1 19.100,30.600 L15.300,30.600 A0.500,0.500 0 0 1 14.800,30.100 L14.800,28.000 A0.500,0.500 0 0 1 15.300,27.500 Z" fill="url(#tab)"/><rect x="16.55" y="30.60" width="1.30" height="2.50" fill="url(#tab)"/><path d="M27.100,27.500 L30.900,27.500 A0.500,0.500 0 0 1 31.400,28.000 L31.400,30.100 A0.500,0.500 0 0 1 30.900,30.600 L27.100,30.600 A0.500,0.500 0 0 1 26.600,30.100 L26.600,28.000 A0.500,0.500 0 0 1 27.100,27.500 Z" fill="url(#tab)"/><rect x="28.35" y="30.60" width="1.30" height="2.50" fill="url(#tab)"/>
+</svg>

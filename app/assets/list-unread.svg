@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="25" height="24" viewBox="0 0 25 24">
+<!-- Unread badge. Not a flat disc: the original is r 10.81 about (12.54,12.24) at 0.259 black,
+     darkening to 0.440 across the top 4.9px, with a white arc at 0.440 along the foot - the
+     bevel of something pressed into the list. The arc is the disc less a copy of itself
+     0.89px higher, so the two regions meet exactly and neither tints the other. -->
+  <defs>
+    <clipPath id="d"><circle cx="12.54" cy="12.24" r="10.81"/></clipPath>
+    <mask id="body"><circle cx="12.54" cy="11.35" r="10.81" fill="#ffffff"/></mask>
+    <mask id="rim">
+      <circle cx="12.54" cy="12.24" r="10.81" fill="#ffffff"/>
+      <circle cx="12.54" cy="11.35" r="10.81" fill="#000000"/>
+    </mask>
+    <linearGradient id="top" gradientUnits="userSpaceOnUse" x1="0" y1="1.42" x2="0" y2="6.30">
+      <stop offset="0" stop-color="#000000" stop-opacity="0.440"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.259"/>
+    </linearGradient>
+  </defs>
+  <g clip-path="url(#d)">
+    <rect x="0" y="0" width="25" height="24" fill="#ffffff" fill-opacity="0.440" mask="url(#rim)"/>
+    <circle cx="12.54" cy="12.24" r="10.81" fill="url(#top)" mask="url(#body)"/>
+  </g>
+</svg>
