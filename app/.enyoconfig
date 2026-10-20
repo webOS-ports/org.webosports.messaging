@@ -8,7 +8,7 @@
     "onyx",
     "moment",
     "enyo-webos",
-    "enyo-luneos"
+    "webos-lib"
   ],
   "sources": {
     "enyo": "https://github.com/enyojs/enyo.git",
@@ -16,15 +16,15 @@
     "onyx": "https://github.com/enyojs/onyx.git",
     "moment": "https://github.com/moment/moment.git",
     "enyo-webos": "https://github.com/enyojs/enyo-webos.git",
-    "enyo-luneos": "https://github.com/JayCanuck/enyo-luneos.git"
+    "webos-lib": "https://github.com/webOS-ports/webos-lib.git"
   },
   "targets": {
     "enyo": "2.7.0",
     "layout": "2.7.0",
     "onyx": "2.7.0",
     "moment": "master",
-    "enyo-luneos": "master",
-    "enyo-animated": "master"
+    "enyo-animated": "master",
+    "webos-lib": "master"
   },
   "production": false,
   "devMode": true,
