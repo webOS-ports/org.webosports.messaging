@@ -1,0 +1,100 @@
+From: Herman van Hazendonk <github.com@herrie.org>
+Subject: [PATCH 2/2] Do not gate the back gesture on platform detection
+
+The keyup -> `backgesture` emulation sits inside the block guarded by
+
+    if (webOS.platform.legacy || webOS.platform.open || webOS.platform.luneos)
+
+so on any build where those three are unset the listener is never installed and
+an application has no back gesture at all. Patch 1 makes the detection work
+again, but the gate is the wrong shape regardless: this library supersedes
+webos-lib for Enyo 2.7, and webos-lib's source/BackGesture.js never gated it -
+
+    enyo.dispatcher.listen(document, 'keyup', function(ev) {
+        if (ev.keyCode == 27 || ev.keyIdentifier == "U+1200001"
+                || ev.keyIdentifier == "U+001B" || ev.keyIdentifier == "Back") {
+            enyo.Signals.send('onbackbutton', ev);
+        }
+    });
+
+Introducing the guard is therefore a regression against the library this one
+replaced, and it makes the back gesture depend on platform sniffing that can
+only ever become more fragile. A listener that reacts to Escape and the two
+webOS Back key identifiers costs nothing on a platform that never sends them.
+
+So move it out, next to the other unconditional blocks, and keep the Mojo hooks
+(relaunch, stageActivated/stageDeactivated, show/hide) behind the guard where
+they belong - those really are legacy-container specific.
+
+This also makes the gesture independent of how the container identifies itself,
+which matters because the key is not a webOS-only convention: the LuneOS
+compositor's CardView.onSwipeLeftGesture sends it as a plain key to whatever has
+focus -
+
+    seat.sendKeyEvent(Qt.Key_Escape, true);
+    seat.sendKeyEvent(Qt.Key_Escape, false);
+
+Verified on a MindPhone with this patch alone - patch 1's fallback and the
+application-side workaround both compiled out, so webOS.platform stayed empty
+and platform.luneos undefined: a keyup of keyCode 27 still raises `backgesture`,
+and in Messaging a conversation open at composer left=87 in a 480px viewport
+slides to left=567, thread list showing. Either patch fixes the back gesture on
+its own; patch 1 additionally restores everything else that platform detection
+gates.
+
+Signed-off-by: Herman van Hazendonk <github.com@herrie.org>
+Upstream-Status: Pending [not yet submitted to JayCanuck/enyo-luneos]
+---
+--- a/LuneOS/LuneOS.js
++++ b/LuneOS/LuneOS.js
+@@ -59,6 +59,36 @@
+ 
+ 
+ /* ============================================================================
++	Back gesture
++============================================================================*/
++(function() {
++
++	// Deliberately NOT inside the platform guard that the rest of the Mojo hooks live behind.
++	// webos-lib's BackGesture.js - what Enyo 2.5 and earlier apps used, and what this library
++	// supersedes for 2.7 - listened unconditionally:
++	//
++	//     enyo.dispatcher.listen(document, 'keyup', function(ev) {
++	//         if (ev.keyCode == 27 || ...) { enyo.Signals.send('onbackbutton', ev); }
++	//     });
++	//
++	// Gating it on webOS.platform.{legacy,open,luneos} is what broke the back gesture on current
++	// LuneOS, where all three are unset and the listener was therefore never installed. A keyup
++	// listener that only reacts to Escape and the webOS Back keys costs nothing anywhere, and the
++	// compositor's back gesture is exactly that key: CardView.onSwipeLeftGesture does
++	// seat.sendKeyEvent(Qt.Key_Escape, true/false) to the focused surface.
++	document.addEventListener('keyup', function(ev) {
++		if (ev.keyCode == 27 || ev.keyIdentifier == "U+1200001"
++				|| ev.keyIdentifier == "U+001B" || ev.keyIdentifier == "Back") {
++			var e = document.createEvent("Event");
++			e.initEvent("backgesture", false, false);
++			document.dispatchEvent(e);
++		}
++	});
++
++})();
++
++
++/* ============================================================================
+ 	Device Orientation APIs
+ ============================================================================*/
+ (function() {
+@@ -532,13 +562,6 @@
+ 			} catch(e) {}
+ 		};
+ 
+-		// emulate "backbutton" event
+-		document.addEventListener('keyup', function(ev) {
+-			if (ev.keyCode == 27 || ev.keyIdentifier == "U+1200001"
+-					|| ev.keyIdentifier == "U+001B" || ev.keyIdentifier == "Back") {
+-				fireDocumentEvent("backgesture", ev);
+-			}
+-		});
+ 
+ 		// LunaSysMgr calls this when a KeepAlive app's window is shown
+ 		// Only used by webOS builtin system apps
