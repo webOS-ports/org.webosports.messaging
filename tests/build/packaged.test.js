@@ -179,4 +179,38 @@ describe('the packed appinfo', function () {
     it('leaves the browser-only mock data out of the shipped assets', function () {
         assert.ok(!fs.existsSync(path.join(PACK, 'mock')), 'the mock directory was packed');
     });
+
+    it('packs the LuneOS event plumbing, not just the handlers that want it', function () {
+        // MainView declares {kind: Signals, onbackgesture: "goBack", onwebOSRelaunch: ...}, but
+        // those events only reach Signals if the enyo-luneos PACKAGE index ran. Its index.js
+        // installs the keyup-27 -> `backgesture` emulation (via LuneOS/LuneOS.js) and the
+        // document -> Signals forwarding for backgesture, activate, deactivate, menubutton,
+        // virtualkeyboard, appshow, apphide and lowmemory, and it requires enyo-webos for
+        // webOSLaunch/webOSRelaunch.
+        //
+        // Requiring enyo-webos/LunaService and friends - all this app used to do - loads those
+        // modules without running either package index, so none of the listeners existed. The
+        // shipped bundle contained MainView's onbackgesture handler and nothing that could ever
+        // fire it, so on a phone (where picking a thread slides the conversation over the list)
+        // there was no way back out of a conversation at all.
+        //
+        // Assert on what only the package index drags in, and keep it minification-proof by
+        // matching string literals rather than function names: the packer renamed
+        // fireDocumentEvent to a single letter, so the dispatch reads `e("backgesture",t)`.
+        // Do NOT assert on webOSRelaunch or webOSLocaleChange - enyo-webos/src/Events.js was
+        // already present in the broken bundle, unexecuted, so its strings prove nothing.
+        assert.ok(html.indexOf('("backgesture"') !== -1 || html.indexOf("('backgesture'") !== -1,
+            'the keyup -> backgesture emulation is absent: enyo-luneos is not required');
+        assert.ok(html.indexOf('apphide') !== -1 && html.indexOf('lowmemory') !== -1,
+            'the enyo-luneos document -> Signals forwarding is absent');
+
+        // Shipping the code is not enough: LuneOS.js gates the whole block on
+        // webOS.platform.{legacy,open,luneos}, and sets luneos only from a user agent that says
+        // "luneos". This WAM's does not ("... Safari/537.36 WebAppManager"), so platform comes
+        // back {} and the guard is false even with the package required. index.js corrects the
+        // flag from window.PalmSystem before enyo-luneos reads it; without that the bundle
+        // contains a listener that is never installed.
+        assert.ok(/window\.webOS\.platform\.luneos\s*=/.test(html),
+            'index.js no longer forces webOS.platform.luneos, so the UA gate will win');
+    });
 });
