@@ -85,6 +85,7 @@ module.exports = kind({
             kind: Signals,
             onbackgesture: "goBack",
             onwebOSRelaunch: "handleRelaunch",
+            onmenubutton: "toggleAppMenu",
             onwindowactivated: "windowActivatedHandler",
             onwindowdeactivated: "windowDeactivatedHandler",
             onwindowhidden: "windowHiddenHandler",
@@ -92,6 +93,9 @@ module.exports = kind({
         },
 
         { name: "buddyDialog", kind: AddBuddyDialog },
+        // What the app menu opens against when the status bar asks for it: the top left corner
+        // of the app, just under the app's name in the status bar.
+        { name: "appMenuAnchor", style: "position: absolute; top: 0; left: 0; width: 0; height: 0;" },
         {
             name: "appMenu", kind: Menu, floating: true, components: [
                 { name: "addBuddyMenuItem", kind: MenuItem, content: $L("Add Buddy"), ontap: "addBuddy" },
@@ -393,9 +397,29 @@ module.exports = kind({
     // --- menus & views ---------------------------------------------------------------------
 
     openAppMenu: function (inSender, inEvent) {
-        this.setOfflineMenuItem();
-        this.$.appMenu.showAtEvent(inEvent || {});
+        this.showAppMenu(inEvent.activator);
         return true;
+    },
+
+    // The app's name in the status bar. Tapping it relaunches the app with
+    // palm-command "open-app-menu", which webos-lib passes on as `menubutton` rather than as a
+    // relaunch. The menu opens at the top left, under the name, and a second tap closes it, as
+    // Mojo's did.
+    toggleAppMenu: function () {
+        if (this.$.appMenu.showing) {
+            this.$.appMenu.hide();
+        } else {
+            this.showAppMenu(this.$.appMenuAnchor);
+        }
+        return true;
+    },
+
+    // onyx's floating Menu places itself against the control that opened it, and measures that
+    // control again while it sizes itself. Opened with showAtEvent() or showAtPosition() it has
+    // none: it threw while hidden for sizing, and stayed invisible.
+    showAppMenu: function (activator) {
+        this.setOfflineMenuItem();
+        this.$.appMenu.requestMenuShow(this, { activator: activator });
     },
 
     openHelp: function () {
