@@ -1,0 +1,43 @@
+{
+	"activity": {
+		"name": "chatthreader-delete-watch",
+		"description": "Updates chat threads when messages are deleted",
+		"type": {
+			"immediate": true,
+			"priority": "normal",
+			"persist": true,
+			"explicit": true,
+			"power": true,
+			"powerDebounce": true
+		},
+		"trigger": {
+			"key": "fired",
+			"method": "luna://com.palm.db/watch",
+			"params": {
+				"query": {
+					"from": "com.palm.message:1",
+					"where": [
+						{
+							"prop": "_del",
+							"op": "=",
+							"val": true
+						},
+						{
+							"prop": "_rev",
+							"op": ">",
+							"val": 0
+						}
+					]
+				}
+			}
+		},
+		"callback": {
+			"method": "luna://org.webosports.service.messaging/messagesDeleted",
+			"params": {
+				"lastDeletedRev": 0
+			}
+		}
+	},
+	"start": true,
+	"replace": true
+}

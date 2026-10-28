@@ -1,8 +1,5 @@
 {
   "messaging-service.operation": [
-      "org.webosports.service.messaging/assignMessages",
-      "org.webosports.service.messaging/putMessage",
-      "org.webosports.service.messaging/deleteChatthread",
-      "org.webosports.service.messaging/updateThreadValues"
+      "org.webosports.service.messaging/*"
   ]
 }

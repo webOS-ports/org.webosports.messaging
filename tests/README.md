@@ -4,7 +4,7 @@ Three layers, each answering a different question.
 
 | | What it checks | Needs |
 |---|---|---|
-| `unit/` | the pure logic in `app/src/util` | node |
+| `unit/` | the pure logic in `app/src/util`, and the service (`service-*.test.js`) | node 22 |
 | `build/` | the app **after** `enyo pack --production` | node, enyo-dev |
 | `device/` | the app running on a phone | node, enyo-dev, adb |
 
@@ -18,6 +18,32 @@ tests/device/run.sh SERIAL   # devices only
 Set `MESSAGING_WORK` to choose where the packed build goes, and `ENYO_DEV` to
 point at a `nodejs-enyo-dev-native` staging directory if the ones `pack.sh`
 knows about are not there.
+
+## The service tests
+
+`unit/service-*.test.js` run `service/` - the chat threader - on a stand-in
+palmbus with an in-memory db8 behind it (`unit/service/`: `fakedb.js` does
+kind inheritance, index defaults, revSets, soft deletes and refuses a merge
+with a stale `_rev`, as db8 does). It also refuses what db8 would refuse the
+service: a query no index of the real kind files serves, and - for calls the
+service makes over the bus - anything its kind permissions do not grant, read
+from `service/configuration/db/permissions` and copies of the other components'
+files (`service-fakedb.test.js` pins those rules to what the device answered).
+Nothing in them needs a device.
+
+`service-volume.test.js` builds a mailbox from a fixed seed
+(`unit/service/volume.js`): 300 contacts, 60 strangers, channels, group chats
+and 800 messages over four transports, with the address forms each transport
+really writes, history back-filled out of order, and contacts that only sync
+halfway. Every message is tagged with the conversation it was generated for, and
+the threads are held to those tags after delivery, after reads and after
+deletes. `VOLUME_SEEDS=4,5,6` runs other mailboxes; a failure names the seed, so
+it can be run again exactly.
+
+The tests were mutation-checked: each rule in `service/lib` was broken in turn
+(threading by "to", channels under the speaker, WhatsApp without its "+", the
+trunk-0 match, the lookup caches, the migration's joins, ...) and some test had
+to fail for each.
 
 ## Why the build layer exists
 
@@ -63,5 +89,6 @@ The C/C++ bar used for the native services - gtest, `-fanalyzer`, clang-tidy,
 cppcheck, ASan/UBSan/TSan, valgrind, sparse, Coccinelle, and the six
 cross-compiles - has nothing to act on: this repo is JavaScript, an Enyo 2 app
 and a node service. The equivalents are `static-analysis.sh` (jshint against the
-repo's own `app/.jshintrc`, plus a parse of every module) and the unit tests.
+repo's own `app/.jshintrc` for the app and `service/.jshintrc` for the service,
+plus a parse of every module) and the unit tests.
 jshint is not vendored, so it is skipped with a note when it is not installed.

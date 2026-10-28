@@ -851,7 +851,10 @@ module.exports = kind({
             mockDb.del(ids);
             return;
         }
-        this.$.dbDelete.send({ ids: ids });
+        // purge: false keeps a tombstone, which is what the service's delete watch fires on to
+        // take the thread's summary and unread count from the messages that are left. A plain
+        // del purges at once on LuneOS's db8, and the thread would keep showing a deleted message.
+        this.$.dbDelete.send({ ids: ids, purge: false });
     },
 
     // --- message interaction ---------------------------------------------------------------

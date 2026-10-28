@@ -1,0 +1,15 @@
+{
+    "esversion": 11,
+    "node": true,
+    "strict": "global",
+    "undef": true,
+    "unused": true,
+    "eqeqeq": true,
+    "curly": false,
+    "latedef": false,
+    "noarg": true,
+    "nonew": true,
+    "freeze": true,
+    "futurehostile": true,
+    "loopfunc": true
+}

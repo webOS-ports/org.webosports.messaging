@@ -831,15 +831,17 @@ var messaging = module.exports = {
 
             // WhatsApp: unify the address variants so an outgoing "+<phone>" and an incoming
             // "<phone>@s.whatsapp.net" (and a bare "<phone>") key the SAME conversation instead of
-            // splitting it. The opaque "<id>@lid" is left alone. Mirrors the chatthreader.
+            // splitting it, as E.164 "+<phone>": the form the contacts framework keeps a WhatsApp
+            // im in, so the thread also finds its contact. The opaque "<id>@lid" is left alone.
+            // The messaging service keys threads the same way (service/lib/address.js).
             if (serviceName === "type_whatsapp") {
                 var waAddr = normalizedAddress.toLowerCase();
                 var waAt = waAddr.indexOf("@");
                 if (waAt !== -1 && waAddr.substring(waAt) === "@s.whatsapp.net") {
                     waAddr = waAddr.substring(0, waAt);
                 }
-                if (waAddr.charAt(0) === "+") {
-                    waAddr = waAddr.substring(1);
+                if (/^[0-9]+$/.test(waAddr)) {
+                    waAddr = "+" + waAddr;
                 }
                 normalizedAddress = waAddr;
             }

@@ -253,11 +253,13 @@ describe('utils.normalizeAddress', function () {
     });
 
     describe('WhatsApp', function () {
-        it('unifies the +phone, bare phone and JID spellings onto one key', function () {
+        it('unifies the +phone, bare phone and JID spellings onto one E.164 key', function () {
+            // E.164, the form a contact keeps a WhatsApp im in, so the thread finds its contact;
+            // the messaging service keys threads the same way.
             var jid = u.normalizeAddress('31612345678@s.whatsapp.net', 'type_whatsapp');
             assert.equal(u.normalizeAddress('+31612345678', 'type_whatsapp'), jid);
             assert.equal(u.normalizeAddress('31612345678', 'type_whatsapp'), jid);
-            assert.equal(jid, '31612345678');
+            assert.equal(jid, '+31612345678');
         });
 
         it('leaves the opaque @lid identifier alone', function () {

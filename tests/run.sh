@@ -5,9 +5,9 @@
 #
 # run.sh [--devices [serial...]]
 #
-# The host suite: the unit tests over the pure logic in app/src/util, then the packed-artifact
-# tests, which need enyo-dev but no device. With --devices it goes on to deploy to each attached
-# LuneOS device and test there.
+# The host suite: the unit tests over the pure logic in app/src/util and over the service, then
+# the packed-artifact tests, which need enyo-dev but no device. With --devices it goes on to
+# deploy to each attached LuneOS device and test there.
 #
 # Not run here, and why: there is no C or C++ in this repo, so the sanitizer, valgrind, sparse
 # and cross-compiler passes the native services get have nothing to act on. The JS equivalent is
