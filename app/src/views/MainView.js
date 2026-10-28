@@ -22,6 +22,7 @@ var kind = require('enyo/kind'),
     AddBuddyDialog = require('./AddBuddyDialog'),
     messagingUtils = require('../util/messagingUtils'),
     appState = require('../util/appState'),
+    urlTarget = require('../util/urlTarget'),
     formFactor = require('../util/formFactor'),
     mockDb = require('../data/mockDb'),
     $L = require('enyo/i18n').$L;
@@ -473,55 +474,14 @@ module.exports = kind({
                     (params.composeRecipients && params.composeRecipients.length)) {
                 this.$.chatView.preHandleLaunch(params);
             } else if (params.target) {
-                this.handleUrlTarget(params.target);
+                var composeParams = urlTarget.composeParams(params.target);
+                if (composeParams) {
+                    this.$.chatView.preHandleLaunch(composeParams);
+                }
             }
         } catch (err) {
             this.error(err);
         }
-    },
-
-    /** Handles the im: and sms: URLs the app registers, as documented in the README. */
-    handleUrlTarget: function (target) {
-        var parsed = this.parseUrl(target);
-        var composeParams;
-
-        switch (parsed.protocol) {
-            case 'im:':
-                composeParams = {
-                    ims: [{ value: parsed.pathname, type: parsed.searchParam.type }],
-                    messageText: parsed.searchParam.body
-                };
-                this.$.chatView.preHandleLaunch(composeParams);
-                break;
-            case 'sms:':
-                // Several numbers can be given; the compose view takes the first.
-                var numbers = parsed.pathname.split(",");
-                composeParams = {
-                    phoneNumbers: [{ value: numbers[0], type: "sms" }],
-                    messageText: parsed.searchParam.body
-                };
-                this.$.chatView.preHandleLaunch(composeParams);
-                break;
-        }
-    },
-
-    parseUrl: function (url) {
-        var parser = document.createElement('a'),
-            searchParam = {},
-            pairs, split, i;
-        parser.href = url;
-        pairs = parser.search.replace(/^\?/, '').split('&');
-        for (i = 0; i < pairs.length; i++) {
-            split = pairs[i].split('=');
-            if (split[0] && split[1]) {
-                searchParam[decodeURIComponent(split[0])] = decodeURIComponent(split[1]);
-            }
-        }
-        return {
-            protocol: parser.protocol,
-            pathname: decodeURIComponent(parser.pathname),
-            searchParam: searchParam
-        };
     },
 
     findThread: function (threadId) {
