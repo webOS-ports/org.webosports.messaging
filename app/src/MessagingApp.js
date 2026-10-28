@@ -6,6 +6,7 @@ var kind = require('enyo/kind'),
     AccountService = require('./data/AccountService'),
     PrefsHandler = require('./data/PrefsHandler'),
     DashboardManager = require('./data/DashboardManager'),
+    AccountErrorDashboard = require('./data/AccountErrorDashboard'),
     appState = require('./util/appState');
 
 module.exports = kind({
@@ -21,6 +22,7 @@ module.exports = kind({
         appState.accountService = new AccountService();
         appState.prefsHandler = new PrefsHandler();
         appState.dashboardManager = new DashboardManager();
+        appState.accountErrorDashboard = new AccountErrorDashboard();
 
         appState.accountService.getAccounts();
 
@@ -39,6 +41,10 @@ module.exports = kind({
         if (appState.dashboardManager) {
             appState.dashboardManager.destroy();
             appState.dashboardManager = null;
+        }
+        if (appState.accountErrorDashboard) {
+            appState.accountErrorDashboard.destroy();
+            appState.accountErrorDashboard = null;
         }
         this.inherited(arguments);
     }
