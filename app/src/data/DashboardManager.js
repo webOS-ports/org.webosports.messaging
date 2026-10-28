@@ -25,6 +25,10 @@ var kind = require('enyo/kind'),
 var NOTIFICATION_SERVICE = 'luna://com.webos.notification';
 var DB_SERVICE = 'luna://com.webos.service.db';
 var APP_ID = 'org.webosports.app.messaging';
+// Every toast names its sourceId. Left out, notificationmgr takes the caller's bus name, which for
+// a web app is the app id plus WAM's pid (org.webosports.app.messaging-968); that matches no app,
+// so the toast got notificationmgr's generic icon instead of the app's. For an application
+// notificationmgr ignores iconUrl and shows the icon of the sourceId's app.
 
 /** Minimum gap between toasts for the same thread, so a burst does not produce a stream. */
 var THROTTLE_MS = 10000;
@@ -215,6 +219,7 @@ module.exports = kind({
             messagingUtils.message.summarizeMedia(body) || "");
 
         this.$.createToast.send({
+            sourceId: APP_ID,
             message: messagingUtils.message.stripEmojiForPlainText(sender) + ": " + body,
             iconUrl: "/usr/palm/applications/" + APP_ID + "/assets/notification-large-messaging.png",
             onclick: {
@@ -269,6 +274,7 @@ module.exports = kind({
 
             var from = (invite.from && (invite.from.name || invite.from.addr)) || $L("Someone");
             this.$.createToast.send({
+                sourceId: APP_ID,
                 message: messagingUtils.message.stripEmojiForPlainText(from) + " " +
                     $L("wants to add you as a buddy"),
                 iconUrl: "/usr/palm/applications/" + APP_ID + "/assets/notification-large-messaging.png",
@@ -287,6 +293,7 @@ module.exports = kind({
             return;
         }
         this.$.createToast.send({
+            sourceId: APP_ID,
             message: messagingUtils.message.getMessageErrorFromCode(message.errorCategory, message),
             iconUrl: "/usr/palm/applications/" + APP_ID + "/assets/notification-large-failed.png",
             onclick: {

@@ -25,6 +25,8 @@ var NOTIFICATION_SERVICE = 'luna://com.webos.notification';
 var TEMPDB_SERVICE = 'luna://com.webos.service.tempdb';
 var SYNCSTATE_KIND = 'com.palm.account.syncstate:1';
 var ACCOUNTS_APP_ID = 'com.palm.app.accounts';
+// Named on every toast, so it carries the Messaging icon; see DashboardManager.
+var APP_ID = 'org.webosports.app.messaging';
 var STORAGE_KEY = 'accountErrorToasts';
 
 /** How long to wait before trying again when the notification service turns a toast down. */
@@ -109,12 +111,11 @@ module.exports = kind({
 
     raise: function (accountId, account) {
         var name = account.alias || account.username || account.loc_name || "";
-        var icon = account.icon && (account.icon.loc_48x48 || account.icon.loc_32x32);
         this.shown[accountId] = "";
         var request = this.$.createToast.send({
+            sourceId: APP_ID,
             title: account.loc_name && account.loc_name !== name ? account.loc_name + ": " + name : name,
             message: $L("Sign-in failed. Tap to sign in again."),
-            iconUrl: icon || undefined,
             persistent: true,
             onclick: {
                 appId: ACCOUNTS_APP_ID,
