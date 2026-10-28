@@ -4,9 +4,11 @@
         "accountsservice.operation",
         "activity.operation",
         "activity.query",
+        "application.launcher",
         "database.operation",
         "messaging-service.operation",
         "notification.management",
-        "notification.operation"
+        "notification.operation",
+        "tempdatabase.operation"
     ]
 }

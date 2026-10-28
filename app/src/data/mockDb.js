@@ -84,7 +84,7 @@ var chatthreads = [
     {
         _id: "thread-ben", _kind: "com.palm.chatthread:1",
         personId: "person-ben", displayName: "Ben Okafor",
-        replyAddress: "44207183875@s.whatsapp.net", normalizedAddress: "44207183875",
+        replyAddress: "44207183875@s.whatsapp.net", normalizedAddress: "+44207183875",
         replyService: "type_whatsapp",
         summary: "file:///media/internal/downloads/voice-note-0143.opus",
         timestamp: ago(0, 5), unreadCount: 0,

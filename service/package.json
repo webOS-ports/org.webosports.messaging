@@ -1,0 +1,9 @@
+{
+	"name": "org.webosports.service.messaging",
+	"version": "1.0.0",
+	"description": "webOS Ports messaging service: assigns messages to chat threads",
+	"main": "service.js",
+	"private": true,
+	"engines": { "node": ">=22" },
+	"license": "Apache-2.0"
+}

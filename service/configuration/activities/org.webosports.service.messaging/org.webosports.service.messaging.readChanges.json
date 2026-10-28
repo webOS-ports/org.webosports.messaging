@@ -1,0 +1,38 @@
+{
+	"activity": {
+		"name": "chatthreader-read-watch",
+		"description": "Recounts unread messages when a message is read",
+		"type": {
+			"immediate": true,
+			"priority": "normal",
+			"persist": true,
+			"explicit": true,
+			"power": true,
+			"powerDebounce": true
+		},
+		"trigger": {
+			"key": "fired",
+			"method": "luna://com.palm.db/watch",
+			"params": {
+				"query": {
+					"from": "com.palm.message:1",
+					"where": [
+						{
+							"prop": "readRevSet",
+							"op": ">",
+							"val": 0
+						}
+					]
+				}
+			}
+		},
+		"callback": {
+			"method": "luna://org.webosports.service.messaging/readChanges",
+			"params": {
+				"lastReadRev": 0
+			}
+		}
+	},
+	"start": true,
+	"replace": true
+}

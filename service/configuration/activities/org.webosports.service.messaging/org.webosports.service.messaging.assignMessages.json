@@ -1,11 +1,7 @@
 {
 	"activity": {
 		"name": "chatthreader-message-watch",
-		"description": "Assings new messages to chat threads",
-		"callback": {
-			"method": "luna://org.webosports.service.messaging/assignMessages",
-			"params": { "lastCheckedRev": 0 }
-		},
+		"description": "Assigns new messages to chat threads",
 		"type": {
 			"immediate": true,
 			"priority": "normal",
@@ -17,19 +13,41 @@
 		"trigger": {
 			"key": "fired",
 			"method": "luna://com.palm.db/watch",
-			"params": { 
+			"params": {
 				"query": {
 					"from": "com.palm.message:1",
 					"where": [
-						{ "op": ">", "prop": "_rev", "val": 0 },
-						{"prop": "conversations", "op": "=", "val": null},
-						{"prop": "flags.visible", "op": "=", "val": true},
-						{"prop": "flags.threadingError", "op": "=", "val": null}
+						{
+							"prop": "conversations",
+							"op": "=",
+							"val": null
+						},
+						{
+							"prop": "flags.visible",
+							"op": "=",
+							"val": true
+						},
+						{
+							"prop": "flags.threadingError",
+							"op": "=",
+							"val": null
+						},
+						{
+							"prop": "_rev",
+							"op": ">",
+							"val": 0
+						}
 					]
 				}
 			}
+		},
+		"callback": {
+			"method": "luna://org.webosports.service.messaging/assignMessages",
+			"params": {
+				"lastCheckedRev": 0
+			}
 		}
 	},
-	"start":   true,
+	"start": true,
 	"replace": true
 }
