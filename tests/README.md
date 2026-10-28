@@ -24,7 +24,12 @@ knows about are not there.
 `unit/service-*.test.js` run `service/` - the chat threader - on a stand-in
 palmbus with an in-memory db8 behind it (`unit/service/`: `fakedb.js` does
 kind inheritance, index defaults, revSets, soft deletes and refuses a merge
-with a stale `_rev`, as db8 does). Nothing in them needs a device.
+with a stale `_rev`, as db8 does). It also refuses what db8 would refuse the
+service: a query no index of the real kind files serves, and - for calls the
+service makes over the bus - anything its kind permissions do not grant, read
+from `service/configuration/db/permissions` and copies of the other components'
+files (`service-fakedb.test.js` pins those rules to what the device answered).
+Nothing in them needs a device.
 
 `service-volume.test.js` builds a mailbox from a fixed seed
 (`unit/service/volume.js`): 300 contacts, 60 strangers, channels, group chats

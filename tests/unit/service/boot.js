@@ -38,8 +38,9 @@ function stateFile() {
 
 function boot(opts) {
     opts = opts || {};
-    var db = createFakeDb();
-    var tempdb = createFakeDb({ name: "tmp" });
+    // Every call the service makes is checked against db8's permissions for its name.
+    var db = createFakeDb({ caller: "org.webosports.service.messaging" });
+    var tempdb = createFakeDb({ name: "tmp", caller: "org.webosports.service.messaging" });
     var am = [], toasts = [];
     var pb = fakePalmbus(async function (uri, args) {
         var m = /^luna:\/\/([^/]+)\/(.+)$/.exec(uri);

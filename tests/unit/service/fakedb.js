@@ -18,6 +18,10 @@
  *   - a query no index can answer is refused (-3963), as db8 refuses it: the indexes are the
  *     ones in service/configuration/db/kinds for the kinds this repo owns, and copies of the
  *     owning repo's for the others (see FOREIGN_INDEXES)
+ *   - with a caller (createFakeDb({ caller })), every luna call through handle() is checked
+ *     against db8's kind permissions as that caller and refused with -3963 "db: permission
+ *     denied" where db8 refuses it (see permitted()); calls made directly, which is how tests
+ *     set up records other components would write, are not
  *
  * calls counts every method, for the volume tests. failNext(method, n) makes the next n calls of
  * a method fail.
@@ -51,6 +55,79 @@ const FOREIGN_INDEXES = {
     "com.palm.imbuddystatus:1": [["accountId", "username"], ["username", "serviceName"], ["availabilityRevSet"], ["personId"],
         ["displayName"]]
 };
+
+const OWN_PERMISSIONS = path.resolve(OWN_KINDS, "..", "permissions");
+
+function readJson(file) { return JSON.parse(fs.readFileSync(file, "utf8")); }
+
+// The permission entries of a file in service/configuration/db/permissions.
+function ownPermissions(file) { return readJson(path.join(OWN_PERMISSIONS, file)); }
+
+function ownOwner(file) { return readJson(path.join(OWN_KINDS, file)).owner; }
+
+// What other components grant, as their permission files declare it. Only the entries whose
+// caller pattern can match a webosports service are copied.
+//   com.palm.immessage, com.palm.immessage.libpurple, com.palm.imchannel, com.palm.imloginstate,
+//   com.palm.imloginstate.libpurple
+//                    imlibpurpleservice files/etc/palm/db/permissions/, as of the branch
+//                    herrie/messaging-imchannel-update (36c357b), which grants the service
+//                    update on imchannel and create/delete on immessage.libpurple
+//   com.palm.imbuddystatus
+//                    imlibpurpleservice files/etc/palm/tempdb/permissions/
+//   com.palm.person, com.palm.contact
+//                    app-services com.palm.service.contacts.linker/db/permissions/
+//   com.palm.smsmessage
+//                    webos-telephonyd, /etc/palm/db/permissions/com.palm.smsmessage on the VM
+function grant(object, caller, ops) {
+    const operations = {};
+    ops.forEach((op) => { operations[op] = "allow"; });
+    return { type: "db.kind", object, caller, operations };
+}
+const FOREIGN_PERMISSIONS = [
+    grant("com.palm.immessage:1", "*", ["extend"]),
+    grant("com.palm.immessage:1", "org.webosports.*", ["extend", "read"]),
+    grant("com.palm.immessage.libpurple:1", "org.webosports.*", ["read", "update"]),
+    grant("com.palm.immessage.libpurple:1", "org.webosports.service.messaging", ["create", "delete", "read", "update"]),
+    grant("com.palm.imchannel:1", "*", ["extend"]),
+    grant("com.palm.imchannel:1", "org.webosports.*", ["extend", "read"]),
+    grant("com.palm.imchannel:1", "org.webosports.service.messaging", ["read", "update"]),
+    grant("com.palm.imloginstate:1", "*", ["extend"]),
+    grant("com.palm.imloginstate:1", "org.webosports.*", ["extend", "read"]),
+    grant("com.palm.imloginstate.libpurple:1", "org.webosports.*", ["read", "update"]),
+    grant("com.palm.imbuddystatus:1", "*", ["extend"]),
+    grant("com.palm.imbuddystatus:1", "org.webosports.*", ["extend", "read"]),
+    grant("com.palm.person:1", "org.webosports.*", ["read"]),
+    grant("com.palm.contact:1", "*", ["extend"]),
+    grant("com.palm.contact:1", "org.webosports.*", ["read"]),
+    grant("com.palm.smsmessage:1", "org.webosports.*", ["extend", "read"]),
+    grant("com.palm.smsmessage:1", "org.webosports.service.messaging", ["create", "delete", "read", "update"])
+];
+
+const PERMISSIONS = [].concat(ownPermissions("com.palm.message"), ownPermissions("com.palm.chatthread"),
+    ownPermissions("com.palm.app.messagingprefs"), FOREIGN_PERMISSIONS);
+
+const OWNERS = {
+    "com.palm.message:1": ownOwner("com.palm.message"),
+    "com.palm.chatthread:1": ownOwner("com.palm.chatthread"),
+    "com.palm.app.messagingprefs:1": ownOwner("com.palm.app.messagingprefs")
+};
+
+// A caller pattern as db8 matches it: "*", "<prefix>.*", or the exact name.
+function callerMatches(pattern, caller) {
+    if (pattern === "*") { return true; }
+    if (pattern.endsWith(".*")) { return caller.startsWith(pattern.slice(0, -1)); }
+    return pattern === caller;
+}
+
+// Whether db8 lets `caller` do `op` (read, create, update, delete) on records of `kind`. The
+// kind's owner may do anything; anyone else needs an entry for that very kind - a subkind does
+// not inherit from its parent, which is how the service, owner of com.palm.message:1, was still
+// refused deleting a com.palm.immessage.libpurple:1 message on the device.
+function permitted(caller, kind, op) {
+    if (OWNERS[kind] === caller) { return true; }
+    return PERMISSIONS.some((e) => e.object === kind && callerMatches(e.caller, caller) &&
+        e.operations && e.operations[op] === "allow");
+}
 
 const KINDS = {
     "com.palm.message:1": {
@@ -175,7 +252,7 @@ function dbError(code, text) {
     return e;
 }
 
-function createFakeDb({ name = "db" } = {}) {
+function createFakeDb({ name = "db", caller = null } = {}) {
     const records = new Map();
     const calls = { find: 0, get: 0, put: 0, merge: 0, del: 0 };
     const failing = {};
@@ -322,8 +399,31 @@ function createFakeDb({ name = "db" } = {}) {
     }
 
     // The same database behind luna calls, for a stand-in palmbus: luna://com.palm.db/<method>.
+    // db8 checks a query against its from kind, and a write against each record's own kind (for
+    // a merge or del, the kind of the record as stored).
+    function authorize(method, args) {
+        if (!caller) { return; }
+        const deny = (kind) => {
+            if (process.env.FAKEDB_TRACE) { process.stderr.write("DENIED " + method + " " + kind + "\n"); }
+            throw dbError(-3963, "db: permission denied for caller '" + caller + "' on kind '" + kind + "'");
+        };
+        const stored = (id) => { const r = records.get(id); return r && r._kind; };
+        if (method === "find") {
+            if (!permitted(caller, args.query.from, "read")) { deny(args.query.from); }
+            return;
+        }
+        const op = { get: "read", put: "create", merge: "update", del: "delete" }[method];
+        if (!op) { return; }
+        const kinds = method === "put" ? args.objects.map((o) => (records.has(o._id) ? stored(o._id) : o._kind))
+            : method === "merge" ? args.objects.map((o) => stored(o._id))
+            : args.ids.map(stored);
+        const want = method === "put" ? args.objects.map((o) => (records.has(o._id) ? "update" : "create")) : kinds.map(() => op);
+        kinds.forEach((kind, i) => { if (kind && !permitted(caller, kind, want[i])) { deny(kind); } });
+    }
+
     async function handle(method, args) {
         try {
+            authorize(method, args);
             switch (method) {
             case "find": { const r = await findPage(args.query); return Object.assign({ returnValue: true, results: r.results }, r.next ? { next: r.next } : {}); }
             case "get": return { returnValue: true, results: await get(args.ids) };
@@ -347,4 +447,4 @@ function createFakeDb({ name = "db" } = {}) {
     return { put, merge, get, del, find, findPage, handle, all, calls, resetCalls, failNext, records };
 }
 
-module.exports = { createFakeDb, KINDS };
+module.exports = { createFakeDb, KINDS, permitted };
