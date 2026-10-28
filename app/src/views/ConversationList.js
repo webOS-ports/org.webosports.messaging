@@ -255,7 +255,7 @@ module.exports = kind({
         },
         {
             name: 'openApp', kind: LunaService,
-            service: 'luna://com.webos.applicationManager', method: 'open', onError: 'serviceErr'
+            service: 'luna://com.palm.applicationManager', method: 'open', onError: 'serviceErr'
         }
     ],
 
