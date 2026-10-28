@@ -14,6 +14,7 @@ var kind = require('enyo/kind'),
     Collection = require('enyo/Collection'),
     RecordModel = require('../data/RecordModel'),
     syncCollection = require('../util/syncCollection'),
+    openThread = require('../util/openThread'),
     Control = require('enyo/Control'),
     LunaService = require('enyo-webos/LunaService'),
     ThreadRow = require('./ThreadRow'),
@@ -55,6 +56,11 @@ module.exports = kind({
             name: 'deleteThreadService', kind: LunaService,
             service: 'luna://org.webosports.service.messaging', method: 'deleteChatthread',
             onError: 'deleteThreadErr'
+        },
+        {
+            name: 'openThreadCheck', kind: LunaService,
+            service: 'luna://com.webos.service.db', method: 'get',
+            onResponse: 'gotOpenThreadCheck', onError: 'deleteThreadErr'
         }
     ],
 
@@ -125,7 +131,14 @@ module.exports = kind({
     },
 
     gotThreads: function (inSender, inEvent) {
-        var results = this.excludeChannelThreads((inEvent && inEvent.results) || []);
+        var all = (inEvent && inEvent.results) || [];
+        var results = this.excludeChannelThreads(all);
+
+        // The open thread left the list: find out whether it was deleted under the conversation.
+        if (!mockDb.enabled && openThread.droppedOut(this.selectedRecord, all, this.filterString)) {
+            this.checkingThreadId = this.selectedRecord._id;
+            this.$.openThreadCheck.send({ ids: [this.checkingThreadId] });
+        }
 
         // Report any thread whose lock state changed out from under the open conversation.
         if (this.selectedRecord) {
@@ -245,6 +258,19 @@ module.exports = kind({
 
     deleteThreadErr: function (inSender, inError) {
         this.error(inError && (inError.errorText || inError));
+        return true;
+    },
+
+    gotOpenThreadCheck: function (inSender, inResponse) {
+        var id = this.checkingThreadId;
+        this.checkingThreadId = null;
+        if (!this.selectedRecord || this.selectedRecord._id !== id || !openThread.gone(inResponse)) {
+            return true;
+        }
+        var thread = this.selectedRecord;
+        this.selectedRecord = null;
+        // The same path as a swipe delete: MainView closes the conversation and clears the selection.
+        this.doDeleteThread({ thread: thread });
         return true;
     },
 
