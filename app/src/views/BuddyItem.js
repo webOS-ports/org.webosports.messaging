@@ -25,7 +25,11 @@ module.exports = kind({
         {
             name: "imageContainer", style: "display: inline-block;", components: [
                 { classes: "contact-image-border" },
-                { name: "contactImage", kind: Image, classes: "contact-image" }
+                {
+                    name: "contactImage", kind: Image, classes: "contact-image",
+                    // Plain HTML, because an <img> error event does not bubble to Enyo.
+                    attributes: { onerror: "window.__messagingAvatarFailed(this)" }
+                }
             ]
         },
         { name: "status", classes: "status status-buddy" },
