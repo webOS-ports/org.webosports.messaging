@@ -603,6 +603,9 @@ var messaging = module.exports = {
     },
 
     person: {
+        /** Drawn when a person has no photo, or the photo cannot be read. */
+        DEFAULT_IMAGE: "assets/list-avatar-default.svg",
+
         /** Attributes selected when reading a person from db8. */
         selectAttributes: ["_id", "_kind", "favorite", "contactIds", "name", "names", "nickname",
             "organization", "emails", "phoneNumbers", "ims", "photos.squarePhotoPath"],
@@ -655,7 +658,20 @@ var messaging = module.exports = {
             if (inPerson && inPerson.photos && inPerson.photos.squarePhotoPath) {
                 return inPerson.photos.squarePhotoPath;
             }
-            return "assets/list-avatar-default.svg";
+            return messaging.person.DEFAULT_IMAGE;
+        },
+
+        /**
+         * An avatar <img> that failed to load. The photo paths come from the transports' own
+         * caches, so the file can be gone, half-written, or unreadable to the app - libpurple
+         * writes its buddy icons 0600 root, and the app runs as another user - and the browser
+         * then draws its broken-image glyph in the middle of the row. Fall back to the
+         * silhouette, once, so a silhouette that is itself missing cannot loop.
+         */
+        avatarFailed: function (img) {
+            if (img && img.getAttribute("src") !== messaging.person.DEFAULT_IMAGE) {
+                img.setAttribute("src", messaging.person.DEFAULT_IMAGE);
+            }
         },
 
         hasMessagingAccounts: function (person) {
@@ -934,6 +950,7 @@ var messaging = module.exports = {
 // global, so these thin shims stand in.
 if (typeof window !== 'undefined') {
     window.__messagingEmojiFallback = function (img) { messaging.message.emojiFallback(img); };
+    window.__messagingAvatarFailed = function (img) { messaging.person.avatarFailed(img); };
     window.__messagingImageLoaded = function (img) { messaging.message.imageLoaded(img); };
     window.__messagingAudioMeta = function (a) { messaging.message.audioMeta(a); };
     window.__messagingAudioTime = function (a) { messaging.message.audioTime(a); };

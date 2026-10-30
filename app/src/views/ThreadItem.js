@@ -26,7 +26,11 @@ module.exports = kind({
         {
             components: [
                 { name: "imageBorder", classes: "contact-image-border" },
-                { name: "contactImage", kind: Image, classes: "contact-image" }
+                {
+                    name: "contactImage", kind: Image, classes: "contact-image",
+                    // Plain HTML, because an <img> error event does not bubble to Enyo.
+                    attributes: { onerror: "window.__messagingAvatarFailed(this)" }
+                }
             ]
         },
         {

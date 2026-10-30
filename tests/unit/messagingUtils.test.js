@@ -416,6 +416,27 @@ describe('person helpers', function () {
         assert.equal(person.getDisplayImage(undefined), 'assets/list-avatar-default.svg');
     });
 
+    it('avatarFailed swaps a photo that would not load for the silhouette', function () {
+        var img = {
+            attrs: { src: '/var/luna/data/im-avatars/abc.jpg' },
+            getAttribute: function (n) { return this.attrs[n]; },
+            setAttribute: function (n, v) { this.attrs[n] = v; }
+        };
+        person.avatarFailed(img);
+        assert.equal(img.attrs.src, 'assets/list-avatar-default.svg');
+    });
+
+    it('avatarFailed leaves the silhouette alone, so a missing one cannot loop', function () {
+        var sets = 0;
+        var img = {
+            getAttribute: function () { return 'assets/list-avatar-default.svg'; },
+            setAttribute: function () { sets += 1; }
+        };
+        person.avatarFailed(img);
+        person.avatarFailed(null);
+        assert.equal(sets, 0);
+    });
+
     it('reports which kinds of account a person can be reached on', function () {
         assert.equal(person.hasMessagingAccounts({ ims: [{ value: 'a' }] }), true);
         assert.equal(person.hasMessagingAccounts({ ims: [] }), false);
