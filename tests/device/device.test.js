@@ -118,9 +118,12 @@ describe('deployment', function () {
 
     it('left nothing behind from the package it replaced', function () {
         // The packaged app ships enyo-luneos/, which the rewrite does not reference; a push over
-        // the top would leave it being served.
+        // the top would leave it being served. Which directories the build itself ships moves
+        // with its libraries - webos-lib/ arrived with the LuneOS kinds - so hold the device to
+        // what was packed, not to a list written out here.
+        var packed = fs.readdirSync(PACK).sort();
         var entries = sh('ls ' + APP_DIR).trim().split(/\s+/).sort();
-        assert.deepEqual(entries, ['appinfo.json', 'assets', 'icon.png', 'index.html', 'onyx']);
+        assert.deepEqual(entries, packed);
     });
 });
 
