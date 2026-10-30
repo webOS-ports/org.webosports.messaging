@@ -25,7 +25,8 @@ var NOTIFICATION_SERVICE = 'luna://com.webos.notification';
 var TEMPDB_SERVICE = 'luna://com.webos.service.tempdb';
 var SYNCSTATE_KIND = 'com.palm.account.syncstate:1';
 var ACCOUNTS_APP_ID = 'com.palm.app.accounts';
-// Named on every toast, so it carries the Messaging icon; see DashboardManager.
+// Named on every toast, so the notification history can group and remove ours; see
+// DashboardManager.
 var APP_ID = 'org.webosports.app.messaging';
 var STORAGE_KEY = 'accountErrorToasts';
 
@@ -111,11 +112,18 @@ module.exports = kind({
 
     raise: function (accountId, account) {
         var name = account.alias || account.username || account.loc_name || "";
+        // The account's own logo on the toast. notificationmgr takes iconUrl from the request
+        // only for a privileged caller (Settings::isPrivilegedSource: org.webosports. is one of
+        // its prefixes); without it the toast falls back to the default toast icon, since for
+        // such a caller it never looks the icon up from sourceId. getIconPath also copes with a
+        // service whose icon is a bare path rather than the usual sizes.
+        var icon = appState.accountService && appState.accountService.getIconPath(account.serviceName);
         this.shown[accountId] = "";
         var request = this.$.createToast.send({
             sourceId: APP_ID,
             title: account.loc_name && account.loc_name !== name ? account.loc_name + ": " + name : name,
             message: $L("Sign-in failed. Tap to sign in again."),
+            iconUrl: icon || undefined,
             persistent: true,
             onclick: {
                 appId: ACCOUNTS_APP_ID,
