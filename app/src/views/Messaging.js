@@ -131,13 +131,13 @@ module.exports = kind({
                     name: "favoriteBtn", kind: Button, content: $L("Add Favorite"),
                     ontap: "doNewFavorite", showing: false
                 },
-                // Mojo opened the app menu from the system menu bar; Enyo 2 has no equivalent hook,
-                // so the menu needs an affordance inside the app. It is taken out of the flow by
-                // the stylesheet and pinned to the right edge, so the primary button beside it
-                // can sit in the centre of the column the way Mojo's did.
+                // The app menu also opens from the app's name in the status bar, as Mojo's did
+                // (MainView.toggleAppMenu); this keeps it at hand inside the app as well. It is
+                // taken out of the flow by the stylesheet and pinned to the right edge, so the
+                // primary button beside it can sit in the centre of the column the way Mojo's did.
                 {
                     name: "appMenuBtn", kind: Button, content: "≡",
-                    classes: "app-menu-button", ontap: "doOpenAppMenu"
+                    classes: "app-menu-button", ontap: "appMenuTapped"
                 }
             ]
         },
@@ -197,6 +197,12 @@ module.exports = kind({
 
     serverBack: function () {
         this.$.serverList.showServers();
+        return true;
+    },
+
+    // The menu opens against the button (MainView.showAppMenu).
+    appMenuTapped: function () {
+        this.doOpenAppMenu({ activator: this.$.appMenuBtn });
         return true;
     },
 
