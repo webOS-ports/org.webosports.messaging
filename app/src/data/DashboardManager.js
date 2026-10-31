@@ -211,16 +211,14 @@ module.exports = kind({
 
     showMessageToast: function (message, threadId) {
         var sender = (message.from && (message.from.name || message.from.addr)) || $L("New message");
-        var body = messagingUtils.message.getMessageText(message);
 
-        // A toast is plain text, so emoji must be stripped rather than left as tofu or entities, and
-        // a bare media URL is replaced by its friendly label.
-        body = messagingUtils.message.stripEmojiForPlainText(
-            messagingUtils.message.summarizeMedia(body) || "");
-
+        // Title and message apart, as the layers of the Mojo dashboard were: the banner joins them
+        // itself, and a toast sent without a title shows its message on both of the notification's
+        // lines.
         this.$.createToast.send({
             sourceId: APP_ID,
-            message: messagingUtils.message.stripEmojiForPlainText(sender) + ": " + body,
+            title: messagingUtils.message.stripEmojiForPlainText(sender),
+            message: messagingUtils.message.getNotificationText(message) || $L("New message"),
             iconUrl: "/usr/palm/applications/" + APP_ID + "/assets/notification-large-messaging.png",
             onclick: {
                 appId: APP_ID,
@@ -275,8 +273,8 @@ module.exports = kind({
             var from = (invite.from && (invite.from.name || invite.from.addr)) || $L("Someone");
             this.$.createToast.send({
                 sourceId: APP_ID,
-                message: messagingUtils.message.stripEmojiForPlainText(from) + " " +
-                    $L("wants to add you as a buddy"),
+                title: messagingUtils.message.stripEmojiForPlainText(from),
+                message: $L("wants to add you as a buddy"),
                 iconUrl: "/usr/palm/applications/" + APP_ID + "/assets/notification-large-messaging.png",
                 onclick: {
                     appId: APP_ID,

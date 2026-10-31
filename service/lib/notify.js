@@ -9,17 +9,11 @@
  */
 "use strict";
 
-const message = require("./message.js");
+const toasttext = require("./toasttext.js");
 
 const APP_ID = "org.webosports.app.messaging";
 const PREFS_KIND = "com.palm.app.messagingprefs:1";
 const DEFAULT_MAX_AGE_MINUTES = 60;
-
-// A toast is plain text: drop emoji and other symbols outside the basic plane, and the joiners
-// and variation selectors that go with them.
-function plain(text) {
-	return String(text || "").replace(/[\u{10000}-\u{10FFFF}‍︎️]/gu, "").trim();
-}
 
 function createNotifier({ db, call, log = console, now = () => Date.now() }) {
 	async function appRunning() {
@@ -51,12 +45,13 @@ function createNotifier({ db, call, log = console, now = () => Date.now() }) {
 		for (const [threadId, msg] of due) {
 			const thread = threads.get(threadId) || {};
 			const sender = (msg.from && (msg.from.name || msg.from.addr)) || thread.displayName || "";
-			const title = plain(thread.displayName || sender);
-			const body = plain(message.messageText(msg));
+			const title = toasttext.plain(thread.displayName || sender);
+			const body = toasttext.notificationText(msg) || "New message";
 			try {
 				await call("luna://com.webos.notification/createToast", {
 					sourceId: APP_ID,
-					message: (title ? title + ": " : "") + body,
+					title,
+					message: body,
 					iconUrl: "/usr/palm/applications/" + APP_ID + "/assets/notification-large-messaging.png",
 					onclick: { appId: APP_ID, params: { threadId } },
 				});
@@ -71,4 +66,4 @@ function createNotifier({ db, call, log = console, now = () => Date.now() }) {
 	return { notify };
 }
 
-module.exports = { createNotifier, plain, APP_ID };
+module.exports = { createNotifier, APP_ID };

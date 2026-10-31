@@ -176,7 +176,8 @@ describe('toasts for new messages', function () {
         var toasts = await deliverOne({});
         assert.equal(toasts.length, 1);
         assert.equal(toasts[0].sourceId, "org.webosports.app.messaging");
-        assert.equal(toasts[0].message, "Alice: ping");
+        assert.equal(toasts[0].title, "Alice");
+        assert.equal(toasts[0].message, "ping");
         assert.equal(toasts[0].onclick.appId, "org.webosports.app.messaging");
         assert.ok(toasts[0].onclick.params.threadId);
     });

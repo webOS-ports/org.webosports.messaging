@@ -309,6 +309,10 @@ var messaging = module.exports = {
             return messageText ? messageText : "";
         },
 
+        /** The kinds whose transports store messageText as HTML, not as plain text. */
+        HTML_MESSAGE_KINDS: ["com.palm.immessage.libpurple:1", "com.palm.immessage.skypem:1",
+            "com.palm.iminvitation:1"],
+
         /** Returns an array of CommunicationAddress objects. */
         getAddressesForThreading: function (rawMessage) {
             var addresses;
@@ -355,7 +359,8 @@ var messaging = module.exports = {
         unescapeText: function (inText) {
             if (!inText) { return inText; }
             return String(inText).replace(/&amp;/g, '&').replace(/&lt;/g, '<')
-                .replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'");
+                .replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+                .replace(/&#39;/g, "'");
         },
 
         // --- Unicode emoji as inline images -------------------------------------------------
@@ -469,8 +474,27 @@ var messaging = module.exports = {
             text = messaging.message.decodeNumericEntities(text);
             text = text.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, "")
                 .replace(/[\uD800-\uDFFF]/g, "")
-                .replace(/�/g, "");
+                .replace(/[\uFFFD\u200D\uFE0E\uFE0F]/g, "");
             return text.replace(/[ \t]{2,}/g, " ").replace(/\s+([.,!?;:])/g, "$1")
+                .replace(/^\s+|\s+$/g, "");
+        },
+
+        /**
+         * A message as the single line of plain text a toast shows, or "" when nothing is left to
+         * show (a toast with an empty message is refused, so the caller supplies a fallback).
+         * DashboardManager.getDisplayText of the Mojo app, with one addition: an <img> keeps its
+         * URL long enough to be labelled, since Telegram sends a photo as nothing but that tag.
+         * service/lib/toasttext.js does the same for the service; the tests hold them together.
+         */
+        getNotificationText: function (rawMessage) {
+            var m = messaging.message;
+            if (m.isMMSMessage(rawMessage)) { return m.getMMSDisplayMessage(); }
+            var text = m.getMessageText(rawMessage);
+            if (rawMessage && m.HTML_MESSAGE_KINDS.indexOf(rawMessage._kind) !== -1) {
+                text = m.removeHtml(text.replace(/<img\b[^>]*?\bsrc=["']([^"']+)["'][^>]*>/gi, " $1 "));
+            }
+            text = m.stripEmojiForPlainText(m.summarizeMedia(m.unescapeText(text)));
+            return (text || "").replace(/\r|\n|\\r|\\n/g, " ").replace(/\s+/g, " ")
                 .replace(/^\s+|\s+$/g, "");
         },
 
@@ -583,17 +607,20 @@ var messaging = module.exports = {
         /**
          * Replace a bare media URL (or local attachment path) in a message body with a friendly
          * label, so previews show "Voice message" instead of a raw file:// / http URL. If there is
-         * real text alongside the URL, keep the text and drop the URL.
+         * real text alongside the URL, keep the text and drop the URL. A local file of any other
+         * type is an attachment too: a file:// is never something to show a person.
          */
         summarizeMedia: function (text) {
             if (!text) { return text; }
             text = messaging.message.summarizeTokens(text);
             var re = /(?:https?|file):\/\/[^\s<>"']+?\.(jpg|jpeg|png|gif|webp|bmp|mp3|m4a|aac|ogg|oga|opus|flac|wav|amr|mp4|m4v|mov|webm|mkv|3gp|data|pdf|doc|docx|xls|xlsx|ppt|pptx)(?:\?[^\s<>"']*)?/gi;
+            var fileRe = /file:\/\/[^\s<>"']+/gi;
             var m = re.exec(text);
-            if (!m) { return text; }
-            var stripped = text.replace(re, "").replace(/\s+/g, " ").replace(/^\s+|\s+$/g, "");
+            if (!m && !fileRe.test(text)) { return text; }
+            var stripped = text.replace(re, "").replace(fileRe, "").replace(/\s+/g, " ")
+                .replace(/^\s+|\s+$/g, "");
             if (stripped) { return stripped; }
-            var ext = m[1].toLowerCase();
+            var ext = m ? m[1].toLowerCase() : "";
             if (/^(jpg|jpeg|png|gif|webp|bmp)$/.test(ext)) { return "📷 " + $L("Photo"); }
             if (/^(mp4|m4v|mov|webm|mkv|3gp)$/.test(ext)) { return "🎥 " + $L("Video"); }
             if (/^(mp3|m4a|aac|ogg|oga|opus|flac|wav|amr|data)$/.test(ext)) { return "🎤 " + $L("Voice message"); }
