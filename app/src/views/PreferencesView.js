@@ -203,7 +203,9 @@ module.exports = kind({
         this.prefs = prefs;
         this.$.showNotification.set('value', !!prefs.enableNotification);
         this.$.showOffline.set('value', !prefs.showOnlineBuddiesOnly);
-        this.selectPickerValue(this.$.alertPicker, prefs.notificationSound);
+        // "alert" is what the legacy app stored for System Sound; both play the same.
+        this.selectPickerValue(this.$.alertPicker,
+            prefs.notificationSound === "alert" ? "system" : prefs.notificationSound);
         this.selectPickerValue(this.$.notifyAgePicker, prefs.notifyMaxAgeMinutes);
 
         if (prefs.ringtone && prefs.ringtone.name) {

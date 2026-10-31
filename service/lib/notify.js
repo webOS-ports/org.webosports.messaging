@@ -6,10 +6,15 @@
  * sign-in would otherwise toast every old message), and one toast per thread per batch. A muted
  * chat's messages (flags.noNotification) never get here: the threader leaves them out of what it
  * hands over.
+ *
+ * The batch makes one sound, the one the preferences choose (alertsound.js): the first toast that
+ * goes out carries it and the rest are silent, so a run that touched five threads does not chime
+ * five times.
  */
 "use strict";
 
 const toasttext = require("./toasttext.js");
+const alertsound = require("./alertsound.js");
 
 const APP_ID = "org.webosports.app.messaging";
 const PREFS_KIND = "com.palm.app.messagingprefs:1";
@@ -42,20 +47,23 @@ function createNotifier({ db, call, log = console, now = () => Date.now() }) {
 			(maxAge === -1 || now() - (msg.localTimestamp || msg.timestamp || 0) <= maxAge * 60000));
 		if (!due.length || await appRunning()) { return 0; }
 		let sent = 0;
+		let sound = alertsound.toastSound(p);
 		for (const [threadId, msg] of due) {
 			const thread = threads.get(threadId) || {};
 			const sender = (msg.from && (msg.from.name || msg.from.addr)) || thread.displayName || "";
 			const title = toasttext.plain(thread.displayName || sender);
 			const body = toasttext.notificationText(msg) || "New message";
 			try {
-				await call("luna://com.webos.notification/createToast", {
+				await call("luna://com.webos.notification/createToast", Object.assign({
 					sourceId: APP_ID,
 					title,
 					message: body,
 					iconUrl: "/usr/palm/applications/" + APP_ID + "/assets/notification-large-messaging.png",
 					onclick: { appId: APP_ID, params: { threadId } },
-				});
+				}, sound));
 				sent++;
+				// Only once it is out: a toast notificationmgr refused leaves the sound to the next.
+				sound = {};
 			} catch (e) {
 				log.error("notify: createToast failed: " + ((e && e.message) || e));
 			}

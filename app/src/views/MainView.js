@@ -86,8 +86,11 @@ module.exports = kind({
             onbackgesture: "goBack",
             onwebOSRelaunch: "handleRelaunch",
             onmenubutton: "toggleAppMenu",
-            onwindowactivated: "windowActivatedHandler",
-            onwindowdeactivated: "windowDeactivatedHandler",
+            // What webos-lib sends for WAM's Mojo.stageActivated/stageDeactivated (its document
+            // "activate"/"deactivate" events). The enyo-1 names this listened for, which nothing
+            // sends, left the app taken as in the foreground for as long as it ran.
+            onactivate: "windowActivatedHandler",
+            ondeactivate: "windowDeactivatedHandler",
             onwindowhidden: "windowHiddenHandler",
             onwindowshown: "windowShownHandler"
         },
