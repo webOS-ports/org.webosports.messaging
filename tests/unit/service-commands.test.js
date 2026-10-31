@@ -178,6 +178,9 @@ describe('toasts for new messages', function () {
         assert.equal(toasts[0].sourceId, "org.webosports.app.messaging");
         assert.equal(toasts[0].title, "Alice");
         assert.equal(toasts[0].message, "ping");
+        // With no prefs record yet, the system sound, as the legacy default "alert" was.
+        assert.equal(toasts[0].soundClass, "notifications");
+        assert.equal("soundFile" in toasts[0], false);
         assert.equal(toasts[0].onclick.appId, "org.webosports.app.messaging");
         assert.ok(toasts[0].onclick.params.threadId);
     });
@@ -191,6 +194,18 @@ describe('toasts for new messages', function () {
         assert.equal((await deliverOne({}, { at: Date.now() - 2 * 3600000 })).length, 0);
         assert.equal((await deliverOne({}, { at: Date.now() - 2 * 3600000 }, { notifyMaxAgeMinutes: -1 })).length, 1);
         assert.equal((await deliverOne({}, {}, { enableNotification: false })).length, 0);
+    });
+
+    it('makes one sound for a run over several threads, the one the prefs choose', async function () {
+        var env = boot({});
+        await env.db.put([{ _kind: "com.palm.app.messagingprefs:1", notificationSound: "mute" }]);
+        var at = { at: Date.now() - 1000 };
+        await seed.putAll(env.db, [seed.imIn("a", "one", at), seed.imIn("b", "two", at),
+            seed.imIn("c", "muted", Object.assign({ flags: { noNotification: true } }, at))]);
+        await ask(env.handle, "assignMessages", { lastCheckedRev: 0 });
+        env.service.bus.stop();
+        assert.equal(env.toasts.length, 2);
+        assert.deepEqual(env.toasts.map(function (t) { return t.soundClass; }), ["none", undefined]);
     });
 });
 
