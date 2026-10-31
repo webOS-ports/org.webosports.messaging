@@ -204,6 +204,14 @@ module.exports = kind({
             if (this.seenMessageIds[message._id]) {
                 continue;
             }
+
+            // Not threaded yet. The transport stores a message without conversations and the
+            // service's threader adds them a few ms later; the watch sees both writes. Judged
+            // now it has no thread, so it never matched the thread on screen, and once marked
+            // seen the threaded write was skipped. Both legacy apps waited for conversations too.
+            if (!message.conversations || message.conversations.length === 0) {
+                continue;
+            }
             this.seenMessageIds[message._id] = true;
 
             // The query cannot filter on flags.read (no index), so do it here.

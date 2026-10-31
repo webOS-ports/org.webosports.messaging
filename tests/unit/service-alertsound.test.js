@@ -240,6 +240,98 @@ describe('the app\'s alerts for a batch', function () {
     });
 });
 
+// --- what the device wrote ----------------------------------------------------------------------
+
+/*
+ * Test 3 on MST0000022 (2026-10-31 13:50:33): an SMS into the chat open on screen still raised a
+ * toast. webos-telephonyd stored the message at .218 and the app's createToast went out at .240,
+ * before the service's threader had run (its applicationmanager/running call is at .276). The
+ * message was then without conversations; db8 now holds it as below, threaded into fakeThread1.
+ */
+var DEVICE_THREAD = 'fakeThread1';
+
+function deviceSms(threaded) {
+    var m = {
+        timestamp: 1793451066, status: 'successful', from: { addr: '+31600000001' },
+        _id: 'fakeMsgId01', _kind: 'com.palm.smsmessage:1', flags: { read: false },
+        localTimestamp: NOW - 1000, folder: 'inbox', _sync: true, messageText: '3', simId: 0, serviceName: 'sms'
+    };
+    if (threaded) {
+        m.conversations = [DEVICE_THREAD];
+        m.readRevSet = 15120;
+        m._rev = 15120;
+    } else {
+        m._rev = 15119;
+    }
+    return m;
+}
+
+describe('the app, with the writes the device made', function () {
+    var dm, realNow;
+
+    beforeEach(function () {
+        appState.prefsHandler = { getPrefs: function () { return { enableNotification: true, notificationSound: 'system', notifyMaxAgeMinutes: 60 }; } };
+        appState.setAppDeactivated(false);
+        realNow = Date.now;
+        Date.now = function () { return NOW; };
+        dm = new DashboardManager();
+        dm.gotMessages(null, { results: [] });
+    });
+
+    function fire(message) {
+        Date.now = function () { return NOW; };
+        dm.gotMessages(null, { results: [message] });
+        Date.now = realNow;
+    }
+
+    it('waits for the threader, then only plays the sound for the thread on screen', function () {
+        // As ThreadList hands it to MainView.selectThread: the chatthread record.
+        appState.setSelectedThread({ _id: DEVICE_THREAD, _kind: 'com.palm.chatthread:1', displayName: '+31600000001' });
+        fire(deviceSms(false));
+        assert.equal(dm.$.createToast.sent.length, 0);
+        assert.equal(dm.$.playFeedback.sent.length, 0);
+        fire(deviceSms(true));
+        assert.equal(dm.$.createToast.sent.length, 0);
+        assert.deepEqual(dm.$.playFeedback.sent, [{ name: 'sysmgr_notification', sink: 'palerts' }]);
+    });
+
+    it('toasts it, with its thread and sound, once threaded, when another chat is open', function () {
+        appState.setSelectedThread({ _id: 'OTzOther', _kind: 'com.palm.chatthread:1' });
+        fire(deviceSms(false));
+        assert.equal(dm.$.createToast.sent.length, 0);
+        fire(deviceSms(true));
+        assert.equal(dm.$.createToast.sent.length, 1);
+        assert.equal(dm.$.createToast.sent[0].onclick.params.threadId, DEVICE_THREAD);
+        assert.equal(dm.$.createToast.sent[0].soundClass, 'notifications');
+    });
+
+    it('toasts the thread that is selected once the card is deactivated', function () {
+        appState.setSelectedThread({ _id: DEVICE_THREAD });
+        appState.setAppDeactivated(true);
+        fire(deviceSms(true));
+        assert.equal(dm.$.createToast.sent.length, 1);
+        assert.equal(dm.$.playFeedback.sent.length, 0);
+    });
+});
+
+describe('the app window\'s activation', function () {
+    var fs = require('node:fs');
+    var APP = bootstrap.APP;
+
+    // MainView keeps appState.appDeactivated from Signals; it has to listen for the names webos-lib
+    // sends for WAM's Mojo.stageActivated/stageDeactivated, or the app is taken as foregrounded
+    // for as long as it runs and a carded app's selected thread never gets a toast.
+    it('listens for the signals webos-lib sends', function () {
+        var lib = fs.readFileSync(path.join(APP, 'lib', 'webos-lib', 'index.js'), 'utf8');
+        var main = fs.readFileSync(path.join(APP, 'src', 'views', 'MainView.js'), 'utf8');
+        ['activate', 'deactivate'].forEach(function (e) {
+            assert.match(lib, new RegExp("'" + e + "',"), 'webos-lib sends on' + e);
+        });
+        assert.match(main, /onactivate: "windowActivatedHandler"/);
+        assert.match(main, /ondeactivate: "windowDeactivatedHandler"/);
+    });
+});
+
 // --- the service -----------------------------------------------------------------------------
 
 describe('the service\'s alerts for a batch', function () {
