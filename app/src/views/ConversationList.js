@@ -776,6 +776,12 @@ module.exports = kind({
         this.$.threadMerge.send({ objects: [thread] });
     },
 
+    /**
+     * The TouchPad app's sound for a sent message: audios/sent.mp3 on the alerts class, through
+     * PalmSystem.playSoundNotification. WAM's PalmSystem has no such method and the app ships no
+     * audios/, so calling it threw a TypeError at the end of every send; until both exist this
+     * plays nothing. A received message's sound comes from DashboardManager.
+     */
     playSoundNotification: function (inParams) {
         var prefs = appState.prefsHandler && appState.prefsHandler.getPrefs();
         if (!prefs || !prefs.enableNotification) {
@@ -784,7 +790,7 @@ module.exports = kind({
         if (prefs.notificationSound !== "system" && prefs.notificationSound !== "ringtone") {
             return;
         }
-        if (!window.PalmSystem) {
+        if (!window.PalmSystem || typeof window.PalmSystem.playSoundNotification !== "function") {
             return;
         }
         var soundPath = inParams.isSent ?
