@@ -5,7 +5,7 @@ Three layers, each answering a different question.
 | | What it checks | Needs |
 |---|---|---|
 | `unit/` | the pure logic in `app/src/util`, and the service (`service-*.test.js`) | node 22 |
-| `build/` | the app **after** `enyo pack --production` | node, enyo-dev |
+| `build/` | the app **after** `enyo pack --production`, and laid out at phone size | node, enyo-dev, chromium (the layout test skips without it) |
 | `device/` | the app running on a phone | node, enyo-dev, adb |
 
 ```sh
@@ -53,6 +53,12 @@ holding a bare script-end sequence closed the inline `<script>` early and
 everything after it was parsed as markup. Nothing in `app/src` was wrong, and
 no test of the sources could have seen it. `build/packaged.test.js` compiles the
 inlined bundle and checks the stylesheet that comes out the other side.
+
+`build/layout.test.js` loads that same page in headless Chromium at the
+Mindphone's 480x723 card and measures it. Every list stopped scrolling once
+because MainView's fit child came out taller than the screen, so the lists grew
+to their rows and had nothing to scroll; that is a property of a layout pass,
+not of any source line or of the bundle's text.
 
 ## Why the device layer exists
 
