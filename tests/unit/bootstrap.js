@@ -20,6 +20,9 @@ var LIBRARIES = {
     'enyo/i18n': path.join(__dirname, 'stubs', 'enyo-i18n.js'),
     'enyo/dom': path.join(__dirname, 'stubs', 'enyo-dom.js'),
     'layout/Panels': path.join(__dirname, 'stubs', 'layout-panels.js'),
+    'enyo/kind': path.join(__dirname, 'stubs', 'enyo-kind.js'),
+    'enyo/Component': path.join(__dirname, 'stubs', 'enyo-webos-lunaservice.js'),
+    'enyo-webos/LunaService': path.join(__dirname, 'stubs', 'enyo-webos-lunaservice.js'),
     'moment': path.join(APP, 'lib', 'moment', 'moment.js')
 };
 
