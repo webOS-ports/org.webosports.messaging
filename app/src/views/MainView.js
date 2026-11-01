@@ -38,6 +38,16 @@ module.exports = kind({
     kind: FittableRows,
 
     components: [
+        // What the app menu opens against when the status bar asks for it: the top left corner
+        // of the app, just under the app's name in the status bar.
+        //
+        // It has to come before "views", not after it. FittableRows sizes its fit child from the
+        // last showing child below it: the room left is the container's height less the distance
+        // from the fit child's bottom edge to that child's. An absolutely placed anchor at the top
+        // sits above the fit child's bottom, so that distance came out as minus the fit child's
+        // own height, and every reflow made "views" a screen taller than it already was. The
+        // lists then grew to their content and had nothing left to scroll.
+        { name: "appMenuAnchor", style: "position: absolute; top: 0; left: 0; width: 0; height: 0;" },
         {
             // CardArranger, not CollapsingArranger: these are alternative whole-screen views, so
             // exactly one shows at a time. A collapsing arranger lays its panels side by side,
@@ -93,9 +103,6 @@ module.exports = kind({
         },
 
         { name: "buddyDialog", kind: AddBuddyDialog },
-        // What the app menu opens against when the status bar asks for it: the top left corner
-        // of the app, just under the app's name in the status bar.
-        { name: "appMenuAnchor", style: "position: absolute; top: 0; left: 0; width: 0; height: 0;" },
         {
             name: "appMenu", kind: Menu, floating: true, components: [
                 { name: "addBuddyMenuItem", kind: MenuItem, content: $L("Add Buddy"), ontap: "addBuddy" },
