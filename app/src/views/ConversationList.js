@@ -15,6 +15,7 @@ var kind = require('enyo/kind'),
     Collection = require('enyo/Collection'),
     RecordModel = require('../data/RecordModel'),
     syncCollection = require('../util/syncCollection'),
+    isNearBottom = require('../util/isNearBottom'),
     Toolbar = require('onyx/Toolbar'),
     Button = require('onyx/Button'),
     IconButton = require('onyx/IconButton'),
@@ -224,7 +225,7 @@ module.exports = kind({
         // --- services -------------------------------------------------------------------
         {
             name: 'messagePut', kind: LunaService, service: DB_SERVICE, method: 'put',
-            onResponse: 'revealListBottom', onError: 'serviceErr'
+            onError: 'serviceErr'
         },
         {
             name: 'messageDraftPut', kind: LunaService, service: DB_SERVICE, method: 'put',
@@ -266,6 +267,8 @@ module.exports = kind({
         this.outboundAttachment = null;
         this.recording = false;
         this.messages = [];
+        this._followToEnd = false;
+        this._revealTimers = [];
 
         this.collection = new Collection({ model: RecordModel });
         this.$.list.set("collection", this.collection);
@@ -292,6 +295,7 @@ module.exports = kind({
             clearTimeout(this._imgRelayoutTimer);
             this._imgRelayoutTimer = null;
         }
+        this.cancelRevealTimers();
         this.stopVoiceNoteTimer();
         if (this.conversationService) {
             this.conversationService.cancel();
@@ -316,7 +320,11 @@ module.exports = kind({
         this._imgRelayoutTimer = setTimeout(function () {
             self._imgRelayoutTimer = null;
             if (!self.$ || !self.$.list) { return; }
+            var follow = isNearBottom(self.$.scroller.getScrollBounds());
             self.$.list.refresh();
+            if (follow) {
+                self.revealListBottomSoon();
+            }
         }, 120);
     },
 
@@ -366,6 +374,7 @@ module.exports = kind({
 
     setupNewChatThread: function () {
         this.forceSendIfOffline = false;
+        this._followToEnd = true;
 
         // Clear the thread's unread count now that it is on screen.
         this.doClearUnreadCount({ threadId: this.chatThread._id });
@@ -471,19 +480,45 @@ module.exports = kind({
             }
         }
 
+        // Measure before the merge: the new rows are what push the bottom out of reach.
+        var follow = this._followToEnd || isNearBottom(this.$.scroller.getScrollBounds());
+        this._followToEnd = false;
+
         this.messages = results;
         syncCollection(this.collection, results);
         this.updateListButtons(this.chatThread);
         this.$.listButtons.setShowing(
             results.length > 0 && !!(this.chatThread && !(this.chatThread.flags || {}).locked));
+        if (follow) {
+            this.revealListBottomSoon();
+        }
         return true;
     },
 
     revealListBottom: function () {
-        if (this.$.scroller.scrollToBottom) {
-            this.$.scroller.scrollToBottom();
-        }
-        return true;
+        this.$.scroller.scrollToBottom();
+    },
+
+    /**
+     * Scroll to the newest message once the rows have been laid out. The second pass is for a
+     * conversation that was opened: the panel is still sliding in at the first one, so the
+     * scroller has not got its final height yet.
+     */
+    revealListBottomSoon: function () {
+        var self = this;
+        this.cancelRevealTimers();
+        [30, 400].forEach(function (delay) {
+            self._revealTimers.push(setTimeout(function () {
+                if (self.$ && self.$.scroller) {
+                    self.revealListBottom();
+                }
+            }, delay));
+        });
+    },
+
+    cancelRevealTimers: function () {
+        this._revealTimers.forEach(clearTimeout);
+        this._revealTimers = [];
     },
 
     updateListButtons: function (thread) {
@@ -748,6 +783,7 @@ module.exports = kind({
     },
 
     sendMessageHelper: function (params, dbKind) {
+        this._followToEnd = true;
         params._kind = dbKind;
         params.localTimestamp = Date.now();
 
