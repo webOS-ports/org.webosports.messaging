@@ -11,6 +11,7 @@
  */
 
 var kind = require('enyo/kind'),
+    rowModelWatch = require('../util/rowModelWatch'),
     Control = require('enyo/Control'),
     ThreadItem = require('./ThreadItem'),
     Divider = require('./widgets/Divider'),
@@ -40,12 +41,17 @@ module.exports = kind({
         // the changed handler (DataList assigned it afterwards, which did). Populate once up front;
         // later reassignments still come through modelChanged as normal.
         if (this.model) {
-            this.populateRow();
+            rowModelWatch.show(this);
         }
     },
 
+    destroy: function () {
+        rowModelWatch.stop(this);
+        this.inherited(arguments);
+    },
+
     modelChanged: function () {
-        this.populateRow();
+        rowModelWatch.show(this);
     },
 
     /** The actual population, kept off modelChanged so create() can call it directly. */
