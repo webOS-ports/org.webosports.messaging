@@ -52,9 +52,33 @@ Status Availability
   margin-right: 10px;
 }
 
+/* Line the dot up with the avatars and service icons in the lists below, which start at the
+   rows' 16px left padding (.contactItem). The dot is a background image, and a background is
+   drawn from the padding edge, so padding never moved it: it sat hard against the left edge. */
 .messaging-availability .status {
   margin-left: 0;
   padding: 0 8px;
+}
+.messaging-availability .availability-status,
+.messaging-availability .status-spinner {
+  -webkit-flex: none;
+  flex: none;
+}
+.messaging-availability .availability-status {
+  margin-left: 16px;
+  margin-right: 8px;
+  padding: 0;
+}
+/* The sign-in spinner stands in for the dot: Onyx draws it 59px wide, which pushed the text 43px
+   right whenever an account was signing in. Draw it at 24px centred on the dot instead, with the
+   margins set so the text starts at the same 40px either way. */
+.messaging-availability .status-spinner {
+  width: 24px;
+  height: 24px;
+  background-size: 24px 24px;
+  margin-left: 12px;
+  margin-right: 4px;
+  padding: 0;
 }
 
 .status-spinner {
@@ -114,14 +138,33 @@ Status Availability
   position: absolute;
   left: 92%;
 }
+/* The status is a dropdown, as in the webOS 3.0 app: dot, text, then the small down triangle that
+   Enyo 1 drew after a list selector's label. The text is only as wide as what it says, so the
+   triangle sits right after it; a long custom status shrinks and ends in an ellipsis instead of
+   pushing the triangle out of the bar. */
 .availability-text {
-  width: 12em;
+  -webkit-flex: 0 1 auto;
+  flex: 0 1 auto;
+  min-width: 0;
   font-style: italic;
   margin-top: 0;
 }
-.adjust-text-for-no-spinner {
-  margin-left: -18px;
-  width: 13em;
+/* ImStatus sits in the toolbar as a flex item, which by default is as wide as its content and
+   never narrower, so a long status widened it past the bar instead of ellipsizing. Let it take
+   the bar's width and no more. */
+.onyx-toolbar.messaging-availability > .messaging-availability {
+  -webkit-flex: 1 1 0;
+  flex: 1 1 0;
+  min-width: 0;
+}
+.availability-arrow {
+  -webkit-flex: none;
+  flex: none;
+  width: 14px;
+  height: 10px;
+  margin-left: 6px;
+  background: url(../assets/menu-arrow.svg) center no-repeat;
+  background-size: 14px 10px;
 }
 
 /*----------------------

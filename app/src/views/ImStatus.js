@@ -35,18 +35,18 @@ module.exports = kind({
                 {
                     classes: "flex-row", ontap: "availabilityTapped", components: [
                         {
-                            name: "status", classes: "status status-buddy",
-                            style: "margin-top: -1px; margin-left: 0;"
+                            name: "status", classes: "status status-buddy availability-status",
+                            style: "margin-top: -1px;"
                         },
                         {
                             name: "spinner", kind: Spinner, classes: "status-spinner",
-                            style: "margin-left: -10px;", showing: false
+                            showing: false
                         },
                         {
                             name: "availability", content: $L("Offline"),
                             classes: "availability-text ellipsized-line"
                         },
-                        { name: "arrow", classes: "menu-item-arrow" }
+                        { name: "arrow", classes: "availability-arrow" }
                     ]
                 }
             ]
@@ -163,7 +163,6 @@ module.exports = kind({
     showHideStatusSpinner: function (inShow) {
         this.$.status.setShowing(!inShow);
         this.$.spinner.setShowing(inShow);
-        this.$.availability.addRemoveClass("adjust-text-for-no-spinner", !inShow);
     },
 
     setStatusIndicator: function (accountsState) {

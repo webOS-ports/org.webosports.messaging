@@ -24,6 +24,7 @@ var kind = require('enyo/kind'),
     appState = require('../util/appState'),
     urlTarget = require('../util/urlTarget'),
     formFactor = require('../util/formFactor'),
+    firstUse = require('../util/firstUse'),
     mockDb = require('../data/mockDb'),
     $L = require('enyo/i18n').$L;
 
@@ -36,6 +37,12 @@ formFactor.install();
 module.exports = kind({
     name: "messaging.MainView",
     kind: FittableRows,
+
+    // Any panel switch - opening another chat, going back to the list, preferences - takes the
+    // conversation off screen, so close its floating reaction picker and menus first.
+    handlers: {
+        onTransitionStart: "panelTransitionStart"
+    },
 
     components: [
         // What the app menu opens against when the status bar asks for it: the top left corner
@@ -180,6 +187,7 @@ module.exports = kind({
         if (appState.accountService) {
             appState.accountService.register(this, this.accountsChanged.bind(this));
         }
+        this.checkFirstUse();
 
         formFactor.apply(this);
     },
@@ -237,9 +245,7 @@ module.exports = kind({
         this.setOfflineMenuItem();
         this.$.messaging.setOfflinePrefs(prefs);
 
-        if (window.PalmSystem && prefs.firstUseMode) {
-            this.handleFirstLaunch();
-        }
+        this.checkFirstUse();
     },
 
     updateOfflinePrefs: function () {
@@ -267,6 +273,22 @@ module.exports = kind({
         // The presence bar and every list re-read their own data when accounts change; nothing to do
         // here beyond keeping the menu labels current.
         this.setOfflineMenuItem();
+        this.checkFirstUse();
+    },
+
+    /** Show the first-run screen only to someone with no IM account; see util/firstUse. */
+    checkFirstUse: function () {
+        if (!window.PalmSystem) {
+            return;
+        }
+        var accounts = appState.accountService;
+        var action = firstUse(this.prefs, !!(accounts && accounts.loaded),
+            accounts && accounts.loaded ? accounts.getImAccounts().length : 0);
+        if (action === "clear") {
+            this.doneFirstLaunch();
+        } else if (action === "show" && this.$.views.getIndex() !== 1) {
+            this.handleFirstLaunch();
+        }
     },
 
     showAddAccountDialog: function () {
@@ -459,7 +481,10 @@ module.exports = kind({
             this.prefs.firstUseMode = false;
             appState.prefsHandler.setPrefs(this.prefs);
         }
-        this.$.views.setIndex(0);
+        // Only leave the first-run screen: clearing the flag must not close preferences.
+        if (this.$.views.getIndex() === 1) {
+            this.$.views.setIndex(0);
+        }
         return true;
     },
 
@@ -571,6 +596,10 @@ module.exports = kind({
         this.$.views.setIndex(0);
         this.$.messaging.windowShownHandler();
         return true;
+    },
+
+    panelTransitionStart: function () {
+        this.$.chatView.dismissPopups();
     },
 
     goBack: function () {

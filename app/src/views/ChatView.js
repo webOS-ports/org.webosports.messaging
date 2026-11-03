@@ -290,5 +290,9 @@ module.exports = kind({
 
     windowHiddenHandler: function () {
         this.$.conversationList.windowHiddenHandler();
+    },
+
+    dismissPopups: function () {
+        this.$.conversationList.dismissPopups();
     }
 });
