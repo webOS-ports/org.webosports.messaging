@@ -4,6 +4,11 @@
  * Reads the MESSAGING capability providers off the user's accounts and exposes the lookups the
  * views need: per-service icons, db kinds, reaction policy, auth pseudo-contacts, and voice/video
  * capability. Listeners register a callback that fires whenever the account set changes.
+ *
+ * listAccounts answers once: the accounts service ignores subscribe, so on its own the app would
+ * never hear of an account added or removed while it runs (and Messaging stays resident). Every
+ * IM account has a com.palm.imloginstate record, so the list is re-read whenever the account ids
+ * behind those records change.
  */
 
 var kind = require('enyo/kind'),
@@ -22,6 +27,12 @@ module.exports = kind({
             service: 'luna://com.webos.service.accounts', method: 'listAccounts',
             subscribe: true, resubscribe: true,
             onResponse: 'gotAccounts', onError: 'accountsError'
+        },
+        {
+            name: 'loginWatch', kind: LunaService,
+            service: 'luna://com.webos.service.db', method: 'find',
+            subscribe: true, resubscribe: true,
+            onResponse: 'gotLoginStates', onError: 'loginWatchError'
         }
     ],
 
@@ -35,6 +46,9 @@ module.exports = kind({
         // True once the first listAccounts answer (or error) is in, so callers can tell
         // "no accounts" apart from "not loaded yet".
         this.loaded = false;
+        // Account ids seen in imloginstate at the last watch answer; null before the first one.
+        this._loginAccountIds = null;
+        this._watchingLogins = false;
     },
 
     // --- fetching ------------------------------------------------------------------------
@@ -48,6 +62,70 @@ module.exports = kind({
             return;
         }
         this.$.listAccounts.send({ capability: "MESSAGING" });
+        this.watchLoginStates();
+    },
+
+    watchLoginStates: function () {
+        if (this._watchingLogins) {
+            return;
+        }
+        this._watchingLogins = true;
+        this.$.loginWatch.send({
+            query: { from: messagingUtils.imLoginState.dbKind, select: ["accountId"] },
+            watch: true
+        });
+    },
+
+    gotLoginStates: function (inSender, inResponse) {
+        if (inResponse && inResponse.fired) {
+            // A watch fires once; ask again for the new set and a fresh watch.
+            this._watchingLogins = false;
+            this.watchLoginStates();
+            return;
+        }
+        var ids = {};
+        ((inResponse && inResponse.results) || []).forEach(function (r) {
+            if (r && r.accountId) { ids[r.accountId] = true; }
+        });
+        var previous = this._loginAccountIds;
+        this._loginAccountIds = ids;
+        if (this.accountsDiffer(previous, ids)) {
+            this.$.listAccounts.send({ capability: "MESSAGING" });
+        }
+    },
+
+    loginWatchError: function (inSender, inError) {
+        this.warn("imloginstate watch failed:", inError && (inError.errorText || inError));
+        this._watchingLogins = false;
+    },
+
+    /**
+     * Whether the accounts behind the login states changed enough to re-read the list. Against the
+     * previous answer: any id added or gone. On the first answer there is nothing to compare
+     * with, so only an id the loaded list does not have yet counts - an account created between
+     * listAccounts and the watch. Comparing against the list itself every time would re-read it
+     * on every presence change if an IM account ever had no login state.
+     */
+    accountsDiffer: function (previous, ids) {
+        var id;
+        if (previous) {
+            for (id in ids) {
+                if (ids.hasOwnProperty(id) && !previous[id]) { return true; }
+            }
+            for (id in previous) {
+                if (previous.hasOwnProperty(id) && !ids[id]) { return true; }
+            }
+            return false;
+        }
+        if (!this.loaded) {
+            return false;   // the first listAccounts answer is still on its way
+        }
+        var known = {};
+        (this.data || []).forEach(function (a) { known[a._id] = true; });
+        for (id in ids) {
+            if (ids.hasOwnProperty(id) && !known[id]) { return true; }
+        }
+        return false;
     },
 
     gotAccounts: function (inSender, inResponse) {
