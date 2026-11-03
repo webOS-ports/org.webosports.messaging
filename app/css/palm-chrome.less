@@ -57,8 +57,8 @@ Toolbars
   margin-bottom: 0;
 }
 
-/* The status reads from the left edge of the column, as in the Enyo 1 app, where the row
-   filled the bar and the dot's own `padding: 0 8px` was the whole inset. Onyx's 6px child
+/* The status row fills the bar from its left edge, as in the Enyo 1 app; the dot's own margin
+   (.availability-status) lines it up with the list icons. Onyx's 6px child
    margin on top of this toolbar's 8px padding had pushed it 14px further in. (The Enyo 1 app
    renders that row starting at x 160 in a desktop browser, but that is its -webkit-box child
    collapsing to zero width under a modern engine, not the layout Palm shipped - so it is not
