@@ -105,6 +105,7 @@ module.exports = kind({
             name: "scroller", kind: Scroller, fit: true, horizontal: "hidden", touch: true,
             // Handlers sit on the scroller; row events arrive decorated with model and index.
             ontap: "handleMessageTap", onConfirm: "swipeDelete", onReact: "handleReactSwipe",
+            onScrollStart: "dismissPopups",
             onError: "showErrorDialog", onSelectSender: "senderRowSelected",
             onOpenAttachment: "openAttachment", onInviteResponse: "respondToInvite",
             components: [
@@ -337,6 +338,7 @@ module.exports = kind({
     },
 
     chatThreadChanged: function (inOldChatThread) {
+        this.dismissPopups();
         if (!inOldChatThread && this.chatThread && this.chatThread._id) {
             this.setupNewChatThread();
         } else if (inOldChatThread && inOldChatThread._id && !this.chatThread) {
@@ -1141,6 +1143,21 @@ module.exports = kind({
         this.$.reactRow.showAtEvent(inEvent);
     },
 
+    /**
+     * Close the reaction picker and message menus. They float above the whole app, pinned where
+     * they opened, so they must close whenever the message under them moves or goes away -
+     * a scroll, another chat, leaving the view - not only on a tap outside them.
+     */
+    dismissPopups: function () {
+        var popups = ["reactRow", "messageMenu", "transportMenu"];
+        for (var i = 0; i < popups.length; i++) {
+            var popup = this.$[popups[i]];
+            if (popup && popup.showing) {
+                popup.hide();
+            }
+        }
+    },
+
     reactPicked: function (inSender) {
         this.$.reactRow.hide();
         if (this.selectedMessage && inSender.reactionValue) {
@@ -1457,6 +1474,7 @@ module.exports = kind({
     },
 
     windowHiddenHandler: function () {
+        this.dismissPopups();
         if (this.chatThread && this.chatThread._id) {
             this.saveMessageToDraft(this.$.richText.get('value'), this.chatThread._id);
         }

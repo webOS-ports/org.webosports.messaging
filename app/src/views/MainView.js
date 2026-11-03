@@ -37,6 +37,12 @@ module.exports = kind({
     name: "messaging.MainView",
     kind: FittableRows,
 
+    // Any panel switch - opening another chat, going back to the list, preferences - takes the
+    // conversation off screen, so close its floating reaction picker and menus first.
+    handlers: {
+        onTransitionStart: "panelTransitionStart"
+    },
+
     components: [
         // What the app menu opens against when the status bar asks for it: the top left corner
         // of the app, just under the app's name in the status bar.
@@ -571,6 +577,10 @@ module.exports = kind({
         this.$.views.setIndex(0);
         this.$.messaging.windowShownHandler();
         return true;
+    },
+
+    panelTransitionStart: function () {
+        this.$.chatView.dismissPopups();
     },
 
     goBack: function () {
