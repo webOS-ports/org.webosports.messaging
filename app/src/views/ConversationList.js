@@ -137,7 +137,7 @@ module.exports = kind({
             strategyKind: TouchScrollStrategy,
             // Handlers sit on the scroller; row events arrive decorated with model and index.
             ontap: "handleMessageTap", onConfirm: "swipeDelete", onReact: "handleReactSwipe",
-            onScrollStart: "dismissPopups",
+            onScrollStart: "dismissPopups", onScrollStop: "noteScrollPosition",
             onError: "showErrorDialog", onSelectSender: "senderRowSelected",
             onOpenAttachment: "openAttachment", onInviteResponse: "respondToInvite",
             components: [
@@ -731,6 +731,12 @@ module.exports = kind({
 
     revealListBottom: function () {
         this.$.scroller.scrollToBottom();
+        this._atEnd = true;
+    },
+
+    /** Whether the newest message was in view when scrolling stopped; see handleResize. */
+    noteScrollPosition: function () {
+        this._atEnd = isNearBottom(this.$.scroller.getScrollBounds());
     },
 
     /**
@@ -1878,8 +1884,22 @@ module.exports = kind({
         this.set('loginStates', states);
     },
 
-    resize: function () {
+    /**
+     * The on-screen keyboard resizes the window rather than covering it, so the message list loses
+     * its bottom part and the newest messages ended up under the keyboard. Keep the end in view when
+     * it was in view before, or when the keyboard came up for typing a reply.
+     *
+     * handleResize, not resize: resize() sends the onresize waterfall; this is the end receiving it.
+     */
+    handleResize: function () {
         this.inherited(arguments);
+        if (!this.$.scroller || !this.collection || !this.collection.length) {
+            return;
+        }
+        var typing = this.$.richText.hasNode() && document.activeElement === this.$.richText.hasNode();
+        if (this._atEnd || typing) {
+            this.revealListBottomSoon();
+        }
     },
 
     windowHiddenHandler: function () {
