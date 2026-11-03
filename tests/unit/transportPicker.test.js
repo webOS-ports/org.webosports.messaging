@@ -93,6 +93,7 @@ describe('transportPicker.setTransportsByPerson', function () {
         assert.equal(transports[0].label, 'AIM');
         assert.equal(transports[1].label, 'jabber');
     });
+
 });
 
 describe('transportPicker.selectForThread', function () {
@@ -118,6 +119,52 @@ describe('transportPicker.selectForThread', function () {
         appState.accountService = accountsFor(['sms'], {});
         picker.setTransportsByPerson(ADA, null);
         assert.equal(picker.getSelectedTransport().replyAddress, '5551234567');
+    });
+});
+
+// Signal and WhatsApp both use the phone number as the address.
+var BEN = {
+    name: { givenName: 'Ben' },
+    ims: [
+        { value: '+31612345678', type: 'type_whatsapp' },
+        { value: '+31612345678', type: 'type_signal' }
+    ],
+    phoneNumbers: [{ value: '+31612345678', type: 'type_mobile' }]
+};
+
+describe('transportPicker with one number on several services', function () {
+    beforeEach(function () {
+        appState.accountService = accountsFor(['type_whatsapp', 'type_signal', 'sms'], {});
+    });
+
+    it('replies on the service the thread was last used on, not the first one listed', function () {
+        picker.setTransportsByPerson(BEN, { replyAddress: '+31612345678', replyService: 'type_signal' });
+        assert.equal(picker.getSelectedTransport().serviceName, 'type_signal');
+    });
+
+    it('keeps to the service even when the stored address is another spelling', function () {
+        // A thread first used on WhatsApp keeps its jid as the address after a Signal message.
+        picker.setTransportsByPerson(BEN,
+            { replyAddress: '31612345678@s.whatsapp.net', replyService: 'type_signal' });
+        assert.equal(picker.getSelectedTransport().serviceName, 'type_signal');
+    });
+
+    it('takes SMS for an MMS thread', function () {
+        picker.setTransportsByPerson(BEN, { replyAddress: '+31612345678', replyService: 'mms' });
+        assert.equal(picker.getSelectedTransport().serviceName, 'sms');
+    });
+
+    it('follows an incoming message onto the service it came in on', function () {
+        picker.setTransportsByPerson(BEN, { replyAddress: '+31612345678', replyService: 'type_whatsapp' });
+        assert.equal(picker.followMessage({ serviceName: 'type_signal', from: { addr: '+31612345678' } }), true);
+        assert.equal(picker.getSelectedTransport().serviceName, 'type_signal');
+        assert.equal(picker.followMessage({ serviceName: 'type_signal', from: { addr: '+31612345678' } }), false);
+    });
+
+    it('leaves the selection alone for a message on a service it cannot send on', function () {
+        picker.setTransportsByPerson(BEN, { replyAddress: '+31612345678', replyService: 'type_whatsapp' });
+        assert.equal(picker.followMessage({ serviceName: 'type_telegram', from: { addr: '+31612345678' } }), false);
+        assert.equal(picker.getSelectedTransport().serviceName, 'type_whatsapp');
     });
 });
 

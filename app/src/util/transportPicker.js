@@ -32,6 +32,38 @@ function serviceLabel(serviceName) {
     return String(serviceName || "").replace(/^type_/, "");
 }
 
+/**
+ * The transport for an address on a service: both matching first, then the service, then (unless
+ * sameServiceOnly) the address alone.
+ */
+function pick(address, serviceName, sameServiceOnly) {
+    var wanted = address ?
+        messagingUtils.utils.normalizeAddress(address, serviceName) : null;
+    var byService = null, byAddress = null;
+    for (var i = 0; i < transports.length; i++) {
+        var t = transports[i];
+        var sameAddress = wanted !== null &&
+            messagingUtils.utils.normalizeAddress(t.replyAddress, t.serviceName) === wanted;
+        var sameService = !!serviceName && sameServiceName(t.serviceName, serviceName);
+        if (sameAddress && sameService) {
+            return t;
+        }
+        if (sameService && !byService) {
+            byService = t;
+        }
+        if (sameAddress && !byAddress) {
+            byAddress = t;
+        }
+    }
+    return byService || (sameServiceOnly ? null : byAddress);
+}
+
+/** "sms" and "mms" are one transport: both send on the phone's SMS account. */
+function sameServiceName(a, b) {
+    var utils = messagingUtils.utils;
+    return a === b || (utils.isTextMessage(a) && utils.isTextMessage(b));
+}
+
 module.exports = {
     getTransports: function () {
         return transports;
@@ -121,28 +153,22 @@ module.exports = {
         return transports;
     },
 
-    /** Pick the transport matching the thread's reply address, else the first one. */
+    /**
+     * Pick the transport the thread was last used on: its reply address on its reply service,
+     * else the reply service, else the address on any service, else the first one.
+     *
+     * The service has to count. Signal and WhatsApp both use the phone number as the address, so
+     * matching on the address alone took whichever the contact listed first, and a Signal
+     * message got its reply on WhatsApp.
+     */
     selectForThread: function (chatThread) {
         selectedTransport = null;
         if (!chatThread) {
             selectedTransport = transports[0] || null;
             return selectedTransport;
         }
-
-        var wanted = messagingUtils.utils.normalizeAddress(
-            chatThread.replyAddress, chatThread.replyService);
-
-        for (var i = 0; i < transports.length; i++) {
-            var candidate = messagingUtils.utils.normalizeAddress(
-                transports[i].replyAddress, transports[i].serviceName);
-            if (candidate === wanted) {
-                selectedTransport = transports[i];
-                break;
-            }
-        }
-        if (!selectedTransport) {
-            selectedTransport = transports[0] || null;
-        }
+        selectedTransport = pick(chatThread.replyAddress, chatThread.replyService) ||
+            transports[0] || null;
         return selectedTransport;
     },
 
@@ -169,6 +195,22 @@ module.exports = {
             return null;
         }
         return accountService.getIconPath(transport.serviceName) || null;
+    },
+
+    /**
+     * Follow an incoming message onto the transport it came in on, so the reply goes back the
+     * same way. Returns true when the selection changed; leaves it alone when no transport fits.
+     */
+    followMessage: function (message) {
+        if (!message || !message.serviceName) {
+            return false;
+        }
+        var match = pick(message.from && message.from.addr, message.serviceName, true);
+        if (!match || match === selectedTransport) {
+            return false;
+        }
+        selectedTransport = match;
+        return true;
     },
 
     /** Menu label for a transport: the address plus what kind of address it is. */

@@ -427,6 +427,7 @@ module.exports = kind({
         this._limit = FIRST_PAGE;
         this.forceSendIfOffline = false;
         this._followToEnd = true;
+        this._newestIncomingId = undefined;
 
         // Clear the thread's unread count now that it is on screen.
         this.doClearUnreadCount({ threadId: this.chatThread._id });
@@ -573,6 +574,7 @@ module.exports = kind({
             this.$.scroller.setScrollTop(before.top + (after.height - before.height));
         }
         syncCollection(this.collection, results);
+        this.followIncomingTransport(results);
         this.updateListButtons(this.chatThread);
         this.$.listButtons.setShowing(
             results.length > 0 && !!(this.chatThread && !(this.chatThread.flags || {}).locked));
@@ -639,6 +641,33 @@ module.exports = kind({
                 model.set('personImage', image);
             }
         });
+    },
+
+    /**
+     * A message that comes in while the chat is open moves the reply onto the transport it came
+     * in on, so a Signal message is not answered on WhatsApp. Only a new one does: the first
+     * results only note the newest, as the thread's own reply service already chose for them, and
+     * a transport picked by hand stays picked until the next message arrives.
+     */
+    followIncomingTransport: function (results) {
+        var newest = null;
+        for (var i = results.length - 1; i >= 0; i--) {
+            if (results[i].folder === FOLDERS.INBOX) {
+                newest = results[i];
+                break;
+            }
+        }
+        var newestId = newest ? newest._id : null;
+        var seenBefore = this._newestIncomingId;
+        this._newestIncomingId = newestId;
+        if (seenBefore === undefined || !newest || newestId === seenBefore ||
+                (this.chatThread && (this.chatThread.flags || {}).locked)) {
+            return;
+        }
+        if (transportPicker.followMessage(newest)) {
+            this.updateTransportButton();
+            this.updateCallButtons();
+        }
     },
 
     /** Ask for the next older batch once this one is on screen, while there may be more. */
