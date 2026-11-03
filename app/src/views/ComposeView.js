@@ -19,6 +19,7 @@ var kind = require('enyo/kind'),
     messagingUtils = require('../util/messagingUtils'),
     appState = require('../util/appState'),
     mockDb = require('../data/mockDb'),
+    composerEcho = require('../util/composerEcho'),
     $L = require('enyo/i18n').$L;
 
 var DB_SERVICE = 'luna://com.webos.service.db';
@@ -70,7 +71,8 @@ module.exports = kind({
                     kind: InputDecorator, classes: "flex-one", components: [
                         {
                             name: "richText", kind: TextArea,
-                            placeholder: $L("Enter message here..."), onkeydown: "checkKey"
+                            placeholder: $L("Enter message here..."), onkeydown: "checkKey",
+                            oninput: "composerInput"
                         }
                     ]
                 },
@@ -192,6 +194,11 @@ module.exports = kind({
     },
 
     // --- sending -----------------------------------------------------------------------------
+
+    // After a send the keyboard can write its last word back into this (now hidden) field.
+    composerInput: function () {
+        composerEcho.check(this.$.richText);
+    },
 
     checkKey: function (inSender, inEvent) {
         if (inEvent.keyCode === 13 && !inEvent.shiftKey) {
@@ -333,6 +340,7 @@ module.exports = kind({
 
         this.pendingMessageText = "";
         this.$.richText.set('value', "");
+        composerEcho.sent(this.$.richText, message.messageText);
         this.doOpenConversation({ threadId: thread._id, thread: thread });
     },
 

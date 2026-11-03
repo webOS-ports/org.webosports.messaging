@@ -37,6 +37,7 @@ var kind = require('enyo/kind'),
     ConversationRow = require('./ConversationRow'),
     ConversationService = require('../data/ConversationService'),
     transportPicker = require('../util/transportPicker'),
+    composerEcho = require('../util/composerEcho'),
     messagingUtils = require('../util/messagingUtils'),
     appState = require('../util/appState'),
     mockDb = require('../data/mockDb'),
@@ -192,7 +193,7 @@ module.exports = kind({
                             name: "richText", kind: TextArea, classes: "conversation-input-text",
                             attributes: { rows: 1 },
                             placeholder: $L("Enter message here..."),
-                            onkeydown: "checkKey", oninput: "growInput"
+                            onkeydown: "checkKey", oninput: "composerInput"
                         }
                     ]
                 },
@@ -851,6 +852,11 @@ module.exports = kind({
 
     // --- sending -------------------------------------------------------------------------
 
+    composerInput: function () {
+        composerEcho.check(this.$.richText);
+        this.growInput();
+    },
+
     /** Grow the field with its content, up to the cap the stylesheet sets. */
     growInput: function () {
         var node = this.$.richText.hasNode();
@@ -1025,6 +1031,7 @@ module.exports = kind({
         }
 
         this.$.richText.set('value', "");
+        composerEcho.sent(this.$.richText, params.messageText);
         this.growInput();
         this.cancelReply();
         if (this.outboundAttachment) {
