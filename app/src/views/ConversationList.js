@@ -20,6 +20,7 @@ var kind = require('enyo/kind'),
     isNearBottom = require('../util/isNearBottom'),
     prependedCount = require('../util/prependedCount'),
     senderImages = require('../util/senderImages'),
+    sendAccount = require('../util/sendAccount'),
     Toolbar = require('onyx/Toolbar'),
     Button = require('onyx/Button'),
     IconButton = require('onyx/IconButton'),
@@ -50,6 +51,8 @@ var FOLDERS = messagingUtils.message.FOLDERS;
 var FIRST_PAGE = 20, BACKFILL_STEP = 30, MAX_MESSAGES = 200, BACKFILL_GAP_MS = 120;
 // Senders asked about per person query; well under what one db8 find hands back.
 var SENDER_BATCH = 50;
+// How long a send waits for a re-read account list before it reports the account missing.
+var ACCOUNT_RELOAD_MS = 5000;
 
 /** The quick-reaction row, stored as HTML numeric entities so they survive the db8/JS round-trip. */
 var QUICK_REACTIONS = ["&#10084;&#65039;", "&#128077;", "&#128518;", "&#128558;", "&#128546;", "&#128591;"];
@@ -860,6 +863,13 @@ module.exports = kind({
             return;
         }
 
+        var resolved = sendAccount(selectedTransport, appState.accountService);
+        if (resolved.state === "missing") {
+            this.sendOnceAccountsReload(selectedTransport);
+            return;
+        }
+        selectedTransport.account = resolved.account;
+
         var recipient = {
             name: selectedTransport.displayName,
             addr: selectedTransport.replyAddress
@@ -912,7 +922,7 @@ module.exports = kind({
         }
 
         var dbKind;
-        if (!messagingUtils.utils.isTextMessage(params.serviceName) && selectedTransport.account) {
+        if (resolved.state === "im") {
             dbKind = (selectedTransport.account.dbkinds || {}).immessage ||
                 messagingUtils.message.dbKind;
         } else {
@@ -934,6 +944,41 @@ module.exports = kind({
         this.mergeThread(updated);
 
         this.sendMessageHelper(params, dbKind);
+    },
+
+    /**
+     * The IM account behind this transport is not in the list the app loaded - typically one added
+     * since the app started. Re-read the accounts and send once they are in; if the account is
+     * still not there, say so and keep the text in the composer rather than send it some other way.
+     */
+    sendOnceAccountsReload: function (transport) {
+        var accounts = appState.accountService;
+        var self = this;
+        var notSent = function () {
+            self.showError($L("Unable to send"),
+                $L("No account for {service} is set up on this device, so the message was not sent.")
+                    .replace("{service}", transport.label || transport.serviceName));
+        };
+        if (!accounts || this._accountWait) {
+            if (!accounts) { notSent(); }
+            return;
+        }
+        var waiter = this._accountWait = {};
+        var finish = function () {
+            if (self._accountWait !== waiter) { return; }
+            clearTimeout(waiter.timer);
+            accounts.unregister(waiter);
+            self._accountWait = null;
+            var resolved = sendAccount(transport, accounts);
+            if (resolved.state === "missing" || !self.chatThread) {
+                notSent();
+                return;
+            }
+            self.sendMessage();
+        };
+        accounts.register(waiter, finish);
+        waiter.timer = setTimeout(finish, ACCOUNT_RELOAD_MS);
+        accounts.getAccounts();
     },
 
     sendMessageHelper: function (params, dbKind) {
