@@ -780,7 +780,10 @@ module.exports = kind({
             }, { owner: this });
         }
         this.$.transportMenu.render();
-        this.$.transportMenu.showAtEvent(inEvent);
+        // Anchored to the button, as MainView.showAppMenu does: a floating Menu opened with
+        // showAtEvent() has no activatorOffset, and while it is open every resize (the back key,
+        // the keyboard) throws in Menu.adjustPosition, so back stops working.
+        this.$.transportMenu.requestMenuShow(this, { activator: this.$.transportButton });
         return true;
     },
 
@@ -1406,6 +1409,9 @@ module.exports = kind({
 
     reactMore: function (inSender, inEvent) {
         this.$.reactRow.hide();
+        // The button that opened it is in the popup just hidden, so anchor to the tap point
+        // instead; without an activatorOffset the open menu throws on every resize.
+        this.$.messageMenu.activatorOffset = { top: inEvent.pageY || 0, left: inEvent.pageX || 0, width: 0, height: 0 };
         this.$.messageMenu.showAtEvent(inEvent);
         return true;
     },
