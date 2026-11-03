@@ -126,6 +126,10 @@ module.exports = kind({
         this.$.conversationList.threadLocked(inThread);
     },
 
+    accountsChanged: function () {
+        this.$.conversationList.accountsChanged();
+    },
+
     loginStatesChanged: function () {
         this.$.conversationList.setLoginStates(this.loginStates);
         this.$.composeView.setLoginStates(this.loginStates);
