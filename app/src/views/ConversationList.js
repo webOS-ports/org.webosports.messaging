@@ -19,6 +19,7 @@ var kind = require('enyo/kind'),
     syncCollection = require('../util/syncCollection'),
     isNearBottom = require('../util/isNearBottom'),
     prependedCount = require('../util/prependedCount'),
+    senderImages = require('../util/senderImages'),
     Toolbar = require('onyx/Toolbar'),
     Button = require('onyx/Button'),
     IconButton = require('onyx/IconButton'),
@@ -47,6 +48,8 @@ var FOLDERS = messagingUtils.message.FOLDERS;
  * between, up to MAX_MESSAGES. Drawing all 200 at once took about two seconds on a phone.
  */
 var FIRST_PAGE = 20, BACKFILL_STEP = 30, MAX_MESSAGES = 200, BACKFILL_GAP_MS = 120;
+// Senders asked about per person query; well under what one db8 find hands back.
+var SENDER_BATCH = 50;
 
 /** The quick-reaction row, stored as HTML numeric entities so they survive the db8/JS round-trip. */
 var QUICK_REACTIONS = ["&#10084;&#65039;", "&#128077;", "&#128518;", "&#128558;", "&#128546;", "&#128591;"];
@@ -253,6 +256,11 @@ module.exports = kind({
             name: 'draftFind', kind: LunaService, service: DB_SERVICE, method: 'find',
             onResponse: 'gotDraftMessages', onError: 'serviceErr'
         },
+        {
+            // Group/channel senders' own photos; see util/senderImages.
+            name: 'senderFind', kind: LunaService, service: DB_SERVICE, method: 'find',
+            onResponse: 'gotSenderPersons', onError: 'serviceErr'
+        },
         { name: 'dbDelete', kind: LunaService, service: DB_SERVICE, method: 'del', onError: 'serviceErr' },
         { name: 'dbMerge', kind: LunaService, service: DB_SERVICE, method: 'merge', onError: 'serviceErr' },
         {
@@ -408,6 +416,8 @@ module.exports = kind({
         this.setHeaderName(this.chatThread.displayName);
         this.$.status.setClasses("status status-no-presence");
         this.chatThread.personImage = messagingUtils.person.getDisplayImage(null);
+        // Asked afresh per conversation, so a sender who became a friend since shows up.
+        this._senderImages = {};
     },
 
     closeConversation: function (chatThreadId, skipSaveDraft) {
@@ -519,12 +529,9 @@ module.exports = kind({
             }
         }
 
-        // Every bubble uses the thread's avatar; group chats show it per message via from.name.
-        if (this.chatThread && this.chatThread.personImage) {
-            for (var j = 0; j < results.length; j++) {
-                results[j].personImage = this.chatThread.personImage;
-            }
-        }
+        // A 1:1 bubble uses the thread's avatar; an incoming group or channel bubble its sender's.
+        this.applySenderImages(results);
+        this.lookUpSenders(results);
 
         // Measure before the merge: the new rows are what push the bottom out of reach.
         var follow = this._followToEnd || isNearBottom(this.$.scroller.getScrollBounds());
@@ -552,6 +559,64 @@ module.exports = kind({
         }
         this.scheduleBackfill(results.length);
         return true;
+    },
+
+    // --- sender avatars ---------------------------------------------------------------------
+
+    applySenderImages: function (records) {
+        var cache = this._senderImages || (this._senderImages = {});
+        var threadImage = this.chatThread && this.chatThread.personImage;
+        var fallback = messagingUtils.person.DEFAULT_IMAGE;
+        for (var i = 0; i < records.length; i++) {
+            var image = senderImages.imageFor(records[i], cache, threadImage, fallback);
+            if (image) {
+                records[i].personImage = image;
+            }
+        }
+    },
+
+    /** Find the people behind group/channel senders not looked up yet, by their IM address. */
+    lookUpSenders: function (records) {
+        var cache = this._senderImages || (this._senderImages = {});
+        var wanted = senderImages.addressesToLookUp(records, cache);
+        var addresses = [];
+        Object.keys(wanted).forEach(function (service) {
+            addresses = addresses.concat(wanted[service]);
+        });
+        if (!addresses.length) {
+            return;
+        }
+        senderImages.markAsked(cache, wanted);
+        for (var i = 0; i < addresses.length; i += SENDER_BATCH) {
+            var query = {
+                from: "com.palm.person:1",
+                where: [{ prop: "ims.value", op: "=", val: addresses.slice(i, i + SENDER_BATCH) }],
+                select: ["_id", "ims", "photos.squarePhotoPath"]
+            };
+            if (mockDb.enabled) {
+                this.gotSenderPersons(null, mockDb.find(query));
+            } else {
+                this.$.senderFind.send({ query: query });
+            }
+        }
+    },
+
+    gotSenderPersons: function (inSender, inResponse) {
+        var found = senderImages.remember(this._senderImages || {},
+            (inResponse && inResponse.results) || []);
+        if (!found || !this.collection) {
+            return;
+        }
+        // Rows follow their model, so setting the image redraws only the bubbles that changed.
+        var self = this;
+        this.collection.forEach(function (model) {
+            var record = model.attributes;
+            var image = senderImages.imageFor(record, self._senderImages,
+                self.chatThread && self.chatThread.personImage, messagingUtils.person.DEFAULT_IMAGE);
+            if (image && image !== record.personImage) {
+                model.set('personImage', image);
+            }
+        });
     },
 
     /** Ask for the next older batch once this one is on screen, while there may be more. */
