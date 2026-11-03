@@ -54,7 +54,9 @@ module.exports = kind({
             return;
         }
         this.setupDivider(record);
-        this.$.buddyItem.set("record", record);
+        // Forced: the model merges each result into the same attributes object, so the record is
+        // the same reference every time and a plain set() would see no change and not redraw.
+        this.$.buddyItem.set("record", record, { force: true });
         this.selectedRowChanged();
     },
 
