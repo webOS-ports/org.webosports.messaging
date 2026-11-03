@@ -11,7 +11,8 @@
  *   - array properties: conversations = id and ims.normalizedValue = x match any element
  *   - = (with an array value: any of them), != < <= > >=, and % (string prefix)
  *   - revSets: readRevSet takes the record's new _rev whenever flags.read changes
- *   - del marks _del and keeps the record; plain queries skip it, a query on _del finds it
+ *   - del marks _del and keeps the record; plain queries skip it, a query on _del finds it;
+ *     del with purge removes it
  *   - merge is a deep merge (objects merged, arrays and scalars replaced); a merge that carries a
  *     stale _rev is refused, as db8 refuses it
  *   - results by orderBy (or _rev), limit, and a page token
@@ -338,10 +339,11 @@ function createFakeDb({ name = "db", caller = null } = {}) {
         return ids.map((id) => records.get(id)).filter(Boolean).map(clone);
     }
 
-    async function del(ids) {
+    async function del(ids, purge) {
         enter("del");
         return ids.filter((id) => records.has(id)).map((id) => {
             const r = records.get(id);
+            if (purge) { records.delete(id); return { id }; }
             r._del = true;
             stamp(r, readBits(r));
             return { id, rev: r._rev };
@@ -429,7 +431,7 @@ function createFakeDb({ name = "db", caller = null } = {}) {
             case "get": return { returnValue: true, results: await get(args.ids) };
             case "put": return { returnValue: true, results: await put(args.objects) };
             case "merge": return { returnValue: true, results: await merge(args.objects) };
-            case "del": return { returnValue: true, results: await del(args.ids) };
+            case "del": return { returnValue: true, results: await del(args.ids, args.purge === true) };
             default: return { returnValue: false, errorCode: -1, errorText: "fakedb: no method " + method };
             }
         } catch (e) {

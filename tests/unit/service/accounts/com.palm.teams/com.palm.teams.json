@@ -1,0 +1,12 @@
+{
+    "templateId": "com.palm.teams",
+    "loc_name": "Teams",
+    "capabilityProviders": [
+        {
+            "capability": "MESSAGING",
+            "capabilitySubtype": "IM",
+            "id": "com.palm.teams.im",
+            "serviceName": "type_teams"
+        }
+    ]
+}

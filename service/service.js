@@ -16,13 +16,13 @@ const { createState } = require("./lib/state.js");
 
 const NAME = "org.webosports.service.messaging";
 
-function start({ palmbus, exit, idleMs, log = console, stateFile, now } = {}) {
+function start({ palmbus, exit, idleMs, log = console, stateFile, now, templateDirs } = {}) {
 	const bus = createBus({ palmbus, name: NAME, exit, idleMs, log });
 	const db = createDb({ call: bus.call });
 	const tempdb = createDb({ call: bus.call, service: "luna://com.palm.tempdb" });
 	const notifier = createNotifier({ db, call: bus.call, log, now });
 	const state = createState({ file: stateFile, log });
-	const methods = createCommands({ db, tempdb, call: bus.call, notifier, state, serial: createSerial(), log, now });
+	const methods = createCommands({ db, tempdb, call: bus.call, notifier, state, serial: createSerial(), log, now, templateDirs });
 	bus.serve(methods);
 	log.log(NAME + ": up (" + Object.keys(methods).length + " methods, node " + process.version + ")");
 	return { bus, db, methods };

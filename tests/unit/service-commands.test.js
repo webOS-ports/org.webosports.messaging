@@ -19,7 +19,7 @@ var { ask } = require('./service/palmbus');
 var { boot, SERVICE } = require('./service/boot');
 var seed = require('./service/seed');
 
-var { activitySpec } = require(path.join(SERVICE, 'lib', 'activity.js'));
+var { activitySpec, WATCHES } = require(path.join(SERVICE, 'lib', 'activity.js'));
 
 var MESSAGE = "com.palm.message:1";
 var THREAD = "com.palm.chatthread:1";
@@ -28,8 +28,8 @@ describe('the messaging service on the bus', function () {
     it('registers its methods under its name', function () {
         var env = boot();
         assert.equal(env.handle.name, "org.webosports.service.messaging");
-        assert.deepEqual(env.handle.methods.sort(), ["/assignMessages", "/deleteChatthread", "/info", "/messagesDeleted",
-            "/putMessage", "/quit", "/readChanges", "/updateThreadValues"]);
+        assert.deepEqual(env.handle.methods.sort(), ["/assignMessages", "/deleteChatthread", "/info", "/loginsChanged",
+            "/messagesDeleted", "/putMessage", "/quit", "/readChanges", "/updateThreadValues"]);
         env.service.bus.stop();
     });
 
@@ -213,8 +213,10 @@ describe('the activity files', function () {
     it('create each watch exactly as the service re-arms it', function () {
         var dir = path.join(SERVICE, 'configuration', 'activities', 'org.webosports.service.messaging');
         var files = fs.readdirSync(dir).sort();
-        assert.deepEqual(files, ["org.webosports.service.messaging.assignMessages.json",
-            "org.webosports.service.messaging.messagesDeleted.json", "org.webosports.service.messaging.readChanges.json"]);
+        // One file for each watch in activity.js, none left over.
+        assert.deepEqual(files, Object.keys(WATCHES).sort().map(function (m) {
+            return "org.webosports.service.messaging." + m + ".json";
+        }));
         files.forEach(function (f) {
             var method = f.split('.').slice(-2)[0];
             assert.deepEqual(JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')), activitySpec(method, 0), f);

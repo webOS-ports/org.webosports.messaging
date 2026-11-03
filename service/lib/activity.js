@@ -1,11 +1,12 @@
 /* activity.js - the db8 watches that wake the service, as activitymanager activities.
  *
- * Three watches, each an activity whose callback is one of our methods and whose trigger is a
+ * Four watches, each an activity whose callback is one of our methods and whose trigger is a
  * db8 watch on the revision that callback handled last:
  *
  *   chatthreader-message-watch  messages with no conversation yet   -> assignMessages
  *   chatthreader-read-watch     messages whose flags.read changed    -> readChanges
  *   chatthreader-delete-watch   messages deleted                     -> messagesDeleted
+ *   chatthreader-login-watch    an IM account's login state changed  -> loginsChanged
  *
  * The files in configuration/activities create them at boot (tests/unit/service-commands.test.js
  * holds them to the specs here). After a callback has done its work, the activity is completed
@@ -23,6 +24,7 @@
 const AM = "luna://com.palm.activitymanager";
 const SERVICE = "luna://org.webosports.service.messaging";
 const MESSAGE_KIND = "com.palm.message:1";
+const LOGINSTATE_KIND = "com.palm.imloginstate:1";
 
 const WATCHES = {
 	assignMessages: {
@@ -47,6 +49,14 @@ const WATCHES = {
 		revParam: "lastDeletedRev",
 		query: (rev) => ({ from: MESSAGE_KIND, where: [
 			{ prop: "_del", op: "=", val: true }, { prop: "_rev", op: ">", val: rev }] }),
+	},
+	// imloginstate's byrevision index; it has none on state and _rev together, so every change
+	// wakes the service, which reads the few records there are and looks for itself.
+	loginsChanged: {
+		name: "chatthreader-login-watch",
+		description: "Deletes the login chat of an IM account once it has signed in",
+		revParam: "lastLoginRev",
+		query: (rev) => ({ from: LOGINSTATE_KIND, where: [{ prop: "_rev", op: ">", val: rev }] }),
 	},
 };
 

@@ -6,9 +6,10 @@
  * service/service.js started on a stand-in bus, with db8, tempdb, activitymanager, the
  * notification service and the application manager behind it.
  *
- *   boot({ running, completeFails, now }) -> { db, tempdb, am, toasts, handle, service }
+ *   boot({ running, completeFails, now, templateDirs }) -> { db, tempdb, am, toasts, handle, service }
  *
- * running: the app is running. completeFails: activitymanager refuses complete.
+ * running: the app is running. completeFails: activitymanager refuses complete. templateDirs:
+ * where the account templates are read from, by default the ones in ./accounts.
  */
 
 "use strict";
@@ -22,6 +23,7 @@ var { fakePalmbus } = require('./palmbus');
 
 var SERVICE = path.resolve(__dirname, '..', '..', '..', 'service');
 var service = require(SERVICE);
+var TEMPLATES = path.join(__dirname, 'accounts');
 
 var quiet = { log: function () {}, error: function () {} };
 var stateDir = null;
@@ -59,8 +61,8 @@ function boot(opts) {
         return { returnValue: false, errorCode: -1, errorText: "unexpected call " + uri };
     });
     var s = service.start({ palmbus: pb, idleMs: 0, exit: function () {}, log: opts.log || quiet,
-        stateFile: stateFile(), now: opts.now });
+        stateFile: stateFile(), now: opts.now, templateDirs: opts.templateDirs || [TEMPLATES] });
     return { db: db, tempdb: tempdb, am: am, toasts: toasts, handle: pb.handles[0], service: s };
 }
 
-module.exports = { boot, SERVICE };
+module.exports = { boot, SERVICE, TEMPLATES };
