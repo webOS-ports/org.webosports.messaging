@@ -127,6 +127,10 @@ function createRun({ db, tempdb, log = console, now = () => Date.now() }) {
 			});
 		} else if (p && thread.personId !== p._id) {
 			change(thread, { personId: p._id, displayName: personName || thread.displayName });
+		} else if (p && person.nameOf(p) && person.nameOf(p) !== thread.displayName) {
+			// The contact got a name (or a new one) after the thread was made. The app's lists
+			// join the contact, but the toast reads the thread's own name, and showed the number.
+			change(thread, { displayName: person.nameOf(p) });
 		} else if (!p && !thread.personId && target.name && target.name !== thread.displayName) {
 			// A sender name from the transport (it can carry emoji the address cannot).
 			change(thread, { displayName: target.name });
@@ -211,7 +215,7 @@ function createRun({ db, tempdb, log = console, now = () => Date.now() }) {
 	// whether it went out; an unread incoming one adds to the count; any incoming one shows the
 	// thread again if it was hidden. History that arrives late (a sync back-fills old messages)
 	// is linked and counted but does not take the summary from a newer message.
-	function apply(thread, msg) {
+	function apply(thread, msg, target) {
 		if (msg.folder !== "inbox" && msg.folder !== "outbox") { return; }
 		const incoming = message.isIncoming(msg);
 		if (!message.isVisible(msg) && !incoming) { return; }
@@ -221,7 +225,15 @@ function createRun({ db, tempdb, log = console, now = () => Date.now() }) {
 			fields.timestamp = Math.max(at, thread.timestamp || 0);
 			fields.summary = message.messageText(msg);
 			fields.flags.outgoing = msg.folder === "outbox";
-			if (msg.serviceName) { fields.replyService = msg.serviceName; }
+			if (msg.serviceName) {
+				fields.replyService = msg.serviceName;
+				// And the address it was on, with it: a reply goes back the way the newest message
+				// came. The service alone left a WhatsApp jid as the address of a Signal reply.
+				if (target && target.type === "address" && target.addr !== address.MISSING_ADDRESS) {
+					fields.replyAddress = target.addr;
+					fields.normalizedAddress = address.normalizeAddress(target.addr, msg.serviceName);
+				}
+			}
 		}
 		if (message.isUnread(msg) && !message.isReplacement(msg)) {
 			fields.unreadCount = (thread.unreadCount || 0) + 1;
@@ -244,7 +256,7 @@ function createRun({ db, tempdb, log = console, now = () => Date.now() }) {
 			else { t = await addressThread(msg, target); }
 			if (ids.indexOf(t._id) === -1) {
 				ids.push(t._id);
-				apply(t, msg);
+				apply(t, msg, target);
 			}
 		}
 		const conversations = Array.from(new Set((msg.conversations || []).concat(ids)));
