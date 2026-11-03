@@ -86,14 +86,19 @@ describe('transportPicker.setTransportsByPerson', function () {
         assert.equal(transports[1].label, 'Work');
     });
 
-    it('labels an IM from the account template, falling back to the bare service name', function () {
+    it('labels an IM from the account template, falling back to a readable service name', function () {
         appState.accountService = accountsFor(['type_aol', 'type_jabber'],
             { type_aol: { loc_shortName: 'AIM' } });
         var transports = picker.setTransportsByPerson(ADA, null);
         assert.equal(transports[0].label, 'AIM');
-        assert.equal(transports[1].label, 'jabber');
+        assert.equal(transports[1].label, 'Jabber');
     });
 
+    it('names a service it has no template for from its type, capitalised', function () {
+        appState.accountService = accountsFor(['type_mastodon'], {});
+        var transports = picker.setTransportsByChatThread({ replyAddress: 'x', replyService: 'type_mastodon' });
+        assert.equal(transports[0].label, 'Mastodon');
+    });
 });
 
 describe('transportPicker.selectForThread', function () {
@@ -165,6 +170,26 @@ describe('transportPicker with one number on several services', function () {
         picker.setTransportsByPerson(BEN, { replyAddress: '+31612345678', replyService: 'type_whatsapp' });
         assert.equal(picker.followMessage({ serviceName: 'type_telegram', from: { addr: '+31612345678' } }), false);
         assert.equal(picker.getSelectedTransport().serviceName, 'type_whatsapp');
+    });
+});
+
+describe('transportPicker.buttonLabelFor', function () {
+    it('names only the service for an IM, without the address', function () {
+        appState.accountService = accountsFor(['type_signal', 'sms'], { type_signal: { loc_shortName: 'Signal' } });
+        picker.setTransportsByPerson(BEN, { replyAddress: '+31612345678', replyService: 'type_signal' });
+        assert.equal(picker.buttonLabelFor(picker.getSelectedTransport()), 'Signal');
+    });
+
+    it('says SMS for a phone number, with its type only when there are several numbers', function () {
+        appState.accountService = accountsFor(['sms'], {});
+        picker.setTransportsByPerson(BEN, null);
+        assert.equal(picker.buttonLabelFor(picker.getSelectedTransport()), 'SMS');
+        picker.setTransportsByPerson(ADA, { replyAddress: '5559876543', replyService: 'sms' });
+        assert.equal(picker.buttonLabelFor(picker.getSelectedTransport()), 'SMS Work');
+    });
+
+    it('is empty for no transport', function () {
+        assert.equal(picker.buttonLabelFor(null), '');
     });
 });
 

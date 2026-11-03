@@ -8,8 +8,19 @@
  */
 
 var messagingUtils = require('./messagingUtils'),
-    appState = require('./appState');
+    appState = require('./appState'),
+    $L = require('enyo/i18n').$L;
 
+/** Names for a service whose account template is not there (yet), e.g. while signing in. */
+var KNOWN_SERVICES = {
+    type_whatsapp: "WhatsApp", type_signal: "Signal", type_telegram: "Telegram",
+    type_discord: "Discord", type_teams: "Teams", type_facebook: "Facebook",
+    type_googlechat: "Google Chat", type_jabber: "Jabber", type_xmpp: "XMPP",
+    type_matrix: "Matrix", type_irc: "IRC"
+};
+
+var transports = [];
+var selectedTransport = null;
 
 /** Friendly label for a phone number type, e.g. "type_mobile" -> "Mobile". */
 function phoneLabel(type) {
@@ -26,7 +37,11 @@ function serviceLabel(serviceName) {
             return tmpl.loc_shortName || tmpl.loc_name;
         }
     }
-    return String(serviceName || "").replace(/^type_/, "");
+    if (KNOWN_SERVICES[serviceName]) {
+        return KNOWN_SERVICES[serviceName];
+    }
+    var bare = String(serviceName || "").replace(/^type_/, "");
+    return bare.charAt(0).toUpperCase() + bare.slice(1);
 }
 
 /**
@@ -183,6 +198,42 @@ module.exports = {
         }
         selectedTransport = match;
         return true;
+    },
+
+    /**
+     * The header button names only the service a reply goes out on ("Signal", "WhatsApp"); the
+     * number is the contact's and says nothing about which service is used. SMS reads "SMS", with
+     * the number's type when the contact has more than one number to choose from.
+     */
+    buttonLabelFor: function (transport) {
+        if (!transport) {
+            return "";
+        }
+        if (!transport.isPhone) {
+            return transport.label || serviceLabel(transport.serviceName);
+        }
+        var phones = 0;
+        for (var i = 0; i < transports.length; i++) {
+            if (transports[i].isPhone) { phones++; }
+        }
+        return phones > 1 && transport.label ? $L("SMS") + " " + transport.label : $L("SMS");
+    },
+
+    /** The service's small icon from its account template (the legacy "splitter"), or null. */
+    iconFor: function (serviceName) {
+        var accountService = appState.accountService;
+        if (!accountService || !accountService.getIcons) {
+            return null;
+        }
+        var icon = accountService.getIcons(
+            messagingUtils.utils.isTextMessage(serviceName) ? "sms" : serviceName);
+        if (!icon) {
+            return null;
+        }
+        if (typeof icon === "string") {
+            return icon;
+        }
+        return icon.splitter || icon.loc_32x32 || icon.loc_48x48 || null;
     },
 
     /** Menu label for a transport: the address plus what kind of address it is. */

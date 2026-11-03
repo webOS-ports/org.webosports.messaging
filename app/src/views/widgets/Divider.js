@@ -4,7 +4,8 @@
  */
 
 var kind = require('enyo/kind'),
-    Control = require('enyo/Control');
+    Control = require('enyo/Control'),
+    messagingUtils = require('../../util/messagingUtils');
 
 module.exports = kind({
     name: "MessagingDivider",
@@ -12,7 +13,9 @@ module.exports = kind({
     classes: "messaging-divider",
 
     published: {
-        caption: ""
+        caption: "",
+        /** Optional image before the caption, e.g. the service a message went out on. */
+        icon: ""
     },
 
     create: function () {
@@ -21,6 +24,18 @@ module.exports = kind({
     },
 
     captionChanged: function () {
-        this.setContent(this.caption || "");
+        if (!this.icon) {
+            this.set('allowHtml', false);
+            this.setContent(this.caption || "");
+            return;
+        }
+        this.set('allowHtml', true);
+        this.setContent('<img class="messaging-divider-icon" alt="" src="' +
+            messagingUtils.message.escapeHtml(this.icon) + '">' +
+            messagingUtils.message.escapeHtml(this.caption || ""));
+    },
+
+    iconChanged: function () {
+        this.captionChanged();
     }
 });
