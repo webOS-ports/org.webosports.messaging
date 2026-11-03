@@ -32,6 +32,9 @@ module.exports = kind({
         this._accountTypes = undefined;
         this._accountTemplates = undefined;
         this._listeners = [];
+        // True once the first listAccounts answer (or error) is in, so callers can tell
+        // "no accounts" apart from "not loaded yet".
+        this.loaded = false;
     },
 
     // --- fetching ------------------------------------------------------------------------
@@ -58,11 +61,13 @@ module.exports = kind({
         if (inResponse && inResponse.templates) {
             this._accountTemplates = inResponse.templates;
         }
+        this.loaded = true;
         this.notifyListeners();
     },
 
     accountsError: function (inSender, inError) {
         this.warn("listAccounts failed:", inError && (inError.errorText || inError));
+        this.loaded = true;
         this.notifyListeners();
     },
 
