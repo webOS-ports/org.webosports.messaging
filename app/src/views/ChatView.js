@@ -294,5 +294,9 @@ module.exports = kind({
 
     dismissPopups: function () {
         this.$.conversationList.dismissPopups();
+    },
+
+    closeAttachmentPicker: function () {
+        return this.$.conversationList.closeAttachmentPicker();
     }
 });

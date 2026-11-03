@@ -31,6 +31,9 @@ var kind = require('enyo/kind'),
     InputDecorator = require('onyx/InputDecorator'),
     Image = require('enyo/Image'),
     LunaService = require('enyo-webos/LunaService'),
+    ServiceRequest = require('enyo-webos/ServiceRequest'),
+    FilePicker = require('webos-lib/FilePicker'),
+    VoiceRecorder = require('../util/voiceRecorder'),
     ConversationRow = require('./ConversationRow'),
     ConversationService = require('../data/ConversationService'),
     transportPicker = require('../util/transportPicker'),
@@ -293,6 +296,13 @@ module.exports = kind({
         {
             name: 'openApp', kind: LunaService,
             service: 'luna://com.palm.applicationManager', method: 'open', onError: 'serviceErr'
+        },
+        {
+            // The system picker, shown in a popup over the app. There is no com.palm.filepicker app
+            // to open on LuneOS.
+            // border-box: at 100% wide the popup's own border pushed it past the right edge.
+            name: "attachmentPicker", kind: FilePicker, fileType: ["image", "video", "audio", "document"],
+            style: "width: 100%; height: 80%; box-sizing: border-box;", onPickFile: "attachmentChosen"
         }
     ],
 
@@ -333,7 +343,7 @@ module.exports = kind({
         }
         this.cancelRevealTimers();
         this.cancelBackfill();
-        this.stopVoiceNoteTimer();
+        this.cancelVoiceNote();
         if (this.conversationService) {
             this.conversationService.cancel();
         }
@@ -432,6 +442,7 @@ module.exports = kind({
 
     closeConversation: function (chatThreadId, skipSaveDraft) {
         this.conversationService.cancel();
+        this.cancelVoiceNote();
         this.clearMessages();
 
         if (!chatThreadId) {
@@ -1370,6 +1381,19 @@ module.exports = kind({
                 popup.hide();
             }
         }
+        this.closeAttachmentPicker();
+    },
+
+    /** Closes the file picker if it is open; true when it was. The back key uses this first. */
+    closeAttachmentPicker: function () {
+        var picker = this.$.attachmentPicker;
+        if (!picker || !picker.showing) {
+            return false;
+        }
+        // Unload the picker page as its own Cancel does, so it starts fresh next time.
+        picker.$.CrossApp.setPath("");
+        picker.hide();
+        return true;
     },
 
     reactPicked: function (inSender) {
@@ -1491,22 +1515,47 @@ module.exports = kind({
             this.showError($L("Attachments"), $L("File picking is only available on device."));
             return true;
         }
-        this.$.openApp.send({
-            target: "palm://com.palm.filepicker",
-            params: { fileType: ["image", "video", "document"] }
+        if (this.attachmentsUnsupported()) {
+            return true;
+        }
+        this.$.attachmentPicker.pickFile();
+        return true;
+    },
+
+    /** SMS cannot carry a file (no MMS sending yet); say so instead of dropping it at send. */
+    attachmentsUnsupported: function () {
+        var transport = transportPicker.getSelectedTransport();
+        if (transport && messagingUtils.utils.isTextMessage(transport.serviceName)) {
+            this.showError($L("Attachments"), $L("Attachments can't be sent by SMS. Pick an IM service to send a file."));
+            return true;
+        }
+        return false;
+    },
+
+    // The picker sends an array of {fullPath, attachmentType, size, ...}.
+    attachmentChosen: function (inSender, inEvent) {
+        var files = Array.isArray(inEvent) ? inEvent : (inEvent && inEvent.files);
+        var file = files && files[0];
+        if (!file || !file.fullPath) {
+            return true;
+        }
+        this.stageAttachment({
+            path: file.fullPath,
+            name: file.name || file.fullPath.slice(file.fullPath.lastIndexOf("/") + 1),
+            type: file.attachmentType
         });
         return true;
     },
 
-    attachmentChosen: function (inSender, inEvent) {
-        var file = inEvent && inEvent.files && inEvent.files[0];
-        if (!file) {
-            return true;
+    stageAttachment: function (attachment) {
+        this.outboundAttachment = attachment;
+        this.$.attachmentChipLabel.setContent(attachment.name);
+        var isImage = attachment.type === "image";
+        if (isImage) {
+            this.$.attachmentChipThumb.setSrc("file://" + attachment.path);
         }
-        this.outboundAttachment = { path: file.fullPath, name: file.name };
-        this.$.attachmentChipLabel.setContent(file.name);
+        this.$.attachmentChipThumb.setShowing(isImage);
         this.$.attachmentChip.setShowing(true);
-        return true;
     },
 
     clearAttachment: function () {
@@ -1525,34 +1574,95 @@ module.exports = kind({
         }
         if (this.recording) {
             this.stopVoiceNote();
-        } else {
+        } else if (!this.attachmentsUnsupported()) {
             this.startVoiceNote();
         }
         return true;
     },
 
+    /** One mediarecorder request, as voiceRecorder wants it: done(error, response). */
+    recorderCall: function (method, params, done) {
+        var request = new ServiceRequest({ service: "luna://com.webos.service.mediarecorder", method: method });
+        request.response(function (inSender, inResponse) { done(null, inResponse); });
+        request.error(function (inSender, inError) {
+            done((inError && (inError.errorText || inError.errorMessage)) || "service error", inError);
+        });
+        request.go(params);
+    },
+
     startVoiceNote: function () {
-        this.recording = true;
-        this.$.micButton.setSrc("assets/menu-icon-mic-rec.svg");
-        this.$.micButton.addClass("recording");
-        this.$.vnTimer.setShowing(true);
-        this.startVoiceNoteTimer();
+        var self = this;
+        if (!this.voiceRecorder) {
+            this.voiceRecorder = new VoiceRecorder(this.bindSafely("recorderCall"));
+        }
+        if (this.voiceRecorder.isBusy()) {
+            return;
+        }
+        this.setRecordingUi(true);
+        this.voiceRecorder.start(function (error) {
+            if (error) {
+                self.setRecordingUi(false);
+                if (error !== "cancelled" && !self.destroyed) {
+                    self.showError($L("Voice message"), $L("Could not start recording: ") + error);
+                }
+            }
+        });
     },
 
     stopVoiceNote: function () {
-        this.recording = false;
-        this.$.micButton.setSrc("assets/menu-icon-mic.svg");
-        this.$.micButton.removeClass("recording");
-        this.$.vnTimer.setShowing(false);
-        this.stopVoiceNoteTimer();
+        var self = this, seconds = this._vnElapsed || 0;
+        this.setRecordingUi(false);
+        if (!this.voiceRecorder || this.voiceRecorder.state !== "recording") {
+            // Still opening: drop it rather than wait.
+            this.cancelVoiceNote();
+            return;
+        }
+        this.voiceRecorder.stop(function (error, path) {
+            if (self.destroyed) {
+                return;
+            }
+            if (error) {
+                self.showError($L("Voice message"), $L("Recording failed: ") + error);
+                return;
+            }
+            self.stageAttachment({
+                path: path,
+                name: $L("Voice message") + " " + messagingUtils.message.audioFmt(seconds),
+                type: "audio"
+            });
+        });
+    },
+
+    /** Leaving the chat or closing the app: stop and throw the recording away. */
+    cancelVoiceNote: function () {
+        if (this.voiceRecorder) {
+            this.voiceRecorder.cancel();
+        }
+        if (this.recording) {
+            this.setRecordingUi(false);
+        }
+    },
+
+    setRecordingUi: function (on) {
+        this.recording = on;
+        this.$.micButton.setSrc(on ? "assets/menu-icon-mic-rec.svg" : "assets/menu-icon-mic.svg");
+        this.$.micButton.addRemoveClass("recording", on);
+        this.$.vnTimer.setShowing(on);
+        if (on) {
+            this.startVoiceNoteTimer();
+        } else {
+            this.stopVoiceNoteTimer();
+        }
     },
 
     startVoiceNoteTimer: function () {
-        var self = this, elapsed = 0;
+        var self = this;
+        this.stopVoiceNoteTimer();
+        this._vnElapsed = 0;
         this.$.vnTimer.setContent(messagingUtils.message.audioFmt(0));
         this._vnTimer = setInterval(function () {
-            elapsed += 1;
-            self.$.vnTimer.setContent(messagingUtils.message.audioFmt(elapsed));
+            self._vnElapsed += 1;
+            self.$.vnTimer.setContent(messagingUtils.message.audioFmt(self._vnElapsed));
         }, 1000);
     },
 

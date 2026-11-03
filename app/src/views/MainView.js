@@ -603,6 +603,10 @@ module.exports = kind({
     },
 
     goBack: function () {
+        // The file picker sits over the chat: back closes it, not the chat underneath.
+        if (this.$.chatView.closeAttachmentPicker()) {
+            return true;
+        }
         if (this.$.views.getIndex() !== 0) {
             this.$.views.setIndex(0);
             return true;
