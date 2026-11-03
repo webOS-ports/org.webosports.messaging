@@ -795,6 +795,19 @@ module.exports = kind({
         return (username ? username + ", " : "") + when;
     },
 
+    /** The service a message went out or came in on, shown on its divider as the legacy app did. */
+    getDividerIcon: function (message) {
+        return transportPicker.serviceIconFor(message && message.serviceName);
+    },
+
+    /** A label, escaped, after the service's icon when there is one. */
+    withServiceIcon: function (serviceName, text) {
+        var icon = transportPicker.serviceIconFor(serviceName);
+        var label = messagingUtils.message.escapeHtml(text || "");
+        return icon ? '<img class="transport-icon" alt="" src="' +
+            messagingUtils.message.escapeHtml(icon) + '">' + label : label;
+    },
+
     // --- header interaction --------------------------------------------------------------
 
     handleHeaderTap: function () {
@@ -834,7 +847,8 @@ module.exports = kind({
         for (var i = 0; i < list.length; i++) {
             this.$.transportMenu.createComponent({
                 kind: MenuItem,
-                content: transportPicker.labelFor(list[i]),
+                allowHtml: true,
+                content: this.withServiceIcon(list[i].serviceName, transportPicker.labelFor(list[i])),
                 transportIndex: i
             }, { owner: this });
         }

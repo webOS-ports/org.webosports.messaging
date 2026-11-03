@@ -33,6 +33,15 @@ Header
   padding: 0 5px;
   margin: 0 7px 0;
 }
+/* The service icon before the service name, in the header button and its menu. */
+.transport-icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 5px;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+}
 
 /* The service's icon in front of its name on the transport button. */
 .conversation-header-type-icon {
@@ -415,6 +424,14 @@ Balloons
 }
 .conversationDivider:after {
   background-color: #8ab4d8;
+}
+/* Which service the run of messages below went over (legacy "splitter" icon). */
+.messaging-divider-icon {
+  -webkit-flex: none;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
 }
 
 .transport-picker .onyx-menu-item {

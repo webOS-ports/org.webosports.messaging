@@ -86,14 +86,19 @@ describe('transportPicker.setTransportsByPerson', function () {
         assert.equal(transports[1].label, 'Work');
     });
 
-    it('labels an IM from the account template, falling back to the bare service name', function () {
+    it('labels an IM from the account template, falling back to a readable service name', function () {
         appState.accountService = accountsFor(['type_aol', 'type_jabber'],
             { type_aol: { loc_shortName: 'AIM' } });
         var transports = picker.setTransportsByPerson(ADA, null);
         assert.equal(transports[0].label, 'AIM');
-        assert.equal(transports[1].label, 'jabber');
+        assert.equal(transports[1].label, 'Jabber');
     });
 
+    it('names a service it has no template for from its type, capitalised', function () {
+        appState.accountService = accountsFor(['type_mastodon'], {});
+        var transports = picker.setTransportsByChatThread({ replyAddress: 'x', replyService: 'type_mastodon' });
+        assert.equal(transports[0].label, 'Mastodon');
+    });
 });
 
 describe('transportPicker.selectForThread', function () {
@@ -238,10 +243,12 @@ describe('transportPicker.serviceNameFor', function () {
         assert.equal(picker.serviceNameFor(transports[1]), 'SMS');
     });
 
-    it('falls back to the template name, then the bare service id', function () {
+    it('falls back to the template name, then a known name or the capitalised service id', function () {
         appState.accountService = accountsFor([], TEMPLATES);
         assert.equal(picker.serviceNameFor({ serviceName: 'type_telegram' }), 'Telegram');
-        assert.equal(picker.serviceNameFor({ serviceName: 'type_discord' }), 'discord');
+        assert.equal(picker.serviceNameFor({ serviceName: 'type_discord' }), 'Discord');
+        assert.equal(picker.serviceNameFor({ serviceName: 'type_mastodon' }), 'Mastodon');
+        assert.equal(picker.serviceNameFor({ serviceName: 'type_googlechat' }), 'Google Chat');
         assert.equal(picker.serviceNameFor(null), '');
     });
 });
@@ -264,5 +271,28 @@ describe('transportPicker.iconFor', function () {
         assert.equal(picker.iconFor({ serviceName: 'sms', isPhone: true }), null);
         assert.equal(picker.iconFor({ serviceName: 'type_teams', isPhone: false }), null);
         assert.equal(picker.iconFor(null), null);
+    });
+});
+
+describe('transportPicker.serviceIconFor', function () {
+    function withTemplateIcons(icons) {
+        var service = accountsFor(Object.keys(icons), {});
+        service.getIcons = function (serviceName) { return icons[serviceName] || null; };
+        return service;
+    }
+
+    it('takes the template\'s small splitter icon, falling back to the larger ones', function () {
+        appState.accountService = withTemplateIcons({
+            type_signal: { splitter: '/s-16.png', loc_32x32: '/s-32.png' },
+            type_discord: { loc_48x48: '/d-48.png' }
+        });
+        assert.equal(picker.serviceIconFor('type_signal'), '/s-16.png');
+        assert.equal(picker.serviceIconFor('type_discord'), '/d-48.png');
+    });
+
+    it('looks SMS and MMS up as "sms", and gives an unknown service none', function () {
+        appState.accountService = withTemplateIcons({ sms: { splitter: '/sms-16.png' } });
+        assert.equal(picker.serviceIconFor('mms'), '/sms-16.png');
+        assert.equal(picker.serviceIconFor('type_teams'), null);
     });
 });
