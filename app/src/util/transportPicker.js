@@ -8,7 +8,8 @@
  */
 
 var messagingUtils = require('./messagingUtils'),
-    appState = require('./appState');
+    appState = require('./appState'),
+    $L = require('enyo/i18n').$L;
 
 var transports = [];
 var selectedTransport = null;
@@ -143,6 +144,31 @@ module.exports = {
             selectedTransport = transports[0] || null;
         }
         return selectedTransport;
+    },
+
+    /**
+     * Header label for a transport: only the service the message goes out on ("Signal",
+     * "Telegram", "SMS"). The address belongs to the conversation, whose name is already next to
+     * it; the menu, where one address has to be picked from several, still shows it (labelFor).
+     */
+    serviceNameFor: function (transport) {
+        if (!transport) {
+            return "";
+        }
+        if (transport.isPhone || messagingUtils.utils.isTextMessage(transport.serviceName)) {
+            return $L("SMS");
+        }
+        return serviceLabel(transport.serviceName);
+    },
+
+    /** The service's own icon for an IM transport, or null (SMS, or a service without one). */
+    iconFor: function (transport) {
+        var accountService = appState.accountService;
+        if (!transport || transport.isPhone || messagingUtils.utils.isTextMessage(transport.serviceName) ||
+                !accountService || !accountService.getIconPath) {
+            return null;
+        }
+        return accountService.getIconPath(transport.serviceName) || null;
     },
 
     /** Menu label for a transport: the address plus what kind of address it is. */

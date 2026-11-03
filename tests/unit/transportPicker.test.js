@@ -172,3 +172,50 @@ describe('transportPicker.labelFor', function () {
         assert.equal(picker.labelFor(undefined), '');
     });
 });
+
+describe('transportPicker.serviceNameFor', function () {
+    var TEMPLATES = { type_signal: { loc_shortName: 'Signal' }, type_telegram: { loc_name: 'Telegram' } };
+
+    it('names only the service, not the number it goes to', function () {
+        // Was "+31611745571 Signal" in the header.
+        appState.accountService = accountsFor(['type_signal'], TEMPLATES);
+        var transport = picker.setTransportsByChatThread(
+            { replyAddress: '+31611745571', replyService: 'type_signal' })[0];
+        assert.equal(picker.serviceNameFor(transport), 'Signal');
+    });
+
+    it('says SMS for a phone number, whatever kind of number it is', function () {
+        appState.accountService = accountsFor(['sms'], {});
+        var transports = picker.setTransportsByPerson(ADA, null);
+        assert.equal(picker.serviceNameFor(transports[0]), 'SMS');
+        assert.equal(picker.serviceNameFor(transports[1]), 'SMS');
+    });
+
+    it('falls back to the template name, then the bare service id', function () {
+        appState.accountService = accountsFor([], TEMPLATES);
+        assert.equal(picker.serviceNameFor({ serviceName: 'type_telegram' }), 'Telegram');
+        assert.equal(picker.serviceNameFor({ serviceName: 'type_discord' }), 'discord');
+        assert.equal(picker.serviceNameFor(null), '');
+    });
+});
+
+describe('transportPicker.iconFor', function () {
+    function withIcons(paths) {
+        var service = accountsFor(Object.keys(paths), {});
+        service.getIconPath = function (serviceName) { return paths[serviceName] || null; };
+        return service;
+    }
+
+    it('gives an IM transport its service icon', function () {
+        appState.accountService = withIcons({ type_signal: '/usr/palm/public/accounts/com.palm.signal/images/signal-48x48.png' });
+        assert.equal(picker.iconFor({ serviceName: 'type_signal', isPhone: false }),
+            '/usr/palm/public/accounts/com.palm.signal/images/signal-48x48.png');
+    });
+
+    it('gives SMS, an unknown service or no transport no icon', function () {
+        appState.accountService = withIcons({ sms: '/sms.png' });
+        assert.equal(picker.iconFor({ serviceName: 'sms', isPhone: true }), null);
+        assert.equal(picker.iconFor({ serviceName: 'type_teams', isPhone: false }), null);
+        assert.equal(picker.iconFor(null), null);
+    });
+});

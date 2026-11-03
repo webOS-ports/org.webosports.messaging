@@ -94,8 +94,15 @@ module.exports = kind({
                     showing: false, ontap: "voicecall", classes: "conversation-call-btn"
                 },
                 {
+                    // The service a reply goes out on: its icon and name, not the address.
                     name: "transportButton", kind: Button, classes: "conversation-header-type",
-                    ontap: "openTransportMenu"
+                    ontap: "openTransportMenu", components: [
+                        {
+                            name: "transportIcon", kind: Image, classes: "conversation-header-type-icon",
+                            showing: false, attributes: { onerror: "this.style.display='none'" }
+                        },
+                        { name: "transportLabel", tag: "span" }
+                    ]
                 }
             ]
         },
@@ -386,7 +393,7 @@ module.exports = kind({
         this.lockConversationList(flags.locked);
 
         if (flags.locked) {
-            this.$.transportButton.setContent($L("Lock"));
+            this.setTransportButton($L("Lock"), null);
             this.runQuery();
             return;
         }
@@ -733,9 +740,19 @@ module.exports = kind({
 
     updateTransportButton: function () {
         var selected = transportPicker.getSelectedTransport();
-        this.$.transportButton.setContent(
-            selected ? transportPicker.labelFor(selected) : $L("."));
+        this.setTransportButton(selected ? transportPicker.serviceNameFor(selected) : $L("."),
+            transportPicker.iconFor(selected));
         this.$.transportButton.setShowing(transportPicker.getTransports().length > 0);
+    },
+
+    setTransportButton: function (label, icon) {
+        this.$.transportLabel.setContent(label);
+        if (icon) {
+            // A fresh src may load where the last one failed, so undo that failure's hiding.
+            this.$.transportIcon.applyStyle("display", null);
+            this.$.transportIcon.setSrc(icon);
+        }
+        this.$.transportIcon.setShowing(!!icon);
     },
 
     openTransportMenu: function (inSender, inEvent) {
