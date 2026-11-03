@@ -391,13 +391,42 @@ module.exports = kind({
         if (this.chatThread.personId && this.chatThread.personId !== "null" && this.chatThread.person) {
             this.chatThread.personImage =
                 messagingUtils.person.getDisplayImage(this.chatThread.person);
+        }
+        this.buildTransports();
+        this.updateTransportButton();
+        this.updateCallButtons();
+        this.runQuery();
+    },
+
+    buildTransports: function () {
+        if (this.chatThread.personId && this.chatThread.personId !== "null" && this.chatThread.person) {
             transportPicker.setTransportsByPerson(this.chatThread.person, this.chatThread);
         } else {
             transportPicker.setTransportsByChatThread(this.chatThread);
         }
+    },
+
+    /**
+     * An account was added or removed: offer what can be sent on now. The transport in use stays
+     * selected while it is still there.
+     */
+    accountsChanged: function () {
+        if (!this.chatThread || !this.chatThread._id || (this.chatThread.flags || {}).locked) {
+            return;
+        }
+        var kept = transportPicker.getSelectedTransport();
+        this.buildTransports();
+        if (kept) {
+            var list = transportPicker.getTransports();
+            for (var i = 0; i < list.length; i++) {
+                if (list[i].serviceName === kept.serviceName && list[i].replyAddress === kept.replyAddress) {
+                    transportPicker.setSelectedTransport(list[i]);
+                    break;
+                }
+            }
+        }
         this.updateTransportButton();
         this.updateCallButtons();
-        this.runQuery();
     },
 
     setupNewChatThread: function () {

@@ -9,6 +9,7 @@
 var kind = require('enyo/kind'),
     Component = require('enyo/Component'),
     LunaService = require('enyo-webos/LunaService'),
+    cancelRequests = require('../util/cancelRequests'),
     messagingUtils = require('../util/messagingUtils'),
     mockDb = require('./mockDb');
 
@@ -22,6 +23,15 @@ module.exports = kind({
             service: 'luna://com.webos.service.accounts', method: 'listAccounts',
             subscribe: true, resubscribe: true,
             onResponse: 'gotAccounts', onError: 'accountsError'
+        },
+        {
+            // listAccounts answers once: it ignores subscribe. So an account added while the app
+            // ran stayed unknown until a restart - a new Signal account was left out of a
+            // contact's reply choices, and the reply went on WhatsApp. Watch the account records
+            // instead, and ask again whenever they change.
+            name: 'accountWatch', kind: LunaService,
+            service: 'luna://com.webos.service.db', method: 'find',
+            onResponse: 'gotAccountWatch', onError: 'accountWatchError'
         }
     ],
 
@@ -47,7 +57,30 @@ module.exports = kind({
             }, 0);
             return;
         }
+        cancelRequests(this.$.listAccounts);
         this.$.listAccounts.send({ capability: "MESSAGING" });
+        this.watchAccounts();
+    },
+
+    watchAccounts: function () {
+        cancelRequests(this.$.accountWatch);
+        this.$.accountWatch.send({
+            query: { from: "com.palm.account:1", select: ["_id"] },
+            watch: true
+        });
+    },
+
+    gotAccountWatch: function (inSender, inResponse) {
+        if (inResponse && inResponse.fired) {
+            // db8 watches fire once; getAccounts asks again and arms the next one.
+            this.getAccounts();
+        }
+        return true;
+    },
+
+    accountWatchError: function (inSender, inError) {
+        this.warn("account watch failed:", inError && (inError.errorText || inError));
+        return true;
     },
 
     gotAccounts: function (inSender, inResponse) {

@@ -271,10 +271,11 @@ module.exports = kind({
     // --- accounts --------------------------------------------------------------------------
 
     accountsChanged: function () {
-        // The presence bar and every list re-read their own data when accounts change; nothing to do
-        // here beyond keeping the menu labels current.
+        // The presence bar and every list re-read their own data when accounts change. Keep the
+        // menu labels current, and let an open chat offer what can be sent on now.
         this.setOfflineMenuItem();
         this.checkFirstUse();
+        this.$.chatView.accountsChanged();
     },
 
     /** Show the first-run screen only to someone with no IM account; see util/firstUse. */
