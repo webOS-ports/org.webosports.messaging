@@ -10,6 +10,7 @@
 
 var kind = require('enyo/kind'),
     FittableRows = require('layout/FittableRows'),
+    Spinner = require('onyx/Spinner'),
     DataRepeater = require('enyo/DataRepeater'),
     Scroller = require('enyo/Scroller'),
     TouchScrollStrategy = require('enyo/TouchScrollStrategy'),
@@ -115,6 +116,8 @@ module.exports = kind({
             onError: "showErrorDialog", onSelectSender: "senderRowSelected",
             onOpenAttachment: "openAttachment", onInviteResponse: "respondToInvite",
             components: [
+                // Shown while a chat's messages load, in the empty list where they will appear.
+                { name: "loadingSpinner", kind: Spinner, classes: "conversation-loading", showing: false },
                 { name: "list", kind: DataRepeater, components: [ { kind: ConversationRow } ] }
             ]
         },
@@ -381,6 +384,8 @@ module.exports = kind({
     },
 
     setupNewChatThread: function () {
+        this.clearMessages();
+        this.$.loadingSpinner.show();
         this.forceSendIfOffline = false;
         this._followToEnd = true;
 
@@ -397,6 +402,7 @@ module.exports = kind({
 
     closeConversation: function (chatThreadId, skipSaveDraft) {
         this.conversationService.cancel();
+        this.clearMessages();
 
         if (!chatThreadId) {
             return;
@@ -415,7 +421,21 @@ module.exports = kind({
         this.clearAttachment();
     },
 
-    lockConversationList: function (locked) {
+    /**
+     * Take the previous chat's messages off screen. The new chat's query can take a second or more
+     * on a long history, and until it answers the list would otherwise go on showing the old one
+     * under the new chat's name.
+     */
+    clearMessages: function () {
+        this.messages = [];
+        if (this.collection && this.collection.length) {
+            this.collection.empty();
+        }
+        this.$.listButtons.setShowing(false);
+        this.$.loadingSpinner.hide();
+    },
+
+        lockConversationList: function (locked) {
         this.$.richText.setDisabled(!!locked);
         this.$.sendButton.setShowing(!locked);
         this.$.attachButton.setShowing(!locked);
@@ -469,6 +489,7 @@ module.exports = kind({
 
     gotMessages: function (inSender, inEvent) {
         var results = (inEvent && inEvent.results) || [];
+        this.$.loadingSpinner.hide();
 
         // Carry any optimistic poll vote across the re-query, so a vote that has not yet round-
         // tripped through the db is not silently reverted by an unrelated watch fire.
