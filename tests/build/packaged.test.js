@@ -141,7 +141,8 @@ describe('the packed appinfo', function () {
         // Dropping one of these is silent until a call is denied at runtime.
         ['accountsservice.management', 'accountsservice.operation', 'database.operation',
             'messaging-service.operation', 'notification.management', 'notification.operation',
-            'tempdatabase.operation', 'audio.operation', 'settings.query', 'tts.operation'
+            'tempdatabase.operation', 'audio.operation', 'settings.query', 'tts.operation',
+            'imlibpurple-service.operation'
         ].forEach(function (acg) {
             assert.ok(appinfo.requiredPermissions.indexOf(acg) !== -1, 'missing ACG: ' + acg);
         });
