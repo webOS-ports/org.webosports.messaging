@@ -11,13 +11,14 @@
 var kind = require('enyo/kind'),
     FittableRows = require('layout/FittableRows'),
     Spinner = require('onyx/Spinner'),
-    DataRepeater = require('enyo/DataRepeater'),
+    PrependingRepeater = require('./widgets/PrependingRepeater'),
     Scroller = require('enyo/Scroller'),
     TouchScrollStrategy = require('enyo/TouchScrollStrategy'),
     Collection = require('enyo/Collection'),
     RecordModel = require('../data/RecordModel'),
     syncCollection = require('../util/syncCollection'),
     isNearBottom = require('../util/isNearBottom'),
+    prependedCount = require('../util/prependedCount'),
     Toolbar = require('onyx/Toolbar'),
     Button = require('onyx/Button'),
     IconButton = require('onyx/IconButton'),
@@ -39,6 +40,13 @@ var kind = require('enyo/kind'),
 
 var DB_SERVICE = 'luna://com.webos.service.db';
 var FOLDERS = messagingUtils.message.FOLDERS;
+
+/**
+ * A chat opens on its newest FIRST_PAGE messages, which draw in a fraction of a second, and then
+ * backfills older ones BACKFILL_STEP at a time, BACKFILL_GAP_MS apart so the list stays usable in
+ * between, up to MAX_MESSAGES. Drawing all 200 at once took about two seconds on a phone.
+ */
+var FIRST_PAGE = 20, BACKFILL_STEP = 30, MAX_MESSAGES = 200, BACKFILL_GAP_MS = 120;
 
 /** The quick-reaction row, stored as HTML numeric entities so they survive the db8/JS round-trip. */
 var QUICK_REACTIONS = ["&#10084;&#65039;", "&#128077;", "&#128518;", "&#128558;", "&#128546;", "&#128591;"];
@@ -118,7 +126,7 @@ module.exports = kind({
             components: [
                 // Shown while a chat's messages load, in the empty list where they will appear.
                 { name: "loadingSpinner", kind: Spinner, classes: "conversation-loading", showing: false },
-                { name: "list", kind: DataRepeater, components: [ { kind: ConversationRow } ] }
+                { name: "list", kind: PrependingRepeater, components: [ { kind: ConversationRow } ] }
             ]
         },
         { classes: "footer-shadow" },
@@ -306,6 +314,7 @@ module.exports = kind({
             this._imgRelayoutTimer = null;
         }
         this.cancelRevealTimers();
+        this.cancelBackfill();
         this.stopVoiceNoteTimer();
         if (this.conversationService) {
             this.conversationService.cancel();
@@ -386,6 +395,7 @@ module.exports = kind({
     setupNewChatThread: function () {
         this.clearMessages();
         this.$.loadingSpinner.show();
+        this._limit = FIRST_PAGE;
         this.forceSendIfOffline = false;
         this._followToEnd = true;
 
@@ -433,6 +443,7 @@ module.exports = kind({
         }
         this.$.listButtons.setShowing(false);
         this.$.loadingSpinner.hide();
+        this.cancelBackfill();
     },
 
         lockConversationList: function (locked) {
@@ -472,23 +483,29 @@ module.exports = kind({
                     { prop: "flags.visible", op: "=", val: true },
                     { prop: "localTimestamp", op: ">", val: 0 }
                 ],
+                // Newest first, so the limit keeps the latest messages: ascending, a long chat
+                // showed its oldest 200 and never its newest. gotMessages turns them back round.
+                // Every row is rendered, so the limit also bounds how many controls a chat makes
+                // (Mojo paged 20 at a time through its flyweight list).
                 orderBy: "localTimestamp",
-                // Every row is rendered now, so bound the history a thread can pull in. Mojo paged
-                // 20 at a time through its flyweight list; this keeps a long thread from turning
-                // into thousands of controls at once.
-                limit: 200
+                desc: true,
+                limit: this._limit || FIRST_PAGE
             }
         });
     },
 
     messagesWatch: function () {
         this.conversationService.cancel();
+        // A new message would otherwise push the oldest shown one out of the limit, and removing a
+        // row at the top makes the list redraw every row.
+        this._limit = Math.max(this._limit || FIRST_PAGE, this.collection.length + 1);
         this.runQuery();
         return true;
     },
 
     gotMessages: function (inSender, inEvent) {
-        var results = (inEvent && inEvent.results) || [];
+        // The query asks newest first; the list reads oldest first.
+        var results = ((inEvent && inEvent.results) || []).slice().reverse();
         this.$.loadingSpinner.hide();
 
         // Carry any optimistic poll vote across the re-query, so a vote that has not yet round-
@@ -514,6 +531,18 @@ module.exports = kind({
         this._followToEnd = false;
 
         this.messages = results;
+
+        // Older messages backfilled in front: add them at the top, where PrependingRepeater draws
+        // only them, and move the scroll position down by what was added, so the same messages
+        // stay on screen - at the bottom or wherever someone scrolled up to read.
+        var shownIds = this.collection.map(function (m) { return m.attributes._id; });
+        var head = prependedCount(shownIds, results.map(function (r) { return r._id; }));
+        if (head) {
+            var before = this.$.scroller.getScrollBounds();
+            this.collection.add(results.slice(0, head), { index: 0 });
+            var after = this.$.scroller.getScrollBounds();
+            this.$.scroller.setScrollTop(before.top + (after.height - before.height));
+        }
         syncCollection(this.collection, results);
         this.updateListButtons(this.chatThread);
         this.$.listButtons.setShowing(
@@ -521,7 +550,38 @@ module.exports = kind({
         if (follow) {
             this.revealListBottomSoon();
         }
+        this.scheduleBackfill(results.length);
         return true;
+    },
+
+    /** Ask for the next older batch once this one is on screen, while there may be more. */
+    scheduleBackfill: function (count) {
+        this.cancelBackfill();
+        var limit = this._limit || FIRST_PAGE;
+        if (count < limit || limit >= MAX_MESSAGES) {
+            return;   // the chat has no older messages, or we have shown as many as we keep
+        }
+        var self = this;
+        this._backfillTimer = setTimeout(function step() {
+            self._backfillTimer = null;
+            if (!self.$ || !self.chatThread) { return; }
+            // Not in the middle of a flick: adding rows then would fight the scroll.
+            var strategy = self.$.scroller.getStrategy();
+            if (strategy && strategy.isScrolling && strategy.isScrolling()) {
+                self._backfillTimer = setTimeout(step, BACKFILL_GAP_MS);
+                return;
+            }
+            self._limit = Math.min(MAX_MESSAGES, limit + BACKFILL_STEP);
+            self.conversationService.cancel();
+            self.runQuery();
+        }, BACKFILL_GAP_MS);
+    },
+
+    cancelBackfill: function () {
+        if (this._backfillTimer) {
+            clearTimeout(this._backfillTimer);
+            this._backfillTimer = null;
+        }
     },
 
     revealListBottom: function () {
