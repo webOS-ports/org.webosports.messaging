@@ -12,6 +12,7 @@ var kind = require('enyo/kind'),
     FittableRows = require('layout/FittableRows'),
     DataRepeater = require('enyo/DataRepeater'),
     Scroller = require('enyo/Scroller'),
+    TouchScrollStrategy = require('enyo/TouchScrollStrategy'),
     Collection = require('enyo/Collection'),
     RecordModel = require('../data/RecordModel'),
     syncCollection = require('../util/syncCollection'),
@@ -103,6 +104,11 @@ module.exports = kind({
             // ThreadList. Message rows vary a lot in height - images, players, poll blocks - so
             // they were the worst case for a list that sizes pages from measured heights.
             name: "scroller", kind: Scroller, fit: true, horizontal: "hidden", touch: true,
+            // Enyo's default on webOS (TranslateScrollStrategy) moves the list with a transform
+            // while a finger is on it and swaps that for scrollTop when it stops. With a long
+            // chat full of images that swap repaints everything at once and the list flashes at
+            // the end of every flick. TouchScrollStrategy moves scrollTop throughout: no swap.
+            strategyKind: TouchScrollStrategy,
             // Handlers sit on the scroller; row events arrive decorated with model and index.
             ontap: "handleMessageTap", onConfirm: "swipeDelete", onReact: "handleReactSwipe",
             onScrollStart: "dismissPopups",
