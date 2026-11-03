@@ -142,7 +142,7 @@ describe('the packed appinfo', function () {
         ['accountsservice.management', 'accountsservice.operation', 'database.operation',
             'messaging-service.operation', 'notification.management', 'notification.operation',
             'tempdatabase.operation', 'audio.operation', 'settings.query', 'tts.operation',
-            'imlibpurple-service.operation'
+            'imlibpurple-channel.operation'
         ].forEach(function (acg) {
             assert.ok(appinfo.requiredPermissions.indexOf(acg) !== -1, 'missing ACG: ' + acg);
         });
