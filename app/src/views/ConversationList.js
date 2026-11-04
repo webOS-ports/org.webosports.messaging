@@ -512,6 +512,7 @@ module.exports = kind({
         this.$.listButtons.setShowing(false);
         this.$.loadingSpinner.hide();
         this.cancelBackfill();
+        this.relayout();
     },
 
         lockConversationList: function (locked) {
@@ -613,6 +614,7 @@ module.exports = kind({
         this.updateListButtons(this.chatThread);
         this.$.listButtons.setShowing(
             results.length > 0 && !!(this.chatThread && !(this.chatThread.flags || {}).locked));
+        this.relayout();
         if (follow) {
             this.revealListBottomSoon();
         }
@@ -949,8 +951,23 @@ module.exports = kind({
         if (!node) {
             return;
         }
+        var before = node.style.height;
         node.style.height = "auto";
         node.style.height = Math.min(node.scrollHeight, 155) + "px";
+        if (node.style.height !== before) {
+            this.relayout();
+        }
+    },
+
+    /**
+     * The message list takes the height left over by the bars around it, worked out by the fittable
+     * layout only when told. Call after a bar appears, goes or changes height: without it the list
+     * kept its old height and pushed the bottom bar (send, attach, mic) off the screen.
+     */
+    relayout: function () {
+        if (this.hasNode()) {
+            this.resize();
+        }
     },
 
     checkKey: function (inSender, inEvent) {
@@ -1598,11 +1615,13 @@ module.exports = kind({
             "<b>" + messagingUtils.message.emojifyEscaped(from) + "</b><br>" +
             messagingUtils.message.emojifyEscaped(text));
         this.$.replyBar.setShowing(true);
+        this.relayout();
     },
 
     cancelReply: function () {
         this.replyToMessage = null;
         this.$.replyBar.setShowing(false);
+        this.relayout();
         return true;
     },
 
@@ -1655,12 +1674,14 @@ module.exports = kind({
         }
         this.$.attachmentChipThumb.setShowing(isImage);
         this.$.attachmentChip.setShowing(true);
+        this.relayout();
     },
 
     clearAttachment: function () {
         this.outboundAttachment = null;
         this.$.attachmentChip.setShowing(false);
         this.$.attachmentChipThumb.setShowing(false);
+        this.relayout();
         return true;
     },
 
