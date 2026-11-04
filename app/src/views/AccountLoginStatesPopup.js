@@ -14,6 +14,11 @@ var kind = require('enyo/kind'),
     LoginStateServices = require('../data/LoginStateService'),
     $L = require('enyo/i18n').$L;
 
+// Room kept free below the list, so the popup's lower edge stays clear of the screen's.
+var SCREEN_MARGIN = 10;
+// Never shorter than this, even on a very short screen: a few rows to scroll through.
+var MIN_LIST_HEIGHT = 120;
+
 module.exports = kind({
     name: "AccountLoginStatesPopup",
     kind: Popup,
@@ -33,8 +38,11 @@ module.exports = kind({
 
     components: [
         {
-            name: "scroller", kind: Scroller, horizontal: "hidden",
-            style: "max-height: 400px;", components: [
+            // The height comes from fitScroller(), through maxHeight: the touch scroller (which
+            // the device uses) only scrolls inside its own maxHeight. A CSS max-height on this
+            // control cut the list off at a fixed 400px with no way to scroll, so on a phone the
+            // last accounts could not be reached to bring them online.
+            name: "scroller", kind: Scroller, horizontal: "hidden", touch: true, components: [
                 {
                     name: "allAccountsDivider", kind: Divider, caption: $L("ALL ACCOUNTS"),
                     style: "margin: 5px 0;", showing: false
@@ -68,6 +76,55 @@ module.exports = kind({
         this.updateAllAccountsAvailability();
         this.updateLoginStateComponents();
         this.db.set('loginStates', this.loginStates);
+        this.fitScroller();
+    },
+
+    showAtPosition: function (pos) {
+        this.openedAt = pos ? utils.mixin({}, pos) : null;
+        this.inherited(arguments);
+    },
+
+    showingChanged: function () {
+        this.inherited(arguments);
+        if (this.showing) {
+            this.$.scroller.scrollToTop();
+            this.fitScroller();
+        }
+    },
+
+    /**
+     * Lets the list grow to the room left between where the popup opens and the bottom of the
+     * screen; it scrolls only when it holds more than that.
+     *
+     * Measured from the spot the popup was opened at, not from where it sits: enyo/Popup moves a
+     * popup taller than that room up, off the top of a short screen, and rewrites targetPosition
+     * as it does. The opening spot is kept apart and handed back before the popup is resized, so
+     * it is placed again, with its new height, where it was opened.
+     */
+    fitScroller: function () {
+        var node = this.hasNode(), list = this.$.scroller.hasNode();
+        if (!this.showing || !node || !list) {
+            return;
+        }
+        var anchor = node.getBoundingClientRect().top;
+        if (this.openedAt && typeof this.openedAt.top === "number") {
+            this.targetPosition = utils.mixin({}, this.openedAt);
+            anchor = this.openedAt.top;
+        }
+        // What the popup adds around the list: its padding and border.
+        var around = node.offsetHeight - list.offsetHeight;
+        var room = window.innerHeight - anchor - around - SCREEN_MARGIN;
+        this.$.scroller.set('maxHeight', Math.max(MIN_LIST_HEIGHT, Math.floor(room)) + "px");
+        this.resize();
+    },
+
+    /** An account opened or closed its options: refit, and bring an opened one into view. */
+    drawerToggled: function (inSender, inEvent) {
+        this.fitScroller();
+        if (inEvent && inEvent.open) {
+            this.$.scroller.scrollToControl(inSender, false);
+        }
+        return true;
     },
 
     checkInvisibilitySupport: function () {
@@ -116,7 +173,8 @@ module.exports = kind({
                     classes: "individual-account",
                     onAvailabilitySet: "changeAvailability",
                     onInputCustomMessage: "inputCustomMessage",
-                    onDrawerOpened: "drawerOpened"
+                    onDrawerOpened: "drawerOpened",
+                    onDrawerToggled: "drawerToggled"
                 }, { owner: this });
                 component.render();
             }

@@ -23,7 +23,8 @@ var AccountLoginState = module.exports = kind({
     events: {
         onAvailabilitySet: "",
         onInputCustomMessage: "",
-        onDrawerOpened: ""
+        onDrawerOpened: "",
+        onDrawerToggled: ""
     },
 
     components: [
@@ -166,6 +167,8 @@ var AccountLoginState = module.exports = kind({
             this.$.arrow.setClasses("menu-item-arrow");
             this.$.account.applyStyle("border-bottom", "none");
         }
+        // The list around it changes height either way.
+        this.doDrawerToggled({ open: this.showDrawer });
         return true;
     },
 
