@@ -230,8 +230,8 @@ Staged attachment chip (above the input once a file is picked)
   height: 40px;
   margin-right: 8px;
   border-radius: 4px;
-  background-size: cover;
-  background-position: center;
+  /* An <img>: crop to the square rather than squash the picture into it */
+  object-fit: cover;
   position: relative;
   top: 3px;
 }
