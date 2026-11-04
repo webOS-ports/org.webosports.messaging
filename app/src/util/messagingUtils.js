@@ -967,6 +967,63 @@ var messaging = module.exports = {
                 d = data.results[i];
                 d[inField] = lookUp[d[inTarget]];
             }
+        },
+
+        /**
+         * What to look a buddy list's threads up by: the personIds of buddies the contacts linker
+         * linked to a person, and the normalized address of every buddy it did not. A missing
+         * personId must not go into the personId list: a chat-thread query for it matches every
+         * thread with no person.
+         */
+        buddyThreadKeys: function (buddies) {
+            var personIds = [], addresses = [], seen = {}, i, b, key;
+            for (i = 0; i < buddies.length; i++) {
+                b = buddies[i];
+                if (b.personId) {
+                    key = "p:" + b.personId;
+                    if (!seen[key]) {
+                        seen[key] = true;
+                        personIds.push(b.personId);
+                    }
+                } else {
+                    var addr = this.normalizeAddress(b.username, b.serviceName);
+                    key = "a:" + addr;
+                    if (!seen[key]) {
+                        seen[key] = true;
+                        addresses.push(addr);
+                    }
+                }
+            }
+            return { personIds: personIds, addresses: addresses };
+        },
+
+        /**
+         * Give each buddy its chat thread: the one of its person, or for a buddy with no person
+         * the thread on its own address that has no person either. A thread that belongs to a
+         * person is never handed to a buddy without one, however its address reads.
+         */
+        joinBuddyThreads: function (buddies, threads) {
+            var own = Object.prototype.hasOwnProperty,
+                byPerson = {}, byAddress = {}, i, t, b, key, table;
+            for (i = 0; i < threads.length; i++) {
+                t = threads[i];
+                if (t.personId) {
+                    byPerson[t.personId] = t;
+                } else if (t.normalizedAddress) {
+                    byAddress[t.normalizedAddress] = t;
+                }
+            }
+            for (i = 0; i < buddies.length; i++) {
+                b = buddies[i];
+                if (b.personId) {
+                    table = byPerson;
+                    key = b.personId;
+                } else {
+                    table = byAddress;
+                    key = this.normalizeAddress(b.username, b.serviceName);
+                }
+                b.thread = own.call(table, key) ? table[key] : undefined;
+            }
         }
     }
 };

@@ -15,7 +15,8 @@ var kind = require('enyo/kind'),
     mockDb = require('./mockDb');
 
 var DB_SERVICE = 'luna://com.webos.service.db',
-    TEMP_DB_SERVICE = 'luna://com.webos.service.tempdb';
+    TEMP_DB_SERVICE = 'luna://com.webos.service.tempdb',
+    THREAD_SELECT = ["_id", "_kind", "personId", "normalizedAddress", "displayName", "unreadCount"];
 
 module.exports = kind({
     name: "BuddyService",
@@ -42,13 +43,18 @@ module.exports = kind({
         {
             name: 'threads', kind: LunaService, service: DB_SERVICE, method: 'find',
             onResponse: 'gotThreads', onError: 'gotThreads'
+        },
+        {
+            name: 'addressThreads', kind: LunaService, service: DB_SERVICE, method: 'find',
+            onResponse: 'gotAddressThreads', onError: 'gotAddressThreads'
         }
     ],
 
     create: function () {
         this.inherited(arguments);
         this.data = { results: [] };
-        this.pids = [];
+        this.keys = { personIds: [], addresses: [] };
+        this.threads = [];
     },
 
     _query: function (lunaName, params, responseMethod) {
@@ -80,6 +86,7 @@ module.exports = kind({
         cancelRequests(this.$.buddiesSearch);
         cancelRequests(this.$.people);
         cancelRequests(this.$.threads);
+        cancelRequests(this.$.addressThreads);
     },
 
     fail: function (inSender, inResponse) {
@@ -100,14 +107,12 @@ module.exports = kind({
             return;
         }
         this.data = inResponse;
-        this.assembleIds();
-        this.queryPeople();
-    },
-
-    assembleIds: function () {
-        this.pids = [];
-        for (var i = 0; i < this.data.results.length; i++) {
-            this.pids.push(this.data.results[i].personId);
+        this.keys = messagingUtils.utils.buddyThreadKeys(this.data.results);
+        this.threads = [];
+        if (this.keys.personIds.length) {
+            this.queryPeople();
+        } else {
+            this.queryAddressThreads();
         }
     },
 
@@ -115,7 +120,7 @@ module.exports = kind({
         this._query('people', {
             query: {
                 from: "com.palm.person:1",
-                where: [{ prop: "_id", op: "=", val: this.pids }],
+                where: [{ prop: "_id", op: "=", val: this.keys.personIds }],
                 select: messagingUtils.person.selectAttributes
             }
         }, 'gotPeople');
@@ -132,16 +137,43 @@ module.exports = kind({
         this._query('threads', {
             query: {
                 from: messagingUtils.thread.dbKind,
-                where: [{ prop: "personId", op: "=", val: this.pids }],
-                select: ["_id", "_kind", "personId", "normalizedAddress", "displayName", "unreadCount"]
+                where: [{ prop: "personId", op: "=", val: this.keys.personIds }],
+                select: THREAD_SELECT
             }
         }, 'gotThreads');
     },
 
     gotThreads: function (inSender, inResponse) {
         if (inResponse && inResponse.results) {
-            messagingUtils.utils.joinData(this.data, inResponse.results, "personId", "personId", "thread");
+            this.threads = this.threads.concat(inResponse.results);
         }
+        this.queryAddressThreads();
+    },
+
+    // A buddy with no person finds its thread by address, as tapping it does (Messaging.js)
+    queryAddressThreads: function () {
+        if (!this.keys.addresses.length) {
+            this.joinThreads();
+            return;
+        }
+        this._query('addressThreads', {
+            query: {
+                from: messagingUtils.thread.dbKind,
+                where: [{ prop: "normalizedAddress", op: "=", val: this.keys.addresses }],
+                select: THREAD_SELECT
+            }
+        }, 'gotAddressThreads');
+    },
+
+    gotAddressThreads: function (inSender, inResponse) {
+        if (inResponse && inResponse.results) {
+            this.threads = this.threads.concat(inResponse.results);
+        }
+        this.joinThreads();
+    },
+
+    joinThreads: function () {
+        messagingUtils.utils.joinBuddyThreads(this.data.results, this.threads);
         this.reply();
     }
 });
