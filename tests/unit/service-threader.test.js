@@ -188,6 +188,37 @@ describe('threading a message', function () {
         assert.equal(threadOf(env, m).personId, mine._id);
     });
 
+    it('takes up the contact\'s name when it is given one after the thread was made', async function () {
+        var ben = seed.person({ ims: [{ value: "+31612345678", type: "type_signal" }] });
+        var env = await setup([ben]);
+        var opts = { service: "type_signal", account: "+31600000000" };
+        var first = seed.imIn("+31612345678", "hoi", opts);
+        await deliver(env, [first]);
+        assert.equal(threadOf(env, first).displayName, "+31612345678");
+        await env.db.merge([{ _id: ben._id, name: { givenName: "Ben" } }]);
+        var second = seed.imIn("+31612345678", "nog een", opts);
+        await deliver(env, [second]);
+        assert.equal(threadOf(env, second)._id, threadOf(env, first)._id);
+        assert.equal(threadOf(env, second).displayName, "Ben");
+    });
+
+    it('replies on the service and address the newest message came in on', async function () {
+        var ben = seed.person({ name: { givenName: "Ben" }, ims: [
+            { value: "+31612345678", type: "type_whatsapp" },
+            { value: "+31612345678", type: "type_signal" }] });
+        var env = await setup([ben]);
+        var wa = seed.imIn("31612345678@s.whatsapp.net", "via whatsapp", { service: "type_whatsapp", account: "+31600000000" });
+        await deliver(env, [wa]);
+        assert.equal(threadOf(env, wa).replyService, "type_whatsapp");
+        var signal = seed.imIn("+31612345678", "via signal", { service: "type_signal", account: "+31600000000" });
+        await deliver(env, [signal]);
+        var t = threadOf(env, signal);
+        assert.equal(t._id, threadOf(env, wa)._id);
+        assert.equal(t.replyService, "type_signal");
+        assert.equal(t.replyAddress, "+31612345678");
+        assert.equal(threads(env).length, 1);
+    });
+
     it('falls back to the buddy record when no contact im matches', async function () {
         var zed = seed.person({ name: { givenName: "Zed" }, ims: [] });
         var env = await setup([zed]);

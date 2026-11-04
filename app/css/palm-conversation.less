@@ -20,7 +20,8 @@ Header
   margin-left: 3px;
   margin-right: 3px;
   color: #222222;
-  font-size: 20px;
+  /* The same size as the service name beside it. */
+  font-size: 18px;
   text-align: left;
   overflow: hidden;
   white-space: nowrap;
@@ -29,13 +30,45 @@ Header
 .conversation-header .status {
   margin-left: 8px;
 }
-.conversation-header-type.onyx-button {
-  padding: 0 5px;
-  margin: 0 7px 0;
+/* The reply service: icon, name and the dropdown arrow, drawn like the availability picker. It
+   keeps its full width; the contact's name is what gets shortened when the bar is short of room. */
+.conversation-header-type {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-flex: none;
+  flex: none;
+  height: 100%;
+  margin: 0 4px 0 8px;
+  color: #222222;
+  font-size: 18px;
+  cursor: pointer;
+}
+.conversation-header-type-label {
+  white-space: nowrap;
+}
+/* The service icon before the service name, in the header button and its menu. */
+.transport-icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 5px;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+}
+
+/* The service's icon in front of its name on the transport button. */
+.conversation-header-type-icon {
+  -webkit-flex: none;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  margin-right: 6px;
 }
 
 /* Bare transparent header call buttons (video + phone): no square button chrome, matching the
-   paperclip/send icons. Sized to the 32x32 glyphs and nudged to the row centre. */
+   paperclip/send icons. Sized to the 32x32 glyphs; the bar centres them. */
 .conversation-call-btn {
   -webkit-flex: none;
   flex: none;
@@ -48,8 +81,6 @@ Header
   min-width: 32px;
   width: 32px;
   height: 32px;
-  position: relative;
-  top: 6px;
   margin: 0 4px;
 }
 .conversation-call-btn.pressed {
@@ -199,8 +230,8 @@ Staged attachment chip (above the input once a file is picked)
   height: 40px;
   margin-right: 8px;
   border-radius: 4px;
-  background-size: cover;
-  background-position: center;
+  /* An <img>: crop to the square rather than squash the picture into it */
+  object-fit: cover;
   position: relative;
   top: 3px;
 }
@@ -236,7 +267,14 @@ Staged attachment chip (above the input once a file is picked)
   background-color: transparent;
   box-shadow: none;
   min-width: 0;
-  margin: 0 2px 4px 2px;
+}
+/* Kept at the bottom so they stay by the last line of a long message; this margin puts their
+   centre on the centre of a one-line field (45px field, 32px icon). Scoped to the toolbar so it
+   outranks onyx's ".onyx-toolbar .onyx-icon-button" margin, which had them 5px low. */
+.onyx-toolbar.conversation-bottom .conversation-attach-btn,
+.onyx-toolbar.conversation-bottom .conversation-mic-btn,
+.onyx-toolbar.conversation-bottom .conversation-send-btn {
+  margin: 0 2px 6.5px 2px;
 }
 .conversation-attach-btn.pressed,
 .conversation-mic-btn.pressed,
@@ -277,7 +315,11 @@ Staged attachment chip (above the input once a file is picked)
 /*----------------------
 Conversation list
 ----------------------*/
-.conversationList .enyo-scroller > * {
+/* On the message list itself. This sat on every child of the scroller, which with the touch
+   scroll strategy is its client: that has the scroller's height, so the padding made it 15px
+   taller than the scroller and the bottom of the newest message was cut off under the
+   composer. */
+.conversationList .conversation-messages {
   padding-top: 10px;
   padding-bottom: 5px;
 }
@@ -407,6 +449,14 @@ Balloons
 }
 .conversationDivider:after {
   background-color: #8ab4d8;
+}
+/* Which service the run of messages below went over (legacy "splitter" icon). */
+.messaging-divider-icon {
+  -webkit-flex: none;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
 }
 
 .transport-picker .onyx-menu-item {

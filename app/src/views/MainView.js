@@ -41,7 +41,8 @@ module.exports = kind({
     // Any panel switch - opening another chat, going back to the list, preferences - takes the
     // conversation off screen, so close its floating reaction picker and menus first.
     handlers: {
-        onTransitionStart: "panelTransitionStart"
+        onTransitionStart: "panelTransitionStart",
+        onTransitionFinish: "panelTransitionFinish"
     },
 
     components: [
@@ -270,10 +271,11 @@ module.exports = kind({
     // --- accounts --------------------------------------------------------------------------
 
     accountsChanged: function () {
-        // The presence bar and every list re-read their own data when accounts change; nothing to do
-        // here beyond keeping the menu labels current.
+        // The presence bar and every list re-read their own data when accounts change. Keep the
+        // menu labels current, and let an open chat offer what can be sent on now.
         this.setOfflineMenuItem();
         this.checkFirstUse();
+        this.$.chatView.accountsChanged();
     },
 
     /** Show the first-run screen only to someone with no IM account; see util/firstUse. */
@@ -320,6 +322,17 @@ module.exports = kind({
     },
 
     selectThread: function (source, thread) {
+        this._closeAfterSlide = false;
+
+        // The thread already open: only make sure it is in view, without reloading it.
+        if (source === this.$.messaging && thread && appState.selectedThread &&
+                appState.selectedThread._id === thread._id) {
+            if (Panels.isScreenNarrow()) {
+                this.$.slidingGroup.setIndex(1);
+            }
+            return;
+        }
+
         appState.setSelectedThread(thread);
 
         if (source === this.$.messaging) {
@@ -603,14 +616,44 @@ module.exports = kind({
     },
 
     goBack: function () {
+        // The file picker sits over the chat: back closes it, not the chat underneath.
+        if (this.$.chatView.closeAttachmentPicker()) {
+            return true;
+        }
         if (this.$.views.getIndex() !== 0) {
             this.$.views.setIndex(0);
             return true;
         }
         if (Panels.isScreenNarrow()) {
-            this.$.slidingGroup.setIndex(0);
+            this.leaveThread();
         }
         return true;
+    },
+
+    /**
+     * Back to the list on one pane: the conversation is no longer on screen, so it must not stay
+     * selected. Left selected, tapping the same thread again did nothing, and its new messages
+     * got no unread badge and no alert, as it still counted as on screen.
+     *
+     * The selection is dropped at once so new messages count as unread; the conversation itself
+     * is closed once the slide has finished, so it does not go blank while still in view.
+     */
+    leaveThread: function () {
+        if (this.$.slidingGroup.getIndex() === 0) {
+            this.selectThread(null, null);   // nothing to slide, so no transition to wait for
+            return;
+        }
+        appState.setSelectedThread(null);
+        this.$.messaging.setSelection(null);
+        this._closeAfterSlide = true;
+        this.$.slidingGroup.setIndex(0);
+    },
+
+    panelTransitionFinish: function (inSender, inEvent) {
+        if (this._closeAfterSlide && inEvent && inEvent.originator === this.$.slidingGroup &&
+                this.$.slidingGroup.getIndex() === 0) {
+            this.selectThread(null, null);
+        }
     },
 
     serviceErr: function (inSender, inError) {

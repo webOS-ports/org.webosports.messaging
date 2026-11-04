@@ -59,6 +59,11 @@ module.exports = kind({
             method: 'systemsounds/playFeedback', onError: 'serviceErr'
         },
         {
+            // One db8 get per toast for its thread, then its contact; see showMessageToast.
+            name: 'toastLookup', kind: LunaService, service: DB_SERVICE, method: 'get',
+            onResponse: 'gotToastLookup', onError: 'toastLookupFailed'
+        },
+        {
             name: 'messageWatch', kind: LunaService, service: DB_SERVICE, method: 'find',
             subscribe: true, resubscribe: true, onResponse: 'gotMessages', onError: 'serviceErr'
         },
@@ -232,9 +237,51 @@ module.exports = kind({
         return true;
     },
 
-    /** @param sound  the soundClass/soundFile fields from messageAlerts, or {} for a silent toast */
+    /**
+     * The transport often names the sender by number alone (Signal does), while the thread's
+     * contact has a name. So look the thread and its contact up first and title the toast with
+     * the contact's name; a thread with no contact (a stranger, a group) keeps the sender.
+     *
+     * @param sound  the soundClass/soundFile fields from messageAlerts, or {} for a silent toast
+     */
     showMessageToast: function (message, threadId, sound) {
-        var sender = (message.from && (message.from.name || message.from.addr)) || $L("New message");
+        var job = { message: message, threadId: threadId, sound: sound || {}, step: "thread" };
+        if (!threadId || mockDb.enabled) {
+            this.raiseMessageToast(job, null);
+            return;
+        }
+        this.$.toastLookup.send({ ids: [threadId] }).toastJob = job;
+    },
+
+    gotToastLookup: function (inSender, inResponse) {
+        var job = inResponse && inResponse.originator && inResponse.originator.toastJob;
+        if (!job) {
+            return true;
+        }
+        var record = inResponse.results && inResponse.results[0];
+        if (job.step === "thread" && record && !record._del && record.personId) {
+            job.step = "person";
+            this.$.toastLookup.send({ ids: [record.personId] }).toastJob = job;
+            return true;
+        }
+        var name = job.step === "person" && record && !record._del ?
+            messagingUtils.person.getDisplayName(record) : "";
+        this.raiseMessageToast(job, name);
+        return true;
+    },
+
+    toastLookupFailed: function (inSender, inError) {
+        var job = inError && inError.originator && inError.originator.toastJob;
+        if (job) {
+            this.raiseMessageToast(job, null);
+        }
+        return true;
+    },
+
+    raiseMessageToast: function (job, contactName) {
+        var message = job.message, threadId = job.threadId, sound = job.sound;
+        var sender = contactName ||
+            (message.from && (message.from.name || message.from.addr)) || $L("New message");
 
         // Title and message apart, as the layers of the Mojo dashboard were: the banner joins them
         // itself, and a toast sent without a title shows its message on both of the notification's

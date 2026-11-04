@@ -7,6 +7,7 @@
  *   await db.put(objects)           -> [{ id, rev }]
  *   await db.merge(objects)         -> [{ id, rev }]
  *   await db.del(ids)               -> [{ id, rev }]
+ *   await db.del(ids, { purge: true }) -> the same, leaving no _del record behind
  *
  * luna://com.palm.db, not com.webos.service.db: db8's ACG groups only list the legacy name
  * (see the trigger note in the activity files). tempdb is the same API on com.palm.tempdb.
@@ -34,10 +35,10 @@ function createDb({ call, service = "luna://com.palm.db" }) {
 		return all;
 	}
 
-	async function chunked(method, key, list) {
+	async function chunked(method, key, list, extra) {
 		const out = [];
 		for (let i = 0; i < list.length; i += MAX_WRITE) {
-			const r = await call(service + "/" + method, { [key]: list.slice(i, i + MAX_WRITE) });
+			const r = await call(service + "/" + method, Object.assign({ [key]: list.slice(i, i + MAX_WRITE) }, extra));
 			out.push(...(r.results || []));
 		}
 		return out;
@@ -52,7 +53,9 @@ function createDb({ call, service = "luna://com.palm.db" }) {
 		find, findPage, get,
 		put: (objects) => chunked("put", "objects", objects),
 		merge: (objects) => chunked("merge", "objects", objects),
-		del: (ids) => chunked("del", "ids", ids),
+		// A plain del keeps a _del record, contents and all, for the delete watch to see; purge
+		// leaves nothing (seen on a phone, 2026-11-03: purgeWindow 0 there does not purge at once).
+		del: (ids, { purge = false } = {}) => chunked("del", "ids", ids, purge ? { purge: true } : undefined),
 	};
 }
 

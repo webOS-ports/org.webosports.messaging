@@ -53,7 +53,9 @@ module.exports = kind({
         if (!record) {
             return;
         }
-        this.$.channelItem.set("record", record);
+        // Forced: the model merges each result into the same attributes object, so the record is
+        // the same reference every time and a plain set() would see no change and not redraw.
+        this.$.channelItem.set("record", record, { force: true });
         this.unreadChanged();
         this.selectedRowChanged();
     },

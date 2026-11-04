@@ -7,7 +7,14 @@ var kind = require('enyo/kind'),
     rowModelWatch = require('../util/rowModelWatch'),
     Control = require('enyo/Control'),
     ConversationItem = require('./ConversationItem'),
-    Divider = require('./widgets/Divider');
+    Divider = require('./widgets/Divider'),
+    messagingUtils = require('../util/messagingUtils');
+
+/** SMS and MMS are one transport. */
+function sameService(a, b) {
+    var utils = messagingUtils.utils;
+    return a === b || (utils.isTextMessage(a) && utils.isTextMessage(b));
+}
 
 module.exports = kind({
     name: "ConversationRow",
@@ -76,11 +83,15 @@ module.exports = kind({
             var index = collection.indexOf(this.model);
             if (index > 0) {
                 var previous = collection.at(index - 1);
+                // The service counts too: Signal and WhatsApp share the phone number, so a switch
+                // between them left the caption the same and showed no divider at all.
                 showDivider = previous ?
-                    caption !== list.getDividerCaption(previous.attributes) : true;
+                    caption !== list.getDividerCaption(previous.attributes) ||
+                    !sameService(record.serviceName, previous.attributes.serviceName) : true;
             }
         }
 
+        this.$.divider.set('icon', list.getDividerIcon ? list.getDividerIcon(record) || "" : "");
         this.$.divider.setCaption(caption);
         this.$.divider.setShowing(showDivider);
     }

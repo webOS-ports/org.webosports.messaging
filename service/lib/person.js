@@ -15,6 +15,16 @@ const LOGINSTATE_KIND = "com.palm.imloginstate:1";
 // Person.generateDisplayNameFromRawPerson: the full name, else the nickname, else the
 // organisation, else the first email, im or phone number.
 function displayNameOf(person) {
+	const named = nameOf(person);
+	if (named || !person) { return named; }
+	for (const list of [person.emails, person.ims, person.phoneNumbers]) {
+		if (list && list.length && list[0].value) { return String(list[0].value); }
+	}
+	return "";
+}
+
+// The name a contact was given, without falling back to one of its addresses.
+function nameOf(person) {
 	if (!person) { return ""; }
 	const n = person.name || {};
 	const full = [n.honorificPrefix, n.givenName, n.middleName, n.familyName, n.honorificSuffix]
@@ -24,9 +34,6 @@ function displayNameOf(person) {
 	const org = person.organization || {};
 	if (org.title && org.name) { return org.title + ", " + org.name; }
 	if (org.name || org.title) { return String(org.name || org.title); }
-	for (const list of [person.emails, person.ims, person.phoneNumbers]) {
-		if (list && list.length && list[0].value) { return String(list[0].value); }
-	}
 	return "";
 }
 
@@ -86,4 +93,4 @@ async function resolvePerson({ db, tempdb }, address, serviceName, username) {
 	return findViaBuddy(tempdb, db, address, serviceName);
 }
 
-module.exports = { PERSON_KIND, CONTACT_KIND, BUDDY_KIND, displayNameOf, findByIm, findByPhone, pickForAccount, findViaBuddy, resolvePerson };
+module.exports = { PERSON_KIND, CONTACT_KIND, BUDDY_KIND, displayNameOf, nameOf, findByIm, findByPhone, pickForAccount, findViaBuddy, resolvePerson };

@@ -3,6 +3,8 @@
  *   assignMessages   {lastCheckedRev}   thread new messages (the message watch)
  *   readChanges      {lastReadRev}      recount threads whose messages were read (read watch)
  *   messagesDeleted  {lastDeletedRev}   update threads that lost messages (delete watch)
+ *   loginsChanged    {lastLoginRev}     delete the login chat of an account that has signed in
+ *                                       (login watch, see authchat.js)
  *   putMessage       {message}          thread a message and store it -> {threadids}
  *   deleteChatthread {threadId}         delete a thread; its messages go too, unless they are
  *                                       also in another thread, which keeps them
@@ -20,12 +22,14 @@ const { createAssigner } = require("./assign.js");
 const { recountThreads } = require("./recount.js");
 const { rearm } = require("./activity.js");
 const { migrate, VERSION: MIGRATION } = require("./migrate.js");
+const authchat = require("./authchat.js");
 
 const MESSAGE_KIND = "com.palm.message:1";
 const CHANNEL_KIND = "com.palm.imchannel:1";
 const PAGE = 500;
 
-function createCommands({ db, tempdb, call, notifier, state, serial, log = console, now }) {
+function createCommands({ db, tempdb, call, notifier, state, serial, log = console, now,
+	templateDirs = authchat.TEMPLATE_DIRS }) {
 	const assigner = createAssigner({ db, tempdb, notifier, log, now });
 
 	function startRev(params, key) {
@@ -115,37 +119,59 @@ function createCommands({ db, tempdb, call, notifier, state, serial, log = conso
 		});
 	}
 
+	// Delete a thread and the messages only it has; run inside the serial queue. purge leaves no
+	// _del records behind, so nothing of them is kept, at the cost of the delete watch not seeing them.
+	async function deleteThread(threadId, { purge = false } = {}) {
+		let deleted = 0, kept = 0;
+		// Each pass changes the set it reads, so read the first page again until it is empty.
+		// Every pass removes the thread from all it read, so a thread of n messages takes
+		// n / PAGE passes; the bound only stops a db that does not apply our writes.
+		for (let pass = 0; pass < 10000; pass++) {
+			const { results } = await db.findPage({ from: MESSAGE_KIND, limit: PAGE,
+				where: [{ prop: "conversations", op: "=", val: threadId }] });
+			const msgs = results.filter((m) => !m._del);
+			if (!msgs.length) { break; }
+			const dels = [], merges = [];
+			for (const m of msgs) {
+				const rest = (m.conversations || []).filter((id) => id !== threadId);
+				if (rest.length) { merges.push({ _id: m._id, conversations: rest }); }
+				else { dels.push(m._id); }
+			}
+			if (merges.length) { await db.merge(merges); kept += merges.length; }
+			if (dels.length) { await db.del(dels, { purge }); deleted += dels.length; }
+		}
+		// A channel that pointed at the thread starts a new one with its next message.
+		const channels = await db.find({ from: CHANNEL_KIND, where: [{ prop: "chatThreadId", op: "=", val: threadId }] }).catch(() => []);
+		if (channels.length) {
+			await db.merge(channels.map((c) => ({ _id: c._id, chatThreadId: null }))).catch((e) =>
+				log.error("deleteChatthread: could not unlink its channel: " + ((e && e.message) || e)));
+		}
+		await db.del([threadId], { purge });
+		return { deleted, kept };
+	}
+
 	async function deleteChatthread(params) {
 		const threadId = params.threadId;
 		if (!threadId || typeof threadId !== "string") { throw missingArgs("threadId is required"); }
-		return serial.run(async () => {
-			let deleted = 0, kept = 0;
-			// Each pass changes the set it reads, so read the first page again until it is empty.
-			// Every pass removes the thread from all it read, so a thread of n messages takes
-			// n / PAGE passes; the bound only stops a db that does not apply our writes.
-			for (let pass = 0; pass < 10000; pass++) {
-				const { results } = await db.findPage({ from: MESSAGE_KIND, limit: PAGE,
-					where: [{ prop: "conversations", op: "=", val: threadId }] });
-				const msgs = results.filter((m) => !m._del);
-				if (!msgs.length) { break; }
-				const dels = [], merges = [];
-				for (const m of msgs) {
-					const rest = (m.conversations || []).filter((id) => id !== threadId);
-					if (rest.length) { merges.push({ _id: m._id, conversations: rest }); }
-					else { dels.push(m._id); }
-				}
-				if (merges.length) { await db.merge(merges); kept += merges.length; }
-				if (dels.length) { await db.del(dels); deleted += dels.length; }
+		return serial.run(() => deleteThread(threadId));
+	}
+
+	async function loginsChanged(params) {
+		const from = startRev(params, "lastLoginRev");
+		const r = await serial.run(async () => {
+			const { states, rev } = await authchat.loginStates(db);
+			const threads = await authchat.authThreads(db, states, authchat.readAuthContacts(templateDirs, log));
+			let deleted = 0;
+			for (const t of threads) {
+				// Purged: a _del record would still hold the password, and so would the thread's summary.
+				const d = await deleteThread(t._id, { purge: true });
+				deleted += d.deleted;
+				log.log("commands: deleted login chat " + t._id + " (" + t.replyService + ", " + d.deleted + " messages)");
 			}
-			// A channel that pointed at the thread starts a new one with its next message.
-			const channels = await db.find({ from: CHANNEL_KIND, where: [{ prop: "chatThreadId", op: "=", val: threadId }] }).catch(() => []);
-			if (channels.length) {
-				await db.merge(channels.map((c) => ({ _id: c._id, chatThreadId: null }))).catch((e) =>
-					log.error("deleteChatthread: could not unlink its channel: " + ((e && e.message) || e)));
-			}
-			await db.del([threadId]);
-			return { deleted, kept };
+			return { rev: Math.max(from, rev), threads: threads.length, deleted };
 		});
+		await finish("loginsChanged", "lastLoginRev", r.rev, params);
+		return r;
 	}
 
 	async function updateThreadValues(params) {
@@ -162,6 +188,7 @@ function createCommands({ db, tempdb, call, notifier, state, serial, log = conso
 		messagesDeleted: { handler: messagesDeleted, timeoutMs },
 		putMessage: { handler: putMessage },
 		deleteChatthread: { handler: deleteChatthread, timeoutMs },
+		loginsChanged: { handler: loginsChanged, timeoutMs },
 		updateThreadValues: { handler: updateThreadValues },
 	};
 }

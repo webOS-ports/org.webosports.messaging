@@ -126,6 +126,10 @@ module.exports = kind({
         this.$.conversationList.threadLocked(inThread);
     },
 
+    accountsChanged: function () {
+        this.$.conversationList.accountsChanged();
+    },
+
     loginStatesChanged: function () {
         this.$.conversationList.setLoginStates(this.loginStates);
         this.$.composeView.setLoginStates(this.loginStates);
@@ -294,5 +298,9 @@ module.exports = kind({
 
     dismissPopups: function () {
         this.$.conversationList.dismissPopups();
+    },
+
+    closeAttachmentPicker: function () {
+        return this.$.conversationList.closeAttachmentPicker();
     }
 });

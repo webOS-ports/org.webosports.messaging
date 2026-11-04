@@ -233,9 +233,9 @@ module.exports = kind({
         if (!record) {
             return true;
         }
-        if (appState.selectedThread && appState.selectedThread._id === record._id) {
-            return true;   // tap on the already-selected row: nothing to do
-        }
+        // A tap on the selected row is still passed on: on one pane the conversation may be off
+        // screen (back, a relaunch), and swallowing the tap left no way back to it but opening
+        // another chat first. MainView only brings it back into view then.
         this.selectedRecord = record;
         this.markSelected(record._id);
         this.doSelectThread({ thread: record });

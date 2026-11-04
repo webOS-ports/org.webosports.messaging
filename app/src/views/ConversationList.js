@@ -19,6 +19,8 @@ var kind = require('enyo/kind'),
     syncCollection = require('../util/syncCollection'),
     isNearBottom = require('../util/isNearBottom'),
     prependedCount = require('../util/prependedCount'),
+    senderImages = require('../util/senderImages'),
+    sendAccount = require('../util/sendAccount'),
     Toolbar = require('onyx/Toolbar'),
     Button = require('onyx/Button'),
     IconButton = require('onyx/IconButton'),
@@ -29,9 +31,14 @@ var kind = require('enyo/kind'),
     InputDecorator = require('onyx/InputDecorator'),
     Image = require('enyo/Image'),
     LunaService = require('enyo-webos/LunaService'),
+    ServiceRequest = require('enyo-webos/ServiceRequest'),
+    FilePicker = require('webos-lib/FilePicker'),
+    VoiceRecorder = require('../util/voiceRecorder'),
     ConversationRow = require('./ConversationRow'),
     ConversationService = require('../data/ConversationService'),
     transportPicker = require('../util/transportPicker'),
+    composerEcho = require('../util/composerEcho'),
+    callRequest = require('../util/callRequest'),
     messagingUtils = require('../util/messagingUtils'),
     appState = require('../util/appState'),
     mockDb = require('../data/mockDb'),
@@ -47,6 +54,10 @@ var FOLDERS = messagingUtils.message.FOLDERS;
  * between, up to MAX_MESSAGES. Drawing all 200 at once took about two seconds on a phone.
  */
 var FIRST_PAGE = 20, BACKFILL_STEP = 30, MAX_MESSAGES = 200, BACKFILL_GAP_MS = 120;
+// Senders asked about per person query; well under what one db8 find hands back.
+var SENDER_BATCH = 50;
+// How long a send waits for a re-read account list before it reports the account missing.
+var ACCOUNT_RELOAD_MS = 5000;
 
 /** The quick-reaction row, stored as HTML numeric entities so they survive the db8/JS round-trip. */
 var QUICK_REACTIONS = ["&#10084;&#65039;", "&#128077;", "&#128518;", "&#128558;", "&#128546;", "&#128591;"];
@@ -88,8 +99,17 @@ module.exports = kind({
                     showing: false, ontap: "voicecall", classes: "conversation-call-btn"
                 },
                 {
-                    name: "transportButton", kind: Button, classes: "conversation-header-type",
-                    ontap: "openTransportMenu"
+                    // The service a reply goes out on: its icon and name, not the address. A
+                    // dropdown drawn like the availability one, not a button.
+                    name: "transportButton", classes: "conversation-header-type",
+                    ontap: "openTransportMenu", components: [
+                        {
+                            name: "transportIcon", kind: Image, classes: "conversation-header-type-icon",
+                            showing: false, onerror: "transportIconFailed"
+                        },
+                        { name: "transportLabel", classes: "conversation-header-type-label" },
+                        { name: "transportArrow", classes: "availability-arrow", showing: false }
+                    ]
                 }
             ]
         },
@@ -120,13 +140,16 @@ module.exports = kind({
             strategyKind: TouchScrollStrategy,
             // Handlers sit on the scroller; row events arrive decorated with model and index.
             ontap: "handleMessageTap", onConfirm: "swipeDelete", onReact: "handleReactSwipe",
-            onScrollStart: "dismissPopups",
+            onScrollStart: "dismissPopups", onScrollStop: "noteScrollPosition",
             onError: "showErrorDialog", onSelectSender: "senderRowSelected",
             onOpenAttachment: "openAttachment", onInviteResponse: "respondToInvite",
             components: [
                 // Shown while a chat's messages load, in the empty list where they will appear.
                 { name: "loadingSpinner", kind: Spinner, classes: "conversation-loading", showing: false },
-                { name: "list", kind: PrependingRepeater, components: [ { kind: ConversationRow } ] }
+                {
+                    name: "list", kind: PrependingRepeater, classes: "conversation-messages",
+                    components: [ { kind: ConversationRow } ]
+                }
             ]
         },
         { classes: "footer-shadow" },
@@ -176,7 +199,7 @@ module.exports = kind({
                             name: "richText", kind: TextArea, classes: "conversation-input-text",
                             attributes: { rows: 1 },
                             placeholder: $L("Enter message here..."),
-                            onkeydown: "checkKey", oninput: "growInput"
+                            onkeydown: "checkKey", oninput: "composerInput"
                         }
                     ]
                 },
@@ -253,6 +276,11 @@ module.exports = kind({
             name: 'draftFind', kind: LunaService, service: DB_SERVICE, method: 'find',
             onResponse: 'gotDraftMessages', onError: 'serviceErr'
         },
+        {
+            // Group/channel senders' own photos; see util/senderImages.
+            name: 'senderFind', kind: LunaService, service: DB_SERVICE, method: 'find',
+            onResponse: 'gotSenderPersons', onError: 'serviceErr'
+        },
         { name: 'dbDelete', kind: LunaService, service: DB_SERVICE, method: 'del', onError: 'serviceErr' },
         { name: 'dbMerge', kind: LunaService, service: DB_SERVICE, method: 'merge', onError: 'serviceErr' },
         {
@@ -275,6 +303,13 @@ module.exports = kind({
         {
             name: 'openApp', kind: LunaService,
             service: 'luna://com.palm.applicationManager', method: 'open', onError: 'serviceErr'
+        },
+        {
+            // The system picker, shown in a popup over the app. There is no com.palm.filepicker app
+            // to open on LuneOS.
+            // border-box: at 100% wide the popup's own border pushed it past the right edge.
+            name: "attachmentPicker", kind: FilePicker, fileType: ["image", "video", "audio", "document"],
+            style: "width: 100%; height: 80%; box-sizing: border-box;", onPickFile: "attachmentChosen"
         }
     ],
 
@@ -315,7 +350,7 @@ module.exports = kind({
         }
         this.cancelRevealTimers();
         this.cancelBackfill();
-        this.stopVoiceNoteTimer();
+        this.cancelVoiceNote();
         if (this.conversationService) {
             this.conversationService.cancel();
         }
@@ -375,7 +410,7 @@ module.exports = kind({
         this.lockConversationList(flags.locked);
 
         if (flags.locked) {
-            this.$.transportButton.setContent($L("Lock"));
+            this.setTransportButton($L("Lock"), null);
             this.runQuery();
             return;
         }
@@ -383,13 +418,42 @@ module.exports = kind({
         if (this.chatThread.personId && this.chatThread.personId !== "null" && this.chatThread.person) {
             this.chatThread.personImage =
                 messagingUtils.person.getDisplayImage(this.chatThread.person);
+        }
+        this.buildTransports();
+        this.updateTransportButton();
+        this.updateCallButtons();
+        this.runQuery();
+    },
+
+    buildTransports: function () {
+        if (this.chatThread.personId && this.chatThread.personId !== "null" && this.chatThread.person) {
             transportPicker.setTransportsByPerson(this.chatThread.person, this.chatThread);
         } else {
             transportPicker.setTransportsByChatThread(this.chatThread);
         }
+    },
+
+    /**
+     * An account was added or removed: offer what can be sent on now. The transport in use stays
+     * selected while it is still there.
+     */
+    accountsChanged: function () {
+        if (!this.chatThread || !this.chatThread._id || (this.chatThread.flags || {}).locked) {
+            return;
+        }
+        var kept = transportPicker.getSelectedTransport();
+        this.buildTransports();
+        if (kept) {
+            var list = transportPicker.getTransports();
+            for (var i = 0; i < list.length; i++) {
+                if (list[i].serviceName === kept.serviceName && list[i].replyAddress === kept.replyAddress) {
+                    transportPicker.setSelectedTransport(list[i]);
+                    break;
+                }
+            }
+        }
         this.updateTransportButton();
         this.updateCallButtons();
-        this.runQuery();
     },
 
     setupNewChatThread: function () {
@@ -398,6 +462,7 @@ module.exports = kind({
         this._limit = FIRST_PAGE;
         this.forceSendIfOffline = false;
         this._followToEnd = true;
+        this._newestIncomingId = undefined;
 
         // Clear the thread's unread count now that it is on screen.
         this.doClearUnreadCount({ threadId: this.chatThread._id });
@@ -408,10 +473,13 @@ module.exports = kind({
         this.setHeaderName(this.chatThread.displayName);
         this.$.status.setClasses("status status-no-presence");
         this.chatThread.personImage = messagingUtils.person.getDisplayImage(null);
+        // Asked afresh per conversation, so a sender who became a friend since shows up.
+        this._senderImages = {};
     },
 
     closeConversation: function (chatThreadId, skipSaveDraft) {
         this.conversationService.cancel();
+        this.cancelVoiceNote();
         this.clearMessages();
 
         if (!chatThreadId) {
@@ -444,6 +512,7 @@ module.exports = kind({
         this.$.listButtons.setShowing(false);
         this.$.loadingSpinner.hide();
         this.cancelBackfill();
+        this.relayout();
     },
 
         lockConversationList: function (locked) {
@@ -519,12 +588,9 @@ module.exports = kind({
             }
         }
 
-        // Every bubble uses the thread's avatar; group chats show it per message via from.name.
-        if (this.chatThread && this.chatThread.personImage) {
-            for (var j = 0; j < results.length; j++) {
-                results[j].personImage = this.chatThread.personImage;
-            }
-        }
+        // A 1:1 bubble uses the thread's avatar; an incoming group or channel bubble its sender's.
+        this.applySenderImages(results);
+        this.lookUpSenders(results);
 
         // Measure before the merge: the new rows are what push the bottom out of reach.
         var follow = this._followToEnd || isNearBottom(this.$.scroller.getScrollBounds());
@@ -544,14 +610,101 @@ module.exports = kind({
             this.$.scroller.setScrollTop(before.top + (after.height - before.height));
         }
         syncCollection(this.collection, results);
+        this.followIncomingTransport(results);
         this.updateListButtons(this.chatThread);
         this.$.listButtons.setShowing(
             results.length > 0 && !!(this.chatThread && !(this.chatThread.flags || {}).locked));
+        this.relayout();
         if (follow) {
             this.revealListBottomSoon();
         }
         this.scheduleBackfill(results.length);
         return true;
+    },
+
+    // --- sender avatars ---------------------------------------------------------------------
+
+    applySenderImages: function (records) {
+        var cache = this._senderImages || (this._senderImages = {});
+        var threadImage = this.chatThread && this.chatThread.personImage;
+        var fallback = messagingUtils.person.DEFAULT_IMAGE;
+        for (var i = 0; i < records.length; i++) {
+            var image = senderImages.imageFor(records[i], cache, threadImage, fallback);
+            if (image) {
+                records[i].personImage = image;
+            }
+        }
+    },
+
+    /** Find the people behind group/channel senders not looked up yet, by their IM address. */
+    lookUpSenders: function (records) {
+        var cache = this._senderImages || (this._senderImages = {});
+        var wanted = senderImages.addressesToLookUp(records, cache);
+        var addresses = [];
+        Object.keys(wanted).forEach(function (service) {
+            addresses = addresses.concat(wanted[service]);
+        });
+        if (!addresses.length) {
+            return;
+        }
+        senderImages.markAsked(cache, wanted);
+        for (var i = 0; i < addresses.length; i += SENDER_BATCH) {
+            var query = {
+                from: "com.palm.person:1",
+                where: [{ prop: "ims.value", op: "=", val: addresses.slice(i, i + SENDER_BATCH) }],
+                select: ["_id", "ims", "photos.squarePhotoPath"]
+            };
+            if (mockDb.enabled) {
+                this.gotSenderPersons(null, mockDb.find(query));
+            } else {
+                this.$.senderFind.send({ query: query });
+            }
+        }
+    },
+
+    gotSenderPersons: function (inSender, inResponse) {
+        var found = senderImages.remember(this._senderImages || {},
+            (inResponse && inResponse.results) || []);
+        if (!found || !this.collection) {
+            return;
+        }
+        // Rows follow their model, so setting the image redraws only the bubbles that changed.
+        var self = this;
+        this.collection.forEach(function (model) {
+            var record = model.attributes;
+            var image = senderImages.imageFor(record, self._senderImages,
+                self.chatThread && self.chatThread.personImage, messagingUtils.person.DEFAULT_IMAGE);
+            if (image && image !== record.personImage) {
+                model.set('personImage', image);
+            }
+        });
+    },
+
+    /**
+     * A message that comes in while the chat is open moves the reply onto the transport it came
+     * in on, so a Signal message is not answered on WhatsApp. Only a new one does: the first
+     * results only note the newest, as the thread's own reply service already chose for them, and
+     * a transport picked by hand stays picked until the next message arrives.
+     */
+    followIncomingTransport: function (results) {
+        var newest = null;
+        for (var i = results.length - 1; i >= 0; i--) {
+            if (results[i].folder === FOLDERS.INBOX) {
+                newest = results[i];
+                break;
+            }
+        }
+        var newestId = newest ? newest._id : null;
+        var seenBefore = this._newestIncomingId;
+        this._newestIncomingId = newestId;
+        if (seenBefore === undefined || !newest || newestId === seenBefore ||
+                (this.chatThread && (this.chatThread.flags || {}).locked)) {
+            return;
+        }
+        if (transportPicker.followMessage(newest)) {
+            this.updateTransportButton();
+            this.updateCallButtons();
+        }
     },
 
     /** Ask for the next older batch once this one is on screen, while there may be more. */
@@ -586,6 +739,12 @@ module.exports = kind({
 
     revealListBottom: function () {
         this.$.scroller.scrollToBottom();
+        this._atEnd = true;
+    },
+
+    /** Whether the newest message was in view when scrolling stopped; see handleResize. */
+    noteScrollPosition: function () {
+        this._atEnd = isNearBottom(this.$.scroller.getScrollBounds());
     },
 
     /**
@@ -650,6 +809,19 @@ module.exports = kind({
         return (username ? username + ", " : "") + when;
     },
 
+    /** The service a message went out or came in on, shown on its divider as the legacy app did. */
+    getDividerIcon: function (message) {
+        return transportPicker.serviceIconFor(message && message.serviceName);
+    },
+
+    /** A label, escaped, after the service's icon when there is one. */
+    withServiceIcon: function (serviceName, text) {
+        var icon = transportPicker.serviceIconFor(serviceName);
+        var label = messagingUtils.message.escapeHtml(text || "");
+        return icon ? '<img class="transport-icon" alt="" src="' +
+            messagingUtils.message.escapeHtml(icon) + '">' + label : label;
+    },
+
     // --- header interaction --------------------------------------------------------------
 
     handleHeaderTap: function () {
@@ -665,9 +837,26 @@ module.exports = kind({
 
     updateTransportButton: function () {
         var selected = transportPicker.getSelectedTransport();
-        this.$.transportButton.setContent(
-            selected ? transportPicker.labelFor(selected) : $L("."));
-        this.$.transportButton.setShowing(transportPicker.getTransports().length > 0);
+        this.setTransportButton(selected ? transportPicker.serviceNameFor(selected) : $L("."),
+            transportPicker.iconFor(selected));
+        var count = transportPicker.getTransports().length;
+        this.$.transportButton.setShowing(count > 0);
+        // The arrow only when there is something to pick from.
+        this.$.transportArrow.setShowing(count > 1);
+    },
+
+    setTransportButton: function (label, icon) {
+        this.$.transportLabel.setContent(label);
+        if (icon) {
+            this.$.transportIcon.setSrc(icon);
+        }
+        this.$.transportIcon.setShowing(!!icon);
+    },
+
+    /** An icon that does not load is left out; the service's name still shows. */
+    transportIconFailed: function () {
+        this.$.transportIcon.hide();
+        return true;
     },
 
     openTransportMenu: function (inSender, inEvent) {
@@ -679,12 +868,16 @@ module.exports = kind({
         for (var i = 0; i < list.length; i++) {
             this.$.transportMenu.createComponent({
                 kind: MenuItem,
-                content: transportPicker.labelFor(list[i]),
+                allowHtml: true,
+                content: this.withServiceIcon(list[i].serviceName, transportPicker.labelFor(list[i])),
                 transportIndex: i
             }, { owner: this });
         }
         this.$.transportMenu.render();
-        this.$.transportMenu.showAtEvent(inEvent);
+        // Anchored to the button, as MainView.showAppMenu does: a floating Menu opened with
+        // showAtEvent() has no activatorOffset, and while it is open every resize (the back key,
+        // the keyboard) throws in Menu.adjustPosition, so back stops working.
+        this.$.transportMenu.requestMenuShow(this, { activator: this.$.transportButton });
         return true;
     },
 
@@ -711,46 +904,46 @@ module.exports = kind({
         return true;
     },
 
-    updateCallButtons: function () {
-        var selected = transportPicker.getSelectedTransport();
-        var serviceName = selected && selected.serviceName;
-        var accountService = appState.accountService;
-
-        this.$.phoneCallButton.setShowing(!!(accountService && serviceName &&
-            accountService.hasVoiceCapability(serviceName)));
-        this.$.videoCallButton.setShowing(!!(accountService && serviceName &&
-            accountService.hasVideoCapability(serviceName)));
+    callOptionsFor: function (transport) {
+        return callRequest.callOptions(transport, appState.accountService,
+            !!(this.chatThread && this.chatThread.groupChatId));
     },
 
-    currentCallTarget: function () {
-        var selected = transportPicker.getSelectedTransport();
-        return selected ? selected.replyAddress : (this.chatThread && this.chatThread.replyAddress);
+    /** The header's call buttons follow the service picked for replies. */
+    updateCallButtons: function () {
+        var calls = this.callOptionsFor(transportPicker.getSelectedTransport());
+        this.$.phoneCallButton.setShowing(calls.voice);
+        this.$.videoCallButton.setShowing(calls.video);
     },
 
     voicecall: function () {
-        var target = this.currentCallTarget();
-        if (target) {
-            this.$.openApp.send({ target: "tel:" + target });
-        }
+        this.callOver(transportPicker.getSelectedTransport(), false);
         return true;
     },
 
     videocall: function () {
-        var target = this.currentCallTarget();
-        var selected = transportPicker.getSelectedTransport();
-        if (target) {
-            this.$.launchApp.send({
-                id: "com.palm.app.phone",
-                params: {
-                    videoCall: true, number: target,
-                    serviceName: selected && selected.serviceName
-                }
-            });
-        }
+        this.callOver(transportPicker.getSelectedTransport(), true);
         return true;
     },
 
+    /** Hand the call to the phone app, over this transport's service. */
+    callOver: function (transport, video) {
+        var calls = this.callOptionsFor(transport);
+        if (!(video ? calls.video : calls.voice)) {
+            return;
+        }
+        var request = callRequest.callRequest(transport, video);
+        if (request) {
+            this.$.launchApp.send(request);
+        }
+    },
+
     // --- sending -------------------------------------------------------------------------
+
+    composerInput: function () {
+        composerEcho.check(this.$.richText);
+        this.growInput();
+    },
 
     /** Grow the field with its content, up to the cap the stylesheet sets. */
     growInput: function () {
@@ -758,8 +951,23 @@ module.exports = kind({
         if (!node) {
             return;
         }
+        var before = node.style.height;
         node.style.height = "auto";
         node.style.height = Math.min(node.scrollHeight, 155) + "px";
+        if (node.style.height !== before) {
+            this.relayout();
+        }
+    },
+
+    /**
+     * The message list takes the height left over by the bars around it, worked out by the fittable
+     * layout only when told. Call after a bar appears, goes or changes height: without it the list
+     * kept its old height and pushed the bottom bar (send, attach, mic) off the screen.
+     */
+    relayout: function () {
+        if (this.hasNode()) {
+            this.resize();
+        }
     },
 
     checkKey: function (inSender, inEvent) {
@@ -794,6 +1002,13 @@ module.exports = kind({
             this.showError($L("Unable to send"), $L("No account can send to this recipient."));
             return;
         }
+
+        var resolved = sendAccount(selectedTransport, appState.accountService);
+        if (resolved.state === "missing") {
+            this.sendOnceAccountsReload(selectedTransport);
+            return;
+        }
+        selectedTransport.account = resolved.account;
 
         var recipient = {
             name: selectedTransport.displayName,
@@ -847,7 +1062,7 @@ module.exports = kind({
         }
 
         var dbKind;
-        if (!messagingUtils.utils.isTextMessage(params.serviceName) && selectedTransport.account) {
+        if (resolved.state === "im") {
             dbKind = (selectedTransport.account.dbkinds || {}).immessage ||
                 messagingUtils.message.dbKind;
         } else {
@@ -871,6 +1086,41 @@ module.exports = kind({
         this.sendMessageHelper(params, dbKind);
     },
 
+    /**
+     * The IM account behind this transport is not in the list the app loaded - typically one added
+     * since the app started. Re-read the accounts and send once they are in; if the account is
+     * still not there, say so and keep the text in the composer rather than send it some other way.
+     */
+    sendOnceAccountsReload: function (transport) {
+        var accounts = appState.accountService;
+        var self = this;
+        var notSent = function () {
+            self.showError($L("Unable to send"),
+                $L("No account for {service} is set up on this device, so the message was not sent.")
+                    .replace("{service}", transport.label || transport.serviceName));
+        };
+        if (!accounts || this._accountWait) {
+            if (!accounts) { notSent(); }
+            return;
+        }
+        var waiter = this._accountWait = {};
+        var finish = function () {
+            if (self._accountWait !== waiter) { return; }
+            clearTimeout(waiter.timer);
+            accounts.unregister(waiter);
+            self._accountWait = null;
+            var resolved = sendAccount(transport, accounts);
+            if (resolved.state === "missing" || !self.chatThread) {
+                notSent();
+                return;
+            }
+            self.sendMessage();
+        };
+        accounts.register(waiter, finish);
+        waiter.timer = setTimeout(finish, ACCOUNT_RELOAD_MS);
+        accounts.getAccounts();
+    },
+
     sendMessageHelper: function (params, dbKind) {
         this._followToEnd = true;
         params._kind = dbKind;
@@ -884,6 +1134,7 @@ module.exports = kind({
         }
 
         this.$.richText.set('value', "");
+        composerEcho.sent(this.$.richText, params.messageText);
         this.growInput();
         this.cancelReply();
         if (this.outboundAttachment) {
@@ -1243,6 +1494,19 @@ module.exports = kind({
                 popup.hide();
             }
         }
+        this.closeAttachmentPicker();
+    },
+
+    /** Closes the file picker if it is open; true when it was. The back key uses this first. */
+    closeAttachmentPicker: function () {
+        var picker = this.$.attachmentPicker;
+        if (!picker || !picker.showing) {
+            return false;
+        }
+        // Unload the picker page as its own Cancel does, so it starts fresh next time.
+        picker.$.CrossApp.setPath("");
+        picker.hide();
+        return true;
     },
 
     reactPicked: function (inSender) {
@@ -1255,6 +1519,9 @@ module.exports = kind({
 
     reactMore: function (inSender, inEvent) {
         this.$.reactRow.hide();
+        // The button that opened it is in the popup just hidden, so anchor to the tap point
+        // instead; without an activatorOffset the open menu throws on every resize.
+        this.$.messageMenu.activatorOffset = { top: inEvent.pageY || 0, left: inEvent.pageX || 0, width: 0, height: 0 };
         this.$.messageMenu.showAtEvent(inEvent);
         return true;
     },
@@ -1348,11 +1615,13 @@ module.exports = kind({
             "<b>" + messagingUtils.message.emojifyEscaped(from) + "</b><br>" +
             messagingUtils.message.emojifyEscaped(text));
         this.$.replyBar.setShowing(true);
+        this.relayout();
     },
 
     cancelReply: function () {
         this.replyToMessage = null;
         this.$.replyBar.setShowing(false);
+        this.relayout();
         return true;
     },
 
@@ -1364,28 +1633,55 @@ module.exports = kind({
             this.showError($L("Attachments"), $L("File picking is only available on device."));
             return true;
         }
-        this.$.openApp.send({
-            target: "palm://com.palm.filepicker",
-            params: { fileType: ["image", "video", "document"] }
+        if (this.attachmentsUnsupported()) {
+            return true;
+        }
+        this.$.attachmentPicker.pickFile();
+        return true;
+    },
+
+    /** SMS cannot carry a file (no MMS sending yet); say so instead of dropping it at send. */
+    attachmentsUnsupported: function () {
+        var transport = transportPicker.getSelectedTransport();
+        if (transport && messagingUtils.utils.isTextMessage(transport.serviceName)) {
+            this.showError($L("Attachments"), $L("Attachments can't be sent by SMS. Pick an IM service to send a file."));
+            return true;
+        }
+        return false;
+    },
+
+    // The picker sends an array of {fullPath, attachmentType, size, ...}.
+    attachmentChosen: function (inSender, inEvent) {
+        var files = Array.isArray(inEvent) ? inEvent : (inEvent && inEvent.files);
+        var file = files && files[0];
+        if (!file || !file.fullPath) {
+            return true;
+        }
+        this.stageAttachment({
+            path: file.fullPath,
+            name: file.name || file.fullPath.slice(file.fullPath.lastIndexOf("/") + 1),
+            type: file.attachmentType
         });
         return true;
     },
 
-    attachmentChosen: function (inSender, inEvent) {
-        var file = inEvent && inEvent.files && inEvent.files[0];
-        if (!file) {
-            return true;
+    stageAttachment: function (attachment) {
+        this.outboundAttachment = attachment;
+        this.$.attachmentChipLabel.setContent(attachment.name);
+        var isImage = attachment.type === "image";
+        if (isImage) {
+            this.$.attachmentChipThumb.setSrc("file://" + attachment.path);
         }
-        this.outboundAttachment = { path: file.fullPath, name: file.name };
-        this.$.attachmentChipLabel.setContent(file.name);
+        this.$.attachmentChipThumb.setShowing(isImage);
         this.$.attachmentChip.setShowing(true);
-        return true;
+        this.relayout();
     },
 
     clearAttachment: function () {
         this.outboundAttachment = null;
         this.$.attachmentChip.setShowing(false);
         this.$.attachmentChipThumb.setShowing(false);
+        this.relayout();
         return true;
     },
 
@@ -1398,34 +1694,95 @@ module.exports = kind({
         }
         if (this.recording) {
             this.stopVoiceNote();
-        } else {
+        } else if (!this.attachmentsUnsupported()) {
             this.startVoiceNote();
         }
         return true;
     },
 
+    /** One mediarecorder request, as voiceRecorder wants it: done(error, response). */
+    recorderCall: function (method, params, done) {
+        var request = new ServiceRequest({ service: "luna://com.webos.service.mediarecorder", method: method });
+        request.response(function (inSender, inResponse) { done(null, inResponse); });
+        request.error(function (inSender, inError) {
+            done((inError && (inError.errorText || inError.errorMessage)) || "service error", inError);
+        });
+        request.go(params);
+    },
+
     startVoiceNote: function () {
-        this.recording = true;
-        this.$.micButton.setSrc("assets/menu-icon-mic-rec.svg");
-        this.$.micButton.addClass("recording");
-        this.$.vnTimer.setShowing(true);
-        this.startVoiceNoteTimer();
+        var self = this;
+        if (!this.voiceRecorder) {
+            this.voiceRecorder = new VoiceRecorder(this.bindSafely("recorderCall"));
+        }
+        if (this.voiceRecorder.isBusy()) {
+            return;
+        }
+        this.setRecordingUi(true);
+        this.voiceRecorder.start(function (error) {
+            if (error) {
+                self.setRecordingUi(false);
+                if (error !== "cancelled" && !self.destroyed) {
+                    self.showError($L("Voice message"), $L("Could not start recording: ") + error);
+                }
+            }
+        });
     },
 
     stopVoiceNote: function () {
-        this.recording = false;
-        this.$.micButton.setSrc("assets/menu-icon-mic.svg");
-        this.$.micButton.removeClass("recording");
-        this.$.vnTimer.setShowing(false);
-        this.stopVoiceNoteTimer();
+        var self = this, seconds = this._vnElapsed || 0;
+        this.setRecordingUi(false);
+        if (!this.voiceRecorder || this.voiceRecorder.state !== "recording") {
+            // Still opening: drop it rather than wait.
+            this.cancelVoiceNote();
+            return;
+        }
+        this.voiceRecorder.stop(function (error, path) {
+            if (self.destroyed) {
+                return;
+            }
+            if (error) {
+                self.showError($L("Voice message"), $L("Recording failed: ") + error);
+                return;
+            }
+            self.stageAttachment({
+                path: path,
+                name: $L("Voice message") + " " + messagingUtils.message.audioFmt(seconds),
+                type: "audio"
+            });
+        });
+    },
+
+    /** Leaving the chat or closing the app: stop and throw the recording away. */
+    cancelVoiceNote: function () {
+        if (this.voiceRecorder) {
+            this.voiceRecorder.cancel();
+        }
+        if (this.recording) {
+            this.setRecordingUi(false);
+        }
+    },
+
+    setRecordingUi: function (on) {
+        this.recording = on;
+        this.$.micButton.setSrc(on ? "assets/menu-icon-mic-rec.svg" : "assets/menu-icon-mic.svg");
+        this.$.micButton.addRemoveClass("recording", on);
+        this.$.vnTimer.setShowing(on);
+        if (on) {
+            this.startVoiceNoteTimer();
+        } else {
+            this.stopVoiceNoteTimer();
+        }
     },
 
     startVoiceNoteTimer: function () {
-        var self = this, elapsed = 0;
+        var self = this;
+        this.stopVoiceNoteTimer();
+        this._vnElapsed = 0;
         this.$.vnTimer.setContent(messagingUtils.message.audioFmt(0));
         this._vnTimer = setInterval(function () {
-            elapsed += 1;
-            self.$.vnTimer.setContent(messagingUtils.message.audioFmt(elapsed));
+            self._vnElapsed += 1;
+            self.$.vnTimer.setContent(messagingUtils.message.audioFmt(self._vnElapsed));
         }, 1000);
     },
 
@@ -1556,8 +1913,22 @@ module.exports = kind({
         this.set('loginStates', states);
     },
 
-    resize: function () {
+    /**
+     * The on-screen keyboard resizes the window rather than covering it, so the message list loses
+     * its bottom part and the newest messages ended up under the keyboard. Keep the end in view when
+     * it was in view before, or when the keyboard came up for typing a reply.
+     *
+     * handleResize, not resize: resize() sends the onresize waterfall; this is the end receiving it.
+     */
+    handleResize: function () {
         this.inherited(arguments);
+        if (!this.$.scroller || !this.collection || !this.collection.length) {
+            return;
+        }
+        var typing = this.$.richText.hasNode() && document.activeElement === this.$.richText.hasNode();
+        if (this._atEnd || typing) {
+            this.revealListBottomSoon();
+        }
     },
 
     windowHiddenHandler: function () {

@@ -1,0 +1,18 @@
+[{
+    "templateId": "com.palm.telegram",
+    "loc_name": "Telegram",
+    "capabilityProviders": [
+        {
+            "capability": "MESSAGING",
+            "capabilitySubtype": "IM",
+            "id": "com.palm.telegram.im",
+            "serviceName": "type_telegram",
+            "authContacts": ["Telegram"]
+        },
+        {
+            "capability": "PHONE",
+            "id": "com.palm.telegram.call",
+            "serviceName": "type_telegram"
+        }
+    ]
+}]

@@ -86,12 +86,18 @@ describe('transportPicker.setTransportsByPerson', function () {
         assert.equal(transports[1].label, 'Work');
     });
 
-    it('labels an IM from the account template, falling back to the bare service name', function () {
+    it('labels an IM from the account template, falling back to a readable service name', function () {
         appState.accountService = accountsFor(['type_aol', 'type_jabber'],
             { type_aol: { loc_shortName: 'AIM' } });
         var transports = picker.setTransportsByPerson(ADA, null);
         assert.equal(transports[0].label, 'AIM');
-        assert.equal(transports[1].label, 'jabber');
+        assert.equal(transports[1].label, 'Jabber');
+    });
+
+    it('names a service it has no template for from its type, capitalised', function () {
+        appState.accountService = accountsFor(['type_mastodon'], {});
+        var transports = picker.setTransportsByChatThread({ replyAddress: 'x', replyService: 'type_mastodon' });
+        assert.equal(transports[0].label, 'Mastodon');
     });
 });
 
@@ -118,6 +124,52 @@ describe('transportPicker.selectForThread', function () {
         appState.accountService = accountsFor(['sms'], {});
         picker.setTransportsByPerson(ADA, null);
         assert.equal(picker.getSelectedTransport().replyAddress, '5551234567');
+    });
+});
+
+// Signal and WhatsApp both use the phone number as the address.
+var BEN = {
+    name: { givenName: 'Ben' },
+    ims: [
+        { value: '+31612345678', type: 'type_whatsapp' },
+        { value: '+31612345678', type: 'type_signal' }
+    ],
+    phoneNumbers: [{ value: '+31612345678', type: 'type_mobile' }]
+};
+
+describe('transportPicker with one number on several services', function () {
+    beforeEach(function () {
+        appState.accountService = accountsFor(['type_whatsapp', 'type_signal', 'sms'], {});
+    });
+
+    it('replies on the service the thread was last used on, not the first one listed', function () {
+        picker.setTransportsByPerson(BEN, { replyAddress: '+31612345678', replyService: 'type_signal' });
+        assert.equal(picker.getSelectedTransport().serviceName, 'type_signal');
+    });
+
+    it('keeps to the service even when the stored address is another spelling', function () {
+        // A thread first used on WhatsApp keeps its jid as the address after a Signal message.
+        picker.setTransportsByPerson(BEN,
+            { replyAddress: '31612345678@s.whatsapp.net', replyService: 'type_signal' });
+        assert.equal(picker.getSelectedTransport().serviceName, 'type_signal');
+    });
+
+    it('takes SMS for an MMS thread', function () {
+        picker.setTransportsByPerson(BEN, { replyAddress: '+31612345678', replyService: 'mms' });
+        assert.equal(picker.getSelectedTransport().serviceName, 'sms');
+    });
+
+    it('follows an incoming message onto the service it came in on', function () {
+        picker.setTransportsByPerson(BEN, { replyAddress: '+31612345678', replyService: 'type_whatsapp' });
+        assert.equal(picker.followMessage({ serviceName: 'type_signal', from: { addr: '+31612345678' } }), true);
+        assert.equal(picker.getSelectedTransport().serviceName, 'type_signal');
+        assert.equal(picker.followMessage({ serviceName: 'type_signal', from: { addr: '+31612345678' } }), false);
+    });
+
+    it('leaves the selection alone for a message on a service it cannot send on', function () {
+        picker.setTransportsByPerson(BEN, { replyAddress: '+31612345678', replyService: 'type_whatsapp' });
+        assert.equal(picker.followMessage({ serviceName: 'type_telegram', from: { addr: '+31612345678' } }), false);
+        assert.equal(picker.getSelectedTransport().serviceName, 'type_whatsapp');
     });
 });
 
@@ -170,5 +222,77 @@ describe('transportPicker.labelFor', function () {
     it('returns an empty label for nothing', function () {
         assert.equal(picker.labelFor(null), '');
         assert.equal(picker.labelFor(undefined), '');
+    });
+});
+
+describe('transportPicker.serviceNameFor', function () {
+    var TEMPLATES = { type_signal: { loc_shortName: 'Signal' }, type_telegram: { loc_name: 'Telegram' } };
+
+    it('names only the service, not the number it goes to', function () {
+        // Was "+31611745571 Signal" in the header.
+        appState.accountService = accountsFor(['type_signal'], TEMPLATES);
+        var transport = picker.setTransportsByChatThread(
+            { replyAddress: '+31611745571', replyService: 'type_signal' })[0];
+        assert.equal(picker.serviceNameFor(transport), 'Signal');
+    });
+
+    it('says SMS for a phone number, whatever kind of number it is', function () {
+        appState.accountService = accountsFor(['sms'], {});
+        var transports = picker.setTransportsByPerson(ADA, null);
+        assert.equal(picker.serviceNameFor(transports[0]), 'SMS');
+        assert.equal(picker.serviceNameFor(transports[1]), 'SMS');
+    });
+
+    it('falls back to the template name, then a known name or the capitalised service id', function () {
+        appState.accountService = accountsFor([], TEMPLATES);
+        assert.equal(picker.serviceNameFor({ serviceName: 'type_telegram' }), 'Telegram');
+        assert.equal(picker.serviceNameFor({ serviceName: 'type_discord' }), 'Discord');
+        assert.equal(picker.serviceNameFor({ serviceName: 'type_mastodon' }), 'Mastodon');
+        assert.equal(picker.serviceNameFor({ serviceName: 'type_googlechat' }), 'Google Chat');
+        assert.equal(picker.serviceNameFor(null), '');
+    });
+});
+
+describe('transportPicker.iconFor', function () {
+    function withIcons(paths) {
+        var service = accountsFor(Object.keys(paths), {});
+        service.getIconPath = function (serviceName) { return paths[serviceName] || null; };
+        return service;
+    }
+
+    it('gives an IM transport its service icon', function () {
+        appState.accountService = withIcons({ type_signal: '/usr/palm/public/accounts/com.palm.signal/images/signal-48x48.png' });
+        assert.equal(picker.iconFor({ serviceName: 'type_signal', isPhone: false }),
+            '/usr/palm/public/accounts/com.palm.signal/images/signal-48x48.png');
+    });
+
+    it('gives SMS, an unknown service or no transport no icon', function () {
+        appState.accountService = withIcons({ sms: '/sms.png' });
+        assert.equal(picker.iconFor({ serviceName: 'sms', isPhone: true }), null);
+        assert.equal(picker.iconFor({ serviceName: 'type_teams', isPhone: false }), null);
+        assert.equal(picker.iconFor(null), null);
+    });
+});
+
+describe('transportPicker.serviceIconFor', function () {
+    function withTemplateIcons(icons) {
+        var service = accountsFor(Object.keys(icons), {});
+        service.getIcons = function (serviceName) { return icons[serviceName] || null; };
+        return service;
+    }
+
+    it('takes the template\'s small splitter icon, falling back to the larger ones', function () {
+        appState.accountService = withTemplateIcons({
+            type_signal: { splitter: '/s-16.png', loc_32x32: '/s-32.png' },
+            type_discord: { loc_48x48: '/d-48.png' }
+        });
+        assert.equal(picker.serviceIconFor('type_signal'), '/s-16.png');
+        assert.equal(picker.serviceIconFor('type_discord'), '/d-48.png');
+    });
+
+    it('looks SMS and MMS up as "sms", and gives an unknown service none', function () {
+        appState.accountService = withTemplateIcons({ sms: { splitter: '/sms-16.png' } });
+        assert.equal(picker.serviceIconFor('mms'), '/sms-16.png');
+        assert.equal(picker.serviceIconFor('type_teams'), null);
     });
 });
