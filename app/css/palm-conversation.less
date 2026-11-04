@@ -294,7 +294,11 @@ Staged attachment chip (above the input once a file is picked)
 /*----------------------
 Conversation list
 ----------------------*/
-.conversationList .enyo-scroller > * {
+/* On the message list itself. This sat on every child of the scroller, which with the touch
+   scroll strategy is its client: that has the scroller's height, so the padding made it 15px
+   taller than the scroller and the bottom of the newest message was cut off under the
+   composer. */
+.conversationList .conversation-messages {
   padding-top: 10px;
   padding-bottom: 5px;
 }

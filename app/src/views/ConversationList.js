@@ -144,7 +144,10 @@ module.exports = kind({
             components: [
                 // Shown while a chat's messages load, in the empty list where they will appear.
                 { name: "loadingSpinner", kind: Spinner, classes: "conversation-loading", showing: false },
-                { name: "list", kind: PrependingRepeater, components: [ { kind: ConversationRow } ] }
+                {
+                    name: "list", kind: PrependingRepeater, classes: "conversation-messages",
+                    components: [ { kind: ConversationRow } ]
+                }
             ]
         },
         { classes: "footer-shadow" },
