@@ -295,21 +295,29 @@ module.exports = kind({
         return this._accountTemplates;
     },
 
-    /** Walk the live account templates looking for a MESSAGING/PHONE provider field. */
+    /**
+     * A MESSAGING or PHONE provider's field for a service, from the live account templates when
+     * there are any, else from the account records. LuneOS's listAccounts sends no templates, so
+     * without the records every lookup came back empty: no IM service could call, and the
+     * reaction and auth-contact settings were never read. The records carry each provider as it
+     * was when the account was made.
+     *
+     * The provider has to name the service: the profile's PHONE provider names none, and taking
+     * that as "any service" would offer a call on every IM service. Cellular calling is
+     * hasVoiceCapability's own case.
+     */
     _fromTemplates: function (capability, serviceName, field) {
-        var tmpls = this.getAccountTemplates();
-        if (!tmpls) { return undefined; }
-        for (var i = 0; i < tmpls.length; i++) {
-            var caps = (tmpls[i] && tmpls[i].capabilityProviders) || [];
-            for (var j = 0; j < caps.length; j++) {
-                var c = caps[j];
-                if (c.capability !== capability) { continue; }
-                if (capability === "PHONE") {
-                    if (!c.serviceName || c.serviceName === serviceName) {
-                        return c[field] === undefined ? true : c[field];
+        var sources = [this.getAccountTemplates(), this.data];
+        for (var s = 0; s < sources.length; s++) {
+            var list = sources[s] || [];
+            for (var i = 0; i < list.length; i++) {
+                var caps = (list[i] && list[i].capabilityProviders) || [];
+                for (var j = 0; j < caps.length; j++) {
+                    var c = caps[j];
+                    if (c && c.capability === capability && c.serviceName === serviceName &&
+                            c[field] !== undefined) {
+                        return c[field];
                     }
-                } else if (c.serviceName === serviceName && c[field]) {
-                    return c[field];
                 }
             }
         }
@@ -350,7 +358,7 @@ module.exports = kind({
 
     /**
      * Can this service place a voice call through the phone app? Cellular SMS/MMS always can; an IM
-     * service can when its template declares a PHONE capabilityProvider.
+     * service can when its template or account has a PHONE provider for it.
      */
     hasVoiceCapability: function (serviceName) {
         if (messagingUtils.utils.isTextMessage(serviceName)) { return true; }
@@ -364,7 +372,7 @@ module.exports = kind({
      */
     hasVideoCapability: function (serviceName) {
         var fmt = this._fromTemplates("PHONE", serviceName, "videoFormat");
-        return !!(fmt && fmt !== true && fmt !== "none");
+        return !!(fmt && fmt !== "none");
     },
 
     // --- listener plumbing ---------------------------------------------------------------

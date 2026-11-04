@@ -38,6 +38,7 @@ var kind = require('enyo/kind'),
     ConversationService = require('../data/ConversationService'),
     transportPicker = require('../util/transportPicker'),
     composerEcho = require('../util/composerEcho'),
+    callRequest = require('../util/callRequest'),
     messagingUtils = require('../util/messagingUtils'),
     appState = require('../util/appState'),
     mockDb = require('../data/mockDb'),
@@ -889,43 +890,38 @@ module.exports = kind({
         return true;
     },
 
-    updateCallButtons: function () {
-        var selected = transportPicker.getSelectedTransport();
-        var serviceName = selected && selected.serviceName;
-        var accountService = appState.accountService;
-
-        this.$.phoneCallButton.setShowing(!!(accountService && serviceName &&
-            accountService.hasVoiceCapability(serviceName)));
-        this.$.videoCallButton.setShowing(!!(accountService && serviceName &&
-            accountService.hasVideoCapability(serviceName)));
+    callOptionsFor: function (transport) {
+        return callRequest.callOptions(transport, appState.accountService,
+            !!(this.chatThread && this.chatThread.groupChatId));
     },
 
-    currentCallTarget: function () {
-        var selected = transportPicker.getSelectedTransport();
-        return selected ? selected.replyAddress : (this.chatThread && this.chatThread.replyAddress);
+    /** The header's call buttons follow the service picked for replies. */
+    updateCallButtons: function () {
+        var calls = this.callOptionsFor(transportPicker.getSelectedTransport());
+        this.$.phoneCallButton.setShowing(calls.voice);
+        this.$.videoCallButton.setShowing(calls.video);
     },
 
     voicecall: function () {
-        var target = this.currentCallTarget();
-        if (target) {
-            this.$.openApp.send({ target: "tel:" + target });
-        }
+        this.callOver(transportPicker.getSelectedTransport(), false);
         return true;
     },
 
     videocall: function () {
-        var target = this.currentCallTarget();
-        var selected = transportPicker.getSelectedTransport();
-        if (target) {
-            this.$.launchApp.send({
-                id: "com.palm.app.phone",
-                params: {
-                    videoCall: true, number: target,
-                    serviceName: selected && selected.serviceName
-                }
-            });
-        }
+        this.callOver(transportPicker.getSelectedTransport(), true);
         return true;
+    },
+
+    /** Hand the call to the phone app, over this transport's service. */
+    callOver: function (transport, video) {
+        var calls = this.callOptionsFor(transport);
+        if (!(video ? calls.video : calls.voice)) {
+            return;
+        }
+        var request = callRequest.callRequest(transport, video);
+        if (request) {
+            this.$.launchApp.send(request);
+        }
     },
 
     // --- sending -------------------------------------------------------------------------
