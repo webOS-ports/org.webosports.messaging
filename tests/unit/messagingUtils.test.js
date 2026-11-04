@@ -183,6 +183,76 @@ describe('utils.isTextMessage', function () {
     });
 });
 
+describe('utils.buddyThreadKeys', function () {
+    it('never asks for a missing personId, which would match every thread with no person', function () {
+        var keys = u.buddyThreadKeys([
+            { personId: 'p1', username: 'anna', serviceName: 'type_aim' },
+            { username: 'bob', serviceName: 'type_aim' },
+            { personId: '', username: 'carol', serviceName: 'type_aim' },
+            { personId: null, username: 'dave', serviceName: 'type_aim' }
+        ]);
+        assert.deepEqual(keys.personIds, ['p1']);
+        assert.deepEqual(keys.addresses, ['bob', 'carol', 'dave']);
+    });
+
+    it('lists each person and address once', function () {
+        var keys = u.buddyThreadKeys([
+            { personId: 'p1', username: 'anna', serviceName: 'type_aim' },
+            { personId: 'p1', username: 'anna@jabber', serviceName: 'type_jabber' },
+            { username: 'bob', serviceName: 'type_aim' },
+            { username: ' bob ', serviceName: 'type_aim' }
+        ]);
+        assert.deepEqual(keys.personIds, ['p1']);
+        assert.deepEqual(keys.addresses, ['bob']);
+    });
+
+    it('asks for nothing for no buddies', function () {
+        assert.deepEqual(u.buddyThreadKeys([]), { personIds: [], addresses: [] });
+    });
+});
+
+describe('utils.joinBuddyThreads', function () {
+    it("does not give a buddy with no person another conversation's thread", function () {
+        // The legacy app's report: an AIM buddy showed 7 unread from a connector's thread
+        var buddies = [{ username: 'aimbuddy', serviceName: 'type_aim' }];
+        u.joinBuddyThreads(buddies, [
+            { _id: 't-own', normalizedAddress: 'aimbuddy', unreadCount: 0 },
+            { _id: 't-other', normalizedAddress: 'someone@imessage', unreadCount: 7 }
+        ]);
+        assert.equal(buddies[0].thread._id, 't-own');
+        assert.equal(buddies[0].thread.unreadCount, 0);
+    });
+
+    it('leaves a buddy with no person and no thread of its own without one', function () {
+        var buddies = [{ username: 'aimbuddy', serviceName: 'type_aim' }];
+        u.joinBuddyThreads(buddies, [{ _id: 't-other', normalizedAddress: 'someone@imessage', unreadCount: 7 }]);
+        assert.equal(buddies[0].thread, undefined);
+    });
+
+    it("never hands a person's thread to a buddy with no person", function () {
+        var buddies = [{ username: 'anna', serviceName: 'type_aim' }];
+        u.joinBuddyThreads(buddies, [{ _id: 't-anna', personId: 'p1', normalizedAddress: 'anna', unreadCount: 3 }]);
+        assert.equal(buddies[0].thread, undefined);
+    });
+
+    it("gives a buddy with a person that person's thread", function () {
+        var buddies = [{ personId: 'p1', username: 'anna', serviceName: 'type_aim' },
+            { personId: 'p2', username: 'ben', serviceName: 'type_aim' }];
+        u.joinBuddyThreads(buddies, [
+            { _id: 't-nobody', normalizedAddress: 'zed', unreadCount: 9 },
+            { _id: 't-anna', personId: 'p1', normalizedAddress: 'anna', unreadCount: 2 }
+        ]);
+        assert.equal(buddies[0].thread._id, 't-anna');
+        assert.equal(buddies[1].thread, undefined);
+    });
+
+    it('clears a thread a buddy kept from an earlier join', function () {
+        var buddies = [{ username: 'aimbuddy', serviceName: 'type_aim', thread: { _id: 'stale', unreadCount: 7 } }];
+        u.joinBuddyThreads(buddies, []);
+        assert.equal(buddies[0].thread, undefined);
+    });
+});
+
 describe('utils.normalizeShortcode', function () {
     it('accepts 2..6 digits, which is what carriers use for shortcodes', function () {
         assert.equal(u.normalizeShortcode('12'), '12');
