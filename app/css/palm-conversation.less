@@ -20,7 +20,8 @@ Header
   margin-left: 3px;
   margin-right: 3px;
   color: #222222;
-  font-size: 20px;
+  /* The same size as the service name beside it. */
+  font-size: 18px;
   text-align: left;
   overflow: hidden;
   white-space: nowrap;
@@ -29,9 +30,23 @@ Header
 .conversation-header .status {
   margin-left: 8px;
 }
-.conversation-header-type.onyx-button {
-  padding: 0 5px;
-  margin: 0 7px 0;
+/* The reply service: icon, name and the dropdown arrow, drawn like the availability picker. It
+   keeps its full width; the contact's name is what gets shortened when the bar is short of room. */
+.conversation-header-type {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-flex: none;
+  flex: none;
+  height: 100%;
+  margin: 0 4px 0 8px;
+  color: #222222;
+  font-size: 18px;
+  cursor: pointer;
+}
+.conversation-header-type-label {
+  white-space: nowrap;
 }
 /* The service icon before the service name, in the header button and its menu. */
 .transport-icon {
@@ -45,14 +60,15 @@ Header
 
 /* The service's icon in front of its name on the transport button. */
 .conversation-header-type-icon {
+  -webkit-flex: none;
+  flex: none;
   width: 24px;
   height: 24px;
   margin-right: 6px;
-  vertical-align: middle;
 }
 
 /* Bare transparent header call buttons (video + phone): no square button chrome, matching the
-   paperclip/send icons. Sized to the 32x32 glyphs and nudged to the row centre. */
+   paperclip/send icons. Sized to the 32x32 glyphs; the bar centres them. */
 .conversation-call-btn {
   -webkit-flex: none;
   flex: none;
@@ -65,8 +81,6 @@ Header
   min-width: 32px;
   width: 32px;
   height: 32px;
-  position: relative;
-  top: 6px;
   margin: 0 4px;
 }
 .conversation-call-btn.pressed {

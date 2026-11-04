@@ -99,14 +99,16 @@ module.exports = kind({
                     showing: false, ontap: "voicecall", classes: "conversation-call-btn"
                 },
                 {
-                    // The service a reply goes out on: its icon and name, not the address.
-                    name: "transportButton", kind: Button, classes: "conversation-header-type",
+                    // The service a reply goes out on: its icon and name, not the address. A
+                    // dropdown drawn like the availability one, not a button.
+                    name: "transportButton", classes: "conversation-header-type",
                     ontap: "openTransportMenu", components: [
                         {
                             name: "transportIcon", kind: Image, classes: "conversation-header-type-icon",
-                            showing: false, attributes: { onerror: "this.style.display='none'" }
+                            showing: false, onerror: "transportIconFailed"
                         },
-                        { name: "transportLabel", tag: "span" }
+                        { name: "transportLabel", classes: "conversation-header-type-label" },
+                        { name: "transportArrow", classes: "availability-arrow", showing: false }
                     ]
                 }
             ]
@@ -835,17 +837,24 @@ module.exports = kind({
         var selected = transportPicker.getSelectedTransport();
         this.setTransportButton(selected ? transportPicker.serviceNameFor(selected) : $L("."),
             transportPicker.iconFor(selected));
-        this.$.transportButton.setShowing(transportPicker.getTransports().length > 0);
+        var count = transportPicker.getTransports().length;
+        this.$.transportButton.setShowing(count > 0);
+        // The arrow only when there is something to pick from.
+        this.$.transportArrow.setShowing(count > 1);
     },
 
     setTransportButton: function (label, icon) {
         this.$.transportLabel.setContent(label);
         if (icon) {
-            // A fresh src may load where the last one failed, so undo that failure's hiding.
-            this.$.transportIcon.applyStyle("display", null);
             this.$.transportIcon.setSrc(icon);
         }
         this.$.transportIcon.setShowing(!!icon);
+    },
+
+    /** An icon that does not load is left out; the service's name still shows. */
+    transportIconFailed: function () {
+        this.$.transportIcon.hide();
+        return true;
     },
 
     openTransportMenu: function (inSender, inEvent) {
