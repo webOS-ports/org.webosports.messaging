@@ -400,6 +400,11 @@ var servers = [
         _id: "server-discord", _kind: "com.palm.imserver:1",
         accountId: "acct-discord", serviceName: "type_discord",
         displayName: "LuneOS Discord", unreadCount: 3
+    },
+    {
+        _id: "server-irc", _kind: "com.palm.imserver:1",
+        serviceName: "type_irc", remoteId: "irc.libera.chat",
+        displayName: "irc.libera.chat", name: "irc.libera.chat", unreadCount: 0
     }
 ];
 
@@ -418,6 +423,11 @@ var channels = [
         _id: "channel-dev", _kind: "com.palm.imchannel:1",
         serverId: "server-discord", serviceName: "type_discord",
         displayName: "#development", threadId: "thread-old", unreadCount: 0
+    },
+    {
+        _id: "channel-irc-webos", _kind: "com.palm.imchannel:1",
+        serverId: "server-irc", serviceName: "type_irc", remoteId: "#webos@irc.libera.chat",
+        displayName: "#webos", name: "#webos", position: 0, unreadCount: 0
     }
 ];
 

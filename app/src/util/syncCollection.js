@@ -16,6 +16,16 @@ module.exports = function syncCollection(collection, records) {
     }
     records = records || [];
 
+    // add() only purges when at least one model is kept (Collection.add tests
+    // `purge && keep.length`), so an empty result would leave the previous list in place: tapping a
+    // server with no channels showed the channels of the server tapped before it.
+    if (!records.length) {
+        if (collection.length) {
+            collection.remove(collection.models.copy());
+        }
+        return;
+    }
+
     collection.add(records, { merge: true, purge: true });
 
     // add() appends new models rather than placing them, so re-impose the query's ordering — but

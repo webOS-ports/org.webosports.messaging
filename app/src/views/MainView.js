@@ -82,8 +82,7 @@ module.exports = kind({
                             onNewBuddy: "addBuddy",
                             onNewFavorite: "showAddFavoriteList",
                             onLoginStatesChange: "loginStatesChange",
-                            onAddAccount: "showAddAccountDialog",
-                            onOpenAppMenu: "openAppMenu"
+                            onAddAccount: "showAddAccountDialog"
                         },
                         {
                             name: "chatView", kind: ChatView, fit: true,
@@ -441,11 +440,6 @@ module.exports = kind({
 
     // --- menus & views ---------------------------------------------------------------------
 
-    openAppMenu: function (inSender, inEvent) {
-        this.showAppMenu(inEvent.activator);
-        return true;
-    },
-
     // The app's name in the status bar. Tapping it relaunches the app with
     // palm-command "open-app-menu", which webos-lib passes on as `menubutton` rather than as a
     // relaunch. The menu opens at the top left, under the name, and a second tap closes it, as
@@ -622,6 +616,15 @@ module.exports = kind({
         }
         if (this.$.views.getIndex() !== 0) {
             this.$.views.setIndex(0);
+            return true;
+        }
+        // On one pane, an open conversation covers the list: back leaves the conversation first.
+        if (Panels.isScreenNarrow() && this.$.slidingGroup.getIndex() !== 0) {
+            this.leaveThread();
+            return true;
+        }
+        // Then out of a server's channels, as the Servers button does.
+        if (this.$.messaging.backToServers()) {
             return true;
         }
         if (Panels.isScreenNarrow()) {

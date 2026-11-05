@@ -46,8 +46,7 @@ module.exports = kind({
         onNewBuddy: "",
         onNewFavorite: "",
         onLoginStatesChange: "",
-        onAddAccount: "",
-        onOpenAppMenu: ""
+        onAddAccount: ""
     },
 
     components: [
@@ -123,6 +122,10 @@ module.exports = kind({
                     ontap: "serverBack", showing: false
                 },
                 {
+                    name: "joinChannelBtn", kind: Button, content: $L("Join Channel"),
+                    ontap: "joinChannel", showing: false
+                },
+                {
                     name: "conversationBtn", kind: Button, content: $L("New Conversation"),
                     ontap: "doOpenComposeView"
                 },
@@ -130,14 +133,6 @@ module.exports = kind({
                 {
                     name: "favoriteBtn", kind: Button, content: $L("Add Favorite"),
                     ontap: "doNewFavorite", showing: false
-                },
-                // The app menu also opens from the app's name in the status bar, as Mojo's did
-                // (MainView.toggleAppMenu); this keeps it at hand inside the app as well. It is
-                // taken out of the flow by the stylesheet and pinned to the right edge, so the
-                // primary button beside it can sit in the centre of the column the way Mojo's did.
-                {
-                    name: "appMenuBtn", kind: Button, content: "≡",
-                    classes: "app-menu-button", ontap: "appMenuTapped"
                 }
             ]
         },
@@ -193,6 +188,13 @@ module.exports = kind({
         // drilled into a server's channels.
         this.$.serverBackBtn.setShowing(
             (index === TAB_SERVERS) && this.$.serverList && this.$.serverList.isDrilledIn());
+        this.$.joinChannelBtn.setShowing(
+            (index === TAB_SERVERS) && this.$.serverList && this.$.serverList.canJoin());
+    },
+
+    joinChannel: function () {
+        this.$.serverList.promptJoin();
+        return true;
     },
 
     serverBack: function () {
@@ -200,15 +202,20 @@ module.exports = kind({
         return true;
     },
 
-    // The menu opens against the button (MainView.showAppMenu).
-    appMenuTapped: function () {
-        this.doOpenAppMenu({ activator: this.$.appMenuBtn });
+    /** Back gesture: leaves a server's channels for the server list, if that is what is shown. */
+    backToServers: function () {
+        if (this._curTab !== TAB_SERVERS || !this.$.serverList || !this.$.serverList.isDrilledIn()) {
+            return false;
+        }
+        this.serverBack();
         return true;
     },
 
     serverDrillChanged: function (inSender, inEvent) {
         this.$.serverBackBtn.setShowing(
             (this._curTab === TAB_SERVERS) && !!(inEvent && inEvent.drilledIn));
+        this.$.joinChannelBtn.setShowing(
+            (this._curTab === TAB_SERVERS) && !!(inEvent && inEvent.drilledIn && inEvent.canJoin));
         return true;
     },
 

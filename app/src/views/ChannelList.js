@@ -6,6 +6,9 @@
  * its own. Selecting a channel resolves its imchannel.chatThreadId to a chatthread and emits it
  * via onSelectThread, reusing the exact contract ThreadList uses so the conversation view opens it
  * with no extra plumbing.
+ *
+ * On an IRC network a channel is joined by name (promptJoin, from the footer's Join Channel) and
+ * left by holding its row (see util/ircChannels).
  */
 
 var kind = require('enyo/kind'),
@@ -18,6 +21,11 @@ var kind = require('enyo/kind'),
     LunaService = require('enyo-webos/LunaService'),
     ChannelRow = require('./ChannelRow'),
     SearchInput = require('./widgets/SearchInput'),
+    Popup = require('onyx/Popup'),
+    Button = require('onyx/Button'),
+    Input = require('onyx/Input'),
+    InputDecorator = require('onyx/InputDecorator'),
+    ircChannels = require('../util/ircChannels'),
     ServerServices = require('../data/ServerService'),
     messagingUtils = require('../util/messagingUtils'),
     mockDb = require('../data/mockDb'),
@@ -48,7 +56,7 @@ module.exports = kind({
             // that entire feedback loop.
             name: "scroller", kind: Scroller, fit: true, horizontal: "hidden", touch: true,
             classes: "threads-list messaging-listsDivider",
-            ontap: "selectChannel",
+            ontap: "selectChannel", onhold: "holdChannel",
             components: [
                 { name: "list", kind: DataRepeater, components: [ { kind: ChannelRow } ] }
             ]
@@ -75,6 +83,64 @@ module.exports = kind({
             name: 'channelOpener', kind: LunaService,
             service: 'luna://com.palm.imlibpurple', method: 'openChannel',
             onError: 'threadFetchFailed'
+        },
+        // IRC: join a channel by name. The same call with a channel not in the list yet.
+        {
+            name: 'channelJoiner', kind: LunaService,
+            service: 'luna://com.palm.imlibpurple', method: 'openChannel',
+            onResponse: 'joinSent', onError: 'joinFailed'
+        },
+        // IRC: part a channel; the service drops its row.
+        {
+            name: 'channelLeaver', kind: LunaService,
+            service: 'luna://com.palm.imlibpurple', method: 'leaveChannel',
+            onResponse: 'leaveDone', onError: 'leaveFailed'
+        },
+        {
+            name: "joinPopup", kind: Popup, centered: true, floating: true, modal: true, scrim: true,
+            style: "width: 20em;", components: [
+                { name: "joinTitle", style: "font-weight: bold; margin-bottom: 0.75rem;" },
+                {
+                    kind: InputDecorator, style: "width: 100%; margin-bottom: 0.5rem;", components: [
+                        {
+                            name: "joinInput", kind: Input, style: "width: 100%;",
+                            placeholder: $L("#channel"), oninput: "joinInputChanged", onchange: "joinTapped"
+                        }
+                    ]
+                },
+                { name: "joinStatus", classes: "account-username-text", style: "margin-bottom: 0.75rem;" },
+                {
+                    classes: "flex-row", components: [
+                        { kind: Button, content: $L("Cancel"), ontap: "joinCancelled" },
+                        { classes: "flex-auto" },
+                        {
+                            name: "joinButton", kind: Button, classes: "onyx-affirmative",
+                            content: $L("Join"), ontap: "joinTapped", disabled: true
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            name: "leavePopup", kind: Popup, centered: true, floating: true, modal: true, scrim: true,
+            style: "width: 20em;", components: [
+                { name: "leaveTitle", style: "font-weight: bold; margin-bottom: 0.75rem;" },
+                {
+                    name: "leaveText", style: "margin-bottom: 0.75rem;",
+                    content: $L("You leave the channel on the network and it is no longer joined at sign-in. What was said stays in Chats.")
+                },
+                { name: "leaveStatus", classes: "account-username-text", style: "margin-bottom: 0.75rem;" },
+                {
+                    classes: "flex-row", components: [
+                        { kind: Button, content: $L("Cancel"), ontap: "leaveCancelled" },
+                        { classes: "flex-auto" },
+                        {
+                            name: "leaveButton", kind: Button, classes: "onyx-negative",
+                            content: $L("Leave"), ontap: "leaveTapped"
+                        }
+                    ]
+                }
+            ]
         }
     ],
 
@@ -87,6 +153,9 @@ module.exports = kind({
         this.selectedChatThread = null;
         this.pendingChannel = null;
         this.allChannels = [];
+        this.server = null;
+        this.pendingJoinKey = null;   // IRC: open this channel when its row appears
+        this.leaving = null;
 
         this.collection = new Collection({ model: RecordModel });
         this.$.list.set("collection", this.collection);
@@ -153,6 +222,8 @@ module.exports = kind({
     /** Point this list at a server: stash its id, retarget the search hint, re-run the query. */
     setServer: function (inServer) {
         this.serverId = inServer && inServer._id;
+        this.server = inServer || null;
+        this.pendingJoinKey = null;
         this.serverName = (inServer && (inServer.displayName || inServer.name)) || $L("channels");
         this.$.search.set('placeholder', $L("Search") + " " + this.serverName);
         this.filterString = "";
@@ -182,6 +253,16 @@ module.exports = kind({
     gotChannels: function (inSender, inEvent) {
         this.allChannels = (inEvent && inEvent.results) || [];
         this.applyFilter();
+        // A channel joined from here shows up once the network let the account in: open it.
+        if (this.pendingJoinKey) {
+            for (var i = 0; i < this.allChannels.length; i++) {
+                if (this.allChannels[i].remoteId === this.pendingJoinKey) {
+                    this.pendingJoinKey = null;
+                    this.openRecord(this.allChannels[i]);
+                    break;
+                }
+            }
+        }
         return true;
     },
 
@@ -248,9 +329,13 @@ module.exports = kind({
 
     selectChannel: function (inSender, inEvent) {
         var record = this.recordFor(inEvent);
-        if (!record) {
-            return true;
+        if (record) {
+            this.openRecord(record);
         }
+        return true;
+    },
+
+    openRecord: function (record) {
         this.selectedRecord = record;
         this.decorateModels();
 
@@ -280,6 +365,118 @@ module.exports = kind({
                 this.$.threadFinder.send({ query: query });
             }
         }
+    },
+
+    // --- IRC: join and leave by name -------------------------------------------------------
+
+    /** Whether channels can be joined by name on the server shown (the footer's Join Channel). */
+    canJoin: function () {
+        return ircChannels.canJoin(this.server);
+    },
+
+    promptJoin: function () {
+        if (!this.canJoin()) {
+            return;
+        }
+        this.$.joinTitle.setContent($L("Join a channel on") + " " + this.serverName);
+        this.$.joinInput.set('value', "");
+        this.$.joinStatus.setContent("");
+        this.$.joinButton.setDisabled(true);
+        this.$.joinPopup.show();
+        this.$.joinInput.focus();
+    },
+
+    joinInputChanged: function () {
+        var typed = this.$.joinInput.get('value') || "";
+        var ok = !!ircChannels.joinRequest(this.server, typed);
+        this.$.joinButton.setDisabled(!ok);
+        this.$.joinStatus.setContent(ok || !typed.replace(/\s+/g, "") ? "" :
+            $L("A channel name has no spaces, commas or colons."));
+        return true;
+    },
+
+    joinTapped: function () {
+        var request = ircChannels.joinRequest(this.server, this.$.joinInput.get('value'));
+        if (!request) {
+            return true;
+        }
+        this.$.joinButton.setDisabled(true);
+        this.pendingJoinKey = request.channel;
+        if (mockDb.enabled) {
+            this.log("would join:", request.channel);
+            this.$.joinPopup.hide();
+            return true;
+        }
+        this.$.channelJoiner.send(request);
+        return true;
+    },
+
+    joinSent: function () {
+        // Joined, or asked to be: the row comes with the next roster refresh (gotChannels).
+        this.$.joinPopup.hide();
+        return true;
+    },
+
+    joinFailed: function (inSender, inError) {
+        this.pendingJoinKey = null;
+        this.$.joinButton.setDisabled(false);
+        this.$.joinStatus.setContent((inError && inError.errorText) || $L("The channel could not be joined."));
+        return true;
+    },
+
+    joinCancelled: function () {
+        this.$.joinPopup.hide();
+        return true;
+    },
+
+    holdChannel: function (inSender, inEvent) {
+        var record = this.recordFor(inEvent);
+        if (!ircChannels.canLeave(record)) {
+            return false;
+        }
+        // The finger lifting after a hold is a tap too; that one should not open the channel.
+        if (inEvent.preventTap) {
+            inEvent.preventTap();
+        }
+        this.leaving = record;
+        this.$.leaveTitle.setContent($L("Leave") + " " + (record.displayName || record.name || record.remoteId) + "?");
+        this.$.leaveStatus.setContent("");
+        this.$.leaveButton.setDisabled(false);
+        this.$.leavePopup.show();
+        return true;
+    },
+
+    leaveTapped: function () {
+        var request = ircChannels.leaveRequest(this.leaving);
+        if (!request) {
+            this.$.leavePopup.hide();
+            return true;
+        }
+        this.$.leaveButton.setDisabled(true);
+        if (mockDb.enabled) {
+            this.log("would leave:", request.channel);
+            this.$.leavePopup.hide();
+            return true;
+        }
+        this.$.channelLeaver.send(request);
+        return true;
+    },
+
+    leaveDone: function () {
+        this.leaving = null;
+        this.$.leavePopup.hide();
+        return true;
+    },
+
+    leaveFailed: function (inSender, inError) {
+        this.$.leaveButton.setDisabled(false);
+        this.$.leaveStatus.setContent((inError && inError.errorText) || $L("The channel could not be left."));
+        return true;
+    },
+
+    leaveCancelled: function () {
+        this.leaving = null;
+        this.$.leavePopup.hide();
         return true;
     },
 

@@ -120,6 +120,47 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         }
     });
 
+    // On a phone, back from a server's channels has to return to the server list: it used to do
+    // nothing there, and only the footer's Servers button got out.
+    it('goes back from a server\'s channels to the server list', async function () {
+        var r = await session.evaluate('(async function () {' +
+            'var $ = require("enyo/dispatcher").$, Signals = require("enyo/Signals");' +
+            'var messaging = $.app_mainView_messaging, servers = $.app_mainView_messaging_serverList;' +
+            'var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };' +
+            'messaging.menuToggle(null, 3);' +
+            'for (var i = 0; i < 20 && !servers.collection.length; i++) { await wait(100); }' +
+            'if (!servers.collection.length) { return "no servers in the mock data"; }' +
+            'servers.selectServer(null, { index: 0 });' +
+            'var drilled = servers.isDrilledIn() && servers.$.drill.getIndex();' +
+            'Signals.send("onbackgesture", {});' +
+            'var r = { drilled: drilled, after: servers.$.drill.getIndex(), still: servers.isDrilledIn(),' +
+            '  backBtn: messaging.$.serverBackBtn.getShowing(), tab: messaging.$.pane.getIndex() };' +
+            'messaging.menuToggle(null, 0);' +   // the tests after this one measure the Chats tab
+            'await wait(300);' +
+            'return r;' +
+            '})()');
+        assert.deepEqual(r, { drilled: 1, after: 0, still: false, backBtn: false, tab: 3 });
+    });
+
+    // The app menu opens from the app's name in the status bar (`menubutton`), so the footer
+    // carries no menu button of its own.
+    it('opens the app menu from the status bar, with no menu button in the footer', async function () {
+        var r = await session.evaluate('(async function () {' +
+            'var $ = require("enyo/dispatcher").$, Signals = require("enyo/Signals");' +
+            'var main = $.app_mainView, footer = document.querySelector(".messaging-footer");' +
+            'var labels = Array.prototype.map.call(footer.querySelectorAll(".onyx-button"),' +
+            '  function (n) { return n.textContent.trim(); });' +
+            'var buttons = labels.length;' +
+            'var inFooter = labels.filter(function (t) { return t === "\u2261"; });' +
+            'Signals.send("onmenubutton", {});' +
+            'await new Promise(function (r) { setTimeout(r, 300); });' +
+            'var shown = main.$.appMenu.showing;' +
+            'main.$.appMenu.hide();' +
+            'return { menuButtons: inFooter.length, buttons: buttons > 0, menuOpens: shown };' +
+            '})()');
+        assert.deepEqual(r, { menuButtons: 0, buttons: true, menuOpens: true });
+    });
+
     it('gives the thread list no more height than the screen has', async function () {
         var m = await measure();
         assert.ok(m.threads, 'no thread list scroller in the page');

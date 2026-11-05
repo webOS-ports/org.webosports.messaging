@@ -72,22 +72,11 @@ Toolbars
 
 /* Mojo centred the one button its footer carried: that toolbar is -webkit-box-pack: center,
    and New Conversation lands at x 87 width 147 in a 320 column - centre 160.5, which is the
-   column's own centre. Ours had it hard against the left at x 8.
-
-   The app menu button has no counterpart there, because Mojo opened the app menu from the
-   system menu bar and Enyo 2 has no hook for it, so take it out of the flow and sit it against
-   the right edge where it cannot pull the centred button off centre. */
+   column's own centre. Ours had it hard against the left at x 8. */
 .onyx-toolbar.messaging-footer {
   position: relative;
   -webkit-justify-content: center;
   justify-content: center;
-}
-.onyx-toolbar.messaging-footer .app-menu-button {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  -webkit-transform: translateY(-50%);
-  transform: translateY(-50%);
 }
 
 /* The composer carries its hairline on top instead, and grows with the field. */
