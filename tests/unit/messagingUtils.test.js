@@ -253,6 +253,25 @@ describe('utils.joinBuddyThreads', function () {
     });
 });
 
+describe('utils.serviceDisplayName', function () {
+    it('names a service by its product, not its prpl', function () {
+        assert.equal(u.serviceDisplayName('type_gometa'), 'Facebook');
+        assert.equal(u.serviceDisplayName('type_whatsapp'), 'WhatsApp');
+        assert.equal(u.serviceDisplayName('type_googlechat'), 'Google Chat');
+    });
+
+    it('Title-cases a service it does not know', function () {
+        assert.equal(u.serviceDisplayName('type_newchat'), 'Newchat');
+        assert.equal(u.serviceDisplayName('aol'), 'Aol');
+    });
+
+    it('gives an empty name for no service, and never a prototype member', function () {
+        assert.equal(u.serviceDisplayName(undefined), '');
+        assert.equal(u.serviceDisplayName(''), '');
+        assert.equal(u.serviceDisplayName('constructor'), 'Constructor');
+    });
+});
+
 describe('utils.normalizeShortcode', function () {
     it('accepts 2..6 digits, which is what carriers use for shortcodes', function () {
         assert.equal(u.normalizeShortcode('12'), '12');

@@ -80,7 +80,6 @@ var AccountLoginState = module.exports = kind({
         // Set the username FIRST so the row always shows its account id even if the service-label
         // lookup below fails.
         this.$.username.setContent(this.loginState.username);
-        this.$.accountName.setContent(this.getServiceLabel());
         this.loginStateChanged();
 
         this.db = this.createComponent({
@@ -92,7 +91,7 @@ var AccountLoginState = module.exports = kind({
     /**
      * Friendly service name for this account, resilient to accountTypeName being unset: the
      * pre-decorated value, then the account record, then the account-type template hash, and
-     * finally the raw serviceName minus its "type_" prefix. The whole lookup is guarded because
+     * finally the service's product name. The whole lookup is guarded because
      * getAccount can throw for some account types and that must never break the row.
      */
     getServiceLabel: function () {
@@ -120,11 +119,13 @@ var AccountLoginState = module.exports = kind({
         } catch (e) {
             this.warn("getServiceLabel failed, using serviceName fallback:", e);
         }
-        var s = (ls.serviceName || "").replace(/^type_/, "");
-        return s ? (s.charAt(0).toUpperCase() + s.slice(1)) : "";
+        return messagingUtils.utils.serviceDisplayName(ls.serviceName);
     },
 
     loginStateChanged: function () {
+        // Every update, not just at creation: a row made before the account list loaded would
+        // otherwise keep the fallback name for as long as the popup lives.
+        this.$.accountName.setContent(this.getServiceLabel());
         var availability = messagingUtils.imLoginState.getAvailability(this.loginState);
         this.$.statuses.set('availability', [availability]);
         this.$.statuses.set('invisibilitySupported', this.loginState.supportsInvisibleStatus);

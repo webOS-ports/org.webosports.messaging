@@ -791,6 +791,35 @@ var messaging = module.exports = {
             "type_other": $L("Other")
         },
 
+        /**
+         * Product names for the IM services, for when the account templates have not loaded or
+         * carry no name. Title-casing the bare serviceName gets most of them nearly right, but
+         * "Whatsapp" and "Gometa" are not what anyone calls them.
+         */
+        _serviceNames: {
+            "type_whatsapp": "WhatsApp",
+            "type_gometa": "Facebook",
+            "type_facebook": "Facebook",
+            "type_signal": "Signal",
+            "type_telegram": "Telegram",
+            "type_discord": "Discord",
+            "type_teams": "Teams",
+            "type_googlechat": "Google Chat",
+            "type_jabber": "Jabber",
+            "type_xmpp": "XMPP",
+            "type_matrix": "Matrix",
+            "type_irc": "IRC"
+        },
+
+        /** The product name for an IM service, else its bare serviceName Title-cased. */
+        serviceDisplayName: function (serviceName) {
+            if (Object.prototype.hasOwnProperty.call(this._serviceNames, serviceName)) {
+                return this._serviceNames[serviceName];
+            }
+            var bare = String(serviceName || "").replace(/^type_/, "");
+            return bare ? bare.charAt(0).toUpperCase() + bare.slice(1) : "";
+        },
+
         _phoneTypeServiceNames: {
             "sms": true, "mms": true,
             "type_home": true, "type_work": true, "type_mobile": true, "type_home_fax": true,
