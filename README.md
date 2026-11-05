@@ -60,8 +60,9 @@ Tablet (TouchPad card, 1024x748):
 
 The people, chats and pictures are made up: they are the in-browser mock data
 (`app/src/data/mockDb.js`, `app/mock`), rendered in headless Chromium with the
-Prelude fonts. `tools/screenshots/shoot.sh` makes them again; see the top of
-that script for what it needs.
+Prelude fonts and the service icons of the LuneOS account templates.
+`tools/screenshots/shoot.sh` makes them again; see the top of that script for
+what it needs.
 
 ## Contributing
 

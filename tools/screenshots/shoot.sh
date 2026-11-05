@@ -11,7 +11,9 @@
 # No device data is involved, so nothing personal can end up in a picture.
 #
 # Needs: enyo-dev (as tests/pack.sh finds it, or ENYO_DEV), python3, chromium or google-chrome,
-# and the Prelude fonts - PRELUDE_DIR, or else they are copied off an attached LuneOS device.
+# and the Prelude fonts and the service icons from the account templates - PRELUDE_DIR and
+# ACCOUNTS_DIR (a copy of /usr/palm/public/accounts), or else both are copied off an attached
+# LuneOS device. Neither is in this repo: the fonts are Palm's and the icons the connectors'.
 # The mock timestamps are relative to now, so shoot in the afternoon for natural looking times.
 set -eu
 
@@ -52,6 +54,20 @@ else
 			{ echo "shoot.sh: set PRELUDE_DIR, or attach a LuneOS device to copy Prelude from" >&2; exit 1; }
 	done
 fi
+
+# The icons the mock accounts name (app/src/data/mockDb.js), from the real templates.
+for t in com.palm.telegram/images/telegram com.palm.whatsapp/images/whatsapp \
+		com.palm.signal/images/signal com.palm.discord/images/discord com.palm.palmprofile/images/sms; do
+	mkdir -p "$DIST/mock/accounts/$(dirname "$t")"
+	for size in 32x32 48x48; do
+		if [ -n "${ACCOUNTS_DIR:-}" ]; then
+			cp "$ACCOUNTS_DIR/$t-$size.png" "$DIST/mock/accounts/$t-$size.png"
+		else
+			adb pull "/usr/palm/public/accounts/$t-$size.png" "$DIST/mock/accounts/$t-$size.png" >/dev/null ||
+				{ echo "shoot.sh: set ACCOUNTS_DIR, or attach a LuneOS device to copy the service icons from" >&2; exit 1; }
+		fi
+	done
+done
 
 python3 -m http.server "$HTTP_PORT" --bind 127.0.0.1 --directory "$DIST" >"$WORK/httpd.log" 2>&1 &
 HTTPD=$!

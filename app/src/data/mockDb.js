@@ -82,7 +82,7 @@ var people = [
         contactIds: ["contact-marta"],
         name: { givenName: "Marta", familyName: "Lindqvist" },
         phoneNumbers: [{ value: "+46701234567", type: "type_mobile" }],
-        ims: [{ value: "+46701234567", type: "type_whatsapp" }],
+        ims: [{ value: "+46701234567", type: "type_whatsapp" }, { value: "+46701234567", type: "type_signal" }],
         photos: avatar("marta")
     },
     {
@@ -435,7 +435,22 @@ var messages = [
         to: [{ addr: "chi_ng" }], flags: { visible: true }
     },
 
-    // thread-marta: a photo with a caption, and a reply.
+    // thread-marta: Signal first, then WhatsApp with a photo; the dividers start again on the
+    // change of service, since both share the number.
+    {
+        _id: "msg-m0", _kind: "com.palm.message:1", conversations: ["thread-marta"],
+        folder: "inbox", messageText: "Landed! Phone's almost dead, more later",
+        localTimestamp: ago(1, 2), timestamp: ago(1, 2), status: "successful",
+        serviceName: "type_signal", from: { addr: "+46701234567", name: "Marta Lindqvist" },
+        flags: { visible: true, read: true }
+    },
+    {
+        _id: "msg-m0b", _kind: "com.palm.message:1", conversations: ["thread-marta"],
+        folder: "outbox", messageText: "Welcome back! Charge up and send pictures 📸",
+        localTimestamp: ago(1, 1.9), timestamp: ago(1, 1.9), status: "successful",
+        serviceName: "type_signal", deliveryStatus: "read",
+        to: [{ addr: "+46701234567" }], flags: { visible: true }
+    },
     {
         _id: "msg-m1", _kind: "com.palm.message:1", conversations: ["thread-marta"],
         folder: "outbox", messageText: "How was the trip?",
@@ -541,6 +556,11 @@ var loginstates = [
         state: "online", availability: 0, customMessage: ""
     },
     {
+        _id: "login-signal", _kind: "com.palm.imloginstate:1",
+        accountId: "acct-signal", serviceName: "type_signal", username: "+15555550100",
+        state: "online", availability: 0, customMessage: ""
+    },
+    {
         _id: "login-discord", _kind: "com.palm.imloginstate:1",
         accountId: "acct-discord", serviceName: "type_discord", username: "you#0001",
         state: "offline", availability: 4, customMessage: ""
@@ -549,57 +569,53 @@ var loginstates = [
 
 // --- accounts (the listAccounts response shape) -------------------------------------------
 
+// Names and icon fields as the device's account templates (/usr/palm/public/accounts) carry them,
+// "splitter" included: the small icon the message dividers show, as in the legacy app. The icons
+// themselves are the connectors' and are not in this repo; tools/screenshots/shoot.sh copies them
+// into mock/accounts from a device. Without them the app hides the icons that fail to load.
+function templateIcons(templateId, name) {
+    var dir = "mock/accounts/" + templateId + "/images/" + name;
+    return { loc_32x32: dir + "-32x32.png", loc_48x48: dir + "-48x48.png", splitter: dir + "-32x32.png" };
+}
+
+function imAccount(service, name, username, extra) {
+    var templateId = "com.palm." + service;
+    var cap = {
+        _id: "cap-" + service, capability: "MESSAGING", capabilitySubtype: "IM",
+        id: templateId + ".im", serviceName: "type_" + service,
+        loc_shortName: name, icon: templateIcons(templateId, service),
+        dbkinds: { imcommand: "com.palm.imcommand." + service + ":1" },
+        chatWithNonBuddies: true
+    };
+    for (var k in extra || {}) {
+        if (extra.hasOwnProperty(k)) { cap[k] = extra[k]; }
+    }
+    return {
+        _id: "acct-" + service, templateId: templateId, username: username, alias: name,
+        loc_name: name, icon: templateIcons(templateId, service),
+        capabilityProviders: [cap].concat(cap.phone ? [{
+            _id: "cap-" + service + "-phone", capability: "PHONE",
+            id: templateId + ".call", serviceName: "type_" + service, videoFormat: "both"
+        }] : [])
+    };
+}
+
 var accounts = [
-    {
-        _id: "acct-telegram", templateId: "org.webosports.telegram",
-        username: "you@telegram", alias: "Telegram", loc_name: "Telegram",
-        capabilityProviders: [{
-            _id: "cap-telegram", capability: "MESSAGING", capabilitySubtype: "IM",
-            id: "org.webosports.telegram.im", serviceName: "type_telegram",
-            loc_name: "Telegram", loc_shortName: "TG",
-            icon: { loc_32x32: "assets/messaging-48x48.png", loc_48x48: "assets/messaging-48x48.png" },
-            dbkinds: { imcommand: "com.palm.imcommand.telegram:1", immessage: "com.palm.immessage.telegram:1" },
-            chatWithNonBuddies: true,
-            reactions: { supported: true },
-            authContacts: ["Telegram"]
-        }]
-    },
-    {
-        _id: "acct-whatsapp", templateId: "org.webosports.whatsapp",
-        username: "+15555550100", alias: "WhatsApp", loc_name: "WhatsApp",
-        capabilityProviders: [{
-            _id: "cap-whatsapp", capability: "MESSAGING", capabilitySubtype: "IM",
-            id: "org.webosports.whatsapp.im", serviceName: "type_whatsapp",
-            loc_name: "WhatsApp", loc_shortName: "WA",
-            icon: { loc_32x32: "assets/messaging-48x48.png", loc_48x48: "assets/messaging-48x48.png" },
-            dbkinds: { imcommand: "com.palm.imcommand.whatsapp:1" },
-            chatWithNonBuddies: true,
-            reactions: { supported: true }
-        }, {
-            _id: "cap-whatsapp-phone", capability: "PHONE",
-            serviceName: "type_whatsapp", videoFormat: "both"
-        }]
-    },
-    {
-        _id: "acct-discord", templateId: "org.webosports.discord",
-        username: "you#0001", alias: "Discord", loc_name: "Discord",
-        capabilityProviders: [{
-            _id: "cap-discord", capability: "MESSAGING", capabilitySubtype: "IM",
-            id: "org.webosports.discord.im", serviceName: "type_discord",
-            loc_name: "Discord", loc_shortName: "DC",
-            icon: { loc_32x32: "assets/messaging-48x48.png", loc_48x48: "assets/messaging-48x48.png" },
-            dbkinds: { imcommand: "com.palm.imcommand.discord:1" },
-            chatWithNonBuddies: false
-        }]
-    },
+    imAccount("telegram", "Telegram", "you@telegram", {
+        dbkinds: { imcommand: "com.palm.imcommand.telegram:1", immessage: "com.palm.immessage.telegram:1" },
+        reactions: { supported: true }, authContacts: ["Telegram"]
+    }),
+    imAccount("whatsapp", "WhatsApp", "+15555550100", { reactions: { supported: true }, phone: true }),
+    imAccount("signal", "Signal", "+15555550100", { reactions: { supported: true } }),
+    imAccount("discord", "Discord", "you#0001", { chatWithNonBuddies: false }),
     {
         _id: "acct-sms", templateId: "com.palm.palmprofile",
-        username: "", alias: "Text Messaging", loc_name: "Text Messaging",
+        username: "", alias: "HP webOS Account", loc_name: "HP webOS Account",
         capabilityProviders: [{
             _id: "cap-sms", capability: "MESSAGING", capabilitySubtype: "SMS",
-            id: "com.palm.sms", serviceName: "sms",
-            loc_name: "Text Messaging", loc_shortName: "SMS",
-            icon: { loc_32x32: "assets/messaging-48x48.png", loc_48x48: "assets/messaging-48x48.png" }
+            id: "com.palm.palmprofile.sms", serviceName: "sms",
+            loc_name: "SMS Account", loc_shortName: "Text",
+            icon: templateIcons("com.palm.palmprofile", "sms")
         }]
     }
 ];
