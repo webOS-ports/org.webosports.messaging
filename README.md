@@ -8,6 +8,61 @@ Description
 The messaging app is one of the core applications of the operating system and allows you to
 send and receive messages through various backend services (IM, SMS, ...).
 
+## Screenshots
+
+Phone (Pixel 3a card, 1080x2050):
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/screenshots/phone-conversations.png" height="360" alt="Conversations"></td>
+    <td align="center"><img src="docs/screenshots/phone-chat.png" height="360" alt="A conversation"></td>
+    <td align="center"><img src="docs/screenshots/phone-group.png" height="360" alt="A group chat"></td>
+    <td align="center"><img src="docs/screenshots/phone-photo.png" height="360" alt="A photo"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Conversations</sub></td>
+    <td align="center"><sub>Replies, reactions, read receipts</sub></td>
+    <td align="center"><sub>Group chat</sub></td>
+    <td align="center"><sub>Photo</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/phone-buddies.png" height="360" alt="Buddies"></td>
+    <td align="center"><img src="docs/screenshots/phone-favorites.png" height="360" alt="Favorites"></td>
+    <td align="center"><img src="docs/screenshots/phone-servers.png" height="360" alt="Servers"></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Buddies</sub></td>
+    <td align="center"><sub>Favorites</sub></td>
+    <td align="center"><sub>Servers and channels</sub></td>
+    <td></td>
+  </tr>
+</table>
+
+Tablet (TouchPad card, 1024x748):
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/screenshots/tablet-chat.png" width="400" alt="A conversation on a tablet"></td>
+    <td align="center"><img src="docs/screenshots/tablet-group.png" width="400" alt="A group chat on a tablet"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Conversation</sub></td>
+    <td align="center"><sub>Group chat</sub></td>
+  </tr>
+  <tr>
+    <td align="center" colspan="2"><img src="docs/screenshots/tablet-buddies.png" width="640" alt="Buddies next to a conversation"></td>
+  </tr>
+  <tr>
+    <td align="center" colspan="2"><sub>Buddies next to a conversation</sub></td>
+  </tr>
+</table>
+
+The people, chats and pictures are made up: they are the in-browser mock data
+(`app/src/data/mockDb.js`, `app/mock`), rendered in headless Chromium with the
+Prelude fonts. `tools/screenshots/shoot.sh` makes them again; see the top of
+that script for what it needs.
+
 ## Contributing
 
 If you want to contribute you can just start with cloning the repository and make your
