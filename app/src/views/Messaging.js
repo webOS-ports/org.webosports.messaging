@@ -123,6 +123,10 @@ module.exports = kind({
                     ontap: "serverBack", showing: false
                 },
                 {
+                    name: "joinChannelBtn", kind: Button, content: $L("Join Channel"),
+                    ontap: "joinChannel", showing: false
+                },
+                {
                     name: "conversationBtn", kind: Button, content: $L("New Conversation"),
                     ontap: "doOpenComposeView"
                 },
@@ -193,6 +197,13 @@ module.exports = kind({
         // drilled into a server's channels.
         this.$.serverBackBtn.setShowing(
             (index === TAB_SERVERS) && this.$.serverList && this.$.serverList.isDrilledIn());
+        this.$.joinChannelBtn.setShowing(
+            (index === TAB_SERVERS) && this.$.serverList && this.$.serverList.canJoin());
+    },
+
+    joinChannel: function () {
+        this.$.serverList.promptJoin();
+        return true;
     },
 
     serverBack: function () {
@@ -209,6 +220,8 @@ module.exports = kind({
     serverDrillChanged: function (inSender, inEvent) {
         this.$.serverBackBtn.setShowing(
             (this._curTab === TAB_SERVERS) && !!(inEvent && inEvent.drilledIn));
+        this.$.joinChannelBtn.setShowing(
+            (this._curTab === TAB_SERVERS) && !!(inEvent && inEvent.drilledIn && inEvent.canJoin));
         return true;
     },
 

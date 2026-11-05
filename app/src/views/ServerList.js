@@ -271,11 +271,20 @@ module.exports = kind({
 
     setDrilled: function (inDrilled) {
         this.drilledIn = inDrilled;
-        this.doServerDrill({ drilledIn: inDrilled });
+        this.doServerDrill({ drilledIn: inDrilled, canJoin: this.canJoin() });
     },
 
     isDrilledIn: function () {
         return this.drilledIn;
+    },
+
+    /** Whether the server drilled into takes channels by name (IRC): the footer's Join Channel. */
+    canJoin: function () {
+        return !!(this.drilledIn && this.$.channelsView.canJoin());
+    },
+
+    promptJoin: function () {
+        this.$.channelsView.promptJoin();
     },
 
     relaySelectThread: function (inSender, inEvent) {
