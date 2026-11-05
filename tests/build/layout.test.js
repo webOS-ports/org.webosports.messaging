@@ -169,4 +169,24 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             'the thread list is ' + m.threads.client + 'px tall in a ' + m.window +
             'px window, so it can never scroll');
     });
+
+    // Only the conversations list hands the chat a thread with its person joined. Opened from
+    // Buddies (or Favorites, a notification, a group sender) the chat got the bare record, so it
+    // showed the default avatar and offered only the thread's own transport, not the person's
+    // phone numbers. Runs last: it opens a chat, which slides the panes on a phone.
+    it('gives a chat opened from Buddies its person and transports', async function () {
+        var r = await session.evaluate('(async function () {' +
+            'var $ = require("enyo/dispatcher").$;' +
+            'var messaging = $.app_mainView_messaging, chat = $.app_mainView_chatView_conversationList;' +
+            'var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };' +
+            'messaging.personSelected(null, { buddy: { personId: "person-anna", username: "anna.k",' +
+            '  serviceName: "type_telegram", displayName: "Anna Kowalski" } });' +
+            'for (var i = 0; i < 20 && !(chat.chatThread && chat.chatThread.person); i++) { await wait(100); }' +
+            'var t = chat.chatThread || {};' +
+            'return { thread: t._id, person: t.person ? t.person._id : null,' +
+            '  picker: chat.$.transportArrow.getShowing() };' +
+            '})()');
+        // Anna has a Telegram handle and two phone numbers, so the transport picker opens.
+        assert.deepEqual(r, { thread: 'thread-anna', person: 'person-anna', picker: true });
+    });
 });
