@@ -82,8 +82,7 @@ module.exports = kind({
                             onNewBuddy: "addBuddy",
                             onNewFavorite: "showAddFavoriteList",
                             onLoginStatesChange: "loginStatesChange",
-                            onAddAccount: "showAddAccountDialog",
-                            onOpenAppMenu: "openAppMenu"
+                            onAddAccount: "showAddAccountDialog"
                         },
                         {
                             name: "chatView", kind: ChatView, fit: true,
@@ -440,11 +439,6 @@ module.exports = kind({
     },
 
     // --- menus & views ---------------------------------------------------------------------
-
-    openAppMenu: function (inSender, inEvent) {
-        this.showAppMenu(inEvent.activator);
-        return true;
-    },
 
     // The app's name in the status bar. Tapping it relaunches the app with
     // palm-command "open-app-menu", which webos-lib passes on as `menubutton` rather than as a

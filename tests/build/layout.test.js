@@ -142,6 +142,25 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.deepEqual(r, { drilled: 1, after: 0, still: false, backBtn: false, tab: 3 });
     });
 
+    // The app menu opens from the app's name in the status bar (`menubutton`), so the footer
+    // carries no menu button of its own.
+    it('opens the app menu from the status bar, with no menu button in the footer', async function () {
+        var r = await session.evaluate('(async function () {' +
+            'var $ = require("enyo/dispatcher").$, Signals = require("enyo/Signals");' +
+            'var main = $.app_mainView, footer = document.querySelector(".messaging-footer");' +
+            'var labels = Array.prototype.map.call(footer.querySelectorAll(".onyx-button"),' +
+            '  function (n) { return n.textContent.trim(); });' +
+            'var buttons = labels.length;' +
+            'var inFooter = labels.filter(function (t) { return t === "\u2261"; });' +
+            'Signals.send("onmenubutton", {});' +
+            'await new Promise(function (r) { setTimeout(r, 300); });' +
+            'var shown = main.$.appMenu.showing;' +
+            'main.$.appMenu.hide();' +
+            'return { menuButtons: inFooter.length, buttons: buttons > 0, menuOpens: shown };' +
+            '})()');
+        assert.deepEqual(r, { menuButtons: 0, buttons: true, menuOpens: true });
+    });
+
     it('gives the thread list no more height than the screen has', async function () {
         var m = await measure();
         assert.ok(m.threads, 'no thread list scroller in the page');
