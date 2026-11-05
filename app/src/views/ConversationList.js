@@ -281,6 +281,11 @@ module.exports = kind({
             name: 'senderFind', kind: LunaService, service: DB_SERVICE, method: 'find',
             onResponse: 'gotSenderPersons', onError: 'serviceErr'
         },
+        {
+            // The open thread's person, when it came without one; see lookUpThreadPerson.
+            name: 'threadPersonFind', kind: LunaService, service: DB_SERVICE, method: 'find',
+            onResponse: 'gotThreadPerson', onError: 'serviceErr'
+        },
         { name: 'dbDelete', kind: LunaService, service: DB_SERVICE, method: 'del', onError: 'serviceErr' },
         { name: 'dbMerge', kind: LunaService, service: DB_SERVICE, method: 'merge', onError: 'serviceErr' },
         {
@@ -418,11 +423,69 @@ module.exports = kind({
         if (this.chatThread.personId && this.chatThread.personId !== "null" && this.chatThread.person) {
             this.chatThread.personImage =
                 messagingUtils.person.getDisplayImage(this.chatThread.person);
+        } else if (this.chatThread.personId && this.chatThread.personId !== "null") {
+            this.lookUpThreadPerson(this.chatThread.personId);
         }
         this.buildTransports();
         this.updateTransportButton();
         this.updateCallButtons();
         this.runQuery();
+    },
+
+    /**
+     * Only the conversations list hands over a thread with its person joined (ThreadService).
+     * A thread opened from Buddies or Favorites, from a notification or launch by id, or from a
+     * group sender is the bare db8 record, so fetch the person the way ThreadService does: without
+     * it the chat shows the default avatar and offers only the thread's own transport, not the
+     * person's other accounts and numbers.
+     */
+    lookUpThreadPerson: function (personId) {
+        var query = {
+            from: "com.palm.person:1",
+            where: [{ prop: "_id", op: "=", val: personId }],
+            select: messagingUtils.person.selectAttributes
+        };
+        if (mockDb.enabled) {
+            // Answer after the messages are in, the way the bus reply arrives on a device.
+            setTimeout(this.gotThreadPerson.bind(this, null, mockDb.find(query)), 0);
+        } else {
+            this.$.threadPersonFind.send({ query: query });
+        }
+    },
+
+    gotThreadPerson: function (inSender, inResponse) {
+        var person = inResponse && inResponse.results && inResponse.results[0];
+        var thread = this.chatThread;
+        // Another conversation may have been opened while the answer was on its way.
+        if (!person || !thread || thread.personId !== person._id || thread.person) {
+            return true;
+        }
+        thread.person = person;
+        thread.personImage = messagingUtils.person.getDisplayImage(person);
+        if ((thread.flags || {}).locked) {
+            return true;
+        }
+        this.buildTransports();
+        this.updateTransportButton();
+        this.updateCallButtons();
+        this.applyThreadImage();
+        return true;
+    },
+
+    /** Give the bubbles already drawn the thread's avatar (group senders keep their own). */
+    applyThreadImage: function () {
+        if (!this.collection) {
+            return;
+        }
+        var self = this;
+        this.collection.forEach(function (model) {
+            var record = model.attributes;
+            var image = senderImages.imageFor(record, self._senderImages || {},
+                self.chatThread.personImage, messagingUtils.person.DEFAULT_IMAGE);
+            if (image && image !== record.personImage) {
+                model.set('personImage', image);
+            }
+        });
     },
 
     buildTransports: function () {
