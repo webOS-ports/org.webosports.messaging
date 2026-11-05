@@ -16,6 +16,15 @@ function ago(days, hours) {
     return now - (days * DAY) - ((hours || 0) * 60 * 60 * 1000);
 }
 
+// Pictures for the fixtures live in app/mock (a devAssets folder, so production packs leave it out;
+// tools/make-mock-media.py makes them). Message bodies need an absolute http(s)/file URL before
+// ConversationItem treats them as an image, so build one from wherever index.html is served.
+var MOCK_URL = String(window.location.href).replace(/[?#].*$/, "").replace(/[^\/]*$/, "") + "mock/";
+
+function avatar(name) {
+    return { squarePhotoPath: "mock/avatars/" + name + ".svg" };
+}
+
 // --- people ------------------------------------------------------------------------------
 
 var people = [
@@ -31,7 +40,7 @@ var people = [
             { value: "+15015559090", type: "type_work" }
         ],
         ims: [{ value: "anna.k", type: "type_telegram" }],
-        photos: { squarePhotoPath: "assets/list-avatar-default.svg" }
+        photos: avatar("anna")
     },
     {
         _id: "person-ben", _kind: "com.palm.person:1", favorite: true,
@@ -40,7 +49,7 @@ var people = [
         emails: [],
         phoneNumbers: [{ value: "+442071838750", type: "type_mobile" }],
         ims: [{ value: "44207183875@s.whatsapp.net", type: "type_whatsapp" }],
-        photos: { squarePhotoPath: "assets/list-avatar-default.svg" }
+        photos: avatar("ben")
     },
     {
         _id: "person-chi", _kind: "com.palm.person:1", favorite: false,
@@ -48,7 +57,7 @@ var people = [
         name: { givenName: "Chi", familyName: "Nguyen" },
         phoneNumbers: [{ value: "5551234567", type: "type_home" }],
         ims: [{ value: "chi_ng", type: "type_discord" }],
-        photos: { squarePhotoPath: "assets/list-avatar-default.svg" }
+        photos: avatar("chi")
     },
     {
         _id: "person-dora", _kind: "com.palm.person:1", favorite: false,
@@ -56,7 +65,7 @@ var people = [
         name: { givenName: "Dora", familyName: "Silva" },
         phoneNumbers: [{ value: "+5511987654321", type: "type_mobile" }],
         ims: [{ value: "dora.silva", type: "type_telegram" }],
-        photos: { squarePhotoPath: "assets/list-avatar-default.svg" }
+        photos: avatar("dora")
     },
     {
         // A favorite with no messaging accounts at all, to exercise the "Tap here to add contact
@@ -67,6 +76,46 @@ var people = [
         phoneNumbers: [],
         ims: [],
         photos: {}
+    },
+    {
+        _id: "person-marta", _kind: "com.palm.person:1", favorite: true,
+        contactIds: ["contact-marta"],
+        name: { givenName: "Marta", familyName: "Lindqvist" },
+        phoneNumbers: [{ value: "+46701234567", type: "type_mobile" }],
+        ims: [{ value: "+46701234567", type: "type_whatsapp" }, { value: "+46701234567", type: "type_signal" }],
+        photos: avatar("marta")
+    },
+    {
+        _id: "person-sam", _kind: "com.palm.person:1", favorite: false,
+        contactIds: ["contact-sam"],
+        name: { givenName: "Sam", familyName: "Patel" },
+        phoneNumbers: [{ value: "5559876543", type: "type_mobile" }],
+        ims: [],
+        photos: avatar("sam")
+    },
+    {
+        _id: "person-yuki", _kind: "com.palm.person:1", favorite: true,
+        contactIds: ["contact-yuki"],
+        name: { givenName: "Yuki", familyName: "Tanaka" },
+        phoneNumbers: [],
+        ims: [{ value: "yuki.t", type: "type_telegram" }],
+        photos: avatar("yuki")
+    },
+    {
+        _id: "person-tomas", _kind: "com.palm.person:1", favorite: false,
+        contactIds: ["contact-tomas"],
+        name: { givenName: "Tomás", familyName: "Rivera" },
+        phoneNumbers: [],
+        ims: [{ value: "tomas_r", type: "type_discord" }],
+        photos: avatar("tomas")
+    },
+    {
+        _id: "person-mum", _kind: "com.palm.person:1", favorite: true,
+        contactIds: ["contact-mum"],
+        name: { givenName: "Mum" },
+        phoneNumbers: [{ value: "+15015550142", type: "type_mobile" }],
+        ims: [{ value: "+15015550142", type: "type_whatsapp" }],
+        photos: avatar("mum")
     }
 ];
 
@@ -89,6 +138,48 @@ var chatthreads = [
         summary: "file:///media/internal/downloads/voice-note-0143.opus",
         timestamp: ago(0, 5), unreadCount: 0,
         flags: { visible: true, outgoing: true, locked: false }
+    },
+    {
+        _id: "thread-marta", _kind: "com.palm.chatthread:1",
+        personId: "person-marta", displayName: "Marta Lindqvist",
+        replyAddress: "46701234567@s.whatsapp.net", normalizedAddress: "+46701234567",
+        replyService: "type_whatsapp",
+        summary: "Photos from the lake are up!",
+        timestamp: ago(0, 6), unreadCount: 1,
+        flags: { visible: true, outgoing: false, locked: false }
+    },
+    {
+        _id: "thread-family", _kind: "com.palm.chatthread:1",
+        displayName: "Family",
+        replyAddress: "120363041234567890@g.us", normalizedAddress: "120363041234567890@g.us",
+        replyService: "type_whatsapp", serviceName: "type_whatsapp",
+        summary: "Mum: Lovely. Six o'clock, and bring a jacket, we'll eat outside",
+        timestamp: ago(0, 3.5), unreadCount: 3,
+        flags: { visible: true, outgoing: false, locked: false }
+    },
+    {
+        _id: "thread-sam", _kind: "com.palm.chatthread:1",
+        personId: "person-sam", displayName: "Sam Patel",
+        replyAddress: "5559876543", normalizedAddress: "5559876543", replyService: "sms",
+        summary: "Got it, thanks. Leaving now",
+        timestamp: ago(1, 6), unreadCount: 0,
+        flags: { visible: true, outgoing: false, locked: false }
+    },
+    {
+        _id: "thread-yuki", _kind: "com.palm.chatthread:1",
+        personId: "person-yuki", displayName: "Yuki Tanaka",
+        replyAddress: "yuki.t", normalizedAddress: "yuki.t", replyService: "type_telegram",
+        summary: "ありがとう! See you on Friday",
+        timestamp: ago(3, 1), unreadCount: 0,
+        flags: { visible: true, outgoing: false, locked: false }
+    },
+    {
+        _id: "thread-tomas", _kind: "com.palm.chatthread:1",
+        personId: "person-tomas", displayName: "Tomás Rivera",
+        replyAddress: "tomas_r", normalizedAddress: "tomas_r", replyService: "type_discord",
+        summary: "Pushed the fix, can you have a look?",
+        timestamp: ago(12), unreadCount: 0,
+        flags: { visible: true, outgoing: false, locked: false }
     },
     {
         _id: "thread-sms", _kind: "com.palm.chatthread:1",
@@ -169,6 +260,28 @@ var buddies = [
         availability: 0, personAvailability: 0,
         status: "", group: "Buddies", offline: false, primary: true,
         groupAvailability: "0"
+    },
+    {
+        _id: "buddy-marta", _kind: "com.palm.imbuddystatus:1",
+        personId: "person-marta", username: "46701234567@s.whatsapp.net",
+        serviceName: "type_whatsapp", displayName: "Marta Lindqvist",
+        availability: 0, personAvailability: 0,
+        status: "Back from the mountains", group: "Buddies", offline: false, primary: true,
+        groupAvailability: "0"
+    },
+    {
+        _id: "buddy-yuki", _kind: "com.palm.imbuddystatus:1",
+        personId: "person-yuki", username: "yuki.t", serviceName: "type_telegram",
+        displayName: "Yuki Tanaka", availability: 2, personAvailability: 2,
+        status: "Travelling", group: "Buddies", offline: false, primary: true,
+        groupAvailability: "2"
+    },
+    {
+        _id: "buddy-tomas", _kind: "com.palm.imbuddystatus.libpurple:1",
+        personId: "person-tomas", username: "tomas_r", serviceName: "type_discord",
+        displayName: "Tomás Rivera", availability: 0, personAvailability: 0,
+        status: "Hacking on LuneOS", group: "Work", offline: false, primary: true,
+        groupAvailability: "0"
     }
 ];
 
@@ -176,6 +289,27 @@ var buddies = [
 
 var messages = [
     // thread-anna: a normal back-and-forth with a reply, a reaction and a read receipt.
+    {
+        _id: "msg-a0a", _kind: "com.palm.message:1", conversations: ["thread-anna"],
+        folder: "inbox", messageText: "Did you get the tickets for the exhibition?",
+        localTimestamp: ago(1, 5), timestamp: ago(1, 5), status: "successful",
+        serviceName: "type_telegram", from: { addr: "anna.k", name: "Anna Kowalski" },
+        flags: { visible: true, read: true }
+    },
+    {
+        _id: "msg-a0b", _kind: "com.palm.message:1", conversations: ["thread-anna"],
+        folder: "outbox", messageText: "Two for tomorrow afternoon. They had student prices too!",
+        localTimestamp: ago(1, 4.9), timestamp: ago(1, 4.9), status: "successful",
+        serviceName: "type_telegram", deliveryStatus: "read",
+        to: [{ addr: "anna.k" }], flags: { visible: true }
+    },
+    {
+        _id: "msg-a0c", _kind: "com.palm.message:1", conversations: ["thread-anna"],
+        folder: "inbox", messageText: "Amazing, thank you &#127881;",
+        localTimestamp: ago(1, 4.8), timestamp: ago(1, 4.8), status: "successful",
+        serviceName: "type_telegram", from: { addr: "anna.k", name: "Anna Kowalski" },
+        flags: { visible: true, read: true }
+    },
     {
         _id: "msg-a1", _kind: "com.palm.message:1", conversations: ["thread-anna"],
         folder: "inbox", messageText: "Morning! Are we still on for today?",
@@ -213,7 +347,7 @@ var messages = [
     // thread-ben: an image, a voice note, and a failed send to exercise the error bubble.
     {
         _id: "msg-b1", _kind: "com.palm.message:1", conversations: ["thread-ben"],
-        folder: "inbox", messageText: "Here's the shot from yesterday https://example.com/pier.jpg",
+        folder: "inbox", messageText: "Here's the shot from yesterday " + MOCK_URL + "photos/pier.jpg",
         localTimestamp: ago(0, 7), timestamp: ago(0, 7), status: "successful",
         serviceName: "type_whatsapp", from: { addr: "44207183875@s.whatsapp.net", name: "Ben Okafor" },
         flags: { visible: true, read: true }
@@ -301,6 +435,103 @@ var messages = [
         to: [{ addr: "chi_ng" }], flags: { visible: true }
     },
 
+    // thread-marta: Signal first, then WhatsApp with a photo; the dividers start again on the
+    // change of service, since both share the number.
+    {
+        _id: "msg-m0", _kind: "com.palm.message:1", conversations: ["thread-marta"],
+        folder: "inbox", messageText: "Landed! Phone's almost dead, more later",
+        localTimestamp: ago(1, 2), timestamp: ago(1, 2), status: "successful",
+        serviceName: "type_signal", from: { addr: "+46701234567", name: "Marta Lindqvist" },
+        flags: { visible: true, read: true }
+    },
+    {
+        _id: "msg-m0b", _kind: "com.palm.message:1", conversations: ["thread-marta"],
+        folder: "outbox", messageText: "Welcome back! Charge up and send pictures 📸",
+        localTimestamp: ago(1, 1.9), timestamp: ago(1, 1.9), status: "successful",
+        serviceName: "type_signal", deliveryStatus: "read",
+        to: [{ addr: "+46701234567" }], flags: { visible: true }
+    },
+    {
+        _id: "msg-m1", _kind: "com.palm.message:1", conversations: ["thread-marta"],
+        folder: "outbox", messageText: "How was the trip?",
+        localTimestamp: ago(0, 8), timestamp: ago(0, 8), status: "successful",
+        serviceName: "type_whatsapp", deliveryStatus: "read",
+        to: [{ addr: "+46701234567" }], flags: { visible: true }
+    },
+    {
+        _id: "msg-m2", _kind: "com.palm.message:1", conversations: ["thread-marta"],
+        folder: "inbox", messageText: MOCK_URL + "photos/lake.jpg Photos from the lake are up!",
+        localTimestamp: ago(0, 6), timestamp: ago(0, 6), status: "successful",
+        serviceName: "type_whatsapp", from: { addr: "+46701234567", name: "Marta Lindqvist" },
+        flags: { visible: true, read: false }
+    },
+
+    // thread-family: a WhatsApp group with three senders.
+    {
+        _id: "msg-f1", _kind: "com.palm.message:1", conversations: ["thread-family"],
+        folder: "inbox", messageText: "Dinner at ours on Sunday?",
+        localTimestamp: ago(0, 4.5), timestamp: ago(0, 4.5), status: "successful",
+        serviceName: "type_whatsapp", chatType: "groupchat", channelName: "Family",
+        from: { addr: "+15015550142", name: "Mum" },
+        flags: { visible: true, read: false }
+    },
+    {
+        _id: "msg-f2", _kind: "com.palm.message:1", conversations: ["thread-family"],
+        folder: "inbox", messageText: "Yes please! I'll bring dessert &#127856;",
+        localTimestamp: ago(0, 4), timestamp: ago(0, 4), status: "successful",
+        serviceName: "type_whatsapp", chatType: "groupchat", channelName: "Family",
+        from: { addr: "+46701234567", name: "Marta Lindqvist" },
+        flags: { visible: true, read: false }
+    },
+    {
+        _id: "msg-f3", _kind: "com.palm.message:1", conversations: ["thread-family"],
+        folder: "inbox", messageText: "Lovely. Six o'clock, and bring a jacket, we'll eat outside",
+        localTimestamp: ago(0, 3.5), timestamp: ago(0, 3.5), status: "successful",
+        serviceName: "type_whatsapp", chatType: "groupchat", channelName: "Family",
+        from: { addr: "+15015550142", name: "Mum" },
+        quotedFrom: "Marta Lindqvist", quotedText: "Yes please! I'll bring dessert", quotedMessageId: "msg-f2",
+        flags: { visible: true, read: false }
+    },
+
+    // thread-sam: SMS.
+    {
+        _id: "msg-p1", _kind: "com.palm.smsmessage:1", conversations: ["thread-sam"],
+        folder: "outbox", messageText: "It's 12 Harbour Road, second floor. Ring twice",
+        localTimestamp: ago(1, 7), timestamp: ago(1, 7), status: "successful",
+        serviceName: "sms", smsType: 0, deliveryStatus: "delivered",
+        to: [{ addr: "5559876543" }], flags: { visible: true }
+    },
+    {
+        _id: "msg-p2", _kind: "com.palm.smsmessage:1", conversations: ["thread-sam"],
+        folder: "inbox", messageText: "Got it, thanks. Leaving now",
+        localTimestamp: ago(1, 6), timestamp: ago(1, 6), status: "successful",
+        serviceName: "sms", smsType: 0, from: { addr: "5559876543" },
+        flags: { visible: true, read: true }
+    },
+
+    // thread-yuki and thread-tomas: short 1:1 chats.
+    {
+        _id: "msg-y1", _kind: "com.palm.message:1", conversations: ["thread-yuki"],
+        folder: "outbox", messageText: "Left your book at the front desk",
+        localTimestamp: ago(3, 2), timestamp: ago(3, 2), status: "successful",
+        serviceName: "type_telegram", deliveryStatus: "read",
+        to: [{ addr: "yuki.t" }], flags: { visible: true }
+    },
+    {
+        _id: "msg-y2", _kind: "com.palm.message:1", conversations: ["thread-yuki"],
+        folder: "inbox", messageText: "ありがとう! See you on Friday",
+        localTimestamp: ago(3, 1), timestamp: ago(3, 1), status: "successful",
+        serviceName: "type_telegram", from: { addr: "yuki.t", name: "Yuki Tanaka" },
+        flags: { visible: true, read: true }
+    },
+    {
+        _id: "msg-t1", _kind: "com.palm.message:1", conversations: ["thread-tomas"],
+        folder: "inbox", messageText: "Pushed the fix, can you have a look?",
+        localTimestamp: ago(12), timestamp: ago(12), status: "successful",
+        serviceName: "type_discord", from: { addr: "tomas_r", name: "Tomás Rivera" },
+        flags: { visible: true, read: true }
+    },
+
     {
         _id: "msg-c1", _kind: "com.palm.message:1", conversations: ["thread-channel"],
         folder: "inbox", messageText: "Build 2026-08-05 is up",
@@ -325,6 +556,11 @@ var loginstates = [
         state: "online", availability: 0, customMessage: ""
     },
     {
+        _id: "login-signal", _kind: "com.palm.imloginstate:1",
+        accountId: "acct-signal", serviceName: "type_signal", username: "+15555550100",
+        state: "online", availability: 0, customMessage: ""
+    },
+    {
         _id: "login-discord", _kind: "com.palm.imloginstate:1",
         accountId: "acct-discord", serviceName: "type_discord", username: "you#0001",
         state: "offline", availability: 4, customMessage: ""
@@ -333,57 +569,53 @@ var loginstates = [
 
 // --- accounts (the listAccounts response shape) -------------------------------------------
 
+// Names and icon fields as the device's account templates (/usr/palm/public/accounts) carry them,
+// "splitter" included: the small icon the message dividers show, as in the legacy app. The icons
+// themselves are the connectors' and are not in this repo; tools/screenshots/shoot.sh copies them
+// into mock/accounts from a device. Without them the app hides the icons that fail to load.
+function templateIcons(templateId, name) {
+    var dir = "mock/accounts/" + templateId + "/images/" + name;
+    return { loc_32x32: dir + "-32x32.png", loc_48x48: dir + "-48x48.png", splitter: dir + "-32x32.png" };
+}
+
+function imAccount(service, name, username, extra) {
+    var templateId = "com.palm." + service;
+    var cap = {
+        _id: "cap-" + service, capability: "MESSAGING", capabilitySubtype: "IM",
+        id: templateId + ".im", serviceName: "type_" + service,
+        loc_shortName: name, icon: templateIcons(templateId, service),
+        dbkinds: { imcommand: "com.palm.imcommand." + service + ":1" },
+        chatWithNonBuddies: true
+    };
+    for (var k in extra || {}) {
+        if (extra.hasOwnProperty(k)) { cap[k] = extra[k]; }
+    }
+    return {
+        _id: "acct-" + service, templateId: templateId, username: username, alias: name,
+        loc_name: name, icon: templateIcons(templateId, service),
+        capabilityProviders: [cap].concat(cap.phone ? [{
+            _id: "cap-" + service + "-phone", capability: "PHONE",
+            id: templateId + ".call", serviceName: "type_" + service, videoFormat: "both"
+        }] : [])
+    };
+}
+
 var accounts = [
-    {
-        _id: "acct-telegram", templateId: "org.webosports.telegram",
-        username: "you@telegram", alias: "Telegram", loc_name: "Telegram",
-        capabilityProviders: [{
-            _id: "cap-telegram", capability: "MESSAGING", capabilitySubtype: "IM",
-            id: "org.webosports.telegram.im", serviceName: "type_telegram",
-            loc_name: "Telegram", loc_shortName: "TG",
-            icon: { loc_32x32: "assets/messaging-48x48.png", loc_48x48: "assets/messaging-48x48.png" },
-            dbkinds: { imcommand: "com.palm.imcommand.telegram:1", immessage: "com.palm.immessage.telegram:1" },
-            chatWithNonBuddies: true,
-            reactions: { supported: true },
-            authContacts: ["Telegram"]
-        }]
-    },
-    {
-        _id: "acct-whatsapp", templateId: "org.webosports.whatsapp",
-        username: "+15555550100", alias: "WhatsApp", loc_name: "WhatsApp",
-        capabilityProviders: [{
-            _id: "cap-whatsapp", capability: "MESSAGING", capabilitySubtype: "IM",
-            id: "org.webosports.whatsapp.im", serviceName: "type_whatsapp",
-            loc_name: "WhatsApp", loc_shortName: "WA",
-            icon: { loc_32x32: "assets/messaging-48x48.png", loc_48x48: "assets/messaging-48x48.png" },
-            dbkinds: { imcommand: "com.palm.imcommand.whatsapp:1" },
-            chatWithNonBuddies: true,
-            reactions: { supported: true }
-        }, {
-            _id: "cap-whatsapp-phone", capability: "PHONE",
-            serviceName: "type_whatsapp", videoFormat: "both"
-        }]
-    },
-    {
-        _id: "acct-discord", templateId: "org.webosports.discord",
-        username: "you#0001", alias: "Discord", loc_name: "Discord",
-        capabilityProviders: [{
-            _id: "cap-discord", capability: "MESSAGING", capabilitySubtype: "IM",
-            id: "org.webosports.discord.im", serviceName: "type_discord",
-            loc_name: "Discord", loc_shortName: "DC",
-            icon: { loc_32x32: "assets/messaging-48x48.png", loc_48x48: "assets/messaging-48x48.png" },
-            dbkinds: { imcommand: "com.palm.imcommand.discord:1" },
-            chatWithNonBuddies: false
-        }]
-    },
+    imAccount("telegram", "Telegram", "you@telegram", {
+        dbkinds: { imcommand: "com.palm.imcommand.telegram:1", immessage: "com.palm.immessage.telegram:1" },
+        reactions: { supported: true }, authContacts: ["Telegram"]
+    }),
+    imAccount("whatsapp", "WhatsApp", "+15555550100", { reactions: { supported: true }, phone: true }),
+    imAccount("signal", "Signal", "+15555550100", { reactions: { supported: true } }),
+    imAccount("discord", "Discord", "you#0001", { chatWithNonBuddies: false }),
     {
         _id: "acct-sms", templateId: "com.palm.palmprofile",
-        username: "", alias: "Text Messaging", loc_name: "Text Messaging",
+        username: "", alias: "HP webOS Account", loc_name: "HP webOS Account",
         capabilityProviders: [{
             _id: "cap-sms", capability: "MESSAGING", capabilitySubtype: "SMS",
-            id: "com.palm.sms", serviceName: "sms",
-            loc_name: "Text Messaging", loc_shortName: "SMS",
-            icon: { loc_32x32: "assets/messaging-48x48.png", loc_48x48: "assets/messaging-48x48.png" }
+            id: "com.palm.palmprofile.sms", serviceName: "sms",
+            loc_name: "SMS Account", loc_shortName: "Text",
+            icon: templateIcons("com.palm.palmprofile", "sms")
         }]
     }
 ];
@@ -445,11 +677,27 @@ var store = {
     "com.palm.imchannel:1": channels
 };
 
-/** Resolve a dotted property path, so "flags.visible" works the way db8 indexes it. */
+/**
+ * Resolve a dotted property path, so "flags.visible" works the way db8 indexes it. Through an
+ * array it collects the field from every element, as db8 does for "ims.value": the result is then
+ * an array, which "=" matches when any element does.
+ */
 function valueAt(record, path) {
-    var parts = String(path).split(".");
-    var value = record;
-    for (var i = 0; i < parts.length && value !== undefined && value !== null; i++) {
+    return walk(record, String(path).split("."), 0);
+}
+
+function walk(value, parts, i) {
+    for (; i < parts.length && value !== undefined && value !== null; i++) {
+        if (value instanceof Array) {
+            var found = [];
+            for (var j = 0; j < value.length; j++) {
+                var v = walk(value[j], parts, i);
+                if (v !== undefined && v !== null) {
+                    found.push(v);
+                }
+            }
+            return found;
+        }
         value = value[parts[i]];
     }
     return value;

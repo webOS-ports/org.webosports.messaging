@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.12"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" fill="#d9822b"/>
+  <rect width="128" height="128" fill="url(#g)"/>
+  <text x="64" y="64" dy="0.35em" text-anchor="middle" fill="#ffffff"
+        font-family="Prelude, 'Prelude Medium', sans-serif" font-size="56">BO</text>
+</svg>

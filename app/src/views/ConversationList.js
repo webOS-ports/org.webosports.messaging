@@ -718,7 +718,8 @@ module.exports = kind({
                 select: ["_id", "ims", "photos.squarePhotoPath"]
             };
             if (mockDb.enabled) {
-                this.gotSenderPersons(null, mockDb.find(query));
+                // Answer after the bubbles are in, the way the bus reply arrives on a device.
+                setTimeout(this.gotSenderPersons.bind(this, null, mockDb.find(query)), 0);
             } else {
                 this.$.senderFind.send({ query: query });
             }
