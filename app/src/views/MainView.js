@@ -624,6 +624,15 @@ module.exports = kind({
             this.$.views.setIndex(0);
             return true;
         }
+        // On one pane, an open conversation covers the list: back leaves the conversation first.
+        if (Panels.isScreenNarrow() && this.$.slidingGroup.getIndex() !== 0) {
+            this.leaveThread();
+            return true;
+        }
+        // Then out of a server's channels, as the Servers button does.
+        if (this.$.messaging.backToServers()) {
+            return true;
+        }
         if (Panels.isScreenNarrow()) {
             this.leaveThread();
         }

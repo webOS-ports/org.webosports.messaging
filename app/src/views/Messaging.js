@@ -211,6 +211,15 @@ module.exports = kind({
         return true;
     },
 
+    /** Back gesture: leaves a server's channels for the server list, if that is what is shown. */
+    backToServers: function () {
+        if (this._curTab !== TAB_SERVERS || !this.$.serverList || !this.$.serverList.isDrilledIn()) {
+            return false;
+        }
+        this.serverBack();
+        return true;
+    },
+
     // The menu opens against the button (MainView.showAppMenu).
     appMenuTapped: function () {
         this.doOpenAppMenu({ activator: this.$.appMenuBtn });
