@@ -12,6 +12,7 @@ var kind = require('enyo/kind'),
     Button = require('onyx/Button'),
     SwipeableItem = require('./widgets/SwipeableItem'),
     messagingUtils = require('../util/messagingUtils'),
+    mediaUrl = require('../util/mediaUrl'),
     moment = require('moment'),
     $L = require('enyo/i18n').$L;
 
@@ -422,16 +423,12 @@ module.exports = kind({
     _docExt: "pdf|doc|docx|xls|xlsx|ppt|pptx|vcf",
 
     /**
-     * Matches http(s)/file media URLs by extension, plus local ".data" files: WhatsApp voice notes
-     * arrive as "file://<hash>.data" because the plugin does not always map the audio mimetype to an
-     * extension, so those need surfacing as a chip too.
+     * Matches http(s) media URLs by extension, and every local file:// URL: a received file of a
+     * kind not listed here (a zip, a voice note as "<hash>.data") is a chip too, not dead text.
      */
     mediaUrlRe: function () {
-        var exts = this._imageExt + "|" + this._audioExt + "|" + this._videoExt + "|" + this._docExt;
-        return new RegExp(
-            "(?:https?|file):\\/\\/[^\\s<>\"']+?\\.(?:" + exts + ")(?:\\?[^\\s<>\"']*)?" +
-            "|file:\\/\\/[^\\s<>\"']+?\\.data(?:\\?[^\\s<>\"']*)?",
-            "gi");
+        return mediaUrl.mediaUrlRe(this._imageExt + "|" + this._audioExt + "|" + this._videoExt +
+            "|" + this._docExt);
     },
 
     extractMediaUrls: function (text) {
