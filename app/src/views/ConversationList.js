@@ -21,6 +21,7 @@ var kind = require('enyo/kind'),
     prependedCount = require('../util/prependedCount'),
     senderImages = require('../util/senderImages'),
     sendAccount = require('../util/sendAccount'),
+    showInFiles = require('../util/showInFiles').showInFiles,
     Toolbar = require('onyx/Toolbar'),
     Button = require('onyx/Button'),
     IconButton = require('onyx/IconButton'),
@@ -1426,8 +1427,16 @@ module.exports = kind({
             return true;
         }
 
-        // Anything else goes through the system resource handler, which picks the right viewer.
-        this.$.openApp.send({ target: target });
+        // Anything else goes through the system resource handler, which picks the right viewer
+        // (PDF Viewer, Documents, Explorer for an archive, ...). A local file no app is registered
+        // for is shown in Explorer instead: the resource handler only answers "No handler".
+        var files = showInFiles(target), self = this;
+        var request = this.$.openApp.send({ target: target });
+        if (files && request && request.error) {
+            request.error(function () {
+                self.$.launchApp.send(files);
+            });
+        }
         return true;
     },
 
