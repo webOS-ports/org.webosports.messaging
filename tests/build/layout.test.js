@@ -658,12 +658,21 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             offered.accept = null; offered.searchTextChanged(); await wait(200);
             out.unfiltered = offered.length;
             offered.accept = accept; offered.searchTextChanged();
+            // Never ourselves: our own number is no one to add.
+            out.ownOffered = [accept({ value: '+1 555 555 0100', isPhone: true }), accept({ value: '+44 7700 900123', isPhone: true })];
             dialog.personPicked(null, { msgAddr: { displayName: 'Ben', value: '+44 7700 900123', isPhone: true } });
             dialog.personPicked(null, { msgAddr: { displayName: 'Local', value: '07700 900123', isPhone: true } });
             dialog.doneTapped();
             out.invite = last();
             chat.promptLeaveGroup(); chat.confirmAccepted();
             out.leave = last();
+            // Left: no member now, so neither button; the chat remembers it (flags.left).
+            await wait(100);
+            var stored = mockDb.store['com.palm.chatthread:1'].filter(function (t) { return t._id === chat.chatThread._id; })[0];
+            out.afterLeave = { add: chat.$.groupAddButton.getShowing(), leave: chat.$.groupLeaveButton.getShowing(),
+                row: chat.$.listButtons.getShowing(), stored: !!(stored && stored.flags && stored.flags.left) };
+            chat.chatThread.flags.left = false; chat.mergeThread({ _id: chat.chatThread._id, flags: { left: false } });
+            chat.updateListButtons(chat.chatThread); chat.showListButtons(true);
 
             // A place: asked first, then sent as a link with the position beside it.
             var count = mockDb.store['com.palm.message:1'].length;
@@ -753,6 +762,8 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.deepEqual(r.invite, cmd('inviteToGroup', GROUP, { members: '+447700900123' }),
             'a number without its country code is not taken');
         assert.deepEqual(r.leave, cmd('leaveGroup', GROUP, {}));
+        assert.deepEqual(r.afterLeave, { add: false, leave: false, row: false, stored: true }, 'a left group offers nothing');
+        assert.deepEqual(r.ownOffered, [false, true], 'our own number is not offered');
         assert.equal(r.locationPrompt, true, 'asked first');
         assert.deepEqual(r.place, { text: 'My location\nhttps://maps.google.com/?q=52.3731,4.8925',
             location: { latitude: 52.3731, longitude: 4.8925 }, to: GROUP });

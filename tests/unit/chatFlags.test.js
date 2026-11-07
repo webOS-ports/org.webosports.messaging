@@ -26,6 +26,9 @@ describe('chatFlags: reading the flags', function () {
         assert.equal(cf.isMuted(chat('a', { muted: true })), true);
         assert.equal(cf.isArchived(chat('a', { archived: true })), true);
         assert.equal(cf.isMarkedUnread(chat('a', { markedUnread: true })), true);
+        assert.equal(cf.isLeft(chat('a', { left: true })), true);
+        assert.equal(cf.isLeft(chat('a', { left: 'yes' })), false);
+        assert.equal(cf.isLeft(chat('a')), false);
         assert.equal(cf.isMuted({ _id: 'a' }), false);
         assert.equal(cf.isPinned(null), false);
     });
@@ -101,6 +104,12 @@ describe('chatFlags.merge', function () {
         assert.deepEqual(cf.merge(chat('a'), { pinned: true }), { _id: 'a', flags: { pinned: true } });
         assert.deepEqual(cf.merge(chat('a'), { muted: false }), { _id: 'a', flags: { muted: false } });
         assert.deepEqual(cf.merge(chat('a'), { markedUnread: true }), { _id: 'a', flags: { markedUnread: true } });
+        assert.deepEqual(cf.merge(chat('a'), { left: true }), { _id: 'a', flags: { left: true } });
+    });
+    it('leaving a group is not offered on a hold', function () {
+        var labels = cf.actions(chat('a')).map(function (a) { return a.change; })
+            .filter(function (c) { return c && 'left' in c; });
+        assert.deepEqual(labels, []);
     });
     it('archiving unpins; unarchiving leaves pinned alone', function () {
         assert.deepEqual(cf.merge(chat('a'), { archived: true }), { _id: 'a', flags: { archived: true, pinned: false } });

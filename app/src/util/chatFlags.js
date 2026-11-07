@@ -8,6 +8,9 @@
  *   flags.markedUnread  shown as unread although it has no unread message; opening it clears it
  *   flags.archived      kept out of the list, under "Archived chats" at its top. A new message
  *                       brings it back, unless it is muted (the service's threader does that)
+ *   flags.left          a group we left from the chat (Leave Group): we are no member, so it
+ *                       offers neither Add People nor Leave Group. Not in the hold menu. A message
+ *                       from the group, as when someone adds us back, clears it (the threader)
  */
 
 var $L = require('enyo/i18n').$L;
@@ -20,6 +23,7 @@ function isPinned(thread) { return flag(thread, "pinned"); }
 function isMuted(thread) { return flag(thread, "muted"); }
 function isArchived(thread) { return flag(thread, "archived"); }
 function isMarkedUnread(thread) { return flag(thread, "markedUnread"); }
+function isLeft(thread) { return flag(thread, "left"); }
 
 /** Whether the chat reads as unread: unread messages, or marked so. */
 function isUnread(thread) {
@@ -96,7 +100,7 @@ function merge(thread, change) {
     }
     var flags = {}, out = { _id: thread._id, flags: flags };
     var any = false;
-    ["pinned", "muted", "markedUnread", "archived"].forEach(function (name) {
+    ["pinned", "muted", "markedUnread", "archived", "left"].forEach(function (name) {
         if (typeof change[name] === "boolean") {
             flags[name] = change[name];
             any = true;
@@ -129,6 +133,7 @@ module.exports = {
     isMuted: isMuted,
     isArchived: isArchived,
     isMarkedUnread: isMarkedUnread,
+    isLeft: isLeft,
     isUnread: isUnread,
     unreadWeight: unreadWeight,
     arrange: arrange,

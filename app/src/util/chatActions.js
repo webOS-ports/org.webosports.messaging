@@ -231,6 +231,23 @@ function memberAddress(entry, serviceName) {
     return /^\+\d{7,15}$/.test(number) ? number : null;
 }
 
+/**
+ * Whether address (memberAddress's) is our own account's on the service: we cannot add
+ * ourselves to a group, and a group we left takes no one from us (WhatsApp answers 409). A phone
+ * number is ours by its digits, as the account may name it "+31..." or "31...@s.whatsapp.net".
+ */
+function isOwnAddress(address, account, serviceName) {
+    var mine = account && account.username;
+    if (!address || !mine) {
+        return false;
+    }
+    if (serviceName === "type_whatsapp" || /^\+?\d+$/.test(String(address))) {
+        var digits = function (s) { return String(s).replace(/\D/g, ""); };
+        return digits(address) !== "" && digits(address) === digits(mine);
+    }
+    return String(address).trim().toLowerCase() === String(mine).trim().toLowerCase();
+}
+
 /** members: the chats' addresses of the people to put in it. */
 function createGroupCommand(kind, serviceName, account, name, members) {
     var title = String(name || "").replace(/[\x1e\x1f]/g, "").trim();
@@ -475,6 +492,7 @@ module.exports = {
     editCommand: editCommand,
     deleteCommand: deleteCommand,
     memberAddress: memberAddress,
+    isOwnAddress: isOwnAddress,
     createGroupCommand: createGroupCommand,
     inviteCommand: inviteCommand,
     leaveCommand: leaveCommand,

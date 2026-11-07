@@ -314,3 +314,21 @@ describe('chatActions: mentions', function () {
         assert.deepEqual(ca.mentionsInText('no one', picked), []);
     });
 });
+
+describe('chatActions.isOwnAddress: not ourselves into a group', function () {
+    it('knows our number however the account writes it', function () {
+        assert.equal(ca.isOwnAddress('+15555550100', me, 'type_whatsapp'), true);
+        assert.equal(ca.isOwnAddress('+15555550100', { username: '15555550100@s.whatsapp.net' }, 'type_whatsapp'), true);
+        assert.equal(ca.isOwnAddress('+15555550101', me, 'type_whatsapp'), false);
+    });
+    it('compares a name-like address without case', function () {
+        assert.equal(ca.isOwnAddress('Me.Here', { username: 'me.here' }, 'type_telegram'), true);
+        assert.equal(ca.isOwnAddress('someone', { username: 'me.here' }, 'type_telegram'), false);
+    });
+    it('is never ours without both', function () {
+        assert.equal(ca.isOwnAddress('', me, 'type_whatsapp'), false);
+        assert.equal(ca.isOwnAddress('+15555550100', null, 'type_whatsapp'), false);
+        assert.equal(ca.isOwnAddress('+15555550100', {}, 'type_whatsapp'), false);
+        assert.equal(ca.isOwnAddress('@', { username: '@' }, 'type_whatsapp'), false);
+    });
+});

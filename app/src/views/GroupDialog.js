@@ -147,7 +147,8 @@ module.exports = kind({
         this.$.doneButton.setContent(mode === "create" ? $L("Create") : $L("Add"));
         var serviceName = account.serviceName;
         this.$.people.set('accept', function (entry) {
-            return !!chatActions.memberAddress(entry, serviceName);
+            var address = chatActions.memberAddress(entry, serviceName);
+            return !!address && !chatActions.isOwnAddress(address, account, serviceName);
         });
         this.show();
         this.$.people.reload();

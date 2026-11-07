@@ -312,6 +312,20 @@ describe('what a message does to its thread', function () {
         assert.deepEqual(m.notified, []);
     });
 
+    // Leave Group sets flags.left (app/src/util/chatFlags.js); someone writing to it means we are in.
+    it('takes a left group back when someone in it writes, but not for a line of the transport', async function () {
+        var r = await chatWith({ left: true });
+        assert.equal(r.thread.flags.left, false);
+        var env = await setup();
+        var a = seed.imIn("p", "one", { flags: { read: true } });
+        await deliver(env, [a]);
+        var id = threadOf(env, a)._id;
+        await env.db.merge([{ _id: id, flags: { left: true } }]);
+        await deliver(env, [seed.imIn("p", "you left", { flags: { noNotification: true } }),
+            seed.imOut("p", "from my other phone"), seed.imIn("p", "read there", { flags: { read: true } })]);
+        assert.equal(threads(env).find(function (t) { return t._id === id; }).flags.left, true);
+    });
+
     it('keeps the flags the app set on a chat when a message comes in', async function () {
         var r = await chatWith({ pinned: true, markedUnread: true });
         assert.equal(r.thread.flags.pinned, true);

@@ -246,6 +246,12 @@ function createRun({ db, tempdb, log = console, now = () => Date.now() }) {
 		if (fresh && !muted && thread.flags && thread.flags.archived === true) {
 			fields.flags.archived = false;
 		}
+		// A group we left (flags.left) is ours again once someone in it writes to it, as when they
+		// add us back. A line the transport writes itself (flags.noNotification: "you left", a
+		// failed add) is nobody's message and leaves it as it is.
+		if (fresh && thread.flags && thread.flags.left === true && !(msg.flags && msg.flags.noNotification)) {
+			fields.flags.left = false;
+		}
 		change(thread, fields);
 		if (fresh && !muted && !(msg.flags && msg.flags.noNotification)) {
 			const prev = notify.get(thread._id);

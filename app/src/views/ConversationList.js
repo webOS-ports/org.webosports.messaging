@@ -51,6 +51,7 @@ var kind = require('enyo/kind'),
     composerEcho = require('../util/composerEcho'),
     callRequest = require('../util/callRequest'),
     chatPresence = require('../util/chatPresence'),
+    chatFlags = require('../util/chatFlags'),
     chatActions = require('../util/chatActions'),
     deviceLocation = require('../util/deviceLocation'),
     GroupDialog = require('./GroupDialog'),
@@ -953,9 +954,7 @@ module.exports = kind({
         syncCollection(this.collection, results);
         this.followIncomingTransport(results);
         this.updateListButtons(this.chatThread);
-        this.$.listButtons.setShowing(results.length > 0 &&
-            !!(this.chatThread && !(this.chatThread.flags || {}).locked) &&
-            (this.$.groupAddButton.showing || this.$.groupLeaveButton.showing));
+        this.showListButtons(results.length > 0);
         this.relayout();
         if (follow) {
             this.revealListBottomSoon();
@@ -1412,9 +1411,17 @@ module.exports = kind({
         this._revealTimers = [];
     },
 
+    /** The group row, when the chat has messages, is not locked, and has a button to show. */
+    showListButtons: function (hasMessages) {
+        this.$.listButtons.setShowing(!!hasMessages &&
+            !!(this.chatThread && !(this.chatThread.flags || {}).locked) &&
+            (this.$.groupAddButton.showing || this.$.groupLeaveButton.showing));
+    },
+
     updateListButtons: function (thread) {
         var actions = thread ? chatActions.actionsFor(thread.replyService, appState.accountService) : {};
-        var group = chatActions.isGroupThread(thread);
+        // A group we left takes nothing from us any more (chatFlags.isLeft).
+        var group = chatActions.isGroupThread(thread) && !chatFlags.isLeft(thread);
         this.$.groupAddButton.setShowing(group && !!actions.groupInvite);
         this.$.groupLeaveButton.setShowing(group && !!actions.groupLeave);
     },
@@ -2549,7 +2556,16 @@ module.exports = kind({
         });
         if (!sent) {
             this.showError($L("Unable to leave"), $L("No account can leave this group."));
+            return;
         }
+        // We are no member now: nothing to add anyone to, nothing to leave (chatFlags.left).
+        var m = chatFlags.merge(thread, { left: true });
+        thread.flags = thread.flags || {};
+        thread.flags.left = true;
+        this.mergeThread(m);
+        this.updateListButtons(thread);
+        this.showListButtons(true);
+        this.relayout();
     },
 
     // --- location and contact cards --------------------------------------------------------
