@@ -462,7 +462,7 @@ module.exports = kind({
     },
 
     openHelp: function () {
-        this.$.openApp.send({ target: "http://help.palm.com/messaging/index.html" });
+        this.$.openApp.send({ target: "https://help.luneos.org/messaging/index.html" });
         return true;
     },
 
