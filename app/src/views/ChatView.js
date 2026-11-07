@@ -6,7 +6,7 @@
 var kind = require('enyo/kind'),
     Panels = require('layout/Panels'),
     CardArranger = require('layout/CardArranger'),
-    FittableRows = require('layout/FittableRows'),
+    FittableRows = require('./widgets/FitRows'),
     Toolbar = require('onyx/Toolbar'),
     Image = require('enyo/Image'),
     LunaService = require('enyo-webos/LunaService'),

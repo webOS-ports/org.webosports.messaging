@@ -197,6 +197,37 @@ describe('chatActions: the commands, as the transport reads them', function () {
     });
 });
 
+describe('chatActions: blocking, from the chat list', function () {
+    var accounts = {
+        type_whatsapp: { username: '+15555550100', capabilitySubtype: 'IM' },
+        sms: { username: '+15555550100', capabilitySubtype: 'MESSAGING' }
+    };
+    var service = { getAccount: function (name) { return accounts[name] || null; } };
+    var chat = { _id: 't1', replyService: 'type_whatsapp', replyAddress: '31612345678@s.whatsapp.net' };
+    function with_(extra) { var t = {}; for (var k in chat) { t[k] = chat[k]; } for (k in extra) { t[k] = extra[k]; } return t; }
+
+    it('a one-to-one chat on an IM account the device has', function () {
+        assert.equal(ca.canBlock(chat, service), true);
+    });
+    it('not a group, a channel, a text message, or a service with no account', function () {
+        assert.equal(ca.canBlock(with_({ replyAddress: GROUP }), service), false, 'a WhatsApp group');
+        assert.equal(ca.canBlock(with_({ groupChatId: 'g1' }), service), false);
+        assert.equal(ca.canBlock(with_({ channelId: 'c1' }), service), false, 'a channel');
+        assert.equal(ca.canBlock(with_({ replyService: 'sms', replyAddress: '+31612345678' }), service), false);
+        assert.equal(ca.canBlock(with_({ replyService: 'type_signal' }), service), false, 'no Signal account');
+        assert.equal(ca.canBlock(with_({ replyAddress: '' }), service), false);
+        assert.equal(ca.canBlock(chat, null), false);
+    });
+    it('the blockBuddy command, without params, as the conversation wrote it', function () {
+        assert.deepEqual(ca.blockCommand(KIND, chat, accounts.type_whatsapp), {
+            _kind: KIND, command: 'blockBuddy', handler: 'transport', serviceName: 'type_whatsapp',
+            fromUsername: '+15555550100', targetUsername: '31612345678@s.whatsapp.net'
+        });
+        assert.equal(ca.blockCommand(KIND, with_({ replyAddress: '' }), accounts.type_whatsapp), null);
+        assert.equal(ca.blockCommand(KIND, chat, {}), null, 'no account username');
+    });
+});
+
 describe('chatActions: a location', function () {
     it('on the earth, to seven places, with a name of one line', function () {
         assert.deepEqual(ca.location(52.37310004, 4.89250001, ' Dam\nsquare '), { latitude: 52.3731, longitude: 4.8925, name: 'Dam square' });

@@ -256,6 +256,34 @@ function leaveCommand(kind, serviceName, account, group) {
     return command(kind, "leaveGroup", serviceName, account, group, {});
 }
 
+// --- blocking --------------------------------------------------------------------------------
+
+/**
+ * Whether the chat list offers Block Sender for a chat (on a long tap): a chat with one person on
+ * an IM account the device has. Not a group or a channel, whose sender is many people, and not a
+ * text message, which the carrier carries.
+ */
+function canBlock(thread, accountService) {
+    if (!thread || !thread.replyAddress || !thread.replyService || thread.channelId || thread.groupChatId ||
+            isGroupThread(thread) || !accountService) {
+        return false;
+    }
+    var account = accountService.getAccount(thread.replyService);
+    return !!(account && account.capabilitySubtype === "IM" && account.username);
+}
+
+/** The blockBuddy imcommand for that chat's person, as the conversation's Block Sender wrote it. */
+function blockCommand(kind, thread, account) {
+    if (!thread || !thread.replyAddress) {
+        return null;
+    }
+    var c = command(kind, "blockBuddy", thread.replyService, account, thread.replyAddress, null);
+    if (c) {
+        delete c.params;   // blockBuddy has none, and was always written without
+    }
+    return c;
+}
+
 // --- location --------------------------------------------------------------------------------
 
 function round7(n) {
@@ -450,6 +478,8 @@ module.exports = {
     createGroupCommand: createGroupCommand,
     inviteCommand: inviteCommand,
     leaveCommand: leaveCommand,
+    canBlock: canBlock,
+    blockCommand: blockCommand,
     location: location,
     locationText: locationText,
     contactCard: contactCard,

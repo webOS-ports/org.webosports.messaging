@@ -7,7 +7,7 @@
  */
 
 var kind = require('enyo/kind'),
-    FittableRows = require('layout/FittableRows'),
+    FittableRows = require('./widgets/FitRows'),
     Toolbar = require('onyx/Toolbar'),
     Button = require('onyx/Button'),
     IconButton = require('onyx/IconButton'),

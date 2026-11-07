@@ -12,7 +12,7 @@
  */
 
 var kind = require('enyo/kind'),
-    FittableRows = require('layout/FittableRows'),
+    FittableRows = require('./widgets/FitRows'),
     Panels = require('layout/Panels'),
     CardArranger = require('layout/CardArranger'),
     Toolbar = require('onyx/Toolbar'),

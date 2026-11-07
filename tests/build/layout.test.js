@@ -191,6 +191,13 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             'var bar = box(chat.$.headerBar);' +
             'var placed = glass.width > 0 && glass.left >= name.right - 1 && glass.right <= service.left + 1 &&' +
             '  glass.top >= bar.top && glass.bottom <= bar.bottom;' +
+            // Right of the name and left of the camera and the phone, when the chat has calls.
+            'var calls = [chat.$.videoCallButton.showing, chat.$.phoneCallButton.showing];' +
+            'chat.$.videoCallButton.show(); chat.$.phoneCallButton.show(); await wait(50);' +
+            'glass = box(chat.$.searchButton); name = box(chat.$.header);' +
+            'var beforeCalls = glass.left >= name.right - 1 && glass.right <= box(chat.$.videoCallButton).left + 1 &&' +
+            '  box(chat.$.videoCallButton).right <= box(chat.$.phoneCallButton).left + 1;' +
+            'chat.$.videoCallButton.setShowing(calls[0]); chat.$.phoneCallButton.setShowing(calls[1]);' +
             'chat.toggleSearch(); await wait(300);' +
             'var opened = chat.$.searchBar.showing;' +
             'chat.searchChanged(null, { value: "BRING" }); await wait(100);' +
@@ -205,12 +212,12 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             'var closed = !chat.$.searchBar.showing && !document.querySelector(".search-hit");' +
             'chat.toggleSearch(); await wait(100); var reopened = chat.$.searchBar.showing;' +
             'chat.toggleSearch(); await wait(100); var toggled = !chat.$.searchBar.showing;' +
-            'return { inMenu: inMenu, placed: placed, opened: opened, reopened: reopened, toggled: toggled,' +
+            'return { inMenu: inMenu, placed: placed, beforeCalls: beforeCalls, opened: opened, reopened: reopened, toggled: toggled,' +
             '  count: count, newest: newest, older: older, olderHit: olderHit,' +
             '  closed: closed,' +
             '  chatStill: chat.chatThread && chat.chatThread._id };' +
             '})()');
-        assert.deepEqual(r, { inMenu: false, placed: true, opened: true, reopened: true, toggled: true,
+        assert.deepEqual(r, { inMenu: false, placed: true, beforeCalls: true, opened: true, reopened: true, toggled: true,
             count: '2 of 2', newest: true, older: '1 of 2', olderHit: true,
             closed: true, chatStill: 'thread-family' });
     });
@@ -572,7 +579,7 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
 
             // The group: Add People and Leave Group; no Block Sender.
             out.buttons = { add: chat.$.groupAddButton.getShowing(), leave: chat.$.groupLeaveButton.getShowing(),
-                block: chat.$.blockButton.getShowing() };
+                block: !!chat.$.blockButton, del: !!chat.$.deleteButton };
             chat.openGroupInvite(); await wait(100);
             var dialog = chat.$.groupDialog;
             out.inviteShown = dialog.getShowing();
@@ -671,7 +678,8 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.equal(r.deletePrompt, true, 'asked first');
         assert.deepEqual(r.del, cmd('deleteMessage', GROUP, { targetServiceMessageId: '3EB0OWN' }));
         assert.equal(r.deleted, true);
-        assert.deepEqual(r.buttons, { add: true, leave: true, block: false });
+        assert.deepEqual(r.buttons, { add: true, leave: true, block: false, del: false },
+            'Block Sender and Delete Conversation are in the chat list now');
         assert.equal(r.inviteShown, true);
         assert.equal(r.dialogFits, true, 'Add People fits the window');
         assert.ok(r.listHeight > 100, 'its contacts get room: ' + r.listHeight);
@@ -699,5 +707,124 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.equal(r.telegramPicked, 1);
         assert.deepEqual(r.afterSwitch, { members: 0, name: 'Climbing' }, 'another service: its people start over, the name stays');
         assert.deepEqual(r.create, cmd('createGroup', '', { name: 'Climbing', members: '+46701234567' }));
+    });
+
+    it('keeps the composer on screen through a reflow under a popup, and fits the group row and search box', async function () {
+        /* global require, innerHeight, innerWidth, getComputedStyle */
+        var page = async function () {
+            var $ = require('enyo/dispatcher').$;
+            var main = $.app_mainView, chat = $.app_mainView_chatView_conversationList;
+            var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+            var thread = null;
+            $.app_mainView_messaging_threadList.collection.forEach(function (m) {
+                if (m.attributes._id === 'thread-family') { thread = m.attributes; }
+            });
+            main.selectThread(null, thread);
+            for (var i = 0; i < 20 && !(chat.chatThread && chat.chatThread._id === 'thread-family' && chat.messages.length); i++) { await wait(100); }
+            await wait(200);
+            var out = {};
+            var onScreen = function (c) {
+                var b = c.hasNode().getBoundingClientRect();
+                var top = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
+                return b.bottom <= innerHeight && b.top >= 0 && !!top && c.hasNode().contains(top);
+            };
+
+            // Reply chosen from the message menu: the bar opens while the menu is still up.
+            var m = chat.messages[chat.messages.length - 1];
+            chat.selectedMessage = m;
+            chat.reactMore(null, {}); await wait(100);
+            chat.enterReply(m); await wait(100);
+            chat.$.messageMenu.hide(); await wait(100);
+            out.reply = { close: onScreen(chat.$.replyBarClose), send: onScreen(chat.$.sendButton) };
+            chat.cancelReply();
+
+            // Any reflow with a popup open, as the keyboard closing under the app menu makes.
+            main.showAppMenu(main.$.appMenuAnchor); await wait(100);
+            main.resize(); chat.resize(); await wait(50);
+            main.$.appMenu.hide(); await wait(100);
+            out.afterMenu = { send: onScreen(chat.$.sendButton),
+                views: Math.round(main.$.views.hasNode().getBoundingClientRect().bottom) <= innerHeight };
+
+            // The group's row: Add People and Leave Group, whole, Leave red.
+            out.row = ['groupAddButton', 'groupLeaveButton'].map(function (k) {
+                var c = chat.$[k], n = c.hasNode();
+                if (!c.getShowing()) { return k + ':hidden'; }
+                var b = n.getBoundingClientRect();
+                out.rowLeft = out.rowLeft === undefined ? Math.round(b.left) : out.rowLeft;
+                return k + ':' + (n.scrollWidth <= n.clientWidth ? 'whole' : 'cut') +
+                    (b.right <= innerWidth ? '' : ':off') + ':' + getComputedStyle(n).backgroundColor;
+            });
+
+            // New Group's search box: the glass inside the box, the box inside the dialog.
+            main.newGroup(); await wait(200);
+            var dialog = main.$.groupDialog, deco = dialog.$.people.$.searchInput.parent.hasNode();
+            var glass = deco.querySelector('img').getBoundingClientRect(), box = deco.getBoundingClientRect();
+            var d = dialog.hasNode().getBoundingClientRect();
+            out.search = { glassInBox: glass.right <= box.right + 0.5 && glass.left >= box.left, boxInDialog: box.right <= d.right + 0.5 };
+            dialog.hide();
+            return out;
+        };
+        // A Pixel 3a's width (450 CSS px), where a group's row was cut; then back to the suite's.
+        await session.send('Emulation.setDeviceMetricsOverride', { width: 450, height: HEIGHT, deviceScaleFactor: 1, mobile: true });
+        var r;
+        try {
+            r = await session.evaluate('(' + page.toString() + ')()');
+        } finally {
+            await session.send('Emulation.setDeviceMetricsOverride', { width: WIDTH, height: HEIGHT, deviceScaleFactor: 1, mobile: true });
+        }
+        assert.deepEqual(r.reply, { close: true, send: true }, 'the reply bar\'s X and Send stay where a finger can reach them');
+        assert.deepEqual(r.afterMenu, { send: true, views: true });
+        assert.deepEqual(r.row, ['groupAddButton:whole:rgb(243, 243, 243)', 'groupLeaveButton:whole:rgb(197, 22, 22)']);
+        assert.equal(r.rowLeft, 8, 'the row starts at its padding');
+        assert.deepEqual(r.search, { glassInBox: true, boxInDialog: true });
+    });
+
+    it('offers Block Sender on a long tap in the chat list, for one person on IM, and asks first', async function () {
+        /* global require */
+        var page = async function () {
+            var $ = require('enyo/dispatcher').$, Signals = require('enyo/Signals'), mockDb = require('src/data/mockDb');
+            var tl = $.app_mainView_messaging_threadList, chatActions = require('src/util/chatActions');
+            var appState = require('src/util/appState');
+            var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+            if ($.app_mainView.$.slidingGroup.getIndex() !== 0) { Signals.send('onbackgesture', {}); await wait(600); }
+            var all = tl.collection.models.map(function (m) { return m.attributes; });
+            var one = all.filter(function (t) { return chatActions.canBlock(t, appState.accountService); })[0];
+            var group = all.filter(function (t) { return t._id === 'thread-family'; })[0];
+            var labels = async function (thread) {
+                var row = null;
+                tl.$.list.getClientControls().forEach(function (c) { if (c.model && c.model.attributes._id === thread._id) { row = c; } });
+                var b = row.hasNode().getBoundingClientRect();
+                tl.holdThread(tl.$.scroller, { originator: row, model: row.model, pageX: b.left + 20, pageY: b.top + 10,
+                    preventTap: function () {} });
+                await wait(200);
+                var items = tl.$.chatMenu.getClientControls().map(function (c) { return c.content; });
+                return items;
+            };
+            var out = { one: !!one };
+            if (!one) { return out; }
+            out.group = (await labels(group)).indexOf('Block Sender') >= 0;
+            tl.$.chatMenu.hide();
+            var items = await labels(one);
+            out.oneOffers = items[items.length - 1];
+            mockDb.imCommands.length = 0;
+            var item = tl.$.chatMenu.getClientControls().filter(function (c) { return c.block; })[0];
+            tl.chatOptionTapped(item); await wait(200);
+            out.asked = tl.$.blockDialog.getShowing();
+            out.beforeYes = mockDb.imCommands.length;
+            tl.blockAccepted(); await wait(100);
+            out.cmd = mockDb.imCommands[0] && { command: mockDb.imCommands[0].command, to: mockDb.imCommands[0].targetUsername === one.replyAddress,
+                service: mockDb.imCommands[0].serviceName === one.replyService };
+            out.closed = !tl.$.blockDialog.getShowing();
+            // Cancel writes nothing.
+            mockDb.imCommands.length = 0;
+            await labels(one);
+            tl.chatOptionTapped(tl.$.chatMenu.getClientControls().filter(function (c) { return c.block; })[0]);
+            tl.closeBlockDialog(); await wait(100);
+            out.cancelled = mockDb.imCommands.length;
+            return out;
+        };
+        var r = await session.evaluate('(' + page.toString() + ')()');
+        assert.deepEqual(r, { one: true, group: false, oneOffers: 'Block Sender', asked: true, beforeYes: 0,
+            cmd: { command: 'blockBuddy', to: true, service: true }, closed: true, cancelled: 0 });
     });
 });

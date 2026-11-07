@@ -38,15 +38,16 @@ module.exports = kind({
             kind: InputDecorator,
             style: 'box-sizing: border-box; width: 100%; display: flex; flex-direction: row; align-items: center;',
             components: [
-                {name: "searchLabel", content: $L("To"), style: "font-weight:bold; margin-right:5px;"},
+                {name: "searchLabel", content: $L("To"), style: "font-weight:bold; margin-right:5px; flex: none;"},
                 {
                     name: "searchInput",
                     kind: Input,
                     placeholder: $L("Enter number or search contacts"),
                     classes: 'search-input',
-                    style: "flex: 1 1; vertical-align:middle;"
+                    // min-width: 0, or the input keeps its own width and pushes the glass out of a narrow box
+                    style: "flex: 1 1; min-width: 0; vertical-align:middle;"
                 },
-                { kind: Image, src: "assets/search-input.svg" }
+                { kind: Image, src: "assets/search-input.svg", style: "flex: none;" }
             ]
         },
         {name: 'dataList', kind: DataList, ontap: "selectMsgAddr", components: [

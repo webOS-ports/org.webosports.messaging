@@ -13,7 +13,7 @@
  */
 
 var kind = require('enyo/kind'),
-    FittableRows = require('layout/FittableRows'),
+    FittableRows = require('./widgets/FitRows'),
     DataRepeater = require('enyo/DataRepeater'),
     Scroller = require('enyo/Scroller'),
     Collection = require('enyo/Collection'),

@@ -8,7 +8,7 @@
  */
 
 var kind = require('enyo/kind'),
-    FittableRows = require('layout/FittableRows'),
+    FittableRows = require('./widgets/FitRows'),
     DataRepeater = require('enyo/DataRepeater'),
     Scroller = require('enyo/Scroller'),
     Collection = require('enyo/Collection'),
@@ -17,6 +17,9 @@ var kind = require('enyo/kind'),
     chatFlags = require('../util/chatFlags'),
     Menu = require('onyx/Menu'),
     MenuItem = require('onyx/MenuItem'),
+    Popup = require('onyx/Popup'),
+    Button = require('onyx/Button'),
+    chatActions = require('../util/chatActions'),
     openThread = require('../util/openThread'),
     Control = require('enyo/Control'),
     LunaService = require('enyo-webos/LunaService'),
@@ -67,6 +70,25 @@ module.exports = kind({
             ]
         },
         { name: "chatMenu", kind: Menu, floating: true, scrolling: false },
+        {
+            // Block Sender, from the chat menu: asked first, as the conversation used to ask.
+            name: "blockDialog", kind: Popup, centered: true, floating: true, modal: true, scrim: true,
+            components: [
+                { content: $L("Block Sender"), style: "font-weight: bold; margin-bottom: 0.5rem;" },
+                { content: $L("Are you sure you want to block this sender?"), style: "margin: 0.5rem 0 1rem;" },
+                {
+                    classes: "flex-row", components: [
+                        { kind: Button, content: $L("Cancel"), ontap: "closeBlockDialog" },
+                        { classes: "flex-auto" },
+                        { name: "blockAccept", kind: Button, classes: "onyx-negative", content: $L("Block"), ontap: "blockAccepted" }
+                    ]
+                }
+            ]
+        },
+        {
+            name: 'blockCommandPut', kind: LunaService, service: 'luna://com.webos.service.db',
+            method: 'put', onError: 'deleteThreadErr'
+        },
         {
             name: 'threadMerge', kind: LunaService, service: 'luna://com.webos.service.db',
             method: 'merge', onError: 'deleteThreadErr'
@@ -293,6 +315,9 @@ module.exports = kind({
     holdThread: function (inSender, inEvent) {
         var record = this.recordFor(inEvent);
         var list = chatFlags.actions(record);
+        if (list.length && chatActions.canBlock(record, appState.accountService)) {
+            list.push({ label: $L("Block Sender"), block: true });
+        }
         if (!list.length) {
             return false;
         }
@@ -305,7 +330,8 @@ module.exports = kind({
         menu.destroyClientControls();
         for (var i = 0; i < list.length; i++) {
             menu.createComponent({
-                kind: MenuItem, content: list[i].label, change: list[i].change, ontap: "chatOptionTapped"
+                kind: MenuItem, content: list[i].label, change: list[i].change, block: !!list[i].block,
+                ontap: "chatOptionTapped"
             }, { owner: this });
         }
         menu.render();
@@ -319,6 +345,11 @@ module.exports = kind({
     chatOptionTapped: function (inSender) {
         this.$.chatMenu.hide();
         var record = this.heldRecord;
+        if (inSender.block) {
+            this.blockRecord = record;
+            this.$.blockDialog.show();
+            return true;
+        }
         var change = inSender.change;
         var m = chatFlags.merge(record, change);
         if (!m) {
@@ -334,6 +365,33 @@ module.exports = kind({
             this.runQuery();
         } else {
             this.$.threadMerge.send({ objects: [m] });
+        }
+        return true;
+    },
+
+    closeBlockDialog: function () {
+        this.$.blockDialog.hide();
+        this.blockRecord = null;
+        return true;
+    },
+
+    /** Write the blockBuddy imcommand for the held chat's person; the transport blocks them. */
+    blockAccepted: function () {
+        this.$.blockDialog.hide();
+        var record = this.blockRecord, accountService = appState.accountService;
+        this.blockRecord = null;
+        if (!record || !chatActions.canBlock(record, accountService)) {
+            return true;
+        }
+        var cmd = chatActions.blockCommand(accountService.getImCommandKind(record.replyService), record,
+            accountService.getAccount(record.replyService));
+        if (!cmd) {
+            return true;
+        }
+        if (mockDb.enabled) {
+            mockDb.imCommands.push(cmd);
+        } else {
+            this.$.blockCommandPut.send({ objects: [cmd] });
         }
         return true;
     },

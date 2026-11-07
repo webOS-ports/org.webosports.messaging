@@ -98,29 +98,39 @@ Header
   box-shadow: none;
 }
 
+/*
+ * A group's Add People and Leave Group. Each button is as wide as its label and they share what is
+ * left, so the labels are not cut; the row starts at the edge rather than under the header's dot.
+ */
 .block-delete-box {
-  padding: 0 12px 0 68px;
+  padding: 0 8px;
   display: -webkit-flex;
   display: flex;
   -webkit-flex-flow: row;
   flex-flow: row;
+  /* gap, not a margin on each next button, so a hidden button before one adds no space. */
+  gap: 8px;
+}
+.block-delete-box > .onyx-button {
+  -webkit-flex: 1 1 auto;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-left: 8px;
+  padding-right: 8px;
 }
 .button-left {
   margin-right: 10px;
 }
-.blocksender-bt,
-.deleteconversation-bt {
-  opacity: 0.5;
-  color: #333;
-}
-.blocksender-bt {
-  margin-right: 8px;
-}
-/* A group's Add People and Leave Group, in the same row and the same light grey. */
 .group-bt {
   opacity: 0.5;
   color: #333;
-  margin-left: 8px;
+}
+/* Leave Group cannot be undone: red, as onyx-negative is. */
+.block-delete-box > .onyx-button.danger-bt {
+  opacity: 1;
+  color: #fff;
+  background-color: #c51616;
+  border-color: #a51010;
 }
 .accept-decline-box {
   margin-top: 3px;

@@ -5,7 +5,7 @@
  */
 
 var kind = require('enyo/kind'),
-    FittableRows = require('layout/FittableRows'),
+    FittableRows = require('./widgets/FitRows'),
     Panels = require('layout/Panels'),
     CollapsingArranger = require('layout/CollapsingArranger'),
     CardArranger = require('layout/CardArranger'),

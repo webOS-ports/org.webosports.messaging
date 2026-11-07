@@ -9,7 +9,7 @@
  */
 
 var kind = require('enyo/kind'),
-    FittableRows = require('layout/FittableRows'),
+    FittableRows = require('./widgets/FitRows'),
     Spinner = require('onyx/Spinner'),
     PrependingRepeater = require('./widgets/PrependingRepeater'),
     Scroller = require('enyo/Scroller'),
@@ -113,17 +113,18 @@ module.exports = kind({
                     allowHtml: true, ontap: "handleHeaderTap"
                 },
                 {
+                    // Find in Chat, next to the name and before the call buttons: opens the search bar
+                    // under the header, or closes it.
+                    name: "searchButton", kind: IconButton, src: "assets/find-in-chat-icon.svg",
+                    ontap: "toggleSearch", classes: "conversation-call-btn"
+                },
+                {
                     name: "videoCallButton", kind: IconButton, src: "assets/video-call-icon.svg",
                     showing: false, ontap: "videocall", classes: "conversation-call-btn"
                 },
                 {
                     name: "phoneCallButton", kind: IconButton, src: "assets/phone-icon.svg",
                     showing: false, ontap: "voicecall", classes: "conversation-call-btn"
-                },
-                {
-                    // Find in Chat: opens the search bar under the header, or closes it.
-                    name: "searchButton", kind: IconButton, src: "assets/find-in-chat-icon.svg",
-                    ontap: "toggleSearch", classes: "conversation-call-btn"
                 },
                 {
                     // The service a reply goes out on: its icon and name, not the address. A
@@ -165,23 +166,17 @@ module.exports = kind({
 
         // --- messages -------------------------------------------------------------------
         {
+            // A group's Add People and Leave Group. Blocking a sender and deleting a chat are in the
+            // chat list: Block Sender on a long tap, Delete by swiping the row.
             name: "listButtons", classes: "block-delete-box", showing: false, components: [
-                {
-                    name: "blockButton", kind: Button, content: $L("Block Sender"),
-                    classes: "blocksender-bt flex-one", ontap: "promptBlock"
-                },
-                {
-                    name: "deleteButton", kind: Button, content: $L("Delete Conversation"),
-                    classes: "deleteconversation-bt flex-one", ontap: "promptDelete"
-                },
                 // A group on a service that manages them (util/chatActions).
                 {
                     name: "groupAddButton", kind: Button, content: $L("Add People"), showing: false,
-                    classes: "group-bt flex-one", ontap: "openGroupInvite"
+                    classes: "group-bt", ontap: "openGroupInvite"
                 },
                 {
                     name: "groupLeaveButton", kind: Button, content: $L("Leave Group"), showing: false,
-                    classes: "group-bt flex-one", ontap: "promptLeaveGroup"
+                    classes: "group-bt danger-bt", ontap: "promptLeaveGroup"
                 }
             ]
         },
@@ -399,11 +394,6 @@ module.exports = kind({
         { kind: Signals, onTypingChanged: "showTyping" },
         {
             name: 'threadMerge', kind: LunaService, service: DB_SERVICE, method: 'merge',
-            onError: 'serviceErr'
-        },
-        {
-            name: 'deleteThreadService', kind: LunaService,
-            service: 'luna://org.webosports.service.messaging', method: 'deleteChatthread',
             onError: 'serviceErr'
         },
         {
@@ -914,8 +904,9 @@ module.exports = kind({
         syncCollection(this.collection, results);
         this.followIncomingTransport(results);
         this.updateListButtons(this.chatThread);
-        this.$.listButtons.setShowing(
-            results.length > 0 && !!(this.chatThread && !(this.chatThread.flags || {}).locked));
+        this.$.listButtons.setShowing(results.length > 0 &&
+            !!(this.chatThread && !(this.chatThread.flags || {}).locked) &&
+            (this.$.groupAddButton.showing || this.$.groupLeaveButton.showing));
         this.relayout();
         if (follow) {
             this.revealListBottomSoon();
@@ -1373,27 +1364,10 @@ module.exports = kind({
     },
 
     updateListButtons: function (thread) {
-        this.$.blockButton.setShowing(!this.shouldHideBlockButton(thread));
         var actions = thread ? chatActions.actionsFor(thread.replyService, appState.accountService) : {};
         var group = chatActions.isGroupThread(thread);
         this.$.groupAddButton.setShowing(group && !!actions.groupInvite);
         this.$.groupLeaveButton.setShowing(group && !!actions.groupLeave);
-    },
-
-    /**
-     * Blocking only makes sense for an IM sender who is not already a buddy, and never for a group
-     * chat or when the user has no IM account at all.
-     */
-    shouldHideBlockButton: function (thread) {
-        var list = transportPicker.getTransports();
-        var haveIMAccount = false;
-        for (var i = 0; i < list.length; i++) {
-            if (list[i].account && list[i].account.capabilitySubtype === "IM") {
-                haveIMAccount = true;
-            }
-        }
-        return !!(thread && ((thread.personId && this.isIMBuddy) || thread.groupChatId ||
-            chatActions.isGroupThread(thread) || !haveIMAccount));
     },
 
     // --- rendering -----------------------------------------------------------------------
@@ -2911,26 +2885,6 @@ module.exports = kind({
         return true;
     },
 
-    promptDelete: function () {
-        this.confirmAction = "delete";
-        this.$.confirmDialogTitle.setContent($L("Delete Conversation"));
-        this.$.confirmDialogMessage.setContent(
-            $L("Are you sure you want to delete this conversation?"));
-        this.$.confirmAcceptButton.setContent($L("Delete"));
-        this.$.confirmDialog.show();
-        return true;
-    },
-
-    promptBlock: function () {
-        this.confirmAction = "block";
-        this.$.confirmDialogTitle.setContent($L("Block Sender"));
-        this.$.confirmDialogMessage.setContent(
-            $L("Are you sure you want to block this sender?"));
-        this.$.confirmAcceptButton.setContent($L("Block"));
-        this.$.confirmDialog.show();
-        return true;
-    },
-
     closeConfirmDialog: function () {
         this.$.confirmDialog.hide();
         this.confirmAction = null;
@@ -2939,11 +2893,7 @@ module.exports = kind({
 
     confirmAccepted: function () {
         this.$.confirmDialog.hide();
-        if (this.confirmAction === "delete") {
-            this.deleteConversation();
-        } else if (this.confirmAction === "block") {
-            this.blockSender();
-        } else if (this.confirmAction === "deleteSelected") {
+        if (this.confirmAction === "deleteSelected") {
             this.deleteSelected();
         } else if (this.confirmAction === "deleteForEveryone") {
             this.deleteForEveryone();
@@ -2954,40 +2904,6 @@ module.exports = kind({
         }
         this.confirmAction = null;
         return true;
-    },
-
-    deleteConversation: function () {
-        if (!this.chatThread || !this.chatThread._id) {
-            return;
-        }
-        var threadId = this.chatThread._id;
-        if (mockDb.enabled) {
-            mockDb.del([threadId]);
-        } else {
-            this.$.deleteThreadService.send({ threadId: threadId });
-        }
-        this.closeConversation(threadId, true);
-        this.chatThread = null;
-        this.collection.empty([]);
-        this.doCloseConversationList();
-    },
-
-    blockSender: function () {
-        var selected = transportPicker.getSelectedTransport();
-        var accountService = appState.accountService;
-        if (!selected || !accountService || mockDb.enabled) {
-            return;
-        }
-        this.$.reactionCommand.send({
-            objects: [{
-                _kind: accountService.getImCommandKind(selected.serviceName),
-                command: "blockBuddy",
-                handler: "transport",
-                serviceName: selected.serviceName,
-                targetUsername: selected.replyAddress,
-                fromUsername: selected.account && selected.account.username
-            }]
-        });
     },
 
     serviceErr: function (inSender, inError) {
