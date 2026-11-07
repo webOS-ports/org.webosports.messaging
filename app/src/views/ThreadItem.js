@@ -68,7 +68,10 @@ module.exports = kind({
         this.updateOutgoing(inThread.flags);
 
         var displayName;
-        if (inThread.person) {
+        if (inThread.channelLabel) {
+            // A followed server channel among the chats (util/chatsThreads).
+            displayName = inThread.channelLabel;
+        } else if (inThread.person) {
             displayName = messagingUtils.person.getDisplayName(inThread.person);
         } else {
             displayName = inThread.displayName ? inThread.displayName : inThread.replyAddress;

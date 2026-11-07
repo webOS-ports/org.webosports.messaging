@@ -23,6 +23,8 @@ var kind = require('enyo/kind'),
     ThreadRow = require('./ThreadRow'),
     SearchInput = require('./widgets/SearchInput'),
     ThreadService = require('../data/ThreadService'),
+    ServerServices = require('../data/ServerService'),
+    chatsThreads = require('../util/chatsThreads'),
     mockDb = require('../data/mockDb'),
     messagingUtils = require('../util/messagingUtils'),
     appState = require('../util/appState'),
@@ -96,12 +98,76 @@ module.exports = kind({
             onWatch: "threadsWatch"
         }, { owner: this });
 
+        // Channels whose messages arrive while closed are shown among the chats (util/chatsThreads).
+        this.deliveredChannels = {};
+        this.allThreads = null;
+        this.channels = null;
+        this.servers = null;
+        this.channelService = this.createComponent({
+            kind: ServerServices.ChannelService,
+            onResults: "gotChannels", onWatch: "channelsWatch"
+        }, { owner: this });
+        this.serverService = this.createComponent({
+            kind: ServerServices.ServerService,
+            onResults: "gotServers", onWatch: "serversWatch"
+        }, { owner: this });
+
         this.runQuery();
+        this.runChannelQuery();
+        this.runServerQuery();
+    },
+
+    runChannelQuery: function () {
+        this.channelService.call({
+            query: { select: ["_id", "background", "serverId", "displayName", "name", "remoteId"] }
+        });
+    },
+
+    runServerQuery: function () {
+        this.serverService.call({ query: { select: ["_id", "displayName", "name"] } });
+    },
+
+    serversWatch: function () {
+        this.serverService.cancel();
+        this.runServerQuery();
+        return true;
+    },
+
+    gotServers: function (inSender, inEvent) {
+        this.servers = (inEvent && inEvent.results) || [];
+        this.refreshDelivered();
+        return true;
+    },
+
+    channelsWatch: function () {
+        this.channelService.cancel();
+        this.runChannelQuery();
+        return true;
+    },
+
+    gotChannels: function (inSender, inEvent) {
+        this.channels = (inEvent && inEvent.results) || [];
+        this.refreshDelivered();
+        return true;
+    },
+
+    refreshDelivered: function () {
+        this.deliveredChannels = chatsThreads.deliveredChannels(this.channels, this.servers);
+        if (this.allThreads) {
+            this.gotThreads(null, { results: this.allThreads });
+        }
+        return true;
     },
 
     destroy: function () {
         if (this.threadService) {
             this.threadService.cancel();
+        }
+        if (this.channelService) {
+            this.channelService.cancel();
+        }
+        if (this.serverService) {
+            this.serverService.cancel();
         }
         if (this.collection) {
             this.collection.destroy();
@@ -150,7 +216,8 @@ module.exports = kind({
 
     gotThreads: function (inSender, inEvent) {
         var all = (inEvent && inEvent.results) || [];
-        var chats = this.excludeChannelThreads(all);
+        this.allThreads = all;
+        var chats = chatsThreads.chatsThreads(all, this.deliveredChannels);
         // Muted chats for the alerts (DashboardManager); a search lists only some of them.
         if (!this.filterString) {
             appState.mutedThreads = chatFlags.mutedIds(chats);
@@ -271,22 +338,14 @@ module.exports = kind({
         return true;
     },
 
-    /**
+    /*
      * Servers/Rooms (channels, status updates, ...) are com.palm.chatthread records too, and the
      * chatthreader stamps flags.visible:true on them so the server/channel unread queries keep
-     * working — which means the "flags.visible = true" query above cannot tell them apart from a
+     * working, which means the "flags.visible = true" query above cannot tell them apart from a
      * real 1:1/group chat. There is no db8 index on channelId to exclude them at the query level
-     * (com.palm.chatthread is a stock kind), so strip them here instead.
+     * (com.palm.chatthread is a stock kind), so util/chatsThreads strips them in gotThreads, all but
+     * the channels that deliver while closed.
      */
-    excludeChannelThreads: function (results) {
-        var filtered = [];
-        for (var i = 0; i < results.length; i++) {
-            if (!results[i].channelId) {
-                filtered.push(results[i]);
-            }
-        }
-        return filtered;
-    },
 
     updateEmptyMessage: function (results) {
         if (results.length === 0) {

@@ -9,7 +9,7 @@
 var kind = require('enyo/kind'),
     Control = require('enyo/Control'),
     messagingUtils = require('../util/messagingUtils'),
-    $L = require('enyo/i18n').$L;
+    chatsThreads = require('../util/chatsThreads');
 
 module.exports = kind({
     name: "ChannelItem",
@@ -64,7 +64,6 @@ module.exports = kind({
      * Prefixed with "#", but not doubled for IRC channels whose name already starts with one.
      */
     getChannelLabel: function (inChannel) {
-        var name = inChannel.displayName || inChannel.name || inChannel.remoteId || $L("channel");
-        return (String(name).charAt(0) === "#") ? name : ("# " + name);
+        return chatsThreads.channelLabel(inChannel);
     }
 });
