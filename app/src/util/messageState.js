@@ -5,15 +5,20 @@
  *   edited   its text was replaced by an edit; the bubble says so next to the time.
  */
 
-var $L = require('enyo/i18n').$L;
+var $L = require('enyo/i18n').$L,
+    poll = require('./poll');
 
 function isDeleted(message) {
     return !!(message && message.deleted === true);
 }
 
-/** Whether to say the message was edited: not once it is deleted, when there is nothing to edit. */
+/**
+ * Whether to say the message was edited: not once it is deleted, when there is nothing to edit, and
+ * not for a poll, which is rewritten in place with its votes as they come (util/poll).
+ */
 function isEdited(message) {
-    return !!(message && message.edited === true && !isDeleted(message));
+    return !!(message && message.edited === true && !isDeleted(message) &&
+        !poll.isPollOnly(message.messageText));
 }
 
 /** The bubble's time line: the time, and "Edited" after it when it was. */

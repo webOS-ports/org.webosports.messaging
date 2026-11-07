@@ -14,6 +14,7 @@ var kind = require('enyo/kind'),
     messagingUtils = require('../util/messagingUtils'),
     mediaUrl = require('../util/mediaUrl'),
     messageState = require('../util/messageState'),
+    poll = require('../util/poll'),
     moment = require('moment'),
     $L = require('enyo/i18n').$L;
 
@@ -496,15 +497,8 @@ module.exports = kind({
      * selection — rather than the static token, so it survives a row re-render.
      */
     buildPollBlock: function (token, inMessage) {
-        var payload;
-        try {
-            var b64 = token.replace(/-/g, "+").replace(/_/g, "/");
-            while (b64.length % 4) { b64 += "="; }
-            payload = JSON.parse(decodeURIComponent(escape(atob(b64))));
-        } catch (e) {
-            return "";
-        }
-        if (!payload || !payload.options || !payload.options.length) { return ""; }
+        var payload = poll.decode(token);
+        if (!payload) { return ""; }
 
         var max = payload.max || 0;
         var type = (max === 1) ? "radio" : "checkbox";
@@ -517,10 +511,12 @@ module.exports = kind({
             var checked = (mine.indexOf(raw) >= 0);
             var opt = messagingUtils.message.emojify(messagingUtils.message.escapeHtml(raw));
             var optAttr = raw.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+            var votes = poll.votesFor(payload, i);
             rows += '<label class="msg-poll-option' + (checked ? ' msg-poll-option-checked' : '') +
                 '" data-poll-option="' + optAttr + '" data-poll-max="' + max + '">' +
-                '<input type="' + type + '"' + (checked ? ' checked' : '') + '/><span>' + opt +
-                '</span></label>';
+                '<input type="' + type + '"' + (checked ? ' checked' : '') + '/><span class="msg-poll-name">' + opt +
+                '</span>' + (votes === null ? '' : '<span class="msg-poll-count">' + votes + '</span>') +
+                '</label>';
         }
 
         var footer;
