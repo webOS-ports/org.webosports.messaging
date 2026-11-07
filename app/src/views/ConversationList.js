@@ -18,6 +18,8 @@ var kind = require('enyo/kind'),
     RecordModel = require('../data/RecordModel'),
     syncCollection = require('../util/syncCollection'),
     isNearBottom = require('../util/isNearBottom'),
+    bubbleHit = require('../util/bubbleHit'),
+    SwipeableItem = require('./widgets/SwipeableItem'),
     prependedCount = require('../util/prependedCount'),
     senderImages = require('../util/senderImages'),
     sendAccount = require('../util/sendAccount'),
@@ -1931,6 +1933,11 @@ module.exports = kind({
 
         // A tap on a poll option votes; a tap on one of my reaction badges removes it.
         var node = inEvent && (inEvent.target || (inEvent.domEvent && inEvent.domEvent.target));
+        // Only the bubble opens the reactions: not the avatar, nor the row beside the bubble.
+        if (!bubbleHit(node)) {
+            this.dismissPopups();
+            return true;
+        }
         var option = this.pollOptionAt(node);
         if (option) {
             this.togglePollOption(message, option.name, option.max, option.node);
@@ -2184,6 +2191,8 @@ module.exports = kind({
      * a scroll, another chat, leaving the view - not only on a tap outside them.
      */
     dismissPopups: function () {
+        // A delete prompt left open on a row goes too: the row it sits on is moving away.
+        SwipeableItem.cancelPending();
         var popups = ["reactRow", "messageMenu", "transportMenu", "attachMenu", "mentionMenu"];
         for (var i = 0; i < popups.length; i++) {
             var popup = this.$[popups[i]];
