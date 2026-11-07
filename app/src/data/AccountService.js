@@ -338,6 +338,14 @@ module.exports = kind({
     },
 
     /**
+     * What a service's plugin does to chats and messages besides sending (util/chatActions), when
+     * its template says so with "chatActions"; null leaves it to the app's own table.
+     */
+    getChatActions: function (serviceName) {
+        return this._fromTemplates("MESSAGING", serviceName, "chatActions") || null;
+    },
+
+    /**
      * Usernames of the non-buddy pseudo-contacts a connector surfaces its interactive login
      * challenge through (Telegram's "Telegram" chat, Facebook's login/2FA chat). They have no
      * presence record, so the "recipient is offline" nag would falsely fire on them mid-login.

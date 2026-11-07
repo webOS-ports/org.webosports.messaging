@@ -20,6 +20,7 @@ var kind = require('enyo/kind'),
     PreferencesView = require('./PreferencesView'),
     FirstLaunch = require('./FirstLaunch'),
     AddBuddyDialog = require('./AddBuddyDialog'),
+    GroupDialog = require('./GroupDialog'),
     messagingUtils = require('../util/messagingUtils'),
     appState = require('../util/appState'),
     urlTarget = require('../util/urlTarget'),
@@ -115,9 +116,12 @@ module.exports = kind({
         },
 
         { name: "buddyDialog", kind: AddBuddyDialog },
+        { name: "groupDialog", kind: GroupDialog },
         {
             name: "appMenu", kind: Menu, floating: true, scrolling: false, classes: "app-menu", components: [
                 { name: "addBuddyMenuItem", kind: MenuItem, content: $L("Add Buddy"), ontap: "addBuddy" },
+                // Only with an account whose service makes groups (util/chatActions).
+                { name: "newGroupMenuItem", kind: MenuItem, content: $L("New Group"), ontap: "newGroup" },
                 {
                     name: "showOfflineMenuItem", kind: MenuItem,
                     content: $L("Show Offline Buddies"), ontap: "updateOfflinePrefs"
@@ -460,6 +464,11 @@ module.exports = kind({
         return true;
     },
 
+    newGroup: function () {
+        this.$.groupDialog.openCreate();
+        return true;
+    },
+
     showAddFavoriteList: function () {
         // Favorites are a Contacts concept, so adding one hands off to that app.
         this.$.launchApp.send({
@@ -488,6 +497,7 @@ module.exports = kind({
     // none: it threw while hidden for sizing, and stayed invisible.
     showAppMenu: function (activator) {
         this.setOfflineMenuItem();
+        this.$.newGroupMenuItem.setShowing(!!this.$.groupDialog.creatingAccount());
         this.$.appMenu.requestMenuShow(this, { activator: activator });
     },
 

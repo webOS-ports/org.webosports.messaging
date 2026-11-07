@@ -116,6 +116,12 @@ Header
 .blocksender-bt {
   margin-right: 8px;
 }
+/* A group's Add People and Leave Group, in the same row and the same light grey. */
+.group-bt {
+  opacity: 0.5;
+  color: #333;
+  margin-left: 8px;
+}
 .accept-decline-box {
   margin-top: 3px;
   display: -webkit-flex;
@@ -1068,4 +1074,51 @@ Replies
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
+}
+
+/*----------------------
+New Group / Add People (GroupDialog) and the contact to send (contactPicker): a name, the people
+picked as chips, and the contacts to pick from in a list that scrolls inside the popup.
+----------------------*/
+.group-dialog,
+.contact-picker-popup {
+  width: 22em;
+  max-width: calc(100vw - 32px);
+  box-sizing: border-box;
+}
+.group-dialog-title {
+  font-weight: bold;
+  margin-bottom: 0.75rem;
+}
+.group-dialog-name {
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 0.5rem;
+}
+.group-dialog-chosen {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-wrap: wrap;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+.group-dialog-member {
+  padding: 4px 10px;
+  margin: 0 6px 6px 0;
+  border-radius: 12px;
+  background-color: #d3e2f0;
+  color: #333;
+}
+.group-dialog-people,
+.contact-picker-list {
+  height: 40vh;
+  margin-bottom: 0.75rem;
+}
+.group-dialog-people .enyo-data-list,
+.contact-picker-list .enyo-data-list {
+  -webkit-flex: 1;
+  flex: 1;
+}
+.contact-picker-cancel {
+  width: 100%;
 }

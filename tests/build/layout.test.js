@@ -244,7 +244,7 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             'chat.reactMore(null, { pageX: 200, pageY: innerHeight - 20 }); await wait(300);' +
             'var n = chat.$.messageMenu.hasNode(), b = n.getBoundingClientRect();' +
             'var rows = Array.prototype.filter.call(n.querySelectorAll(".onyx-menu-item"), function (x) {' +
-            '  return !/divider/.test(x.className); });' +
+            '  return !/divider/.test(x.className) && x.offsetParent !== null; });' +
             'var whole = rows.every(function (x) { var q = x.getBoundingClientRect(); return q.height > 30 && q.top >= b.top && q.bottom <= b.bottom; });' +
             'var mid = Math.abs((b.top + b.bottom) / 2 - innerHeight / 2) <= 2;' +
             'var bg = getComputedStyle(n).backgroundColor;' +
@@ -453,5 +453,188 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             '})()');
         // Anna has a Telegram handle and two phone numbers, so the transport picker opens.
         assert.deepEqual(r, { thread: 'thread-anna', person: 'person-anna', picker: true });
+    });
+    // B2-B6 on the mock WhatsApp group: what each action writes is the imcommand or outbox
+    // message the transport reads (util/chatActions), and the chat shows it at once. Runs in the
+    // page; everything it adds is taken out again at the end.
+    it('reacts, edits, deletes for everyone, manages the group, and sends places, cards and mentions', async function () {
+        /* global require, innerHeight */
+        var page = async function () {
+            var $ = require('enyo/dispatcher').$, mockDb = require('src/data/mockDb');
+            var main = $.app_mainView, chat = $.app_mainView_chatView_conversationList;
+            var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+            var GROUP = '120363041234567890@g.us';
+            var thread = null;
+            $.app_mainView_messaging_threadList.collection.forEach(function (m) {
+                if (m.attributes._id === 'thread-family') { thread = m.attributes; }
+            });
+            main.selectThread(null, thread);
+            for (var i = 0; i < 20 && !(chat.chatThread && chat.chatThread._id === 'thread-family' && chat.messages.length); i++) { await wait(100); }
+            var out = {};
+            var last = function () { return mockDb.imCommands[mockDb.imCommands.length - 1]; };
+            var record = function (id) { return mockDb.get([id]).results[0] || {}; };
+            var before = mockDb.store['com.palm.message:1'].map(function (m) { return m._id; });
+            mockDb.imCommands.length = 0;
+
+            // A reaction on Marta's message names it, her, our account and the group.
+            var marta = chat.messages.filter(function (m) { return m._id === 'msg-f2'; })[0];
+            chat.toggleMyReaction(marta, 'X');
+            out.reaction = last();
+            chat.toggleMyReaction(marta, 'X');   // and off again
+
+            // Theirs has no Edit or Delete for Everyone.
+            chat.selectedMessage = marta;
+            chat.reactMore(null, {}); await wait(100);
+            out.theirs = { edit: chat.$.menuEditItem.getShowing(), all: chat.$.menuDeleteAllItem.getShowing() };
+            chat.$.messageMenu.hide();
+
+            // Ours, sent a minute ago, has both.
+            mockDb.merge([{
+                _id: 'msg-own', _kind: 'com.palm.message:1', conversations: ['thread-family'], folder: 'outbox',
+                status: 'successful', serviceName: 'type_whatsapp', chatType: 'groupchat', serviceMessageId: '3EB0OWN',
+                messageText: 'See you at six', localTimestamp: Date.now() - 60000, timestamp: Date.now() - 60000,
+                from: { addr: '+15555550100' }, flags: { visible: true, read: true }
+            }]);
+            chat.runQuery(); await wait(300);
+            var own = chat.messages.filter(function (m) { return m._id === 'msg-own'; })[0];
+            chat.selectedMessage = own;
+            chat.reactMore(null, {}); await wait(100);
+            out.ours = { edit: chat.$.menuEditItem.getShowing(), all: chat.$.menuDeleteAllItem.getShowing() };
+            chat.$.messageMenu.hide();
+
+            chat.menuEdit(); await wait(50);
+            out.editing = { bar: chat.$.replyBar.getShowing(), text: chat.$.richText.get('value') };
+            chat.$.richText.set('value', 'See you at seven');
+            chat.sendMessage(); await wait(200);
+            out.edit = last();
+            out.edited = { text: record('msg-own').messageText, edited: record('msg-own').edited,
+                composer: chat.$.richText.get('value'), bar: chat.$.replyBar.getShowing() };
+
+            chat.selectedMessage = own;
+            chat.menuDeleteForEveryone();
+            out.deletePrompt = chat.$.confirmDialog.getShowing();
+            chat.confirmAccepted(); await wait(200);
+            out.del = last();
+            out.deleted = record('msg-own').deleted;
+
+            // The group: Add People and Leave Group; no Block Sender.
+            out.buttons = { add: chat.$.groupAddButton.getShowing(), leave: chat.$.groupLeaveButton.getShowing(),
+                block: chat.$.blockButton.getShowing() };
+            chat.openGroupInvite(); await wait(100);
+            var dialog = chat.$.groupDialog;
+            out.inviteShown = dialog.getShowing();
+            var fits = function (c) {
+                var b = c.hasNode().getBoundingClientRect();
+                return b.left >= 0 && b.top >= 0 && b.right <= innerWidth && b.bottom <= innerHeight && b.width > 200;
+            };
+            out.dialogFits = fits(dialog);
+            out.listHeight = Math.round(dialog.$.people.$.dataList.hasNode().getBoundingClientRect().height);
+            // Only who can be in a WhatsApp group is offered: the mock contacts have no one.
+            var offered = dialog.$.people.$.dataList.collection, accept = offered.accept;
+            for (i = 0; i < 20 && !offered.personCollection.length; i++) { await wait(100); }
+            await wait(200);
+            out.listed = offered.map(function (m) { return m.get('value'); });
+            offered.accept = null; offered.searchTextChanged(); await wait(200);
+            out.unfiltered = offered.length;
+            offered.accept = accept; offered.searchTextChanged();
+            dialog.personPicked(null, { msgAddr: { displayName: 'Ben', value: '+44 7700 900123', isPhone: true } });
+            dialog.personPicked(null, { msgAddr: { displayName: 'Local', value: '07700 900123', isPhone: true } });
+            dialog.doneTapped();
+            out.invite = last();
+            chat.promptLeaveGroup(); chat.confirmAccepted();
+            out.leave = last();
+
+            // A place: asked first, then sent as a link with the position beside it.
+            var count = mockDb.store['com.palm.message:1'].length;
+            chat.promptShareLocation();
+            out.locationPrompt = chat.$.confirmDialog.getShowing();
+            chat.confirmAccepted(); await wait(200);
+            var sentNow = function () { return mockDb.store['com.palm.message:1'].slice(count); };
+            var place = sentNow()[0] || {};
+            out.place = { text: place.messageText, location: place.location, to: place.to && place.to[0].addr };
+
+            // A card.
+            count = mockDb.store['com.palm.message:1'].length;
+            chat.openContactPicker(); await wait(200);
+            out.pickerFits = fits(chat.$.contactPicker);
+            out.pickerList = Math.round(chat.$.contactList.$.dataList.hasNode().getBoundingClientRect().height);
+            chat.contactPicked(null, { msgAddr: { displayName: 'Sam Patel', value: '+1 555 987 6543', isPhone: true } });
+            await wait(200);
+            var card = sentNow()[0] || {};
+            out.card = { text: card.messageText, vcard: card.contactCard && card.contactCard.vcard };
+
+            // A mention: "@Ma" offers Marta; picking her writes her name, sending says who it is.
+            var node = chat.$.richText.hasNode();
+            chat.$.richText.set('value', 'hi @Ma'); node.value = 'hi @Ma'; node.setSelectionRange(6, 6);
+            chat.composerInput(); await wait(100);
+            var items = chat.$.mentionMenu.getClientControls();
+            out.offered = items.map(function (c) { return c.member.name; });
+            chat.mentionPicked(null, { originator: items[0] });
+            out.mentionText = chat.$.richText.get('value');
+            chat.$.richText.set('value', out.mentionText + 'bring the cake');
+            count = mockDb.store['com.palm.message:1'].length;
+            chat.sendMessage(); await wait(200);
+            var mention = sentNow()[0] || {};
+            out.mention = { text: mention.messageText, mentions: mention.mentions };
+
+            // New Group, from the app menu.
+            main.showAppMenu(main.$.appMenuAnchor); await wait(100);
+            out.newGroupItem = main.$.newGroupMenuItem.getShowing();
+            main.$.appMenu.hide();
+            main.newGroup(); await wait(100);
+            var create = main.$.groupDialog;
+            create.$.nameInput.set('value', 'Climbing');
+            create.personPicked(null, { msgAddr: { displayName: 'Marta', value: '+46 70 123 45 67', isPhone: true } });
+            create.doneTapped();
+            out.create = last();
+
+            // Leave the mock store as it was.
+            var added = mockDb.store['com.palm.message:1'].map(function (m) { return m._id; })
+                .filter(function (id) { return before.indexOf(id) < 0; });
+            mockDb.del(added);
+            mockDb.imCommands.length = 0;
+            chat.runQuery(); await wait(200);
+            return out;
+        };
+        var r = await session.evaluate('(' + page.toString() + ')()');
+        var cmd = function (command, target, params) {
+            return { _kind: 'com.palm.imcommand.whatsapp:1', command: command, handler: 'transport',
+                serviceName: 'type_whatsapp', fromUsername: '+15555550100', targetUsername: target, params: params };
+        };
+        var GROUP = '120363041234567890@g.us';
+        assert.deepEqual(r.reaction, cmd('sendReaction', GROUP,
+            { targetServiceMessageId: '3EB0C4F1A2', emoji: 'X', remove: false, targetSender: '+46701234567' }));
+        assert.deepEqual(r.theirs, { edit: false, all: false });
+        assert.deepEqual(r.ours, { edit: true, all: true });
+        assert.deepEqual(r.editing, { bar: true, text: 'See you at six' });
+        assert.deepEqual(r.edit, cmd('editMessage', GROUP, { targetServiceMessageId: '3EB0OWN', text: 'See you at seven' }));
+        assert.deepEqual(r.edited, { text: 'See you at seven', edited: true, composer: '', bar: false });
+        assert.equal(r.deletePrompt, true, 'asked first');
+        assert.deepEqual(r.del, cmd('deleteMessage', GROUP, { targetServiceMessageId: '3EB0OWN' }));
+        assert.equal(r.deleted, true);
+        assert.deepEqual(r.buttons, { add: true, leave: true, block: false });
+        assert.equal(r.inviteShown, true);
+        assert.equal(r.dialogFits, true, 'Add People fits the window');
+        assert.ok(r.listHeight > 100, 'its contacts get room: ' + r.listHeight);
+        assert.equal(r.pickerFits, true, 'the contact picker fits the window');
+        assert.ok(r.pickerList > 100, 'its contacts get room: ' + r.pickerList);
+        assert.ok(r.unfiltered > r.listed.length, 'the contacts that cannot be members are left out (' + r.unfiltered + ')');
+        assert.deepEqual(r.listed.filter(function (v) { return !/^\+\d+$/.test(v) && !/@s\.whatsapp\.net$/.test(v); }), [],
+            'only a WhatsApp address or a full number: ' + r.listed.join());
+        assert.ok(r.listed.indexOf('anna.k') < 0 && r.listed.indexOf('5551234567') < 0);
+        assert.deepEqual(r.invite, cmd('inviteToGroup', GROUP, { members: '+447700900123' }),
+            'a number without its country code is not taken');
+        assert.deepEqual(r.leave, cmd('leaveGroup', GROUP, {}));
+        assert.equal(r.locationPrompt, true, 'asked first');
+        assert.deepEqual(r.place, { text: 'My location\nhttps://maps.google.com/?q=52.3731,4.8925',
+            location: { latitude: 52.3731, longitude: 4.8925 }, to: GROUP });
+        assert.equal(r.card.text.split('\n')[0], 'Sam Patel');
+        assert.match(r.card.vcard, /^BEGIN:VCARD\r\nVERSION:3\.0\r\nFN:Sam Patel\r\n[\s\S]*TEL;TYPE=CELL:[\s\S]*END:VCARD\r\n$/);
+        assert.deepEqual(r.offered, ['Marta Lindqvist']);
+        assert.equal(r.mentionText, 'hi @Marta Lindqvist ');
+        assert.deepEqual(r.mention, { text: 'hi @Marta Lindqvist bring the cake',
+            mentions: [{ id: '+46701234567', name: 'Marta Lindqvist' }] });
+        assert.equal(r.newGroupItem, true);
+        assert.deepEqual(r.create, cmd('createGroup', '', { name: 'Climbing', members: '+46701234567' }));
     });
 });

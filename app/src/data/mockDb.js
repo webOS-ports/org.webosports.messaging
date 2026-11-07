@@ -789,6 +789,12 @@ module.exports = {
     store: store,
     accounts: accounts,
 
+    /** The imcommands the app wrote (reactions, edits, groups, ...), for the tests to read. */
+    imCommands: [],
+
+    /** Where the device is, for sending a location without a location service. */
+    location: { latitude: 52.3731, longitude: 4.8925 },
+
     /** Evaluate a db8-style query against the fixtures. */
     find: function (query) {
         query = query || {};

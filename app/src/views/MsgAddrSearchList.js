@@ -19,13 +19,16 @@ module.exports = kind({
     name: 'MsgAddrSearchList',
     kind: Control,
     published: {
-        searchText: ""
+        searchText: "",
+        // What the field is for ("To", "Share", "Add").
+        label: $L("To"),
+        // Which addresses to offer: entry -> bool (MsgAddrCollection.accept); null for all.
+        accept: null
     },
     events: {
         onSelected: ''
     },
     bindings: [
-        {from: "$.searchInput.value", to: "$.dataList.collection.searchText"},
         {from: "$.searchInput.value", to: "searchText", oneWay: false}
     ],
     classes: 'onyx-background',
@@ -35,7 +38,7 @@ module.exports = kind({
             kind: InputDecorator,
             style: 'box-sizing: border-box; width: 100%; display: flex; flex-direction: row; align-items: center;',
             components: [
-                {content: $L("To"), style: "font-weight:bold; margin-right:5px;"},
+                {name: "searchLabel", content: $L("To"), style: "font-weight:bold; margin-right:5px;"},
                 {
                     name: "searchInput",
                     kind: Input,
@@ -46,7 +49,7 @@ module.exports = kind({
                 { kind: Image, src: "assets/search-input.svg" }
             ]
         },
-        {name: 'dataList', kind: DataList, collection: new MsgAddrCollection(), ontap: "selectMsgAddr", components: [
+        {name: 'dataList', kind: DataList, ontap: "selectMsgAddr", components: [
             {classes: 'msg-addr-item', components: [
                 {name: 'addrHeader', classes: 'msg-addr-header',  components: [
                     {tag: 'hr'},
@@ -78,6 +81,34 @@ module.exports = kind({
             ]}
         ]}
     ],
+
+    create: function () {
+        this.inherited(arguments);
+        // Each list its own: one in the kind would be shared by every list, the Compose view's
+        // with the group dialog's, and so would its filter.
+        this.$.dataList.set('collection', new MsgAddrCollection());
+        this.labelChanged();
+        this.acceptChanged();
+    },
+
+    searchTextChanged: function () {
+        this.$.dataList.get('collection').set('searchText', this.searchText);
+    },
+
+    labelChanged: function () {
+        this.$.searchLabel.setContent(this.label);
+    },
+
+    acceptChanged: function () {
+        this.$.dataList.get('collection').accept = this.accept;
+    },
+
+    /** The contact an entry is of (PersonModel), from the people the list was made from. */
+    personFor: function (msgAddr) {
+        var id = msgAddr && (msgAddr.get ? msgAddr.get('personId') : msgAddr.personId);
+        var people = this.$.dataList.get('collection').personCollection;
+        return (id && people && people.find(function (p) { return p.get('_id') === id; })) || null;
+    },
 
     reload: function () {
         this.log();

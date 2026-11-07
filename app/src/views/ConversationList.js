@@ -49,6 +49,10 @@ var kind = require('enyo/kind'),
     composerEcho = require('../util/composerEcho'),
     callRequest = require('../util/callRequest'),
     chatPresence = require('../util/chatPresence'),
+    chatActions = require('../util/chatActions'),
+    deviceLocation = require('../util/deviceLocation'),
+    GroupDialog = require('./GroupDialog'),
+    MsgAddrSearchList = require('./MsgAddrSearchList'),
     Signals = require('enyo/Signals'),
     messagingUtils = require('../util/messagingUtils'),
     appState = require('../util/appState'),
@@ -167,6 +171,15 @@ module.exports = kind({
                 {
                     name: "deleteButton", kind: Button, content: $L("Delete Conversation"),
                     classes: "deleteconversation-bt flex-one", ontap: "promptDelete"
+                },
+                // A group on a service that manages them (util/chatActions).
+                {
+                    name: "groupAddButton", kind: Button, content: $L("Add People"), showing: false,
+                    classes: "group-bt flex-one", ontap: "openGroupInvite"
+                },
+                {
+                    name: "groupLeaveButton", kind: Button, content: $L("Leave Group"), showing: false,
+                    classes: "group-bt flex-one", ontap: "promptLeaveGroup"
                 }
             ]
         },
@@ -219,7 +232,7 @@ module.exports = kind({
             name: "footer", kind: Toolbar, classes: "conversation-bottom flex-row", components: [
                 {
                     name: "attachButton", kind: IconButton, src: "assets/menu-icon-attach.svg",
-                    classes: "conversation-attach-btn", ontap: "openAttachmentPicker"
+                    classes: "conversation-attach-btn", ontap: "openAttachMenu"
                 },
                 {
                     name: "micButton", kind: IconButton, src: "assets/menu-icon-mic.svg",
@@ -266,6 +279,27 @@ module.exports = kind({
             name: "transportMenu", kind: Menu, floating: true, scrolling: false, onSelect: "transportChosen"
         },
         {
+            // What the paperclip sends: a file, where we are, or a contact's card.
+            name: "attachMenu", kind: Menu, floating: true, scrolling: false, components: [
+                { kind: MenuItem, content: $L("File"), ontap: "openAttachmentPicker" },
+                { kind: MenuItem, content: $L("My Location"), ontap: "promptShareLocation" },
+                { kind: MenuItem, content: $L("Contact"), ontap: "openContactPicker" }
+            ]
+        },
+        // Who an "@" being typed in a group may be (updateMentionMenu).
+        { name: "mentionMenu", kind: Menu, floating: true, scrolling: false, onSelect: "mentionPicked" },
+        {
+            name: "contactPicker", kind: Popup, centered: true, floating: true, modal: true, scrim: true,
+            classes: "contact-picker-popup", components: [
+                {
+                    name: "contactList", kind: MsgAddrSearchList, label: $L("Share"),
+                    classes: "contact-picker-list", onSelected: "contactPicked"
+                },
+                { kind: Button, content: $L("Cancel"), classes: "contact-picker-cancel", ontap: "closeContactPicker" }
+            ]
+        },
+        { name: "groupDialog", kind: GroupDialog },
+        {
             name: "reactRow", kind: Popup, floating: true, autoDismiss: true,
             classes: "reaction-picker-popup", components: [
                 { name: "reactRowBox", classes: "reaction-row-box" }
@@ -277,8 +311,13 @@ module.exports = kind({
                 { kind: MenuItem, content: $L("Forward"), ontap: "menuForward" },
                 { kind: MenuItem, content: $L("Forward Via Email"), ontap: "menuForwardEmail" },
                 { kind: MenuItem, content: $L("Copy Text"), ontap: "menuCopy" },
+                { name: "menuEditItem", kind: MenuItem, content: $L("Edit"), ontap: "menuEdit" },
                 { classes: "onyx-menu-divider" },
-                { kind: MenuItem, content: $L("Delete"), ontap: "menuDelete" }
+                { kind: MenuItem, content: $L("Delete"), ontap: "menuDelete" },
+                {
+                    name: "menuDeleteAllItem", kind: MenuItem, content: $L("Delete for Everyone"),
+                    ontap: "menuDeleteForEveryone"
+                }
             ]
         },
         {
@@ -411,6 +450,7 @@ module.exports = kind({
 
     destroy: function () {
         this.stopTyping();
+        this.cancelLocating();
         if (appState.activeConversationList === this) {
             appState.activeConversationList = null;
             messagingUtils.activeConversationList = null;
@@ -620,10 +660,13 @@ module.exports = kind({
         if (!chatThreadId) {
             return;
         }
-        if (!skipSaveDraft) {
+        // An edit's text is the old message's, not a draft.
+        if (!skipSaveDraft && !this.editingMessage) {
             this.saveMessageToDraft(this.$.richText.get('value'), chatThreadId);
         }
         this.$.richText.set('value', "");
+        this.pickedMentions = [];
+        this.cancelLocating();
 
         // Clear the unread count only when the app is foregrounded: if it is carded, an unread
         // thread should keep its badge.
@@ -1329,6 +1372,10 @@ module.exports = kind({
 
     updateListButtons: function (thread) {
         this.$.blockButton.setShowing(!this.shouldHideBlockButton(thread));
+        var actions = thread ? chatActions.actionsFor(thread.replyService, appState.accountService) : {};
+        var group = chatActions.isGroupThread(thread);
+        this.$.groupAddButton.setShowing(group && !!actions.groupInvite);
+        this.$.groupLeaveButton.setShowing(group && !!actions.groupLeave);
     },
 
     /**
@@ -1343,7 +1390,8 @@ module.exports = kind({
                 haveIMAccount = true;
             }
         }
-        return !!(thread && ((thread.personId && this.isIMBuddy) || thread.groupChatId || !haveIMAccount));
+        return !!(thread && ((thread.personId && this.isIMBuddy) || thread.groupChatId ||
+            chatActions.isGroupThread(thread) || !haveIMAccount));
     },
 
     // --- rendering -----------------------------------------------------------------------
@@ -1504,6 +1552,7 @@ module.exports = kind({
         composerEcho.check(this.$.richText);
         this.growInput();
         this.composerTyped();
+        this.updateMentionMenu();
     },
 
     /** The text changed: tell the transport we are typing, and watch for the keys to stop. */
@@ -1566,13 +1615,21 @@ module.exports = kind({
         return true;
     },
 
-    sendMessage: function () {
+    /**
+     * Send what is in the composer, or extra: { text, fields } for a message made for it (a
+     * location, a contact card: util/chatActions), which leaves the composer as it is.
+     */
+    sendMessage: function (extra) {
         if (!this.chatThread || !this.chatThread._id) {
             return;
         }
         // Safety net in case the app is killed before the thread is re-read.
         this.doClearUnreadCount({ threadId: this.chatThread._id });
         this.stopTyping();
+        if (this.editingMessage && !extra) {
+            this.sendEdit();
+            return;
+        }
 
         var selectedTransport = transportPicker.getSelectedTransport();
         if (!selectedTransport) {
@@ -1582,7 +1639,7 @@ module.exports = kind({
 
         var resolved = sendAccount(selectedTransport, appState.accountService);
         if (resolved.state === "missing") {
-            this.sendOnceAccountsReload(selectedTransport);
+            this.sendOnceAccountsReload(selectedTransport, extra);
             return;
         }
         selectedTransport.account = resolved.account;
@@ -1612,14 +1669,14 @@ module.exports = kind({
             conversations: [this.chatThread._id],
             flags: { read: true, visible: true, deliveryReport: false },
             to: [recipient],
-            messageText: this.$.richText.get('value'),
+            messageText: extra ? extra.text : this.$.richText.get('value'),
             serviceName: selectedTransport.serviceName
         };
 
         // Native reply: stamp the quote metadata from the message being replied to. quotedMessageId
         // is the original's serviceMessageId, which the transport hands to the network so OTHER
         // clients thread the reply too; the fields also render the local echo's quote card.
-        if (this.replyToMessage) {
+        if (this.replyToMessage && !extra) {
             var qsrc = messagingUtils.message.unescapeText(this.replyToMessage.messageText || "")
                 .replace(/[\r\n]+/g, " ").replace(/\s+/g, " ");
             params.quotedText = qsrc;
@@ -1642,6 +1699,17 @@ module.exports = kind({
         if (resolved.state === "im") {
             dbKind = (selectedTransport.account.dbkinds || {}).immessage ||
                 messagingUtils.message.dbKind;
+            // What a plugin may send natively; the text is its plain form for any other.
+            var fields = (extra && extra.fields) || {};
+            for (var f in fields) {
+                if (fields.hasOwnProperty(f)) {
+                    params[f] = fields[f];
+                }
+            }
+            var mentions = extra ? [] : chatActions.mentionsInText(params.messageText, this.pickedMentions);
+            if (mentions.length) {
+                params.mentions = mentions;
+            }
         } else {
             dbKind = messagingUtils.message.SMS.dbKind;
             params.serviceName = "sms";
@@ -1650,8 +1718,9 @@ module.exports = kind({
         // One message per staged file, the text on the first (util/attachments). Only IM
         // transports can carry an attachment path; SMS/MMS ignores it, so never stamp it on a
         // text-message record.
-        var parts = attachments.messages(params.messageText, this.outboundAttachments,
-            !messagingUtils.utils.isTextMessage(params.serviceName));
+        var parts = extra ? [{ text: params.messageText }] :
+            attachments.messages(params.messageText, this.outboundAttachments,
+                !messagingUtils.utils.isTextMessage(params.serviceName));
         if (!parts.length) {
             return;
         }
@@ -1676,7 +1745,7 @@ module.exports = kind({
             { _id: this.chatThread._id, _kind: messagingUtils.thread.dbKind }, list[list.length - 1], recipient);
         this.mergeThread(updated);
 
-        this.sendMessageHelper(list, dbKind, params.messageText);
+        this.sendMessageHelper(list, dbKind, params.messageText, !!extra);
     },
 
     /**
@@ -1684,7 +1753,7 @@ module.exports = kind({
      * since the app started. Re-read the accounts and send once they are in; if the account is
      * still not there, say so and keep the text in the composer rather than send it some other way.
      */
-    sendOnceAccountsReload: function (transport) {
+    sendOnceAccountsReload: function (transport, extra) {
         var accounts = appState.accountService;
         var self = this;
         var notSent = function () {
@@ -1707,7 +1776,7 @@ module.exports = kind({
                 notSent();
                 return;
             }
-            self.sendMessage();
+            self.sendMessage(extra);
         };
         accounts.register(waiter, finish);
         waiter.timer = setTimeout(finish, ACCOUNT_RELOAD_MS);
@@ -1715,7 +1784,7 @@ module.exports = kind({
     },
 
     /** Write the messages of one send (one per file) to the outbox, in order, and reset the composer. */
-    sendMessageHelper: function (list, dbKind, typed) {
+    sendMessageHelper: function (list, dbKind, typed, keepComposer) {
         this._followToEnd = true;
         var now = Date.now();
         for (var i = 0; i < list.length; i++) {
@@ -1731,12 +1800,15 @@ module.exports = kind({
             this.$.messagePut.send({ objects: list });
         }
 
-        this.$.richText.set('value', "");
-        composerEcho.sent(this.$.richText, typed);
-        this.growInput();
-        this.cancelReply();
-        if (this.outboundAttachments.length) {
-            this.clearAttachment();
+        if (!keepComposer) {
+            this.$.richText.set('value', "");
+            composerEcho.sent(this.$.richText, typed);
+            this.growInput();
+            this.cancelReply();
+            this.pickedMentions = [];
+            if (this.outboundAttachments.length) {
+                this.clearAttachment();
+            }
         }
         this.playSoundNotification({ isSent: true });
     },
@@ -2044,20 +2116,30 @@ module.exports = kind({
     },
 
     sendPollVoteCommand: function (message, selected) {
-        var accountService = appState.accountService;
-        if (!accountService || mockDb.enabled) {
-            return;
-        }
-        this.$.reactionCommand.send({
-            objects: [{
-                _kind: accountService.getImCommandKind(message.serviceName),
-                command: "sendPollVote",
-                handler: "transport",
-                serviceName: message.serviceName,
-                messageId: message.serviceMessageId,
-                options: selected
-            }]
+        var thread = this.chatThread;
+        this.sendImCommand(message.serviceName, function (kind, account) {
+            return chatActions.pollVoteCommand(kind, account, chatActions.chatOf(message, thread), message, selected);
         });
+    },
+
+    /**
+     * Write one imcommand for the transport (util/chatActions). build(kind, account) makes it for
+     * our account on serviceName. With the mock db it is kept for the tests. False when there is
+     * no account or nothing to send.
+     */
+    sendImCommand: function (serviceName, build) {
+        var accountService = appState.accountService;
+        var account = accountService && accountService.getAccount(serviceName);
+        var cmd = account && build(accountService.getImCommandKind(serviceName), account);
+        if (!cmd) {
+            return false;
+        }
+        if (mockDb.enabled) {
+            mockDb.imCommands.push(cmd);
+        } else {
+            this.$.reactionCommand.send({ objects: [cmd] });
+        }
+        return true;
     },
 
     // --- reactions ---------------------------------------------------------------------------
@@ -2111,7 +2193,7 @@ module.exports = kind({
      * a scroll, another chat, leaving the view - not only on a tap outside them.
      */
     dismissPopups: function () {
-        var popups = ["reactRow", "messageMenu", "transportMenu"];
+        var popups = ["reactRow", "messageMenu", "transportMenu", "attachMenu", "mentionMenu"];
         for (var i = 0; i < popups.length; i++) {
             var popup = this.$[popups[i]];
             if (popup && popup.showing) {
@@ -2143,8 +2225,17 @@ module.exports = kind({
 
     reactMore: function (inSender, inEvent) {
         this.$.reactRow.hide();
+        this.updateMessageMenu(this.selectedMessage);
         this.showMenuCentered(this.$.messageMenu);
         return true;
+    },
+
+    /** Edit and Delete for Everyone only for our own sent message, where the service does them. */
+    updateMessageMenu: function (message) {
+        var actions = message ? chatActions.actionsFor(message.serviceName, appState.accountService) : {};
+        var now = Date.now();
+        this.$.menuEditItem.setShowing(chatActions.canEdit(message, actions, now));
+        this.$.menuDeleteAllItem.setShowing(chatActions.canDeleteForEveryone(message, actions, now));
     },
 
     /**
@@ -2191,20 +2282,11 @@ module.exports = kind({
     },
 
     sendReactionCommand: function (message, emoji, remove) {
-        var accountService = appState.accountService;
-        if (!accountService || mockDb.enabled) {
-            return;
-        }
-        this.$.reactionCommand.send({
-            objects: [{
-                _kind: accountService.getImCommandKind(message.serviceName),
-                command: "sendReaction",
-                handler: "transport",
-                serviceName: message.serviceName,
-                messageId: message.serviceMessageId,
-                emoji: this.mapReactionForNetwork(emoji, message.serviceName),
-                remove: !!remove
-            }]
+        var thread = this.chatThread;
+        var networkEmoji = this.mapReactionForNetwork(emoji, message.serviceName);
+        this.sendImCommand(message.serviceName, function (kind, account) {
+            return chatActions.reactionCommand(kind, account, chatActions.chatOf(message, thread), message,
+                networkEmoji, remove);
         });
     },
 
@@ -2296,6 +2378,7 @@ module.exports = kind({
     },
 
     enterReply: function (message) {
+        this.endEdit();
         this.replyToMessage = message;
         var from = (message.from && message.from.name) ? message.from.name : $L("You");
         var text = messagingUtils.message.removeHtml(message.messageText || "")
@@ -2308,9 +2391,279 @@ module.exports = kind({
     },
 
     cancelReply: function () {
+        this.endEdit();
         this.replyToMessage = null;
         this.$.replyBar.setShowing(false);
         this.relayout();
+        return true;
+    },
+
+    // --- editing and deleting our own messages (util/chatActions) -----------------------------
+
+    menuEdit: function () {
+        if (this.selectedMessage) {
+            this.enterEdit(this.selectedMessage);
+        }
+        return true;
+    },
+
+    /** Edit a message we sent: its text goes into the composer, and the bar above says so. */
+    enterEdit: function (message) {
+        this.cancelReply();
+        this.editingMessage = message;
+        var text = String(message.messageText || "");
+        this.$.replyBarText.setContent("<b>" + $L("Edit Message") + "</b><br>" +
+            messagingUtils.message.emojifyEscaped(messagingUtils.message.removeHtml(text).replace(/[\r\n]+/g, " ")));
+        this.$.replyBar.setShowing(true);
+        this.$.richText.set('value', text);
+        this.growInput();
+        this.$.richText.focus();
+        this.relayout();
+    },
+
+    /** Stop editing; the old text the composer was given goes with it. */
+    endEdit: function () {
+        if (!this.editingMessage) {
+            return;
+        }
+        this.editingMessage = null;
+        this.$.richText.set('value', "");
+        this.growInput();
+    },
+
+    /** Send the composer's text as the edit, and show it at once. */
+    sendEdit: function () {
+        var message = this.editingMessage;
+        var text = this.$.richText.get('value') || "";
+        if (!String(text).trim()) {
+            return;   // an edit cannot empty a message; Delete does that
+        }
+        if (text !== message.messageText) {
+            var thread = this.chatThread;
+            var sent = this.sendImCommand(message.serviceName, function (kind, account) {
+                return chatActions.editCommand(kind, account, chatActions.chatOf(message, thread), message, text);
+            });
+            if (!sent) {
+                this.showError($L("Unable to edit"), $L("This message cannot be edited."));
+                return;
+            }
+            this.mergeRecord({ _id: message._id, _kind: message._kind, messageText: text, edited: true });
+        }
+        this.cancelReply();
+    },
+
+    menuDeleteForEveryone: function () {
+        if (!this.selectedMessage) {
+            return true;
+        }
+        this.pendingDelete = this.selectedMessage;
+        this.confirmAction = "deleteForEveryone";
+        this.$.confirmDialogTitle.setContent($L("Delete for Everyone"));
+        this.$.confirmDialogMessage.setContent($L("Delete this message for everyone in the chat?"));
+        this.$.confirmAcceptButton.setContent($L("Delete"));
+        this.$.confirmDialog.show();
+        return true;
+    },
+
+    /** Delete our message on the service, and draw it deleted at once, as the transport will. */
+    deleteForEveryone: function () {
+        var message = this.pendingDelete, thread = this.chatThread;
+        this.pendingDelete = null;
+        if (!message) {
+            return;
+        }
+        var sent = this.sendImCommand(message.serviceName, function (kind, account) {
+            return chatActions.deleteCommand(kind, account, chatActions.chatOf(message, thread), message);
+        });
+        if (!sent) {
+            this.showError($L("Unable to delete"), $L("This message cannot be deleted for everyone."));
+            return;
+        }
+        // The words DeleteHandler leaves, for the thread's summary.
+        this.mergeRecord({ _id: message._id, _kind: message._kind, deleted: true, messageText: "This message was deleted." });
+    },
+
+    // --- groups ----------------------------------------------------------------------------
+
+    openGroupInvite: function () {
+        this.$.groupDialog.openInvite(this.chatThread);
+        return true;
+    },
+
+    promptLeaveGroup: function () {
+        if (!this.chatThread) {
+            return true;
+        }
+        this.confirmAction = "leaveGroup";
+        this.$.confirmDialogTitle.setContent($L("Leave Group"));
+        this.$.confirmDialogMessage.setContent(
+            $L("Leave {group}? Its new messages will no longer reach you.")
+                .replace("{group}", this.chatThread.displayName || $L("this group")));
+        this.$.confirmAcceptButton.setContent($L("Leave"));
+        this.$.confirmDialog.show();
+        return true;
+    },
+
+    leaveGroup: function () {
+        var thread = this.chatThread;
+        if (!thread) {
+            return;
+        }
+        var sent = this.sendImCommand(thread.replyService, function (kind, account) {
+            return chatActions.leaveCommand(kind, thread.replyService, account, thread.replyAddress);
+        });
+        if (!sent) {
+            this.showError($L("Unable to leave"), $L("No account can leave this group."));
+        }
+    },
+
+    // --- location and contact cards --------------------------------------------------------
+
+    openAttachMenu: function () {
+        this.$.attachMenu.requestMenuShow(this, { activator: this.$.attachButton });
+        return true;
+    },
+
+    /** Where we are goes only to whom it is meant for: ask first. */
+    promptShareLocation: function () {
+        if (!this.chatThread) {
+            return true;
+        }
+        this.confirmAction = "sendLocation";
+        this.$.confirmDialogTitle.setContent($L("Send My Location"));
+        this.$.confirmDialogMessage.setContent($L("Send where you are now to this chat?"));
+        this.$.confirmAcceptButton.setContent($L("Send"));
+        this.$.confirmDialog.show();
+        return true;
+    },
+
+    shareLocation: function () {
+        if (this._locating) {
+            return;
+        }
+        var self = this, threadId = this.chatThread && this.chatThread._id;
+        var done = function (error, fix) {
+            self._locating = null;
+            if (!self.chatThread || self.chatThread._id !== threadId) {
+                return;   // another chat by now
+            }
+            var loc = fix && chatActions.location(fix.latitude, fix.longitude);
+            if (!loc) {
+                self.showError($L("Location"), error || $L("Location unavailable."));
+                return;
+            }
+            self.sendMessage({ text: chatActions.locationText(loc), fields: { location: loc } });
+        };
+        if (mockDb.enabled) {
+            done(null, mockDb.location);
+            return;
+        }
+        this._locating = deviceLocation.locate(this.bindSafely("locationCall"), {
+            set: function (fn, ms) { return setTimeout(fn, ms); },
+            clear: function (id) { clearTimeout(id); }
+        }, done);
+    },
+
+    /** One call to the location service, for deviceLocation. */
+    locationCall: function (method, params, onReply, onError) {
+        var request = new ServiceRequest({
+            service: "luna://com.webos.service.location", method: method, subscribe: !!params.subscribe
+        });
+        request.response(function (inSender, inResponse) { onReply(inResponse); });
+        request.error(function (inSender, inError) { onError(inError); });
+        request.go(params);
+        return request;
+    },
+
+    cancelLocating: function () {
+        if (this._locating) {
+            this._locating();
+            this._locating = null;
+        }
+    },
+
+    openContactPicker: function () {
+        this.$.contactPicker.show();
+        this.$.contactList.reload();
+        return true;
+    },
+
+    closeContactPicker: function () {
+        this.$.contactPicker.hide();
+        return true;
+    },
+
+    /** Send a contact as a card: all their numbers and addresses, not only the one tapped. */
+    contactPicked: function (inSender, inEvent) {
+        var entry = inEvent && inEvent.msgAddr;
+        var attrs = (entry && (entry.attributes || entry)) || {};
+        var person = this.$.contactList.personFor(entry);
+        var contact = {
+            name: attrs.displayName,
+            phoneNumbers: person ? person.get('phoneNumbers') : (attrs.isPhone ? [{ value: attrs.value }] : []),
+            emails: person ? person.get('emails') : []
+        };
+        this.$.contactPicker.hide();
+        var card = chatActions.contactCard(contact);
+        if (!card) {
+            this.showError($L("Contact"), $L("This contact has no number or address to send."));
+            return true;
+        }
+        this.sendMessage({ text: chatActions.contactText(contact), fields: { contactCard: card } });
+        return true;
+    },
+
+    // --- mentions --------------------------------------------------------------------------
+
+    /** The people of this chat one can mention: who has written in it. */
+    chatMembers: function () {
+        return chatActions.groupMembers(this.collection.map(function (m) { return m.attributes; }));
+    },
+
+    /** An "@" typed in a group or channel whose service mentions: offer who it may be. */
+    updateMentionMenu: function () {
+        var thread = this.chatThread;
+        var node = this.$.richText.hasNode();
+        var actions = thread ? chatActions.actionsFor(thread.replyService, appState.accountService) : {};
+        var inGroup = chatActions.isGroupThread(thread) || !!(thread && thread.channelId);
+        var query = (actions.mentions && inGroup && node) ? chatActions.mentionQuery(node.value, node.selectionStart) : null;
+        var members = query ? chatActions.mentionCandidates(this.chatMembers(), query.query) : [];
+        this._mentionQuery = query;
+        var menu = this.$.mentionMenu;
+        if (!members.length) {
+            if (menu.showing) {
+                menu.hide();
+            }
+            return;
+        }
+        menu.destroyClientControls();
+        for (var i = 0; i < members.length; i++) {
+            menu.createComponent({
+                kind: MenuItem, allowHtml: true, member: members[i],
+                content: messagingUtils.message.emojifyEscaped(members[i].name)
+            }, { owner: this });
+        }
+        menu.render();
+        if (!menu.showing) {
+            menu.requestMenuShow(this, { activator: this.$.richText });
+        }
+    },
+
+    mentionPicked: function (inSender, inEvent) {
+        var member = inEvent && inEvent.originator && inEvent.originator.member;
+        var node = this.$.richText.hasNode();
+        var query = this._mentionQuery;
+        this._mentionQuery = null;
+        if (!member || !query || !node) {
+            return true;
+        }
+        var result = chatActions.insertMention(node.value, node.selectionStart, query, member);
+        this.$.richText.set('value', result.text);
+        node.value = result.text;
+        node.setSelectionRange(result.caret, result.caret);
+        this.$.richText.focus();
+        this.pickedMentions = (this.pickedMentions || []).concat([member]);
+        this.growInput();
         return true;
     },
 
@@ -2580,6 +2933,12 @@ module.exports = kind({
             this.blockSender();
         } else if (this.confirmAction === "deleteSelected") {
             this.deleteSelected();
+        } else if (this.confirmAction === "deleteForEveryone") {
+            this.deleteForEveryone();
+        } else if (this.confirmAction === "leaveGroup") {
+            this.leaveGroup();
+        } else if (this.confirmAction === "sendLocation") {
+            this.shareLocation();
         }
         this.confirmAction = null;
         return true;

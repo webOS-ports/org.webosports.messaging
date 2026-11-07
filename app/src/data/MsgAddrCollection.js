@@ -18,6 +18,8 @@ module.exports = kind({
     },
     model: MsgAddrModel,
     personCollection: new PersonCollection(),
+    // Which entries to list, when not every address will do (a group's members): entry -> bool.
+    accept: null,
     extractSuccess: null,
 
     fetch: function (opts) {
@@ -77,6 +79,9 @@ module.exports = kind({
             }
         });
 
+        if (this.accept instanceof Function) {
+            msgAddrData = msgAddrData.filter(this.accept);
+        }
         this.log("replacing with " + msgAddrData.length + " models");
         var removedModels = this.empty(msgAddrData);
 
