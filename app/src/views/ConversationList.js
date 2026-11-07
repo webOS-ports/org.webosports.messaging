@@ -197,7 +197,7 @@ module.exports = kind({
             // A tap reacts; a hold selects (startSelection), as press & hold enters a list's edit
             // mode in HP's TouchPad guidelines.
             ondown: "messageDown", onhold: "handleMessageHold",
-            ontap: "handleMessageTap", onConfirm: "swipeDelete", onReact: "handleReactSwipe",
+            ontap: "handleMessageTap", onConfirm: "swipeDelete", onReply: "handleReplySwipe",
             onScrollStart: "dismissPopups", onScrollStop: "noteScrollPosition",
             onError: "showErrorDialog", onSelectSender: "senderRowSelected",
             onOpenAttachment: "openAttachment", onInviteResponse: "respondToInvite",
@@ -2174,15 +2174,6 @@ module.exports = kind({
         return null;
     },
 
-    handleReactSwipe: function (inSender, inEvent) {
-        var message = this.messageFor(inEvent);
-        if (message && !messageState.isDeleted(message) && !this._selected) {
-            this.selectedMessage = message;
-            this.openReactRow(inEvent);
-        }
-        return true;
-    },
-
     openReactRow: function (inEvent) {
         this.$.reactRow.showAtEvent(inEvent);
     },
@@ -2304,6 +2295,18 @@ module.exports = kind({
     },
 
     // --- message menu --------------------------------------------------------------------
+
+    /** A short right swipe on a message replies to it; a tap is what opens the reactions. */
+    handleReplySwipe: function (inSender, inEvent) {
+        var message = this.messageFor(inEvent);
+        // Not to a deleted message, which has nothing to quote, nor while selecting.
+        if (message && !messageState.isDeleted(message) && !this._selected) {
+            this.dismissPopups();
+            this.selectedMessage = message;
+            this.enterReply(message);
+        }
+        return true;
+    },
 
     menuReply: function () {
         if (this.selectedMessage) {

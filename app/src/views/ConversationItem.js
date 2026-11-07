@@ -24,7 +24,7 @@ module.exports = kind({
     kind: SwipeableItem,
     confirmCaption: $L("Delete"),
     classes: "chat-balloon",
-    reactEnabled: true,
+    replyEnabled: true,
 
     /** Whether the list is selecting messages (ConversationList.startSelection). */
     listSelecting: function () {
@@ -49,7 +49,7 @@ module.exports = kind({
         onSelectSender: "",
         onOpenAttachment: "",
         onInviteResponse: "",
-        onReact: ""
+        onReply: ""
     },
 
     components: [

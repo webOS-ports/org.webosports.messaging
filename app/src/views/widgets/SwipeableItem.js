@@ -1,8 +1,8 @@
 /**
  * Enyo 2 stand-in for Mojo's enyo.SwipeableItem: drag a row sideways to reveal a confirm button.
  *
- * Swipe distance bands match ConversationItem's override in the Mojo app:
- *   short right swipe            -> onReact  (only when reactEnabled)
+ * Swipe distance bands (util/swipeAction.js), as the Mojo app's later ConversationItem had them:
+ *   short right swipe            -> onReply  (only when replyEnabled)
  *   long right swipe, any left   -> reveal the confirm prompt, which fires onConfirm when tapped
  *   anything shorter             -> snap back and fire onCancel
  *
@@ -17,6 +17,7 @@ var kind = require('enyo/kind'),
     Control = require('enyo/Control'),
     Button = require('onyx/Button'),
     dom = require('enyo/dom'),
+    swipeAction = require('../../util/swipeAction'),
     $L = require('enyo/i18n').$L;
 
 module.exports = kind({
@@ -28,8 +29,8 @@ module.exports = kind({
         confirmCaption: $L("Delete"),
         /** Set false on rows that must not be swipe-deleted. */
         swipeable: true,
-        /** When true a short right swipe fires onReact instead of arming the delete prompt. */
-        reactEnabled: false,
+        /** When true a short right swipe fires onReply instead of arming the delete prompt. */
+        replyEnabled: false,
         /** Row index, set by the owning list so handlers know which record was swiped. */
         index: -1
     },
@@ -37,7 +38,7 @@ module.exports = kind({
     events: {
         onConfirm: "",
         onCancel: "",
-        onReact: ""
+        onReply: ""
     },
 
     handlers: {
@@ -45,11 +46,6 @@ module.exports = kind({
         ondrag: "dragHandler",
         ondragfinish: "dragfinishHandler"
     },
-
-    /** Minimum right-swipe distance, in px, that counts as a react rather than a stray drag. */
-    reactMinPx: 45,
-    /** Fraction of the row width past which a right swipe means delete rather than react. */
-    deleteRatio: 0.55,
 
     /** Chrome, kept off `components` so subkind component blocks cannot clobber it. */
     swipeChrome: [
@@ -107,9 +103,8 @@ module.exports = kind({
         if (!this.handlingDrag) {
             return false;
         }
-        var dx = inEvent.dx || 0;
         var width = (this.getBounds && this.getBounds().width) || 0;
-        var deletePx = Math.floor(width * this.deleteRatio);
+        var action = swipeAction(inEvent.dx, width, this.replyEnabled);
 
         this.handlingDrag = false;
         this.resetPosition();
@@ -117,12 +112,10 @@ module.exports = kind({
             inEvent.preventTap();
         }
 
-        if (dx <= -this.reactMinPx || (!this.reactEnabled && dx >= this.reactMinPx) || dx >= deletePx) {
-            // A left swipe of any length, or a long right swipe, arms the delete prompt. With
-            // reactions off, any right swipe past the threshold does too.
+        if (action === "confirm") {
             this.showConfirm();
-        } else if (this.reactEnabled && dx >= this.reactMinPx) {
-            this.doReact({ index: this.index });
+        } else if (action === "reply") {
+            this.doReply({ index: this.index });
         } else {
             this.doCancel({ index: this.index });
         }
