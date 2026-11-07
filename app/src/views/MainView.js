@@ -26,6 +26,7 @@ var kind = require('enyo/kind'),
     formFactor = require('../util/formFactor'),
     firstUse = require('../util/firstUse'),
     mockDb = require('../data/mockDb'),
+    chatPresence = require('../util/chatPresence'),
     $L = require('enyo/i18n').$L;
 
 var DB_SERVICE = 'luna://com.webos.service.db';
@@ -167,6 +168,12 @@ module.exports = kind({
         {
             name: 'openApp', kind: LunaService,
             service: 'luna://com.palm.applicationManager', method: 'open', onError: 'serviceErr'
+        },
+        // Who is typing to us: the transport's typers, then each change (util/chatPresence).
+        {
+            name: 'typingWatch', kind: LunaService, service: 'luna://com.palm.imlibpurple',
+            method: 'watchTyping', subscribe: true, resubscribe: true,
+            onResponse: 'gotTyping', onError: 'typingWatchFailed'
         }
     ],
 
@@ -191,6 +198,24 @@ module.exports = kind({
         this.checkFirstUse();
 
         formFactor.apply(this);
+
+        appState.typers = new chatPresence.Typers();
+        if (!mockDb.enabled) {
+            this.$.typingWatch.send({ subscribe: true });
+        }
+    },
+
+    /** A watchTyping reply: keep it, and tell the open chat when it changed what it shows. */
+    gotTyping: function (inSender, inResponse) {
+        if (appState.typers && appState.typers.apply(inResponse, Date.now())) {
+            Signals.send("onTypingChanged", {});
+        }
+        return true;
+    },
+
+    /** No typing from a transport that cannot be reached; nothing else depends on it. */
+    typingWatchFailed: function () {
+        return true;
     },
 
     /**

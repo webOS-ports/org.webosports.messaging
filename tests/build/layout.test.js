@@ -351,6 +351,52 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         });
     });
 
+    // Typing and reading (util/chatPresence): opening a chat says it was read; typing in it says
+    // so once, and "none" once it is sent; a buddy typing to us shows after their name until it
+    // stops. With the mock db the calls are kept on mockDb.presenceCalls instead of sent.
+    it('says a chat was read, passes our typing on, and shows theirs', async function () {
+        var r = await session.evaluate('(async function () {' +
+            'var $ = require("enyo/dispatcher").$, mockDb = require("src/data/mockDb");' +
+            'var main = $.app_mainView, chat = $.app_mainView_chatView_conversationList;' +
+            'var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };' +
+            'var anna = null; $.app_mainView_messaging_threadList.collection.forEach(function (m) {' +
+            '  if (m.attributes._id === "thread-anna") { anna = m.attributes; } });' +
+            // From another chat, so opening Anna's is a change of chat.
+            'var other = null; $.app_mainView_messaging_threadList.collection.forEach(function (m) {' +
+            '  if (m.attributes._id === "thread-sam") { other = m.attributes; } });' +
+            'main.selectThread(null, other); await wait(300);' +
+            'mockDb.presenceCalls = [];' +
+            'main.selectThread(null, anna);' +
+            'for (var i = 0; i < 20 && !(chat.chatThread && chat.chatThread._id === "thread-anna"); i++) { await wait(100); }' +
+            'await wait(300);' +
+            'var read = mockDb.presenceCalls.filter(function (c) { return c.payload.usernameTo === "anna.k"; });' +
+            'mockDb.presenceCalls = [];' +
+            'chat.$.richText.set("value", "h"); chat.composerInput();' +
+            'chat.$.richText.set("value", "he"); chat.composerInput();' +
+            'var typed = mockDb.presenceCalls.slice();' +
+            'chat.$.richText.set("value", ""); chat.composerInput();' +
+            'var cleared = mockDb.presenceCalls.slice(typed.length);' +
+            'var account = require("src/util/appState").accountService.getAccount("type_telegram");' +
+            'var ev = function (state) { return { serviceName: "type_telegram", username: account.username, from: "anna.k", state: state }; };' +
+            'main.gotTyping(null, ev("typing")); await wait(50);' +
+            'var header = chat.$.header.hasNode().textContent;' +
+            'var shown = !!chat.$.header.hasNode().querySelector(".conversation-typing");' +
+            'main.gotTyping(null, ev("none")); await wait(50);' +
+            'var gone = !chat.$.header.hasNode().querySelector(".conversation-typing");' +
+            'return { read: read, typed: typed, cleared: cleared, account: account.username, header: header, shown: shown, gone: gone,' +
+            '  name: chat.$.header.hasNode().textContent };' +
+            '})()');
+        var who = { serviceName: 'type_telegram', username: r.account, usernameTo: 'anna.k' };
+        assert.deepEqual(r.read, [{ method: 'markRead', payload: who }]);
+        assert.deepEqual(r.typed, [{ method: 'sendTyping', payload: Object.assign({ state: 'typing' }, who) }],
+            'typing is said once, not on every key');
+        assert.deepEqual(r.cleared, [{ method: 'sendTyping', payload: Object.assign({ state: 'none' }, who) }]);
+        assert.equal(r.shown, true, 'typing shows in the header');
+        assert.match(r.header, /^Anna Kowalski typing\.\.\.$/);
+        assert.equal(r.gone, true);
+        assert.equal(r.name, 'Anna Kowalski');
+    });
+
     // Hold a message: taps then pick messages, the bar takes the composer's place with all
     // its buttons on screen, and back leaves selecting before it leaves the chat.
     it('selects several messages, in chat order, and leaves selecting on back', async function () {

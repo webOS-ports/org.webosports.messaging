@@ -48,6 +48,8 @@ var kind = require('enyo/kind'),
     selection = require('../util/selection'),
     composerEcho = require('../util/composerEcho'),
     callRequest = require('../util/callRequest'),
+    chatPresence = require('../util/chatPresence'),
+    Signals = require('enyo/Signals'),
     messagingUtils = require('../util/messagingUtils'),
     appState = require('../util/appState'),
     mockDb = require('../data/mockDb'),
@@ -343,6 +345,17 @@ module.exports = kind({
             name: 'reactionCommand', kind: LunaService, service: DB_SERVICE, method: 'put',
             onError: 'serviceErr'
         },
+        // Typing and reading (util/chatPresence). A transport that cannot be reached loses only
+        // these, so their errors are not shown.
+        {
+            name: 'typingSender', kind: LunaService, service: 'luna://com.palm.imlibpurple',
+            method: 'sendTyping', onError: 'presenceFailed'
+        },
+        {
+            name: 'readMarker', kind: LunaService, service: 'luna://com.palm.imlibpurple',
+            method: 'markRead', onError: 'presenceFailed'
+        },
+        { kind: Signals, onTypingChanged: "showTyping" },
         {
             name: 'threadMerge', kind: LunaService, service: DB_SERVICE, method: 'merge',
             onError: 'serviceErr'
@@ -397,6 +410,7 @@ module.exports = kind({
     },
 
     destroy: function () {
+        this.stopTyping();
         if (appState.activeConversationList === this) {
             appState.activeConversationList = null;
             messagingUtils.activeConversationList = null;
@@ -583,8 +597,9 @@ module.exports = kind({
         this._followToEnd = true;
         this._newestIncomingId = undefined;
 
-        // Clear the thread's unread count now that it is on screen.
+        // Clear the thread's unread count now that it is on screen, and say it was read.
         this.doClearUnreadCount({ threadId: this.chatThread._id });
+        this.markChatRead(true);
 
         this.$.richText.set('value', "");
         this.getDraftMessage(this.chatThread._id);
@@ -597,6 +612,7 @@ module.exports = kind({
     },
 
     closeConversation: function (chatThreadId, skipSaveDraft) {
+        this.stopTyping();
         this.conversationService.cancel();
         this.cancelVoiceNote();
         this.clearMessages();
@@ -655,7 +671,127 @@ module.exports = kind({
     },
 
     setHeaderName: function (inName) {
-        this.$.header.setContent(messagingUtils.message.emojifyEscaped(inName || ""));
+        this._headerName = inName || "";
+        this.renderHeader();
+    },
+
+    /** The chat's name, and "typing..." after it while the buddy types to us. */
+    renderHeader: function () {
+        var html = messagingUtils.message.emojifyEscaped(this._headerName || "");
+        var typing = this.typingState();
+        if (typing === "typing") {
+            html += ' <span class="conversation-typing">' + $L("typing...") + '</span>';
+        }
+        this.$.header.setContent(html);
+    },
+
+    // --- typing and reading (util/chatPresence) -------------------------------------------
+
+    /**
+     * The chat as the transport knows it: the service and address replies go to. ownAddress: the
+     * thread's own, for when the chat has only just opened and the picker still holds the last
+     * chat's transport.
+     */
+    presenceTarget: function (ownAddress) {
+        var thread = this.chatThread;
+        if (!thread || !thread._id) {
+            return null;
+        }
+        var transport = ownAddress ? null : transportPicker.getSelectedTransport();
+        var useTransport = !!(transport && transport.serviceName && transport.replyAddress);
+        return {
+            replyService: useTransport ? transport.serviceName : thread.replyService,
+            replyAddress: useTransport ? transport.replyAddress : thread.replyAddress,
+            channelId: thread.channelId, groupChatId: thread.groupChatId
+        };
+    },
+
+    presenceAccount: function (target) {
+        return target && appState.accountService ? appState.accountService.getAccount(target.replyService) : null;
+    },
+
+    /** The buddy's typing state in this chat: "typing", "paused" or null. */
+    typingState: function () {
+        var target = this.presenceTarget();
+        return appState.typers ? appState.typers.stateFor(target, this.presenceAccount(target), Date.now()) : null;
+    },
+
+    /** watchTyping brought a change: draw it, and again when it lapses. */
+    showTyping: function () {
+        this.renderHeader();
+        if (this._typingLapseTimer) {
+            clearTimeout(this._typingLapseTimer);
+            this._typingLapseTimer = null;
+        }
+        var next = appState.typers && appState.typers.nextLapse();
+        if (next !== null && next !== undefined) {
+            var self = this;
+            this._typingLapseTimer = setTimeout(function () {
+                self._typingLapseTimer = null;
+                self.showTyping();
+            }, Math.max(0, next - Date.now()) + 50);
+        }
+        return true;
+    },
+
+    /** Send one call to the transport; with the mock db, keep it for the tests instead. */
+    sendPresence: function (service, payload) {
+        if (!payload) {
+            return;
+        }
+        if (mockDb.enabled) {
+            mockDb.presenceCalls = mockDb.presenceCalls || [];
+            mockDb.presenceCalls.push({ method: service.method, payload: payload });
+            return;
+        }
+        service.send(payload);
+    },
+
+    /** Tell the transport the chat was read, so it sends the service's read receipts. */
+    markChatRead: function (ownAddress) {
+        var target = this.presenceTarget(ownAddress);
+        this.sendPresence(this.$.readMarker, chatPresence.markReadPayload(target, this.presenceAccount(target)));
+    },
+
+    /** Tell the transport our typing state in this chat, as the composer reports it. */
+    sendTypingState: function (state) {
+        if (!state) {
+            return;
+        }
+        var target = this.presenceTarget();
+        this.sendPresence(this.$.typingSender,
+            chatPresence.sendTypingPayload(target, this.presenceAccount(target), state));
+    },
+
+    /** The keys went quiet for a while: paused. Checked once a second while typing. */
+    typingTick: function () {
+        if (!this._composer) {
+            return;
+        }
+        this.sendTypingState(this._composer.tick(Date.now()));
+        if (this._composer.sent !== "typing") {
+            this.cancelTypingTimer();
+        }
+    },
+
+    cancelTypingTimer: function () {
+        if (this._typingTimer) {
+            clearInterval(this._typingTimer);
+            this._typingTimer = null;
+        }
+    },
+
+    /** Sent, emptied or left: not typing any more. */
+    stopTyping: function () {
+        this.cancelTypingTimer();
+        if (this._composer) {
+            this.sendTypingState(this._composer.stop());
+            this._composer = null;
+        }
+    },
+
+    presenceFailed: function () {
+        return true;
     },
 
     // --- messages ------------------------------------------------------------------------
@@ -1122,6 +1258,11 @@ module.exports = kind({
             this.updateTransportButton();
             this.updateCallButtons();
         }
+        // Read as it arrives while the chat is on screen.
+        if (appState.getAppDeactivated() === false) {
+            this.markChatRead();
+        }
+        this.renderHeader();
     },
 
     /** Ask for the next older batch once this one is on screen, while there may be more. */
@@ -1254,6 +1395,8 @@ module.exports = kind({
 
     updateTransportButton: function () {
         var selected = transportPicker.getSelectedTransport();
+        // Whose typing the header shows follows the service picked.
+        this.renderHeader();
         this.setTransportButton(selected ? transportPicker.serviceNameFor(selected) : $L("."),
             transportPicker.iconFor(selected));
         var count = transportPicker.getTransports().length;
@@ -1360,6 +1503,22 @@ module.exports = kind({
     composerInput: function () {
         composerEcho.check(this.$.richText);
         this.growInput();
+        this.composerTyped();
+    },
+
+    /** The text changed: tell the transport we are typing, and watch for the keys to stop. */
+    composerTyped: function () {
+        if (!this.chatThread || !this.chatThread._id) {
+            return;
+        }
+        this._composer = this._composer || new chatPresence.Composer();
+        this.sendTypingState(this._composer.input(this.$.richText.get('value'), Date.now()));
+        if (this._composer.sent === "typing" && !this._typingTimer) {
+            var self = this;
+            this._typingTimer = setInterval(function () { self.typingTick(); }, 1000);
+        } else if (this._composer.sent === "none") {
+            this.cancelTypingTimer();
+        }
     },
 
     /** Grow the field with its content, up to the cap the stylesheet sets. */
@@ -1413,6 +1572,7 @@ module.exports = kind({
         }
         // Safety net in case the app is killed before the thread is re-read.
         this.doClearUnreadCount({ threadId: this.chatThread._id });
+        this.stopTyping();
 
         var selectedTransport = transportPicker.getSelectedTransport();
         if (!selectedTransport) {

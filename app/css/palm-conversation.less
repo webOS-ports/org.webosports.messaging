@@ -30,6 +30,13 @@ Header
 .conversation-header .status {
   margin-left: 8px;
 }
+/* After the name while the buddy types to us (ConversationList.renderHeader): quieter than the
+   name, so the name still reads first. */
+.conversation-typing {
+  color: #6b6b6b;
+  font-style: italic;
+  font-size: 15px;
+}
 /* The reply service: icon, name and the dropdown arrow, drawn like the availability picker. It
    keeps its full width; the contact's name is what gets shortened when the bar is short of room. */
 .conversation-header-type {
