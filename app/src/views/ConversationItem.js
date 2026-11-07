@@ -13,6 +13,7 @@ var kind = require('enyo/kind'),
     SwipeableItem = require('./widgets/SwipeableItem'),
     messagingUtils = require('../util/messagingUtils'),
     mediaUrl = require('../util/mediaUrl'),
+    messageState = require('../util/messageState'),
     moment = require('moment'),
     $L = require('enyo/i18n').$L;
 
@@ -100,7 +101,7 @@ module.exports = kind({
         this.updateMessageText(m, m.folder !== FOLDERS.OUTBOX && m.folder !== FOLDERS.INBOX);
         this.updateContactImage(m.personImage);
         this.updateSentReceived(m.folder);
-        this.updateTime(m.localTimestamp);
+        this.updateTime(m);
         this.updateMessageStatus(m.status, m.errorCategory);
         this.updateDeliveryStatus(m.deliveryStatus, m.folder);
         this.updateInvite(m);
@@ -157,8 +158,9 @@ module.exports = kind({
             personImage || messagingUtils.person.getDisplayImage(null));
     },
 
-    updateTime: function (localTimestamp) {
-        this.$.messageTime.setContent(localTimestamp ? moment(localTimestamp).format("LT") : "");
+    updateTime: function (message) {
+        var time = message.localTimestamp ? moment(message.localTimestamp).format("LT") : "";
+        this.$.messageTime.setContent(messageState.timeLine(message, time));
     },
 
     updateSentReceived: function (inFolder) {
@@ -207,6 +209,11 @@ module.exports = kind({
 
         if (messagingUtils.message.isMMSMessage(inMessage)) {
             this.$.messageText.setContent(messagingUtils.message.getMMSDisplayMessage());
+            return;
+        }
+        // Deleted for everyone: say so, and draw nothing of what it said (util/messageState).
+        if (messageState.isDeleted(inMessage)) {
+            this.$.messageText.setContent(messageState.deletedHtml());
             return;
         }
 

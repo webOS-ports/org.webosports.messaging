@@ -488,6 +488,15 @@ var messages = [
         flags: { visible: true, read: false }
     },
     {
+        // Deleted for everyone, as imlibpurpleservice's DeleteHandler leaves it.
+        _id: "msg-f1d", _kind: "com.palm.message:1", conversations: ["thread-family"],
+        folder: "inbox", messageText: "This message was deleted.", deleted: true,
+        localTimestamp: ago(0, 4.2), timestamp: ago(0, 4.2), status: "successful",
+        serviceName: "type_whatsapp", chatType: "groupchat", channelName: "Family",
+        from: { addr: "+46701234567", name: "Marta Lindqvist" },
+        flags: { visible: true, read: false }
+    },
+    {
         _id: "msg-f2", _kind: "com.palm.message:1", conversations: ["thread-family"],
         folder: "inbox", messageText: "Yes please! I'll bring dessert &#127856;",
         localTimestamp: ago(0, 4), timestamp: ago(0, 4), status: "successful",
@@ -503,6 +512,8 @@ var messages = [
         serviceName: "type_whatsapp", chatType: "groupchat", channelName: "Family",
         from: { addr: "+15015550142", name: "Mum" },
         quotedFrom: "Marta Lindqvist", quotedText: "Yes please! I'll bring dessert", quotedMessageId: "3EB0C4F1A2",
+        // Edited after it was sent (EditHandler).
+        edited: true,
         flags: { visible: true, read: false }
     },
 

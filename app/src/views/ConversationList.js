@@ -44,6 +44,7 @@ var kind = require('enyo/kind'),
     forward = require('../util/forward'),
     attachments = require('../util/attachments'),
     enyoUtils = require('enyo/utils'),
+    messageState = require('../util/messageState'),
     composerEcho = require('../util/composerEcho'),
     callRequest = require('../util/callRequest'),
     messagingUtils = require('../util/messagingUtils'),
@@ -1558,6 +1559,10 @@ module.exports = kind({
             this.toggleMyReaction(message, reaction);
             return true;
         }
+        // Nothing to react to, reply to, forward or copy on a message deleted for everyone.
+        if (messageState.isDeleted(message)) {
+            return true;
+        }
         var quoted = quoteJump.quotedIdAt(node, this.hasNode());
         if (quoted) {
             this.jumpToQuoted(quoted);
@@ -1775,7 +1780,7 @@ module.exports = kind({
 
     handleReactSwipe: function (inSender, inEvent) {
         var message = this.messageFor(inEvent);
-        if (message) {
+        if (message && !messageState.isDeleted(message)) {
             this.selectedMessage = message;
             this.openReactRow(inEvent);
         }
