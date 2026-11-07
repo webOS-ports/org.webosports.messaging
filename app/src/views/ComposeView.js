@@ -57,6 +57,16 @@ module.exports = kind({
         },
         { classes: "footer-shadow" },
         {
+            // A forwarded message's file, sent with the first message.
+            name: "fileBar", showing: false, classes: "attachment-chip", components: [
+                { name: "fileLabel", classes: "attachment-chip-label" },
+                {
+                    name: "fileClear", kind: IconButton, src: "assets/icon-decline.svg",
+                    ontap: "clearFile"
+                }
+            ]
+        },
+        {
             name: "chosenBar", showing: false, classes: "attachment-chip", components: [
                 { name: "chosenLabel", classes: "attachment-chip-label" },
                 {
@@ -108,12 +118,15 @@ module.exports = kind({
         this.inherited(arguments);
         this.recipient = null;
         this.pendingMessageText = "";
+        this.filePath = null;
+        this.pendingFilePath = null;
     },
 
     /** Called when the view is shown, so a stale recipient from last time is not carried over. */
     reset: function () {
         this.recipient = null;
         this.$.chosenBar.setShowing(false);
+        this.clearFile();
         this.$.richText.set('value', "");
         this.$.recipientList.reload();
     },
@@ -129,6 +142,9 @@ module.exports = kind({
         }
         if (params.messageText) {
             this.$.richText.set('value', params.messageText);
+        }
+        if (params.filePath) {
+            this.setFile(params.filePath);
         }
 
         var addr = null;
@@ -154,6 +170,22 @@ module.exports = kind({
         }
     },
 
+    // --- forwarded file ----------------------------------------------------------------------
+
+    setFile: function (path) {
+        this.filePath = path;
+        this.$.fileLabel.setContent(String(path).replace(/^.*\//, ""));
+        this.$.fileBar.setShowing(true);
+        this.resize();
+    },
+
+    clearFile: function () {
+        this.filePath = null;
+        this.$.fileBar.setShowing(false);
+        this.resize();
+        return true;
+    },
+
     // --- recipient -------------------------------------------------------------------------
 
     recipientSelected: function (inSender, inEvent) {
@@ -177,11 +209,14 @@ module.exports = kind({
             messagingUtils.utils.formatAddress(recipient.value, recipient.type) +
             (recipient.displayName ? " — " + recipient.displayName : ""));
         this.$.chosenBar.setShowing(true);
+        // The bar takes room from the list; refit, or the composer is pushed off the bottom.
+        this.resize();
     },
 
     clearRecipient: function () {
         this.recipient = null;
         this.$.chosenBar.setShowing(false);
+        this.resize();
         return true;
     },
 
@@ -216,11 +251,17 @@ module.exports = kind({
                 $L("Choose who this message should go to."));
             return true;
         }
-        if (!text) {
+        if (!text && !this.filePath) {
             return true;
         }
 
         var serviceName = this.serviceNameForRecipient();
+        // No MMS sending yet: an SMS cannot carry the file, so say so rather than drop it.
+        if (this.filePath && messagingUtils.utils.isTextMessage(serviceName)) {
+            this.showNotice($L("Attachments"),
+                $L("Attachments can't be sent by SMS. Pick an IM service to send a file."));
+            return true;
+        }
         var accountService = appState.accountService;
         if (accountService && !accountService.getAccount(serviceName)) {
             this.showNotice($L("Unable to send"),
@@ -230,7 +271,8 @@ module.exports = kind({
             return true;
         }
 
-        this.pendingMessageText = text;
+        this.pendingMessageText = text || "";
+        this.pendingFilePath = this.filePath;
         this.findOrCreateThread();
         return true;
     },
@@ -331,6 +373,9 @@ module.exports = kind({
             message.from = { name: account.alias, addr: account.username };
             message.username = account.username;
         }
+        if (this.pendingFilePath && !messagingUtils.utils.isTextMessage(serviceName)) {
+            message.filePath = this.pendingFilePath;
+        }
 
         if (mockDb.enabled) {
             mockDb.merge([message]);
@@ -339,6 +384,8 @@ module.exports = kind({
         }
 
         this.pendingMessageText = "";
+        this.pendingFilePath = null;
+        this.clearFile();
         this.$.richText.set('value', "");
         composerEcho.sent(this.$.richText, message.messageText);
         this.doOpenConversation({ threadId: thread._id, thread: thread });

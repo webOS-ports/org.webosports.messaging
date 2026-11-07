@@ -39,6 +39,7 @@ var kind = require('enyo/kind'),
     ConversationService = require('../data/ConversationService'),
     transportPicker = require('../util/transportPicker'),
     quoteJump = require('../util/quoteJump'),
+    forward = require('../util/forward'),
     composerEcho = require('../util/composerEcho'),
     callRequest = require('../util/callRequest'),
     messagingUtils = require('../util/messagingUtils'),
@@ -227,6 +228,8 @@ module.exports = kind({
         {
             name: "messageMenu", kind: Menu, floating: true, components: [
                 { kind: MenuItem, content: $L("Reply"), ontap: "menuReply" },
+                { kind: MenuItem, content: $L("Forward"), ontap: "menuForward" },
+                { kind: MenuItem, content: $L("Forward Via Email"), ontap: "menuForwardEmail" },
                 { kind: MenuItem, content: $L("Copy Text"), ontap: "menuCopy" },
                 { classes: "onyx-menu-divider" },
                 { kind: MenuItem, content: $L("Delete"), ontap: "menuDelete" }
@@ -1729,6 +1732,23 @@ module.exports = kind({
     menuReply: function () {
         if (this.selectedMessage) {
             this.enterReply(this.selectedMessage);
+        }
+        return true;
+    },
+
+    /** New Conversation with this message's text and file, for picking who it goes to. */
+    menuForward: function () {
+        var params = forward.composeParams(this.selectedMessage);
+        if (params) {
+            this.doOpenComposeView({ params: params });
+        }
+        return true;
+    },
+
+    menuForwardEmail: function () {
+        var launch = forward.emailLaunch(this.selectedMessage);
+        if (launch) {
+            this.$.launchApp.send(launch);
         }
         return true;
     },

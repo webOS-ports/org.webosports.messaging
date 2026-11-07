@@ -339,6 +339,16 @@ var messages = [
         flags: { visible: true, read: false }
     },
     {
+        // A file the transport saved on the device, drawn as a chip; forwarding it takes the file.
+        _id: "msg-a3f", _kind: "com.palm.message:1", conversations: ["thread-anna"],
+        folder: "inbox", messageText: "",
+        filePath: "/media/internal/downloads/exhibition-tickets.pdf",
+        localTimestamp: ago(0, 1.5), timestamp: ago(0, 1.5), status: "successful",
+        serviceName: "type_telegram", from: { addr: "anna.k", name: "Anna Kowalski" },
+        serviceMessageId: "tg-4475",
+        flags: { visible: true, read: true }
+    },
+    {
         _id: "msg-a4", _kind: "com.palm.message:1", conversations: ["thread-anna"],
         folder: "inbox", messageText: "See you at the station then &#128578;",
         localTimestamp: ago(0, 1), timestamp: ago(0, 1), status: "successful",

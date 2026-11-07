@@ -143,10 +143,10 @@ module.exports = kind({
     },
 
     openComposeView: function (inSender, inEvent) {
+        // A forward brings its text and file; nothing from a compose left before may stay.
+        this.$.composeView.reset();
         if (inEvent && inEvent.params) {
             this.$.composeView.set('params', inEvent.params);
-        } else {
-            this.$.composeView.reset();
         }
         this.selectViewByName("composeView");
         return true;
