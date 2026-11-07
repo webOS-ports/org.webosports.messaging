@@ -3,7 +3,8 @@
  *
  * Swipe distance bands (util/swipeAction.js), as the Mojo app's later ConversationItem had them:
  *   short right swipe            -> onReply  (only when replyEnabled)
- *   long right swipe, any left   -> reveal the confirm prompt, which fires onConfirm when tapped
+ *   long right swipe, any left   -> reveal the confirm prompt: its confirm button fires onConfirm,
+ *                                   its Cancel button or a tap beside them fires onCancel
  *   anything shorter             -> snap back and fire onCancel
  *
  * The sliding content and the confirm prompt are created in initComponents rather than declared in
@@ -27,6 +28,7 @@ module.exports = kind({
 
     published: {
         confirmCaption: $L("Delete"),
+        cancelCaption: $L("Cancel"),
         /** Set false on rows that must not be swipe-deleted. */
         swipeable: true,
         /** When true a short right swipe fires onReply instead of arming the delete prompt. */
@@ -51,7 +53,10 @@ module.exports = kind({
     swipeChrome: [
         { name: "content", classes: "swipeable-item-content" },
         {
-            name: "confirm", classes: "swipeable-confirm", showing: false, components: [
+            // As the Mojo app's ScrimmedConfirmPrompt: Cancel, then the confirm button, centred.
+            name: "confirm", classes: "swipeable-confirm", showing: false, ontap: "cancelTapped",
+            components: [
+                { name: "cancelButton", kind: Button, ontap: "cancelTapped" },
                 {
                     name: "confirmButton", kind: Button, classes: "onyx-negative",
                     ontap: "confirmTapped"
@@ -71,10 +76,15 @@ module.exports = kind({
         this.inherited(arguments);
         this.handlingDrag = false;
         this.confirmCaptionChanged();
+        this.cancelCaptionChanged();
     },
 
     confirmCaptionChanged: function () {
         this.$.confirmButton.setContent(this.confirmCaption);
+    },
+
+    cancelCaptionChanged: function () {
+        this.$.cancelButton.setContent(this.cancelCaption);
     },
 
     // --- dragging ------------------------------------------------------------------------
@@ -83,7 +93,7 @@ module.exports = kind({
         if (!this.swipeable || !inEvent.horizontal) {
             return false;
         }
-        // A revealed prompt swallows the drag; tapping its button or elsewhere dismisses it.
+        // A revealed prompt swallows the drag; one of its buttons, or a tap beside them, closes it.
         if (this.$.confirm.getShowing()) {
             return false;
         }
@@ -144,6 +154,20 @@ module.exports = kind({
         this.hideConfirm();
         this.doConfirm({ index: this.index });
         inEvent.preventDefault();
+        return true;
+    },
+
+    /**
+     * Cancel, or a tap on the prompt beside its buttons: close it and leave the row as it was.
+     * Returning true keeps the tap from reaching the row, which would open the reactions on a
+     * message or the chat on a chat row.
+     */
+    cancelTapped: function (inSender, inEvent) {
+        this.hideConfirm();
+        this.doCancel({ index: this.index });
+        if (inEvent && inEvent.preventDefault) {
+            inEvent.preventDefault();
+        }
         return true;
     }
 });
