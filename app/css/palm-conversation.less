@@ -225,6 +225,14 @@ Staged attachment chip (above the input once a file is picked)
   border-top: 1px solid rgba(0, 0, 0, 0.12);
   border-bottom: 1px solid rgba(0, 0, 0, 0.12);
 }
+/* Several staged files stack; keep the composer on screen however many there are. */
+.attachment-chips {
+  max-height: 156px;
+  overflow-y: auto;
+}
+.attachment-chips > .attachment-chip + .attachment-chip {
+  border-top: none;
+}
 .attachment-chip-thumb {
   width: 40px;
   height: 40px;

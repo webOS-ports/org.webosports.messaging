@@ -826,6 +826,11 @@ module.exports = {
         var results = [];
         for (var i = 0; i < objects.length; i++) {
             var obj = objects[i];
+            // A transport's own message kind (com.palm.immessage.telegram:1) extends
+            // com.palm.message:1 in the real db, so a send in a mock IM chat is kept with the rest.
+            if (obj._kind && !store[obj._kind] && /^com\.palm\.immessage\./.test(obj._kind)) {
+                store[obj._kind] = messages;
+            }
             var records = store[obj._kind] || [];
             var found = false;
             for (var j = 0; j < records.length; j++) {

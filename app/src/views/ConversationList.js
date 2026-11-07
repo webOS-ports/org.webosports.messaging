@@ -42,6 +42,8 @@ var kind = require('enyo/kind'),
     chatSearch = require('../util/chatSearch'),
     SearchInput = require('./widgets/SearchInput'),
     forward = require('../util/forward'),
+    attachments = require('../util/attachments'),
+    enyoUtils = require('enyo/utils'),
     composerEcho = require('../util/composerEcho'),
     callRequest = require('../util/callRequest'),
     messagingUtils = require('../util/messagingUtils'),
@@ -182,17 +184,8 @@ module.exports = kind({
         },
         { classes: "footer-shadow" },
 
-        // --- staged attachment ----------------------------------------------------------
-        {
-            name: "attachmentChip", showing: false, classes: "attachment-chip", components: [
-                { name: "attachmentChipThumb", kind: Image, classes: "attachment-chip-thumb", showing: false },
-                { name: "attachmentChipLabel", classes: "attachment-chip-label" },
-                {
-                    name: "attachmentChipRemove", kind: IconButton, src: "assets/icon-decline.svg",
-                    ontap: "clearAttachment"
-                }
-            ]
-        },
+        // --- staged attachments: one chip per file (renderAttachmentChips) ----------------
+        { name: "attachmentChips", showing: false, classes: "attachment-chips" },
 
         // --- reply bar ------------------------------------------------------------------
         {
@@ -344,6 +337,7 @@ module.exports = kind({
             // to open on LuneOS.
             // border-box: at 100% wide the popup's own border pushed it past the right edge.
             name: "attachmentPicker", kind: FilePicker, fileType: ["image", "video", "audio", "document"],
+            allowMultiSelect: true,
             style: "width: 100%; height: 80%; box-sizing: border-box;", onPickFile: "attachmentChosen"
         }
     ],
@@ -352,7 +346,7 @@ module.exports = kind({
         this.inherited(arguments);
         this.selectedMessage = null;
         this.replyToMessage = null;
-        this.outboundAttachment = null;
+        this.outboundAttachments = [];
         this.recording = false;
         this.messages = [];
         this._followToEnd = false;
@@ -1252,7 +1246,7 @@ module.exports = kind({
         if (inEvent.keyCode === 13 && !inEvent.shiftKey) {
             inEvent.preventDefault();
             var messageText = this.$.richText.get('value');
-            if (messageText || (this.outboundAttachment && this.outboundAttachment.path)) {
+            if (messageText || this.outboundAttachments.length) {
                 this.sendMessage();
             }
             return true;
@@ -1261,7 +1255,7 @@ module.exports = kind({
 
     sendButtonTapped: function () {
         var messageText = this.$.richText.get('value');
-        if (messageText || (this.outboundAttachment && this.outboundAttachment.path)) {
+        if (messageText || this.outboundAttachments.length) {
             this.sendMessage();
         }
         return true;
@@ -1347,20 +1341,36 @@ module.exports = kind({
             params.serviceName = "sms";
         }
 
-        // Only IM transports can carry an attachment path; SMS/MMS ignores it, so never stamp it on
-        // a text-message record.
-        if (this.outboundAttachment && this.outboundAttachment.path &&
-                !messagingUtils.utils.isTextMessage(params.serviceName)) {
-            params.filePath = this.outboundAttachment.path;
+        // One message per staged file, the text on the first (util/attachments). Only IM
+        // transports can carry an attachment path; SMS/MMS ignores it, so never stamp it on a
+        // text-message record.
+        var parts = attachments.messages(params.messageText, this.outboundAttachments,
+            !messagingUtils.utils.isTextMessage(params.serviceName));
+        if (!parts.length) {
+            return;
         }
+        var list = parts.map(function (part, i) {
+            var p = enyoUtils.clone(params);
+            p.messageText = part.text;
+            if (part.file) {
+                p.filePath = part.file.path;
+            }
+            if (i > 0) {
+                // The reply's quote goes with its first message only.
+                delete p.quotedText;
+                delete p.quotedFrom;
+                delete p.quotedMessageId;
+            }
+            return p;
+        });
 
         // Update the thread record directly rather than waiting on the chatthreader, which is too
         // slow to keep the list in step with a just-sent message.
         var updated = messagingUtils.thread.updateFromNewMessage(
-            { _id: this.chatThread._id, _kind: messagingUtils.thread.dbKind }, params, recipient);
+            { _id: this.chatThread._id, _kind: messagingUtils.thread.dbKind }, list[list.length - 1], recipient);
         this.mergeThread(updated);
 
-        this.sendMessageHelper(params, dbKind);
+        this.sendMessageHelper(list, dbKind, params.messageText);
     },
 
     /**
@@ -1398,23 +1408,28 @@ module.exports = kind({
         accounts.getAccounts();
     },
 
-    sendMessageHelper: function (params, dbKind) {
+    /** Write the messages of one send (one per file) to the outbox, in order, and reset the composer. */
+    sendMessageHelper: function (list, dbKind, typed) {
         this._followToEnd = true;
-        params._kind = dbKind;
-        params.localTimestamp = Date.now();
+        var now = Date.now();
+        for (var i = 0; i < list.length; i++) {
+            list[i]._kind = dbKind;
+            // Apart by a millisecond, so the list and the transport keep them in the order picked.
+            list[i].localTimestamp = now + i;
+        }
 
         if (mockDb.enabled) {
-            mockDb.merge([params]);
+            mockDb.merge(list);
             this.runQuery();
         } else {
-            this.$.messagePut.send({ objects: [params] });
+            this.$.messagePut.send({ objects: list });
         }
 
         this.$.richText.set('value', "");
-        composerEcho.sent(this.$.richText, params.messageText);
+        composerEcho.sent(this.$.richText, typed);
         this.growInput();
         this.cancelReply();
-        if (this.outboundAttachment) {
+        if (this.outboundAttachments.length) {
             this.clearAttachment();
         }
         this.playSoundNotification({ isSent: true });
@@ -1957,38 +1972,64 @@ module.exports = kind({
         return false;
     },
 
-    // The picker sends an array of {fullPath, attachmentType, size, ...}.
+    // The picker sends an array of {fullPath, attachmentType, size, ...}, several when more
+    // than one was picked.
     attachmentChosen: function (inSender, inEvent) {
         var files = Array.isArray(inEvent) ? inEvent : (inEvent && inEvent.files);
-        var file = files && files[0];
-        if (!file || !file.fullPath) {
-            return true;
-        }
-        this.stageAttachment({
-            path: file.fullPath,
-            name: file.name || file.fullPath.slice(file.fullPath.lastIndexOf("/") + 1),
-            type: file.attachmentType
-        });
+        this.stageAttachments(attachments.fromPicked(files));
         return true;
     },
 
     stageAttachment: function (attachment) {
-        this.outboundAttachment = attachment;
-        this.$.attachmentChipLabel.setContent(attachment.name);
-        var isImage = attachment.type === "image";
-        if (isImage) {
-            this.$.attachmentChipThumb.setSrc("file://" + attachment.path);
+        this.stageAttachments([attachment]);
+    },
+
+    stageAttachments: function (more) {
+        if (!more.length) {
+            return;
         }
-        this.$.attachmentChipThumb.setShowing(isImage);
-        this.$.attachmentChip.setShowing(true);
+        var r = attachments.add(this.outboundAttachments, more);
+        this.outboundAttachments = r.list;
+        this.renderAttachmentChips();
+        if (r.dropped) {
+            this.showError($L("Attachments"),
+                $L("Up to {max} files can go at once.").replace("{max}", attachments.MAX));
+        }
+    },
+
+    /** A chip per staged file: a thumbnail for a picture, its name, and an X to take it off. */
+    renderAttachmentChips: function () {
+        var box = this.$.attachmentChips;
+        box.destroyClientControls();
+        for (var i = 0; i < this.outboundAttachments.length; i++) {
+            var a = this.outboundAttachments[i];
+            var parts = [];
+            if (a.type === "image") {
+                parts.push({ kind: Image, classes: "attachment-chip-thumb", src: "file://" + a.path });
+            }
+            parts.push({ classes: "attachment-chip-label", content: a.name });
+            parts.push({
+                kind: IconButton, src: "assets/icon-decline.svg", attachmentIndex: i,
+                ontap: "removeAttachment"
+            });
+            box.createComponent({ classes: "attachment-chip", components: parts }, { owner: this });
+        }
+        box.setShowing(this.outboundAttachments.length > 0);
+        if (box.hasNode()) {
+            box.render();
+        }
         this.relayout();
     },
 
+    removeAttachment: function (inSender) {
+        this.outboundAttachments = attachments.remove(this.outboundAttachments, inSender.attachmentIndex);
+        this.renderAttachmentChips();
+        return true;
+    },
+
     clearAttachment: function () {
-        this.outboundAttachment = null;
-        this.$.attachmentChip.setShowing(false);
-        this.$.attachmentChipThumb.setShowing(false);
-        this.relayout();
+        this.outboundAttachments = [];
+        this.renderAttachmentChips();
         return true;
     },
 
