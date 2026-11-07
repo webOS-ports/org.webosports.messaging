@@ -435,6 +435,59 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             after: { bar: false, composer: true, lit: 0, chat: 'thread-family' } });
     });
 
+    // Palm's stylesheet capped names and previews at fixed widths (190px, less beside a badge)
+    // for the Pre's 320px screen, so on a wider one they were cut off at two thirds of the row.
+    // Each row's text gets the width its column has; a long name stops only at what sits beside
+    // it in the row (the unread badge, a star). A name made long in place stands for a long one.
+    it('lets names and previews use the width of the row', async function () {
+        var r = await session.evaluate('(async function () {' +
+            'var $ = require("enyo/dispatcher").$, messaging = $.app_mainView_messaging;' +
+            'var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };' +
+            'var LONG = "Anna Kowalski-Wisniewska van der Berg-Lindqvist of Gdansk";' +
+            'function px(n) { return n.getBoundingClientRect(); }' +
+            'function check(listSel, out) {' +
+            '  var cols = document.querySelectorAll(listSel + " .message-summary");' +
+            '  out.rows = 0; out.narrow = [];' +
+            '  for (var i = 0; i < cols.length; i++) {' +
+            '    var col = px(cols[i]); if (!col.width) { continue; }' +
+            '    out.rows++;' +
+            '    var lines = cols[i].querySelectorAll(".message-preview, .status-message, .contact-message");' +
+            '    for (var j = 0; j < lines.length; j++) {' +
+            '      var w = px(lines[j]).width;' +
+            '      if (w && Math.abs(w - col.width) > 1) { out.narrow.push(Math.round(w) + " of " + Math.round(col.width)); }' +
+            '    }' +
+            '  }' +
+            '  var name = document.querySelector(listSel + " .contact-name");' +
+            '  name.textContent = LONG;' +
+            '  var box = name.parentNode.classList.contains("contact-name-box") ? name.parentNode : name;' +
+            '  var beside = 0;' +
+            '  for (var k = 0; box !== name && k < box.children.length; k++) {' +
+            '    var c = box.children[k]; if (c !== name && px(c).width) { beside += px(c).width; }' +
+            '  }' +
+            '  out.elided = name.scrollWidth > name.clientWidth;' +
+            // text-overflow draws its "..." only in a block container; in a flex box the text is cut.
+            '  out.display = getComputedStyle(name).display;' +
+            '  out.gap = Math.round(px(box).right - beside - px(name).right);' +
+            '}' +
+            'var res = { chats: {}, favorites: {} };' +
+            'messaging.menuToggle(null, 0); await wait(400);' +
+            'check("[id$=_threadList]", res.chats);' +
+            'messaging.menuToggle(null, 2); await wait(600);' +
+            'check("[id$=_favoriteList]", res.favorites);' +
+            'messaging.menuToggle(null, 0); await wait(300);' +
+            'return res;' +
+            '})()');
+        ['chats', 'favorites'].forEach(function (tab) {
+            assert.ok(r[tab].rows > 0, 'no ' + tab + ' rows to measure');
+            assert.deepEqual(r[tab].narrow, [], tab + ': text lines narrower than their column');
+            assert.equal(r[tab].elided, true, tab + ': the long name should be elided');
+            assert.match(r[tab].display, /^(block|inline-block)$/,
+                tab + ': a name laid out as ' + r[tab].display + ' is cut off with no ellipsis');
+            assert.ok(r[tab].gap >= 0 && r[tab].gap <= 8,
+                tab + ': the long name stops ' + r[tab].gap + 'px short of the room it has');
+        });
+    });
+
     // Only the conversations list hands the chat a thread with its person joined. Opened from
     // Buddies (or Favorites, a notification, a group sender) the chat got the bare record, so it
     // showed the default avatar and offered only the thread's own transport, not the person's

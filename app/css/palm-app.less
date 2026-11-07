@@ -352,6 +352,18 @@ Thread / Buddy / Favorite / Server rows
 .contact-name {
   font-size: 18px;
 }
+/* A Favorites row's name is its own box. Text straight in a flex box is not elided, so lay it
+ * out as a block, on the box's 24px line. */
+.contact-name-box.contact-name {
+  display: block;
+  line-height: 24px;
+}
+/* The name gives way first, so a badge or icon beside it in the box stays whole. */
+.contact-name-box > .contact-name {
+  min-width: 0;
+  -webkit-flex: 0 1 auto;
+  flex: 0 1 auto;
+}
 .status-message,
 .message-preview {
   font-size: 14px;
@@ -362,28 +374,25 @@ Thread / Buddy / Favorite / Server rows
   font-style: italic;
   color: #888888;
 }
+/* As wide as the row leaves them. Palm's stylesheet gave these fixed widths (190px, less beside
+ * a badge or star) for the Pre's 320px screen, which cut names off at two thirds of a wider one. */
 .contact-name,
 .status-message,
 .message-preview,
 .contact-message {
   text-overflow: ellipsis;
   overflow: hidden;
-  max-width: 190px;
+  max-width: 100%;
   white-space: nowrap;
 }
 .contact-name-unread-favorite {
   font-weight: bold;
-  max-width: 150px;
 }
 .contact-name-no-messaging-account {
   color: #888888;
 }
 .contact-name-unread {
   font-weight: bold;
-  max-width: 170px;
-}
-.contact-name-favorite {
-  max-width: 175px;
 }
 
 .contact-image {
