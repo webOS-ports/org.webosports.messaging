@@ -397,12 +397,28 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             'var dots = bubble.hasNode().querySelector(".conversation-typing-bubble").getBoundingClientRect();' +
             'var place = { below: bb.top >= last.bottom - 0.5, inView: bb.bottom <= sb.bottom + 0.5 && bb.top >= sb.top,' +
             '  small: dots.width > 20 && dots.width < 120, left: dots.left < sb.left + sb.width / 2 };' +
+            // Drawn as a received message is: their picture where its picture is, the bubble where
+            // its bubble is and as tall, with the tail.
+            'var recv = chat.$.list.hasNode().querySelectorAll(".chat-balloon-received");' +
+            'var rb = recv[recv.length - 1].getBoundingClientRect();' +
+            'var rimg = recv[recv.length - 1].closest(".chat-balloon").querySelector(".contact-image").getBoundingClientRect();' +
+            'var img = chat.$.typingImage.hasNode(), ib = img.getBoundingClientRect();' +
+            'var dotsNode = bubble.hasNode().querySelector(".conversation-typing-bubble");' +
+            'var tail = getComputedStyle(dotsNode, ":after");' +
+            'var looks = { bubbleX: Math.abs(dots.left - rb.left) < 1, imageX: Math.abs(ib.left - rimg.left) < 1,' +
+            '  imageSize: Math.round(ib.width) === Math.round(rimg.width), picture: img.getAttribute("src") === recv[recv.length - 1].closest(".chat-balloon").querySelector(".contact-image").getAttribute("src"),' +
+            '  minHeight: dots.height >= 35, tail: /received-shape/.test(tail.backgroundImage) && tail.left === "-8px" };' +
+            // Their picture comes in while the dots show: the dots' row takes it as the rows do.
+            'var keptImage = chat.chatThread.personImage; chat.chatThread.personImage = "assets/typing-test-avatar.png";' +
+            'chat.applyThreadImage();' +
+            'looks.followsPicture = img.getAttribute("src") === "assets/typing-test-avatar.png";' +
+            'chat.chatThread.personImage = keptImage; chat.applyThreadImage();' +
             'main.gotTyping(null, ev("paused")); await wait(50);' +
             'var paused = bubble.showing;' +
             'main.gotTyping(null, ev("typing")); await wait(50);' +
             'main.gotTyping(null, ev("none")); await wait(50);' +
             'var gone = !bubble.showing;' +
-            'return { read: read, typed: typed, cleared: cleared, account: account.username, header: header, shown: shown, gone: gone, place: place, paused: paused,' +
+            'return { read: read, typed: typed, cleared: cleared, account: account.username, header: header, shown: shown, gone: gone, place: place, looks: looks, paused: paused,' +
             '  name: chat.$.header.hasNode().textContent };' +
             '})()');
         var who = { serviceName: 'type_telegram', username: r.account, usernameTo: 'anna.k' };
@@ -412,6 +428,8 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.deepEqual(r.cleared, [{ method: 'sendTyping', payload: Object.assign({ state: 'none' }, who) }]);
         assert.equal(r.shown, true, 'typing shows as dots under the last message');
         assert.deepEqual(r.place, { below: true, inView: true, small: true, left: true });
+        assert.deepEqual(r.looks, { bubbleX: true, imageX: true, imageSize: true, picture: true, minHeight: true, tail: true, followsPicture: true },
+            'drawn as a received message, picture and tail');
         assert.equal(r.header, 'Anna Kowalski', 'and not in the header');
         assert.equal(r.paused, false, 'paused is not typing');
         assert.equal(r.gone, true);

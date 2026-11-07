@@ -205,13 +205,27 @@ module.exports = kind({
                     name: "list", kind: PrependingRepeater, classes: "conversation-messages",
                     components: [ { kind: ConversationRow } ]
                 },
-                // The buddy is typing to us: a received bubble of three dots under the last
-                // message, as WhatsApp draws it (showTypingBubble).
+                // The buddy is typing to us: three dots under the last message, as WhatsApp draws
+                // it (showTypingBubble), in a received message's row - their picture, then the
+                // bubble with its tail - built as ConversationItem builds one.
                 {
-                    name: "typingBubble", classes: "conversation-typing-row", showing: false, components: [
+                    name: "typingBubble", classes: "chat-balloon conversation-typing-row", showing: false, components: [
                         {
-                            classes: "chat-balloon-received conversation-typing-bubble", allowHtml: true,
-                            content: "<span></span><span></span><span></span>"
+                            classes: "conversationContactImage", components: [
+                                { classes: "contact-image-border" },
+                                {
+                                    name: "typingImage", kind: Image, classes: "contact-image",
+                                    attributes: { onerror: "window.__messagingAvatarFailed(this)" }
+                                }
+                            ]
+                        },
+                        {
+                            classes: "flex-one", components: [
+                                {
+                                    classes: "chat-balloon-received conversation-typing-bubble", allowHtml: true,
+                                    content: "<span></span><span></span><span></span>"
+                                }
+                            ]
                         }
                     ]
                 }
@@ -584,6 +598,14 @@ module.exports = kind({
         return true;
     },
 
+    /** The typing row's picture: the one a received message in this 1:1 chat has. */
+    showTypingImage: function () {
+        var image = (this.chatThread && this.chatThread.personImage) || messagingUtils.person.DEFAULT_IMAGE;
+        if (this.$.typingImage.getAttribute("src") !== image) {
+            this.$.typingImage.setAttribute("src", image);
+        }
+    },
+
     /** Give the bubbles already drawn the thread's avatar (group senders keep their own). */
     applyThreadImage: function () {
         if (!this.collection) {
@@ -598,6 +620,7 @@ module.exports = kind({
                 model.set('personImage', image);
             }
         });
+        this.showTypingImage();
     },
 
     buildTransports: function () {
@@ -733,6 +756,9 @@ module.exports = kind({
      */
     showTypingBubble: function () {
         var typing = this.typingState() === "typing";
+        if (typing) {
+            this.showTypingImage();
+        }
         if (typing === this.$.typingBubble.showing) {
             return;
         }

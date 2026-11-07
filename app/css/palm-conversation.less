@@ -30,16 +30,17 @@ Header
 .conversation-header .status {
   margin-left: 8px;
 }
-/* The buddy is typing (ConversationList.showTypingBubble): a received bubble, as wide as its
-   three dots, where their next message will come; the dots pulse one after the other. */
-.conversation-typing-row {
-  padding: 5px 8px 5px 13px;
-}
+/* The buddy is typing (ConversationList.showTypingBubble): a received message's row, its picture
+   and a bubble as wide as its three dots, where their next message will come; the dots pulse one
+   after the other. */
 .chat-balloon-received.conversation-typing-bubble {
+  /* As wide as its dots; the height, margin and tail of any received bubble, so it lines up
+     under the messages beside the picture. */
   display: inline-block;
-  min-height: 0;
-  padding: 9px 12px;
   line-height: 0;
+  padding: 13px 12px 0;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
 }
 .conversation-typing-bubble > span {
   display: inline-block;
