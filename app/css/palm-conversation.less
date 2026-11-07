@@ -948,6 +948,45 @@ Replies
   max-height: 48px;
   overflow: hidden;
 }
+/* Find in Chat: the bar under the header, and the match shown. */
+.conversation-search {
+  -webkit-align-items: center;
+  align-items: center;
+  padding: 2px 6px;
+  background-color: #e4e4e4;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+.conversation-search .messaging-search {
+  min-width: 0;
+}
+.conversation-search-count {
+  font-size: 13px;
+  color: #555555;
+  margin: 0 4px;
+  white-space: nowrap;
+}
+/* The arrow image is smaller than the button: centred, so turning the button keeps it in place. */
+.conversation-search-older,
+.conversation-search-newer {
+  -webkit-flex: none;
+  flex: none;
+  background-position: center !important;
+  background-repeat: no-repeat;
+}
+.conversation-search-older {
+  -webkit-transform: rotate(180deg);
+  transform: rotate(180deg);
+}
+.conversation-search-done {
+  -webkit-flex: none;
+  flex: none;
+  margin-left: 4px;
+  min-width: 64px;
+}
+.search-hit {
+  background-color: rgba(47, 111, 179, 0.18);
+}
+
 /* The message a tapped quote card is for, lit for a moment once it is scrolled to. */
 @-webkit-keyframes quote-flash {
   from { background-color: rgba(47, 111, 179, 0.28); }

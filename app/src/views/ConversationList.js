@@ -39,6 +39,8 @@ var kind = require('enyo/kind'),
     ConversationService = require('../data/ConversationService'),
     transportPicker = require('../util/transportPicker'),
     quoteJump = require('../util/quoteJump'),
+    chatSearch = require('../util/chatSearch'),
+    SearchInput = require('./widgets/SearchInput'),
     forward = require('../util/forward'),
     composerEcho = require('../util/composerEcho'),
     callRequest = require('../util/callRequest'),
@@ -119,6 +121,27 @@ module.exports = kind({
             ]
         },
         { classes: "header-shadow" },
+
+        // --- Find in Chat (openSearch) --------------------------------------------------
+        {
+            name: "searchBar", showing: false, classes: "conversation-search flex-row", components: [
+                {
+                    name: "searchInput", kind: SearchInput, classes: "flex-one",
+                    placeholder: $L("Find in Chat"), onSearchChange: "searchChanged",
+                    onSearchCancel: "searchChanged"
+                },
+                { name: "searchCount", classes: "conversation-search-count" },
+                {
+                    name: "searchOlder", kind: IconButton, src: "assets/menu-arrow.svg",
+                    classes: "conversation-search-older", ontap: "searchOlder"
+                },
+                {
+                    name: "searchNewer", kind: IconButton, src: "assets/menu-arrow.svg",
+                    classes: "conversation-search-newer", ontap: "searchNewer"
+                },
+                { kind: Button, content: $L("Done"), classes: "conversation-search-done", ontap: "closeSearch" }
+            ]
+        },
 
         // --- messages -------------------------------------------------------------------
         {
@@ -406,6 +429,7 @@ module.exports = kind({
     chatThreadChanged: function (inOldChatThread) {
         this.dismissPopups();
         this.cancelQuoteJump();
+        this.closeSearch();
         if (!inOldChatThread && this.chatThread && this.chatThread._id) {
             this.setupNewChatThread();
         } else if (inOldChatThread && inOldChatThread._id && !this.chatThread) {
@@ -665,7 +689,9 @@ module.exports = kind({
         this.lookUpSenders(results);
 
         // Measure before the merge: the new rows are what push the bottom out of reach.
-        var follow = this._followToEnd || isNearBottom(this.$.scroller.getScrollBounds());
+        // While searching, the list stays on the match rather than following new messages down.
+        var follow = this._followToEnd ||
+            (!(this._search && this._search.query) && isNearBottom(this.$.scroller.getScrollBounds()));
         this._followToEnd = false;
 
         this.messages = results;
@@ -694,7 +720,115 @@ module.exports = kind({
         if (this._wantedQuote) {
             this.stepQuoteJump();
         }
+        if (this._search) {
+            this.refreshSearch(false);
+        }
         return true;
+    },
+
+    // --- Find in Chat ---------------------------------------------------------------------
+
+    /** Open the search bar, and load all the messages the chat keeps so it searches them all. */
+    openSearch: function () {
+        if (!this.chatThread || !this.chatThread._id) {
+            return;
+        }
+        this.dismissPopups();
+        this._search = this._search || { query: "", hits: [], current: -1, id: null };
+        this.$.searchBar.show();
+        this.relayout();
+        this.$.searchInput.$.input.focus();
+        if ((this._limit || FIRST_PAGE) < MAX_MESSAGES) {
+            this.cancelBackfill();
+            this._limit = MAX_MESSAGES;
+            this.conversationService.cancel();
+            this.runQuery();
+        }
+        this.refreshSearch(false);
+    },
+
+    /** Whether the search bar is open; back closes it first. */
+    closeSearch: function () {
+        var open = !!this._search;
+        this._search = null;
+        this.markSearchHit(null);
+        if (this.$.searchBar.showing) {
+            this.$.searchInput.set('value', "");
+            this.$.searchBar.hide();
+            this.relayout();
+        }
+        return open;
+    },
+
+    searchChanged: function (inSender, inEvent) {
+        if (this._search) {
+            this._search.query = (inEvent && inEvent.value) || "";
+            this._search.id = null;
+            this.refreshSearch(true);
+        }
+        return true;
+    },
+
+    searchOlder: function () {
+        this.stepSearch(-1);
+        return true;
+    },
+
+    searchNewer: function () {
+        this.stepSearch(1);
+        return true;
+    },
+
+    /** Recount the matches; go to the match shown before, or the newest. show: scroll to it. */
+    refreshSearch: function (show) {
+        var s = this._search, messages = this.messages || [];
+        s.hits = chatSearch.find(messages, s.query);
+        var current = chatSearch.keep(messages, s.hits, s.id);
+        var moved = current >= 0 && messages[s.hits[current]]._id !== s.id;
+        s.current = current;
+        s.id = current >= 0 ? messages[s.hits[current]]._id : null;
+        this.updateSearchCount();
+        this.markSearchHit(current >= 0 ? s.hits[current] : null, show || moved);
+    },
+
+    stepSearch: function (dir) {
+        var s = this._search;
+        if (!s || !s.hits.length) {
+            return;
+        }
+        s.current = chatSearch.step(s.current, s.hits.length, dir);
+        s.id = this.messages[s.hits[s.current]]._id;
+        this.updateSearchCount();
+        this.markSearchHit(s.hits[s.current], true);
+    },
+
+    updateSearchCount: function () {
+        var s = this._search;
+        var text = !s.query.trim() ? "" : !s.hits.length ? $L("No matches") :
+            $L("{n} of {total}").replace("{n}", s.current + 1).replace("{total}", s.hits.length);
+        this.$.searchCount.setContent(text);
+        this.$.searchOlder.setDisabled(!s.hits.length || s.current <= 0);
+        this.$.searchNewer.setDisabled(!s.hits.length || s.current >= s.hits.length - 1);
+    },
+
+    /** Light the row at index as the current match (null: none), scrolling to it when asked. */
+    markSearchHit: function (index, scroll) {
+        if (this._searchRow && !this._searchRow.destroyed) {
+            this._searchRow.removeClass("search-hit");
+        }
+        this._searchRow = null;
+        if (index === null || index === undefined) {
+            return;
+        }
+        var row = this.$.list.getChildForIndex(index);
+        if (!row) {
+            return;
+        }
+        row.addClass("search-hit");
+        this._searchRow = row;
+        if (scroll) {
+            this.scrollRowToMiddle(row);
+        }
     },
 
     // --- quote taps -----------------------------------------------------------------------
@@ -723,21 +857,29 @@ module.exports = kind({
     /** Scroll the row at index to the middle of the list and light it up for a moment. */
     showQuoted: function (index) {
         var row = this.$.list.getChildForIndex(index);
-        var node = row && row.hasNode();
-        var scroller = this.$.scroller.hasNode();
-        if (!node || !scroller) {
+        if (!this.scrollRowToMiddle(row)) {
             return;
         }
-        var bounds = this.$.scroller.getScrollBounds();
-        var top = bounds.top + node.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
-        this.$.scroller.setScrollTop(Math.max(0, top - Math.max(0, (bounds.clientHeight - node.offsetHeight) / 2)));
-        this._atEnd = isNearBottom(this.$.scroller.getScrollBounds());
 
         this.clearQuoteFlash();
         row.addClass("quote-target");
         this._quoteFlash = { row: row };
         var self = this;
         this._quoteFlash.timer = setTimeout(function () { self.clearQuoteFlash(); }, QUOTE_FLASH_MS);
+    },
+
+    /** Scroll so row sits in the middle of the list. False when it is not drawn. */
+    scrollRowToMiddle: function (row) {
+        var node = row && row.hasNode();
+        var scroller = this.$.scroller.hasNode();
+        if (!node || !scroller) {
+            return false;
+        }
+        var bounds = this.$.scroller.getScrollBounds();
+        var top = bounds.top + node.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
+        this.$.scroller.setScrollTop(Math.max(0, top - Math.max(0, (bounds.clientHeight - node.offsetHeight) / 2)));
+        this._atEnd = isNearBottom(this.$.scroller.getScrollBounds());
+        return true;
     },
 
     clearQuoteFlash: function () {

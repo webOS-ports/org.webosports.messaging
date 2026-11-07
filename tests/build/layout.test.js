@@ -170,6 +170,37 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             'px window, so it can never scroll');
     });
 
+    // Find in Chat, from the app menu: the newest match first, older from there, and back closes
+    // the bar before it leaves the chat.
+    it('finds in a chat, newest match first, and closes on back', async function () {
+        var r = await session.evaluate('(async function () {' +
+            'var $ = require("enyo/dispatcher").$, Signals = require("enyo/Signals");' +
+            'var main = $.app_mainView, chat = $.app_mainView_chatView_conversationList;' +
+            'var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };' +
+            'main.selectThread(null, (await new Promise(function (res) {' +
+            '  var t = null; $.app_mainView_messaging_threadList.collection.forEach(function (m) {' +
+            '    if (m.attributes._id === "thread-family") { t = m.attributes; } }); res(t); })));' +
+            'for (var i = 0; i < 20 && !(chat.messages && chat.messages.length); i++) { await wait(100); }' +
+            'Signals.send("onmenubutton", {}); await wait(300);' +
+            'var offered = main.$.findInChatMenuItem.showing;' +
+            'main.findInChat(); await wait(300);' +
+            'chat.searchChanged(null, { value: "BRING" }); await wait(100);' +
+            'var count = chat.$.searchCount.getContent();' +
+            'var hit = document.querySelector(".search-hit");' +
+            'var newest = !!hit && /jacket/.test(hit.textContent);' +
+            'chat.searchOlder(); await wait(100);' +
+            'var older = chat.$.searchCount.getContent();' +
+            'hit = document.querySelector(".search-hit");' +
+            'var olderHit = !!hit && /dessert/.test(hit.textContent);' +
+            'Signals.send("onbackgesture", {}); await wait(300);' +
+            'return { offered: offered, count: count, newest: newest, older: older, olderHit: olderHit,' +
+            '  closed: !chat.$.searchBar.showing && !document.querySelector(".search-hit"),' +
+            '  chatStill: chat.chatThread && chat.chatThread._id };' +
+            '})()');
+        assert.deepEqual(r, { offered: true, count: '2 of 2', newest: true, older: '1 of 2', olderHit: true,
+            closed: true, chatStill: 'thread-family' });
+    });
+
     // Only the conversations list hands the chat a thread with its person joined. Opened from
     // Buddies (or Favorites, a notification, a group sender) the chat got the bare record, so it
     // showed the default avatar and offered only the thread's own transport, not the person's
