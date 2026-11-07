@@ -19,6 +19,10 @@ HERE=$(cd "$(dirname "$0")" && pwd)
 WORK=${MESSAGING_WORK:-${TMPDIR:-/tmp}/messaging-tests}
 fail=0
 
+# The unit tests load moment and webos-lib from app/lib, so fetch it before them on a new clone.
+# Without enyo-dev the unit tests that need it fail, and the build step says why.
+"$HERE/libs.sh" || echo "libs: not fetched; the tests that need app/lib will fail"
+
 echo "== unit"
 node --test "$HERE"/unit/*.test.js || fail=1
 
