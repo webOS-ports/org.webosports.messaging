@@ -445,7 +445,7 @@ module.exports = kind({
     holdChannel: function (inSender, inEvent) {
         var record = this.recordFor(inEvent);
         if (channelOptions.supports(record)) {
-            if (this.$.optionsPopup.showFor(record, false, this.server) && inEvent.preventTap) {
+            if (this.$.optionsPopup.showFor(record, false, this.server, inEvent) && inEvent.preventTap) {
                 // The finger lifting after a hold is a tap too; that one should not open the channel.
                 inEvent.preventTap();
             }

@@ -283,7 +283,7 @@ module.exports = kind({
 
     holdServer: function (inSender, inEvent) {
         var record = this.recordFor(inEvent);
-        if (!this.$.optionsPopup.showFor(record, true)) {
+        if (!this.$.optionsPopup.showFor(record, true, null, inEvent)) {
             return false;
         }
         // The finger lifting after a hold is a tap too; that one should not drill in.
