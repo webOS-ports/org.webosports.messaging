@@ -248,6 +248,29 @@ function isOwnAddress(address, account, serviceName) {
     return String(address).trim().toLowerCase() === String(mine).trim().toLowerCase();
 }
 
+/**
+ * A channel's chat that is a group one can add people to and leave, as a WhatsApp group is. The
+ * transport keeps these as channels, as it does a server's channels, so the server tells them
+ * apart: every Telegram chat with a channel is a group (imlibpurpleservice files them all under
+ * one "Telegram" server), and on Discord a group DM is, which purple-discord keeps in its own
+ * buddy-list group "Discord" - its server's name - where a server's channels sit under
+ * "<server>: <category>". serverName: the name of the thread's imserver, when known.
+ */
+function isChannelGroup(thread, serverName) {
+    if (!thread || !thread.channelId) {
+        return false;
+    }
+    if (thread.replyService === "type_telegram") {
+        return true;
+    }
+    return thread.replyService === "type_discord" && serverName === "Discord";
+}
+
+/** A group whose people can be managed from the chat: WhatsApp's, or a channel's (isChannelGroup). */
+function isManagedGroup(thread, serverName) {
+    return isGroupThread(thread) || isChannelGroup(thread, serverName);
+}
+
 /** members: the chats' addresses of the people to put in it. */
 function createGroupCommand(kind, serviceName, account, name, members) {
     var title = String(name || "").replace(/[\x1e\x1f]/g, "").trim();
@@ -483,6 +506,8 @@ module.exports = {
     ACTIONS: ACTIONS,
     actionsFor: actionsFor,
     isGroupThread: isGroupThread,
+    isChannelGroup: isChannelGroup,
+    isManagedGroup: isManagedGroup,
     isOwnSent: isOwnSent,
     chatOf: chatOf,
     canEdit: canEdit,

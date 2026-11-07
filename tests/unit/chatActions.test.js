@@ -332,3 +332,26 @@ describe('chatActions.isOwnAddress: not ourselves into a group', function () {
         assert.equal(ca.isOwnAddress('@', { username: '@' }, 'type_whatsapp'), false);
     });
 });
+
+describe('chatActions.isChannelGroup: a channel that is a group', function () {
+    var tg = { channelId: 'c1', replyService: 'type_telegram', replyAddress: '-100999' };
+    var dc = { channelId: 'c2', replyService: 'type_discord', replyAddress: '1100000000000000009' };
+    it('any Telegram chat with a channel', function () {
+        assert.equal(ca.isChannelGroup(tg), true);
+        assert.equal(ca.isManagedGroup(tg), true);
+    });
+    it('a Discord group DM, by its server, and no server channel', function () {
+        assert.equal(ca.isChannelGroup(dc, 'Discord'), true);
+        assert.equal(ca.isChannelGroup(dc, 'LuneOS Discord'), false);
+        assert.equal(ca.isChannelGroup(dc, undefined), false, 'not before the server is known');
+    });
+    it('no chat without a channel, and no other service', function () {
+        assert.equal(ca.isChannelGroup({ replyService: 'type_telegram', replyAddress: 'anna' }), false);
+        assert.equal(ca.isChannelGroup({ channelId: 'c3', replyService: 'type_irc' }, 'Discord'), false);
+        assert.equal(ca.isChannelGroup(null), false);
+    });
+    it('a WhatsApp group is managed as before', function () {
+        assert.equal(ca.isManagedGroup({ replyAddress: GROUP, replyService: 'type_whatsapp' }), true);
+        assert.equal(ca.isManagedGroup({ replyAddress: '+15555550101', replyService: 'type_whatsapp' }), false);
+    });
+});

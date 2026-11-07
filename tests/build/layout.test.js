@@ -465,6 +465,55 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.deepEqual(r.cancelled, [1], 'the dead watch is ended');
     });
 
+    // Telegram groups and Discord group DMs are channels to the transport; the server tells them
+    // from a server's channels (chatActions.isChannelGroup), so they get Add People and Leave.
+    it('offers the group buttons in a Telegram group and a Discord group DM, not in a server channel', async function () {
+        var r = await session.evaluate('(async function () {' +
+            'var $ = require("enyo/dispatcher").$, mockDb = require("src/data/mockDb");' +
+            'var main = $.app_mainView, chat = $.app_mainView_chatView_conversationList;' +
+            'var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };' +
+            'var threads = mockDb.store["com.palm.chatthread:1"];' +
+            'var tg = JSON.parse(JSON.stringify(threads.filter(function (t) { return t._id === "thread-channel"; })[0]));' +
+            'var anna = mockDb.store["com.palm.message:1"].filter(function (m) { return m.conversations[0] === "thread-anna"; })[0];' +
+            'mockDb.merge([{ _id: "server-gdm", _kind: "com.palm.imserver:1", serviceName: "type_discord", remoteId: "Discord", name: "Discord", displayName: "Discord" }]);' +
+            'var made = ["server-gdm"];' +
+            'var thread = function (id, server) { var t = { _id: id, _kind: "com.palm.chatthread:1", displayName: id, channelId: "ch-" + id, serverId: server,' +
+            '  replyAddress: "1100000000000000077", normalizedAddress: "1100000000000000077", replyService: "type_discord", serviceName: "type_discord",' +
+            '  timestamp: Date.now(), unreadCount: 0, flags: { visible: true } };' +
+            '  var m = JSON.parse(JSON.stringify(anna)); m._id = "msg-" + id; m.conversations = [id]; m.serviceName = "type_discord";' +
+            '  mockDb.merge([t, m]); made.push(id, "msg-" + id); return JSON.parse(JSON.stringify(t)); };' +
+            'var open = async function (t) { main.selectThread(null, t);' +
+            '  for (var k = 0; k < 20 && !(chat.chatThread && chat.chatThread._id === t._id && chat.collection.length); k++) { await wait(100); }' +
+            '  await wait(300);' +
+            '  return { add: chat.$.groupAddButton.getShowing(), leave: chat.$.groupLeaveButton.getShowing(), row: chat.$.listButtons.getShowing() }; };' +
+            'var out = {};' +
+            'try {' +
+            ' out.telegram = await open(tg);' +
+            ' chat.openGroupInvite(); await wait(100);' +
+            ' out.inviteFor = chat.$.groupDialog.thread && chat.$.groupDialog.thread.replyAddress; chat.$.groupDialog.hide();' +
+            ' out.serverChannel = await open(thread("thread-dchan", "server-discord"));' +
+            ' out.groupDm = await open(thread("thread-gdm", "server-gdm"));' +
+            // The server's answer after the messages, as it can come on a device: the buttons then.
+            ' chat._serverName = undefined; chat.updateListButtons(chat.chatThread); chat.showListButtons(true);' +
+            ' var before = chat.$.groupAddButton.getShowing();' +
+            ' chat.gotChatServer(null, mockDb.get(["server-gdm"]));' +
+            ' out.late = { before: before, after: chat.$.groupAddButton.getShowing(), row: chat.$.listButtons.getShowing() };' +
+            // A channel's chat with no server: not the last server's name.
+            ' out.noServer = await open(thread("thread-noserver", undefined));' +
+            '} finally {' +
+            ' mockDb.del(made);' +
+            ' main.selectThread(null, JSON.parse(JSON.stringify(threads.filter(function (t) { return t._id === "thread-anna"; })[0]))); await wait(300);' +
+            '}' +
+            'return out;' +
+            '})()');
+        assert.deepEqual(r.telegram, { add: true, leave: true, row: true }, 'a Telegram group');
+        assert.equal(r.inviteFor, '-100999', 'Add People adds to the chat the messages go to');
+        assert.deepEqual(r.serverChannel, { add: false, leave: false, row: false }, 'a server channel');
+        assert.deepEqual(r.groupDm, { add: true, leave: true, row: true }, 'a Discord group DM');
+        assert.deepEqual(r.late, { before: false, after: true, row: true }, 'the server known after the messages');
+        assert.deepEqual(r.noServer, { add: false, leave: false, row: false }, 'no server, no group');
+    });
+
     // A chat opened with unread messages (util/unreadMarker): "N unread messages" above the first
     // of them, and the chat opens at the line when the newest would take it off the top; further
     // up, a button back down, counting what comes in meanwhile.

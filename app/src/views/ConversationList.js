@@ -410,6 +410,8 @@ module.exports = kind({
             onResponse: 'gotThreadPerson', onError: 'serviceErr'
         },
         { name: 'dbDelete', kind: LunaService, service: DB_SERVICE, method: 'del', onError: 'serviceErr' },
+        // The server of a channel's chat, whose name tells a group (chatActions.isChannelGroup).
+        { name: 'serverGet', kind: LunaService, service: DB_SERVICE, method: 'get', onResponse: 'gotChatServer', onError: 'serviceErr' },
         { name: 'dbMerge', kind: LunaService, service: DB_SERVICE, method: 'merge', onError: 'serviceErr' },
         {
             name: 'reactionCommand', kind: LunaService, service: DB_SERVICE, method: 'put',
@@ -565,7 +567,36 @@ module.exports = kind({
         this.buildTransports();
         this.updateTransportButton();
         this.updateCallButtons();
+        this.lookUpChatServer(this.chatThread);
         this.runQuery();
+    },
+
+    /** The server of a channel's chat, for its name (updateListButtons). */
+    lookUpChatServer: function (thread) {
+        if (!thread.serverId || thread.serverId === this._serverId) {
+            return;
+        }
+        this._serverId = thread.serverId;
+        this._serverName = undefined;
+        if (mockDb.enabled) {
+            setTimeout(this.gotChatServer.bind(this, null, mockDb.get([thread.serverId])), 0);
+        } else {
+            this.$.serverGet.send({ ids: [thread.serverId] });
+        }
+    },
+
+    gotChatServer: function (inSender, inResponse) {
+        var server = inResponse && inResponse.results && inResponse.results[0];
+        if (!server || server._id !== this._serverId) {
+            return true;
+        }
+        this._serverName = server.name || server.displayName;
+        if (this.chatThread && this.chatThread.serverId === server._id) {
+            this.updateListButtons(this.chatThread);
+            this.showListButtons(this.collection && this.collection.length > 0);
+            this.relayout();
+        }
+        return true;
     },
 
     /**
@@ -1549,7 +1580,8 @@ module.exports = kind({
     updateListButtons: function (thread) {
         var actions = thread ? chatActions.actionsFor(thread.replyService, appState.accountService) : {};
         // A group we left takes nothing from us any more (chatFlags.isLeft).
-        var group = chatActions.isGroupThread(thread) && !chatFlags.isLeft(thread);
+        var server = thread && thread.serverId === this._serverId ? this._serverName : undefined;
+        var group = chatActions.isManagedGroup(thread, server) && !chatFlags.isLeft(thread);
         this.$.groupAddButton.setShowing(group && !!actions.groupInvite);
         this.$.groupLeaveButton.setShowing(group && !!actions.groupLeave);
     },
