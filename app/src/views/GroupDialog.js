@@ -13,6 +13,8 @@ var kind = require('enyo/kind'),
     Button = require('onyx/Button'),
     Input = require('onyx/Input'),
     InputDecorator = require('onyx/InputDecorator'),
+    Picker = require('onyx/Picker'),
+    PickerDecorator = require('onyx/PickerDecorator'),
     LunaService = require('enyo-webos/LunaService'),
     MsgAddrSearchList = require('./MsgAddrSearchList'),
     chatActions = require('../util/chatActions'),
@@ -34,6 +36,18 @@ module.exports = kind({
 
     components: [
         { name: "title", classes: "group-dialog-title" },
+        {
+            // New Group with more than one service that makes groups: which one, as Add Buddy asks.
+            name: "accountRow", classes: "flex-row group-dialog-account", showing: false, components: [
+                { content: $L("Account"), classes: "flex-one" },
+                {
+                    kind: PickerDecorator, components: [
+                        {},
+                        { name: "accountPicker", kind: Picker, onSelect: "accountPicked" }
+                    ]
+                }
+            ]
+        },
         {
             name: "nameBox", kind: InputDecorator, classes: "group-dialog-name", components: [
                 { name: "nameInput", kind: Input, placeholder: $L("Group name"), oninput: "updateButton" }
@@ -60,25 +74,52 @@ module.exports = kind({
         this.mode = null;
     },
 
-    /** The first IM account whose service makes groups, or null. */
-    creatingAccount: function () {
+    /** The IM accounts whose service makes groups. */
+    creatingAccounts: function () {
         var accountService = appState.accountService;
-        var accounts = (accountService && accountService.getImAccounts()) || [];
-        for (var i = 0; i < accounts.length; i++) {
-            if (chatActions.actionsFor(accounts[i].serviceName, accountService).groupCreate) {
-                return accounts[i];
-            }
-        }
-        return null;
+        return ((accountService && accountService.getImAccounts()) || []).filter(function (a) {
+            return !!chatActions.actionsFor(a.serviceName, accountService).groupCreate;
+        });
+    },
+
+    creatingAccount: function () {
+        return this.creatingAccounts()[0] || null;
     },
 
     openCreate: function () {
-        var account = this.creatingAccount();
-        if (!account) {
+        var accounts = this.creatingAccounts();
+        if (!accounts.length) {
             return false;
         }
-        this.open("create", account, null);
+        this.creatable = accounts;
+        this.$.accountPicker.destroyClientControls();
+        for (var i = 0; i < accounts.length; i++) {
+            this.$.accountPicker.createComponent({
+                content: accounts[i].loc_name || accounts[i].serviceName, accountIndex: i, active: i === 0
+            }, { owner: this });
+        }
+        this.$.accountPicker.render();
+        this.open("create", accounts[0], null);
+        this.$.accountRow.setShowing(accounts.length > 1);
         return true;
+    },
+
+    /** Another service for the new group: the people picked were for the last one, so they go. */
+    accountPicked: function (inSender, inEvent) {
+        var picked = inEvent && inEvent.selected;
+        var account = picked && this.creatable && this.creatable[picked.accountIndex];
+        if (account && account !== this.account) {
+            this.chooseAccount(account);
+        }
+        return true;
+    },
+
+    chooseAccount: function (account) {
+        var name = this.$.nameInput.get('value');
+        this.open("create", account, null);
+        this.$.nameInput.set('value', name);
+        this.$.accountRow.setShowing(this.creatable.length > 1);
+        this.updateButton();
     },
 
     openInvite: function (thread) {
@@ -101,6 +142,7 @@ module.exports = kind({
             $L("New {service} Group").replace("{service}", service) :
             $L("Add People to {group}").replace("{group}", (thread && thread.displayName) || $L("the group")));
         this.$.nameBox.setShowing(mode === "create");
+        this.$.accountRow.setShowing(false);
         this.$.nameInput.set('value', "");
         this.$.doneButton.setContent(mode === "create" ? $L("Create") : $L("Add"));
         var serviceName = account.serviceName;

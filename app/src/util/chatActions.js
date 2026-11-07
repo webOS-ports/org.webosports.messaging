@@ -41,6 +41,11 @@ var ACTIONS = {
     type_signal: {
         edit: true, deleteForEveryone: true, mentions: true, contact: true
     },
+    type_telegram: {
+        edit: true, deleteForEveryone: true,
+        groupCreate: true, groupInvite: true, groupLeave: true,
+        mentions: true, location: true, contact: true
+    },
     // Groups are group DMs; a server's channels are not.
     type_discord: {
         edit: true, deleteForEveryone: true,

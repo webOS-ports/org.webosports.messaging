@@ -583,7 +583,13 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             main.$.appMenu.hide();
             main.newGroup(); await wait(100);
             var create = main.$.groupDialog;
+            out.creators = create.creatable.map(function (a) { return a.serviceName; });
+            out.accountRow = create.$.accountRow.getShowing();
             create.$.nameInput.set('value', 'Climbing');
+            create.personPicked(null, { msgAddr: { displayName: 'Anna', value: 'anna.k', type: 'type_telegram' } });
+            out.telegramPicked = create.members.length;
+            create.chooseAccount(create.creatable[out.creators.indexOf('type_whatsapp')]);
+            out.afterSwitch = { members: create.members.length, name: create.$.nameInput.get('value') };
             create.personPicked(null, { msgAddr: { displayName: 'Marta', value: '+46 70 123 45 67', isPhone: true } });
             create.doneTapped();
             out.create = last();
@@ -635,6 +641,10 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.deepEqual(r.mention, { text: 'hi @Marta Lindqvist bring the cake',
             mentions: [{ id: '+46701234567', name: 'Marta Lindqvist' }] });
         assert.equal(r.newGroupItem, true);
+        assert.deepEqual(r.creators, ['type_telegram', 'type_whatsapp', 'type_discord'], 'every account whose service makes groups');
+        assert.equal(r.accountRow, true, 'so the dialog asks which');
+        assert.equal(r.telegramPicked, 1);
+        assert.deepEqual(r.afterSwitch, { members: 0, name: 'Climbing' }, 'another service: its people start over, the name stays');
         assert.deepEqual(r.create, cmd('createGroup', '', { name: 'Climbing', members: '+46701234567' }));
     });
 });

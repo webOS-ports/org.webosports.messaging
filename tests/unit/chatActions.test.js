@@ -37,6 +37,10 @@ describe('chatActions: what a service does', function () {
         assert.equal(sig.edit && sig.deleteForEveryone && sig.mentions && sig.contact, true);
         assert.equal(!!sig.groupCreate, false);
         assert.equal(!!sig.location, false, 'Signal has no location message: it goes as text');
+        var tg = ca.actionsFor('type_telegram');
+        assert.equal(tg.edit && tg.deleteForEveryone && tg.groupCreate && tg.groupInvite && tg.groupLeave &&
+            tg.mentions && tg.location && tg.contact, true);
+        assert.equal(tg.editWindowMs, undefined, 'no window we know of');
         var dc = ca.actionsFor('type_discord');
         assert.equal(dc.edit && dc.deleteForEveryone && dc.groupCreate && dc.groupInvite && dc.groupLeave && dc.mentions, true);
         assert.equal(!!(dc.location || dc.contact || dc.editWindowMs), false);
