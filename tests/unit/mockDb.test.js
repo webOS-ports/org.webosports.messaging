@@ -19,6 +19,23 @@ global.window.location = { href: 'http://127.0.0.1:8731/index.html?debug#x' };
 var mockDb = bootstrap.load('data/mockDb.js');
 
 describe('mockDb', function () {
+    it('merges an object into the one there, as db8 does, and replaces arrays and values', function () {
+        mockDb.merge([{ _id: 'thread-family', _kind: 'com.palm.chatthread:1', flags: { pinned: true } }]);
+        var t = mockDb.store['com.palm.chatthread:1'].find(function (x) { return x._id === 'thread-family'; });
+        assert.equal(t.flags.pinned, true);
+        assert.equal(t.flags.visible, true);
+        var before = t.summary;
+        mockDb.merge([{ _id: 'thread-family', _kind: 'com.palm.chatthread:1', flags: { pinned: false }, tags: ['a'] }]);
+        assert.equal(t.flags.pinned, false);
+        assert.equal(t.flags.visible, true);
+        assert.deepEqual(t.tags, ['a']);
+        mockDb.merge([{ _id: 'thread-family', _kind: 'com.palm.chatthread:1', tags: ['b'] }]);
+        assert.deepEqual(t.tags, ['b']);
+        mockDb.merge([{ _id: 'thread-family', _kind: 'com.palm.chatthread:1', extra: { a: 1 } }]);
+        mockDb.merge([{ _id: 'thread-family', _kind: 'com.palm.chatthread:1', extra: [2] }]);
+        assert.deepEqual(t.extra, [2]);
+        assert.equal(t.summary, before);
+    });
     it('matches a field inside an array the way db8 does ("ims.value")', function () {
         var r = mockDb.find({
             from: 'com.palm.person:1',

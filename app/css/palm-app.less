@@ -428,6 +428,39 @@ Thread / Buddy / Favorite / Server rows
   flex: none;
 }
 
+/* A chat marked unread with no unread message in it: the badge, smaller and with no number. */
+.unread-count.unread-mark {
+  -webkit-transform: scale(0.6);
+  transform: scale(0.6);
+}
+/* A muted chat (util/chatFlags), next to its name. */
+.thread-muted {
+  width: 16px;
+  height: 16px;
+  margin: 0 4px;
+  -webkit-flex: none;
+  flex: none;
+  background: url(../assets/thread-muted.svg) center center no-repeat;
+}
+/* Over the chats: the archived ones, or the way back from them. */
+.archive-bar {
+  -webkit-align-items: center;
+  align-items: center;
+  height: 44px;
+  padding: 0 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  color: #2f6fb3;
+  font-size: 16px;
+}
+.archive-bar.archive-bar-open {
+  background-color: #e4e4e4;
+}
+.archive-bar-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Server/channel rows put the unread badge flush right and their aggregate counts run large
  * ("99+"), which would clip inside the fixed 24px circle - so render those as a grey pill that
  * grows with its content instead. */

@@ -141,6 +141,11 @@ module.exports = kind({
             prefs: appState.prefsHandler && appState.prefsHandler.getPrefs(),
             filterAll: !!this.filter.filterAll,
             onScreenThread: onScreen,
+            // Muted chats, as the Chats list last saw them (util/chatFlags).
+            muted: function (threadId) {
+                return !!(appState.mutedThreads && threadId &&
+                    Object.prototype.hasOwnProperty.call(appState.mutedThreads, threadId));
+            },
             now: Date.now(),
             throttled: function (threadId) { return self.throttled(threadId); }
         };

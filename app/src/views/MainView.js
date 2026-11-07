@@ -82,7 +82,8 @@ module.exports = kind({
                             onNewBuddy: "addBuddy",
                             onNewFavorite: "showAddFavoriteList",
                             onLoginStatesChange: "loginStatesChange",
-                            onAddAccount: "showAddAccountDialog"
+                            onAddAccount: "showAddAccountDialog",
+                            onClearUnreadCount: "clearUnreadCount"
                         },
                         {
                             name: "chatView", kind: ChatView, fit: true,
@@ -395,7 +396,11 @@ module.exports = kind({
     },
 
     clearUnreadCountForThread: function (threadId) {
-        var record = { _id: threadId, _kind: messagingUtils.thread.dbKind, unreadCount: 0 };
+        // Opening a chat also takes off a "Mark as Unread" (util/chatFlags).
+        var record = {
+            _id: threadId, _kind: messagingUtils.thread.dbKind, unreadCount: 0,
+            flags: { markedUnread: false }
+        };
         if (mockDb.enabled) {
             mockDb.merge([record]);
             return;
@@ -644,8 +649,8 @@ module.exports = kind({
             this.leaveThread();
             return true;
         }
-        // Then out of a server's channels, as the Servers button does.
-        if (this.$.messaging.backToServers()) {
+        // Then out of a server's channels, as the Servers button does, or out of the archive.
+        if (this.$.messaging.backToServers() || this.$.messaging.closeArchive()) {
             return true;
         }
         if (Panels.isScreenNarrow()) {

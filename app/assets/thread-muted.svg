@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+<!-- A muted chat, after the stock speaker: a speaker cone with a slash across it, in the grey
+     of the row's preview text. -->
+<path d="M2 6h2.5L8 3v10L4.5 10H2z" fill="#8a8a8a"/>
+<path d="M10.5 5.5l4 5M14.5 5.5l-4 5" stroke="#8a8a8a" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+</svg>

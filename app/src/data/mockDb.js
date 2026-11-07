@@ -764,6 +764,24 @@ function matchesClause(record, clause) {
     }
 }
 
+/**
+ * As db8's merge: an object in the merge is merged into the object it meets, anything else
+ * (arrays too) replaces what was there. A flags merge keeps the flags it does not name.
+ */
+function mergeInto(target, source) {
+    for (var k in source) {
+        if (Object.prototype.hasOwnProperty.call(source, k)) {
+            var v = source[k], old = target[k];
+            if (v && typeof v === "object" && !Array.isArray(v) &&
+                    old && typeof old === "object" && !Array.isArray(old)) {
+                mergeInto(old, v);
+            } else {
+                target[k] = v;
+            }
+        }
+    }
+}
+
 module.exports = {
     /** True when the app is running outside a device and should use these fixtures. */
     enabled: !('PalmSystem' in window),
@@ -846,9 +864,7 @@ module.exports = {
             var found = false;
             for (var j = 0; j < records.length; j++) {
                 if (records[j]._id === obj._id) {
-                    for (var k in obj) {
-                        if (obj.hasOwnProperty(k)) { records[j][k] = obj[k]; }
-                    }
+                    mergeInto(records[j], obj);
                     found = true;
                     break;
                 }

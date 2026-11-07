@@ -46,7 +46,8 @@ module.exports = kind({
         onNewBuddy: "",
         onNewFavorite: "",
         onLoginStatesChange: "",
-        onAddAccount: ""
+        onAddAccount: "",
+        onClearUnreadCount: ""
     },
 
     components: [
@@ -101,7 +102,8 @@ module.exports = kind({
                 {
                     name: "threadList", kind: ThreadList,
                     onSelectThread: "doSelectThread", onDeleteThread: "doDeleteThread",
-                    onThreadLocked: "doThreadLocked", onUnreadCountChanged: "updateUnreadCount"
+                    onThreadLocked: "doThreadLocked", onUnreadCountChanged: "updateUnreadCount",
+                    onClearUnreadCount: "doClearUnreadCount"
                 },
                 {
                     name: "buddyList", kind: BuddyList,
@@ -203,6 +205,11 @@ module.exports = kind({
     },
 
     /** Back gesture: leaves a server's channels for the server list, if that is what is shown. */
+    /** Out of the archived chats, when the Chats tab shows them. */
+    closeArchive: function () {
+        return this._curTab === TAB_CHATS && this.$.threadList.closeArchive();
+    },
+
     backToServers: function () {
         if (this._curTab !== TAB_SERVERS || !this.$.serverList || !this.$.serverList.isDrilledIn()) {
             return false;

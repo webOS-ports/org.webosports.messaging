@@ -201,6 +201,42 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             closed: true, chatStill: 'thread-family' });
     });
 
+    // Holding a chat: pin it over the others, archive it behind "Archived chats", and back out of
+    // the archive (util/chatFlags). Each choice is a merge on the chatthread.
+    it('pins a chat to the top and archives one out of the list', async function () {
+        var r = await session.evaluate('(async function () {' +
+            'var $ = require("enyo/dispatcher").$, Signals = require("enyo/Signals");' +
+            'var tl = $.app_mainView_messaging_threadList;' +
+            'var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };' +
+            'var ids = function () { return tl.collection.map(function (m) { return m.attributes._id; }); };' +
+            'var choose = async function (id, change) {' +
+            '  var held = tl.collection.models.filter(function (m) { return m.attributes._id === id; })[0];' +
+            '  if (!held) { throw new Error("no " + id + " in " + ids().join() + " filter=" + tl.filterString + " arch=" + tl.inArchive); }' +
+            '  tl.heldRecord = held.attributes;' +
+            '  tl.chatOptionTapped({ change: change }); await wait(300); };' +
+            // From the list: on one pane an open chat covers it, and back would leave that first.
+            'if ($.app_mainView.$.slidingGroup.getIndex() !== 0) { Signals.send("onbackgesture", {}); await wait(600); }' +
+            'var start = ids(), pin = start[3], arch = start[1];' +
+            'await choose(pin, { pinned: true });' +
+            'var divider = document.querySelector(".threadList-Divider");' +
+            'var pinned = { first: ids()[0] === pin, caption: divider && divider.offsetHeight ? divider.textContent : null };' +
+            'await choose(arch, { archived: true });' +
+            'var bar = tl.$.archiveBar;' +
+            'var archived = { gone: ids().indexOf(arch) < 0, bar: bar.showing && bar.hasNode().textContent.indexOf("(1)") >= 0 };' +
+            'tl.toggleArchive(); await wait(300);' +
+            'var inside = ids();' +
+            'Signals.send("onbackgesture", {}); await wait(300);' +
+            'var back = { out: !tl.inArchive, count: ids().length === start.length - 1 };' +
+            // Unarchived from the archive, which closes once it is empty.
+            'tl.toggleArchive(); await wait(300);' +
+            'await choose(arch, { archived: false }); await choose(pin, { pinned: false });' +
+            'return { pinned: pinned, archived: archived, inside: inside.join() === arch, back: back,' +
+            '  restored: ids().join() === start.join(), barAfter: bar.showing, archiveClosed: !tl.inArchive };' +
+            '})()');
+        assert.deepEqual(r, { pinned: { first: true, caption: 'Pinned' }, archived: { gone: true, bar: true },
+            inside: true, back: { out: true, count: true }, restored: true, barAfter: false, archiveClosed: true });
+    });
+
     // Select, in the message menu: taps pick messages, the bar takes the composer's place with all
     // its buttons on screen, and back leaves selecting before it leaves the chat.
     it('selects several messages, in chat order, and leaves selecting on back', async function () {

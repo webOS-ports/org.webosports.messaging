@@ -14,6 +14,9 @@ var kind = require('enyo/kind'),
     Collection = require('enyo/Collection'),
     RecordModel = require('../data/RecordModel'),
     syncCollection = require('../util/syncCollection'),
+    chatFlags = require('../util/chatFlags'),
+    Menu = require('onyx/Menu'),
+    MenuItem = require('onyx/MenuItem'),
     openThread = require('../util/openThread'),
     Control = require('enyo/Control'),
     LunaService = require('enyo-webos/LunaService'),
@@ -33,12 +36,21 @@ module.exports = kind({
         onSelectThread: "",
         onDeleteThread: "",
         onThreadLocked: "",
-        onUnreadCountChanged: ""
+        onUnreadCountChanged: "",
+        onClearUnreadCount: ""
     },
 
     components: [
         { name: "search", kind: SearchInput, onSearchChange: "filterList" },
         { classes: "header-shadow header-app-shadow" },
+        {
+            // "Archived chats (n)" over the list, or the way back from them (util/chatFlags).
+            name: "archiveBar", classes: "archive-bar flex-row", showing: false, ontap: "toggleArchive",
+            components: [
+                { name: "archiveLabel", classes: "archive-bar-label flex-one" },
+                { name: "archiveUnread", classes: "unread-count", showing: false }
+            ]
+        },
         { name: "emptyMessage", classes: "messageTexts", showing: false },
         {
             // A Scroller around a DataRepeater rather than a DataList: DataList is
@@ -47,10 +59,15 @@ module.exports = kind({
             // that entire feedback loop.
             name: "scroller", kind: Scroller, fit: true, horizontal: "hidden", touch: true,
             classes: "threads-list messaging-listsDivider",
-            ontap: "selectThread", onConfirm: "swipeDelete",
+            ontap: "selectThread", onConfirm: "swipeDelete", onhold: "holdThread",
             components: [
                 { name: "list", kind: DataRepeater, components: [ { kind: ThreadRow } ] }
             ]
+        },
+        { name: "chatMenu", kind: Menu, floating: true },
+        {
+            name: 'threadMerge', kind: LunaService, service: 'luna://com.webos.service.db',
+            method: 'merge', onError: 'deleteThreadErr'
         },
         {
             name: 'deleteThreadService', kind: LunaService,
@@ -68,6 +85,7 @@ module.exports = kind({
         this.inherited(arguments);
         this.filterString = "";
         this.selectedRecord = null;
+        this.inArchive = false;
 
         this.collection = new Collection({ model: RecordModel });
         this.$.list.set("collection", this.collection);
@@ -132,7 +150,22 @@ module.exports = kind({
 
     gotThreads: function (inSender, inEvent) {
         var all = (inEvent && inEvent.results) || [];
-        var results = this.excludeChannelThreads(all);
+        var chats = this.excludeChannelThreads(all);
+        // Muted chats for the alerts (DashboardManager); a search lists only some of them.
+        if (!this.filterString) {
+            appState.mutedThreads = chatFlags.mutedIds(chats);
+        }
+        // A search finds archived chats too; otherwise they wait behind "Archived chats".
+        var arranged = chatFlags.arrange(chats, this.inArchive);
+        if (this.filterString && !this.inArchive) {
+            arranged.list = chatFlags.arrange(chats, false).list.concat(chatFlags.arrange(chats, true).list);
+        }
+        if (this.inArchive && !arranged.archivedCount && !this.filterString) {
+            this.inArchive = false;
+            arranged = chatFlags.arrange(chats, false);
+        }
+        var results = arranged.list;
+        this.updateArchiveBar(arranged);
 
         // The open thread left the list: find out whether it was deleted under the conversation.
         if (!mockDb.enabled && openThread.droppedOut(this.selectedRecord, all, this.filterString)) {
@@ -156,7 +189,85 @@ module.exports = kind({
             this.markSelected(this.selectedRecord._id);
         }
         this.updateEmptyMessage(results);
-        this.reportUnreadCount(results);
+        this.reportUnreadCount(chats);
+        return true;
+    },
+
+    // --- archive -------------------------------------------------------------------------
+
+    updateArchiveBar: function (arranged) {
+        var show = this.inArchive || (arranged.archivedCount > 0 && !this.filterString);
+        this.$.archiveBar.setShowing(show);
+        this.$.archiveBar.addRemoveClass("archive-bar-open", this.inArchive);
+        this.$.archiveLabel.setContent(this.inArchive ? $L("Back to Chats") :
+            $L("Archived chats ({n})").replace("{n}", arranged.archivedCount));
+        this.$.archiveUnread.setContent(arranged.archivedUnread);
+        this.$.archiveUnread.setShowing(!this.inArchive && arranged.archivedUnread > 0);
+    },
+
+    toggleArchive: function () {
+        this.inArchive = !this.inArchive;
+        this.runQuery();
+        return true;
+    },
+
+    /** Leave the archived chats; whether they were shown, so back leaves them first. */
+    closeArchive: function () {
+        if (!this.inArchive) {
+            return false;
+        }
+        this.inArchive = false;
+        this.runQuery();
+        return true;
+    },
+
+    // --- chat options (hold a row) -------------------------------------------------------
+
+    holdThread: function (inSender, inEvent) {
+        var record = this.recordFor(inEvent);
+        var list = chatFlags.actions(record);
+        if (!list.length) {
+            return false;
+        }
+        // The finger lifting after a hold is a tap too; that one should not open the chat.
+        if (inEvent.preventTap) {
+            inEvent.preventTap();
+        }
+        this.heldRecord = record;
+        var menu = this.$.chatMenu;
+        menu.destroyClientControls();
+        for (var i = 0; i < list.length; i++) {
+            menu.createComponent({
+                kind: MenuItem, content: list[i].label, change: list[i].change, ontap: "chatOptionTapped"
+            }, { owner: this });
+        }
+        menu.render();
+        // Anchored to the finger, as the message menu; without an activatorOffset the open menu
+        // throws on every resize.
+        menu.activatorOffset = { top: inEvent.pageY || 0, left: inEvent.pageX || 0, width: 0, height: 0 };
+        menu.showAtEvent(inEvent);
+        return true;
+    },
+
+    chatOptionTapped: function (inSender) {
+        this.$.chatMenu.hide();
+        var record = this.heldRecord;
+        var change = inSender.change;
+        var m = chatFlags.merge(record, change);
+        if (!m) {
+            return true;
+        }
+        m._kind = messagingUtils.thread.dbKind;
+        if (change.read) {
+            // As opening it does: MainView marks its messages read and clears the count.
+            this.doClearUnreadCount({ threadId: record._id });
+        }
+        if (mockDb.enabled) {
+            mockDb.merge([m]);
+            this.runQuery();
+        } else {
+            this.$.threadMerge.send({ objects: [m] });
+        }
         return true;
     },
 
@@ -179,7 +290,9 @@ module.exports = kind({
 
     updateEmptyMessage: function (results) {
         if (results.length === 0) {
-            if (this.filterString && this.filterString.length > 0) {
+            if (this.inArchive) {
+                this.$.emptyMessage.hide();
+            } else if (this.filterString && this.filterString.length > 0) {
                 this.showEmptyMessage(messagingUtils.CONSTANTS.NO_SEARCH_RESULTS);
             } else {
                 this.showEmptyMessage($L("Your conversation list is empty."));
@@ -201,7 +314,7 @@ module.exports = kind({
             var thread = results[i];
             if (!appState.selectedThread || thread._id !== appState.selectedThread._id ||
                     appState.getAppDeactivated() === true) {
-                cnt += (thread.unreadCount || 0);
+                cnt += chatFlags.unreadWeight(thread);
             }
         }
         this.doUnreadCountChanged({ count: cnt });

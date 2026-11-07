@@ -15,7 +15,14 @@ var kind = require('enyo/kind'),
     Control = require('enyo/Control'),
     ThreadItem = require('./ThreadItem'),
     Divider = require('./widgets/Divider'),
-    BucketDateFormatter = require('../util/BucketDateFormatter');
+    BucketDateFormatter = require('../util/BucketDateFormatter'),
+    chatFlags = require('../util/chatFlags');
+
+/** The divider caption of a row: "Pinned" for a pinned chat, else its date bucket. */
+function captionOf(record, list) {
+    return chatFlags.dividerCaption(record, !!(list && list.inArchive),
+        BucketDateFormatter.getDateBucket(new Date(record.timestamp)));
+}
 
 module.exports = kind({
     name: "ThreadRow",
@@ -70,15 +77,15 @@ module.exports = kind({
     /** Show a divider only when this row opens a new date bucket. */
     setupDivider: function (record) {
         var collection = this.repeater && this.repeater.collection;
-        var caption = BucketDateFormatter.getDateBucket(new Date(record.timestamp));
+        var list = this.repeater && this.repeater.owner;
+        var caption = captionOf(record, list);
         var showDivider = true;
 
         if (collection) {
             var index = collection.indexOf(this.model);
             if (index > 0) {
                 var previous = collection.at(index - 1);
-                var previousCaption = previous &&
-                    BucketDateFormatter.getDateBucket(new Date(previous.attributes.timestamp));
+                var previousCaption = previous && captionOf(previous.attributes, list);
                 showDivider = caption !== previousCaption;
             }
         }

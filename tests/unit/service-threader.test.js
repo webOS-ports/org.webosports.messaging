@@ -279,6 +279,57 @@ describe('what a message does to its thread', function () {
         assert.equal(threadOf(env, b).flags.visible, true);
     });
 
+    // Muted, archived and pinned are set by the app's Chats list (app/src/util/chatFlags.js).
+    async function chatWith(flags) {
+        var env = await setup();
+        var a = seed.imIn("p", "one", { flags: { read: true } });
+        await deliver(env, [a]);
+        var id = threadOf(env, a)._id;
+        await env.db.merge([{ _id: id, flags: flags }]);
+        var seen = null;
+        var notifier = { notify: function (newest) { seen = newest; return Promise.resolve(newest.size); } };
+        var b = seed.imIn("p", "two");
+        await deliver(env, [b], { notifier: notifier });
+        return { thread: threadOf(env, b), notified: Array.from(seen.keys()), id: id };
+    }
+
+    it('brings an archived chat back with a new message, and notifies', async function () {
+        var r = await chatWith({ archived: true, pinned: false });
+        assert.equal(r.thread.flags.archived, false);
+        assert.equal(r.thread.flags.visible, true);
+        assert.deepEqual(r.notified, [r.id]);
+    });
+
+    it('keeps a muted chat quiet, and archived if it was, but still counts the message', async function () {
+        var r = await chatWith({ archived: true, muted: true });
+        assert.equal(r.thread.flags.archived, true);
+        assert.equal(r.thread.flags.muted, true);
+        assert.equal(r.thread.unreadCount, 1);
+        assert.equal(r.thread.summary, "two");
+        assert.deepEqual(r.notified, []);
+        var m = await chatWith({ muted: true });
+        assert.equal(m.thread.flags.archived, undefined);
+        assert.deepEqual(m.notified, []);
+    });
+
+    it('keeps the flags the app set on a chat when a message comes in', async function () {
+        var r = await chatWith({ pinned: true, markedUnread: true });
+        assert.equal(r.thread.flags.pinned, true);
+        assert.equal(r.thread.flags.markedUnread, true);
+        assert.equal(r.thread.flags.archived, undefined);
+        assert.deepEqual(r.notified, [r.id]);
+    });
+
+    it('does not bring an archived chat back for a message I sent or one already read', async function () {
+        var env = await setup();
+        var a = seed.imIn("p", "one", { flags: { read: true } });
+        await deliver(env, [a]);
+        var id = threadOf(env, a)._id;
+        await env.db.merge([{ _id: id, flags: { archived: true } }]);
+        await deliver(env, [seed.imOut("p", "from my other phone"), seed.imIn("p", "read there", { flags: { read: true } })]);
+        assert.equal(threads(env).find(function (t) { return t._id === id; }).flags.archived, true);
+    });
+
     it('puts a message with no address in a "No Recipient" thread, even without flags', async function () {
         var env = await setup();
         var m = { _kind: seed.IM, folder: "inbox", serviceName: "type_teams", messageText: "?", localTimestamp: seed.tick() };

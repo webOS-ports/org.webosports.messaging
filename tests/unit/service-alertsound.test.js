@@ -186,6 +186,26 @@ describe('the app\'s alerts for a batch', function () {
         assert.equal(out.feedback.length, 0);
     });
 
+    it('stays silent for a chat muted from the Chats list, and only that one', function () {
+        appState.mutedThreads = { t1: true };
+        try {
+            var out = deliver([msg('m1', 't1'), msg('m2', 't2')]);
+            assert.deepEqual(out.toasts.map(function (x) { return x.onclick.params.threadId; }), ['t2']);
+            // The other chat's toast carries the batch's sound, as when it was alone.
+            assert.deepEqual(soundOf(out.toasts[0]), SYSTEM);
+            dm.lastToastAt = {};
+            appState.setSelectedThread({ _id: 't1' });
+            assert.equal(deliver([msg('m3', 't1')]).feedback.length, 0);
+        } finally {
+            appState.mutedThreads = {};
+        }
+    });
+
+    it('takes no chat for muted from what an object holds on its prototype', function () {
+        appState.mutedThreads = {};
+        assert.equal(deliver([msg('m1', 'constructor')]).toasts.length, 1);
+    });
+
     it('stays silent for back-filled history, unless the window is unlimited', function () {
         var old = { localTimestamp: NOW - 2 * 3600000 };
         assert.equal(deliver([msg('m1', 't1', old)]).toasts.length, 0);

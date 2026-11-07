@@ -9,6 +9,7 @@ var kind = require('enyo/kind'),
     SwipeableItem = require('./widgets/SwipeableItem'),
     messagingUtils = require('../util/messagingUtils'),
     appState = require('../util/appState'),
+    chatFlags = require('../util/chatFlags'),
     $L = require('enyo/i18n').$L;
 
 module.exports = kind({
@@ -44,6 +45,7 @@ module.exports = kind({
                 {
                     classes: "contact-name-box", components: [
                         { name: "displayName", classes: "contact-name", allowHtml: true },
+                        { name: "mutedIcon", classes: "thread-muted", showing: false },
                         { name: "unreadCount", classes: "unread-count", showing: false }
                     ]
                 },
@@ -87,10 +89,13 @@ module.exports = kind({
     },
 
     updateUnreadCount: function (inThread) {
-        var inUnreadCount = inThread.unreadCount;
-        var hasUnread = !this.isThreadSelected(inThread) && Number(inUnreadCount) > 0;
-        this.$.unreadCount.setContent(inUnreadCount || 0);
+        var inUnreadCount = Number(inThread.unreadCount) || 0;
+        // Marked unread with nothing unread in it: a badge with no number.
+        var hasUnread = !this.isThreadSelected(inThread) && chatFlags.isUnread(inThread);
+        this.$.unreadCount.setContent(inUnreadCount > 0 ? inUnreadCount : "");
+        this.$.unreadCount.addRemoveClass("unread-mark", inUnreadCount === 0);
         this.$.unreadCount.setShowing(hasUnread);
+        this.$.mutedIcon.setShowing(chatFlags.isMuted(inThread));
         this.$.displayName.setClasses("contact-name" + (hasUnread ? " contact-name-unread" : ""));
     },
 
