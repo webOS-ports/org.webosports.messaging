@@ -250,7 +250,7 @@ module.exports = kind({
 
         // --- popups ---------------------------------------------------------------------
         {
-            name: "transportMenu", kind: Menu, floating: true, onSelect: "transportChosen"
+            name: "transportMenu", kind: Menu, floating: true, scrolling: false, onSelect: "transportChosen"
         },
         {
             name: "reactRow", kind: Popup, floating: true, autoDismiss: true,
@@ -259,7 +259,7 @@ module.exports = kind({
             ]
         },
         {
-            name: "messageMenu", kind: Menu, floating: true, components: [
+            name: "messageMenu", kind: Menu, floating: true, scrolling: false, components: [
                 { kind: MenuItem, content: $L("Reply"), ontap: "menuReply" },
                 { kind: MenuItem, content: $L("Forward"), ontap: "menuForward" },
                 { kind: MenuItem, content: $L("Forward Via Email"), ontap: "menuForwardEmail" },
@@ -1963,11 +1963,29 @@ module.exports = kind({
 
     reactMore: function (inSender, inEvent) {
         this.$.reactRow.hide();
-        // The button that opened it is in the popup just hidden, so anchor to the tap point
-        // instead; without an activatorOffset the open menu throws on every resize.
-        this.$.messageMenu.activatorOffset = { top: inEvent.pageY || 0, left: inEvent.pageX || 0, width: 0, height: 0 };
-        this.$.messageMenu.showAtEvent(inEvent);
+        this.showMenuCentered(this.$.messageMenu);
         return true;
+    },
+
+    /**
+     * Open a menu in the middle of the screen, as the legacy app opened its message menu
+     * (PopupSelect.openAtCenter). At the finger it ran off the bottom for a message low down.
+     */
+    showMenuCentered: function (menu) {
+        // Onyx's .onyx-menu carries a 2px top margin, for a menu under its button.
+        menu.applyPosition({ top: 0, left: 0, bottom: 'auto', right: 'auto', 'margin-top': 0 });
+        menu.activatorOffset = { top: 0, left: 0, width: 0, height: 0 };
+        menu.show();
+        var n = menu.hasNode();
+        if (!n) {
+            return;
+        }
+        var b = n.getBoundingClientRect();
+        var top = Math.max(0, Math.round((window.innerHeight - b.height) / 2));
+        var left = Math.max(0, Math.round((window.innerWidth - b.width) / 2));
+        // adjustPosition (on a resize) moves a floating menu to its activatorOffset: keep it here.
+        menu.activatorOffset = { top: top, left: left, width: 0, height: 0 };
+        menu.applyPosition({ top: top, left: left });
     },
 
     /** Add or remove my reaction optimistically, then tell the transport. */

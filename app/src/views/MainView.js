@@ -115,7 +115,7 @@ module.exports = kind({
 
         { name: "buddyDialog", kind: AddBuddyDialog },
         {
-            name: "appMenu", kind: Menu, floating: true, components: [
+            name: "appMenu", kind: Menu, floating: true, scrolling: false, classes: "app-menu", components: [
                 {
                     name: "findInChatMenuItem", kind: MenuItem, content: $L("Find in Chat"),
                     ontap: "findInChat", showing: false

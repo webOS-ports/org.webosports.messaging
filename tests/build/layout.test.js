@@ -201,6 +201,37 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             closed: true, chatStill: 'thread-family' });
     });
 
+    // The message menu as the legacy app's (PopupSelect.openAtCenter): in the middle of the
+    // screen, every row on it, light as Enyo 1.0's menus. At the finger, a message low down put
+    // it off the bottom, and Onyx's 200px menu scroller cut Delete in half.
+    it('opens the message menu whole, in the middle, light', async function () {
+        var r = await session.evaluate('(async function () {' +
+            'var $ = require("enyo/dispatcher").$, chat = $.app_mainView_chatView_conversationList;' +
+            'var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };' +
+            '$.app_mainView.selectThread(null, (await new Promise(function (res) {' +
+            '  var t = null; $.app_mainView_messaging_threadList.collection.forEach(function (m) {' +
+            '    if (m.attributes._id === "thread-family") { t = m.attributes; } }); res(t); })));' +
+            'for (var i = 0; i < 20 && !(chat.messages && chat.messages.length); i++) { await wait(100); }' +
+            'chat.selectedMessage = chat.messages[chat.messages.length - 1];' +
+            'chat.reactMore(null, { pageX: 200, pageY: innerHeight - 20 }); await wait(300);' +
+            'var n = chat.$.messageMenu.hasNode(), b = n.getBoundingClientRect();' +
+            'var rows = Array.prototype.filter.call(n.querySelectorAll(".onyx-menu-item"), function (x) {' +
+            '  return !/divider/.test(x.className); });' +
+            'var whole = rows.every(function (x) { var q = x.getBoundingClientRect(); return q.height > 30 && q.top >= b.top && q.bottom <= b.bottom; });' +
+            'var mid = Math.abs((b.top + b.bottom) / 2 - innerHeight / 2) <= 2;' +
+            'var bg = getComputedStyle(n).backgroundColor;' +
+            'chat.$.messageMenu.hide();' +
+            'var app = $.app_mainView.$.appMenu; app.show(); await wait(200);' +
+            'var help = app.$.helpMenuItem ? app.$.helpMenuItem.hasNode().getBoundingClientRect() : $.app_mainView.$.helpMenuItem.hasNode().getBoundingClientRect();' +
+            'var box = app.hasNode().getBoundingClientRect();' +
+            'var appBg = getComputedStyle(app.hasNode()).backgroundColor; app.hide();' +
+            'return { rows: rows.length, whole: whole, onScreen: b.top >= 0 && b.bottom <= innerHeight, mid: mid,' +
+            '  light: bg === "rgb(217, 217, 217)", helpShown: help.height > 0 && help.bottom <= box.bottom + 1 && help.bottom <= innerHeight,' +
+            '  appDark: appBg !== "rgb(217, 217, 217)" };' +
+            '})()');
+        assert.deepEqual(r, { rows: 6, whole: true, onScreen: true, mid: true, light: true, helpShown: true, appDark: true });
+    });
+
     // Holding a chat: pin it over the others, archive it behind "Archived chats", and back out of
     // the archive (util/chatFlags). Each choice is a merge on the chatthread.
     it('pins a chat to the top and archives one out of the list', async function () {

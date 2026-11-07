@@ -64,7 +64,7 @@ module.exports = kind({
                 { name: "list", kind: DataRepeater, components: [ { kind: ThreadRow } ] }
             ]
         },
-        { name: "chatMenu", kind: Menu, floating: true },
+        { name: "chatMenu", kind: Menu, floating: true, scrolling: false },
         {
             name: 'threadMerge', kind: LunaService, service: 'luna://com.webos.service.db',
             method: 'merge', onError: 'deleteThreadErr'
