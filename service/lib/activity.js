@@ -1,18 +1,27 @@
 /* activity.js - the db8 watches that wake the service, as activitymanager activities.
  *
- * Four watches, each an activity whose callback is one of our methods and whose trigger is a
- * db8 watch on the revision that callback handled last:
+ * Six watches, each an activity whose callback is one of our methods and whose trigger is a
+ * db8 watch, most of them on the revision that callback handled last:
  *
  *   chatthreader-message-watch  messages with no conversation yet   -> assignMessages
  *   chatthreader-read-watch     messages whose flags.read changed    -> readChanges
  *   chatthreader-delete-watch   messages deleted                     -> messagesDeleted
  *   chatthreader-login-watch    an IM account's login state changed  -> loginsChanged
+ *   chatthreader-buddy-watch    buddies with no displayName yet      -> newBuddies       (tempdb)
+ *   chatthreader-availability-watch
+ *                               buddies whose availability changed   -> changedAvailability (tempdb)
  *
  * The files in configuration/activities create them at boot (tests/unit/service-commands.test.js
  * holds them to the specs here). After a callback has done its work, the activity is completed
  * with restart:true and a trigger moved on to the new revision, so it fires again only for what
  * is new. The trigger is luna://com.palm.db/watch: activitymanager checks that the creator may
- * call the trigger method, and db8's ACG groups name only com.palm.db.
+ * call the trigger method, and db8's ACG groups name only com.palm.db (and com.palm.tempdb).
+ *
+ * The buddy watches are on tempdb, which starts empty at every boot and counts its revisions
+ * from the start again. Their activities are therefore not persisted: the configurator creates
+ * every activity in configuration/activities again at boot (it never caches them), from 0, and a
+ * revision kept from before the reboot would be one tempdb never reaches. The buddy watch needs
+ * no revision: a buddy leaves it once it has a displayName.
  */
 "use strict";
 
@@ -25,6 +34,9 @@ const AM = "luna://com.palm.activitymanager";
 const SERVICE = "luna://org.webosports.service.messaging";
 const MESSAGE_KIND = "com.palm.message:1";
 const LOGINSTATE_KIND = "com.palm.imloginstate:1";
+const BUDDY_KIND = "com.palm.imbuddystatus:1";
+const DB = "luna://com.palm.db";
+const TEMPDB = "luna://com.palm.tempdb";
 
 const WATCHES = {
 	assignMessages: {
@@ -58,14 +70,30 @@ const WATCHES = {
 		revParam: "lastLoginRev",
 		query: (rev) => ({ from: LOGINSTATE_KIND, where: [{ prop: "_rev", op: ">", val: rev }] }),
 	},
+	newBuddies: {
+		name: "chatthreader-buddy-watch",
+		description: "Links new IM buddies to their contacts",
+		db: TEMPDB,
+		persist: false,
+		query: () => ({ from: BUDDY_KIND, where: [{ prop: "displayName", op: "=", val: "" }] }),
+	},
+	changedAvailability: {
+		name: "chatthreader-availability-watch",
+		description: "Sorts the buddy list again when a buddy's availability changes",
+		db: TEMPDB,
+		persist: false,
+		revParam: "lastAvailabilityRev",
+		query: (rev) => ({ from: BUDDY_KIND, where: [{ prop: "availabilityRevSet", op: ">", val: rev }] }),
+	},
 };
 
 function trigger(method, rev) {
-	return { key: "fired", method: "luna://com.palm.db/watch", params: { query: WATCHES[method].query(rev) } };
+	return { key: "fired", method: (WATCHES[method].db || DB) + "/watch", params: { query: WATCHES[method].query(rev) } };
 }
 
 function callback(method, rev) {
-	return { method: SERVICE + "/" + method, params: { [WATCHES[method].revParam]: rev } };
+	const w = WATCHES[method];
+	return { method: SERVICE + "/" + method, params: w.revParam ? { [w.revParam]: rev } : {} };
 }
 
 // The whole activity, as configuration/activities holds it (rev 0) and as it is re-created.
@@ -75,7 +103,7 @@ function activitySpec(method, rev = 0) {
 		activity: {
 			name: w.name,
 			description: w.description,
-			type: { immediate: true, priority: "normal", persist: true, explicit: true, power: true, powerDebounce: true },
+			type: { immediate: true, priority: "normal", persist: w.persist !== false, explicit: true, power: true, powerDebounce: true },
 			trigger: trigger(method, rev),
 			callback: callback(method, rev),
 		},

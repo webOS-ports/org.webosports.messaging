@@ -9,10 +9,21 @@
  *   deleteChatthread {threadId}         delete a thread; its messages go too, unless they are
  *                                       also in another thread, which keeps them
  *   updateThreadValues {threadId}       recount a thread from its messages
+ *   newBuddies       {}                 link buddies with no displayName yet to their person
+ *                                       (buddy watch, see buddies.js)
+ *   changedAvailability {lastAvailabilityRev}
+ *                                       sort the buddy list again for the buddies whose
+ *                                       availability changed (availability watch, buddies.js)
+ *   restoreFinished  {}                 called by the backup service after a restore: unlink
+ *                                       every thread from its person, as the persons it named
+ *                                       are gone; the next message adopts the thread again
  *
  * Everything that writes threads runs through one serial queue (serial.js). Whichever watch
  * fires first after an update first puts right what the old threader left (migrate.js): on a
  * device with history that is the read watch, at boot, as its revision starts from 0.
+ *
+ * The buddy jobs write only tempdb and run in a queue of their own. Their revision is tempdb's,
+ * which starts again at every boot, so it is never kept in the state file (see activity.js).
  */
 "use strict";
 
@@ -23,22 +34,26 @@ const { recountThreads } = require("./recount.js");
 const { rearm } = require("./activity.js");
 const { migrate, VERSION: MIGRATION } = require("./migrate.js");
 const authchat = require("./authchat.js");
+const buddies = require("./buddies.js");
+const { createSerial } = require("./serial.js");
 
 const MESSAGE_KIND = "com.palm.message:1";
 const CHANNEL_KIND = "com.palm.imchannel:1";
+const THREAD_KIND = "com.palm.chatthread:1";
 const PAGE = 500;
 
 function createCommands({ db, tempdb, call, notifier, state, serial, log = console, now,
 	templateDirs = authchat.TEMPLATE_DIRS }) {
 	const assigner = createAssigner({ db, tempdb, notifier, log, now });
+	const buddySerial = createSerial();
 
 	function startRev(params, key) {
 		const given = Number(params[key]) || 0;
 		return state ? Math.max(given, state.get(key)) : given;
 	}
 
-	async function finish(method, key, rev, params) {
-		if (state) { state.set(key, rev); }
+	async function finish(method, key, rev, params, { keep = true } = {}) {
+		if (state && keep) { state.set(key, rev); }
 		try { await rearm({ call, log }, method, rev, params.$activity); }
 		catch (e) { log.error("commands: re-arming " + method + " failed: " + ((e && e.message) || e)); }
 	}
@@ -181,6 +196,29 @@ function createCommands({ db, tempdb, call, notifier, state, serial, log = conso
 		return { updated: merges.length };
 	}
 
+	async function newBuddies(params) {
+		const r = await buddySerial.run(() => buddies.linkNew({ db, tempdb, log }));
+		await finish("newBuddies", null, 0, params, { keep: false });
+		return r;
+	}
+
+	async function changedAvailability(params) {
+		const from = Number(params.lastAvailabilityRev) || 0;
+		const r = await buddySerial.run(() => buddies.availabilityChanged({ tempdb }, from));
+		await finish("changedAvailability", "lastAvailabilityRev", r.rev, params, { keep: false });
+		return r;
+	}
+
+	async function restoreFinished() {
+		return serial.run(async () => {
+			const linked = (await db.find({ from: THREAD_KIND, select: ["_id", "personId"] }))
+				.filter((t) => !t._del && t.personId);
+			if (linked.length) { await db.merge(linked.map((t) => ({ _id: t._id, personId: null }))); }
+			log.log("commands: restore finished, " + linked.length + " threads unlinked from their persons");
+			return { unlinked: linked.length };
+		});
+	}
+
 	const timeoutMs = 300000;
 	return {
 		assignMessages: { handler: assignMessages, timeoutMs },
@@ -190,6 +228,9 @@ function createCommands({ db, tempdb, call, notifier, state, serial, log = conso
 		deleteChatthread: { handler: deleteChatthread, timeoutMs },
 		loginsChanged: { handler: loginsChanged, timeoutMs },
 		updateThreadValues: { handler: updateThreadValues },
+		newBuddies: { handler: newBuddies, timeoutMs },
+		changedAvailability: { handler: changedAvailability, timeoutMs },
+		restoreFinished: { handler: restoreFinished, timeoutMs },
 	};
 }
 

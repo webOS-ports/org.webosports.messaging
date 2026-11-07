@@ -1,0 +1,36 @@
+{
+	"activity": {
+		"name": "chatthreader-buddy-watch",
+		"description": "Links new IM buddies to their contacts",
+		"type": {
+			"immediate": true,
+			"priority": "normal",
+			"persist": false,
+			"explicit": true,
+			"power": true,
+			"powerDebounce": true
+		},
+		"trigger": {
+			"key": "fired",
+			"method": "luna://com.palm.tempdb/watch",
+			"params": {
+				"query": {
+					"from": "com.palm.imbuddystatus:1",
+					"where": [
+						{
+							"prop": "displayName",
+							"op": "=",
+							"val": ""
+						}
+					]
+				}
+			}
+		},
+		"callback": {
+			"method": "luna://org.webosports.service.messaging/newBuddies",
+			"params": {}
+		}
+	},
+	"start": true,
+	"replace": true
+}
