@@ -70,6 +70,22 @@ describe('syncCollection', function () {
         assert.equal(a.attributes.name, 'x');
     });
 
+    // A result made only of records that left the list earlier: enyo's add() finds their models in
+    // its store and does not count them as kept, so its purge removed nothing (the archived chats).
+    it('drops every model when none of the new records was in the list', function () {
+        var c = collectionOf([{ _id: 'a' }, { _id: 'b' }]);
+        syncCollection(c, [{ _id: 'c' }]);
+        assert.deepEqual(ids(c), ['c']);
+        syncCollection(c, [{ _id: 'a' }, { _id: 'b' }]);
+        assert.deepEqual(ids(c), ['a', 'b']);
+    });
+
+    it('takes no record id for one that is on the prototype', function () {
+        var c = collectionOf([{ _id: 'constructor' }, { _id: 'a' }]);
+        syncCollection(c, [{ _id: 'a' }]);
+        assert.deepEqual(ids(c), ['a']);
+    });
+
     it('does nothing without a collection', function () {
         syncCollection(null, [{ _id: 'a' }]);
     });
