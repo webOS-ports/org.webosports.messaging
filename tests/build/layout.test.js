@@ -404,6 +404,35 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.equal(r.name, 'Anna Kowalski');
     });
 
+    // The transport restarting ends watchTyping without a word (util/serviceFollower): when the
+    // hub says it went, whoever was typing is dropped; when it is back, watchTyping is made again
+    // and the dead request ended. Runs after the test above, in Anna's chat.
+    it('drops typing when the transport goes, and watches again when it is back', async function () {
+        var r = await session.evaluate('(async function () {' +
+            'var $ = require("enyo/dispatcher").$;' +
+            'var main = $.app_mainView, chat = $.app_mainView_chatView_conversationList;' +
+            'var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };' +
+            'var w = main.$.typingWatch, sent = [], cancelled = [];' +
+            'var send = w.send, cancel = w.cancel;' +
+            'w.send = function (p) { var q = { n: sent.length + 1, p: p }; sent.push(p); return q; };' +
+            'w.cancel = function (q) { cancelled.push(q.n); };' +
+            'try {' +
+            ' var account = require("src/util/appState").accountService.getAccount("type_telegram");' +
+            ' main.gotTyping(null, { serviceName: "type_telegram", username: account.username, from: "anna.k", state: "typing" }); await wait(50);' +
+            ' var before = !!chat.$.header.hasNode().querySelector(".conversation-typing");' +
+            ' main.gotTransportStatus(null, { serviceName: "com.palm.imlibpurple", connected: true });' +
+            ' main.gotTransportStatus(null, { serviceName: "com.palm.imlibpurple", connected: false }); await wait(50);' +
+            ' var after = !!chat.$.header.hasNode().querySelector(".conversation-typing");' +
+            ' main.gotTransportStatus(null, { serviceName: "com.palm.imlibpurple", connected: true });' +
+            ' return { before: before, after: after, sent: sent, cancelled: cancelled };' +
+            '} finally { w.send = send; w.cancel = cancel; main.typingFollower.request = null; }' +
+            '})()');
+        assert.equal(r.before, true, 'typing shows first');
+        assert.equal(r.after, false, 'and is gone with the transport');
+        assert.deepEqual(r.sent, [{ subscribe: true }, { subscribe: true }], 'watched on each "up"');
+        assert.deepEqual(r.cancelled, [1], 'the dead watch is ended');
+    });
+
     // Hold a message: taps then pick messages, the bar takes the composer's place with all
     // its buttons on screen, and back leaves selecting before it leaves the chat.
     it('selects several messages, in chat order, and leaves selecting on back', async function () {

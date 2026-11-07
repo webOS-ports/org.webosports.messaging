@@ -28,6 +28,7 @@ var kind = require('enyo/kind'),
     firstUse = require('../util/firstUse'),
     mockDb = require('../data/mockDb'),
     chatPresence = require('../util/chatPresence'),
+    ServiceFollower = require('../util/serviceFollower').ServiceFollower,
     $L = require('enyo/i18n').$L;
 
 var DB_SERVICE = 'luna://com.webos.service.db';
@@ -174,10 +175,17 @@ module.exports = kind({
             service: 'luna://com.palm.applicationManager', method: 'open', onError: 'serviceErr'
         },
         // Who is typing to us: the transport's typers, then each change (util/chatPresence).
+        // Made again each time the transport comes up (util/serviceFollower): a restart of
+        // imlibpurpleservice ended it without a word.
         {
             name: 'typingWatch', kind: LunaService, service: 'luna://com.palm.imlibpurple',
-            method: 'watchTyping', subscribe: true, resubscribe: true,
+            method: 'watchTyping', subscribe: true,
             onResponse: 'gotTyping', onError: 'typingWatchFailed'
+        },
+        {
+            name: 'transportStatus', kind: LunaService, service: 'luna://com.webos.service.bus',
+            method: 'signal/registerServerStatus', subscribe: true,
+            onResponse: 'gotTransportStatus', onError: 'typingWatchFailed'
         }
     ],
 
@@ -204,8 +212,17 @@ module.exports = kind({
         formFactor.apply(this);
 
         appState.typers = new chatPresence.Typers();
+        var self = this;
+        this.typingFollower = new ServiceFollower(function () {
+            return self.$.typingWatch.send({ subscribe: true });
+        }, function () {
+            // The transport went: whoever was typing through it is not any more.
+            self.gotTyping(null, { typing: [] });
+        }, function (request) {
+            self.$.typingWatch.cancel(request);
+        });
         if (!mockDb.enabled) {
-            this.$.typingWatch.send({ subscribe: true });
+            this.$.transportStatus.send({ serviceName: "com.palm.imlibpurple", subscribe: true });
         }
     },
 
@@ -214,6 +231,12 @@ module.exports = kind({
         if (appState.typers && appState.typers.apply(inResponse, Date.now())) {
             Signals.send("onTypingChanged", {});
         }
+        return true;
+    },
+
+    /** The transport came or went (registerServerStatus). */
+    gotTransportStatus: function (inSender, inResponse) {
+        this.typingFollower.status(inResponse);
         return true;
     },
 
