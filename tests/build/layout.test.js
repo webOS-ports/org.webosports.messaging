@@ -201,6 +201,20 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             closed: true, chatStill: 'thread-family' });
     });
 
+    // Onyx's popups are dark by default, so every new dialog came out dark until it was restyled.
+    // Light is the default here, as in Enyo 1.0; only the app menu is dark.
+    it('draws a popup light unless it is the app menu', async function () {
+        var r = await session.evaluate('(function () {' +
+            'var look = function (cls) { var d = document.createElement("div"); d.className = cls;' +
+            '  document.body.appendChild(d); var s = getComputedStyle(d);' +
+            '  var v = { color: s.color, image: s.backgroundImage !== "none" }; d.remove(); return v; };' +
+            'return { popup: look("onyx-popup"), dialog: look("onyx-popup onyx-popup-decorator"),' +
+            '  appMenu: look("onyx-popup onyx-menu app-menu").color };' +
+            '})()');
+        assert.deepEqual(r, { popup: { color: 'rgb(34, 34, 34)', image: true },
+            dialog: { color: 'rgb(34, 34, 34)', image: true }, appMenu: 'rgb(255, 255, 255)' });
+    });
+
     // The message menu as the legacy app's (PopupSelect.openAtCenter): in the middle of the
     // screen, every row on it, light as Enyo 1.0's menus. At the finger, a message low down put
     // it off the bottom, and Onyx's 200px menu scroller cut Delete in half.

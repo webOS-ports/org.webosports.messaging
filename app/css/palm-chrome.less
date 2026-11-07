@@ -193,6 +193,26 @@ Buttons on the light bars
 }
 
 /*----------------------
+Popups
+----------------------*/
+/* Every popup light, as webOS 3.0 drew them, unless it says otherwise. Onyx's default is a dark
+   #4C4C4C sheet with white text, so any Popup or Menu added without its own styling came out dark;
+   Enyo 1.0, which the legacy app was written for, had light ones throughout. Dialogs after its
+   ModalDialog and Popup (themes/Onyx: images/dialog.png, popup.png; DialogPrompt.css): a sheet
+   that lightens from #cccccc to #e3e3e3 at the top, rounded, with a soft shadow, and dark text
+   (#222, the message #4c4c4c). The app menu keeps Onyx's dark look, as Enyo 1.0's AppMenu was. */
+.onyx-popup:not(.app-menu) {
+  color: #222222;
+  background: #cccccc;
+  background: -webkit-linear-gradient(top, #e3e3e3, #cccccc 48px);
+  background: linear-gradient(to bottom, #e3e3e3, #cccccc 48px);
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+  -webkit-box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+}
+
+/*----------------------
 Menus
 ----------------------*/
 /* Popup menus as webOS 3.0 drew them (Enyo 1.0, themes/Onyx: Menu.css, MenuItem.css, Item.css,
