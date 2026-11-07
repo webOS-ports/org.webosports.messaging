@@ -320,6 +320,8 @@ var messages = [
     {
         _id: "msg-a2", _kind: "com.palm.message:1", conversations: ["thread-anna"],
         folder: "outbox", messageText: "Yes — 14:30 at the north entrance",
+        // The network's id for it, which a reply quoting it names (quotedMessageId).
+        serviceMessageId: "tg-4471",
         localTimestamp: ago(0, 3), timestamp: ago(0, 3), status: "successful",
         serviceName: "type_telegram", deliveryStatus: "read",
         to: [{ addr: "anna.k" }], flags: { visible: true }
@@ -332,7 +334,7 @@ var messages = [
         // The field names the transports actually stamp on a reply (see ConversationItem.buildQuote).
         quotedFrom: "You",
         quotedText: "Yes — 14:30 at the north entrance",
-        quotedMessageId: "msg-a2",
+        quotedMessageId: "tg-4471",
         reactions: [{ emoji: "&#128077;", count: 2, mine: true }],
         flags: { visible: true, read: false }
     },
@@ -480,6 +482,7 @@ var messages = [
         folder: "inbox", messageText: "Yes please! I'll bring dessert &#127856;",
         localTimestamp: ago(0, 4), timestamp: ago(0, 4), status: "successful",
         serviceName: "type_whatsapp", chatType: "groupchat", channelName: "Family",
+        serviceMessageId: "3EB0C4F1A2",
         from: { addr: "+46701234567", name: "Marta Lindqvist" },
         flags: { visible: true, read: false }
     },
@@ -489,7 +492,7 @@ var messages = [
         localTimestamp: ago(0, 3.5), timestamp: ago(0, 3.5), status: "successful",
         serviceName: "type_whatsapp", chatType: "groupchat", channelName: "Family",
         from: { addr: "+15015550142", name: "Mum" },
-        quotedFrom: "Marta Lindqvist", quotedText: "Yes please! I'll bring dessert", quotedMessageId: "msg-f2",
+        quotedFrom: "Marta Lindqvist", quotedText: "Yes please! I'll bring dessert", quotedMessageId: "3EB0C4F1A2",
         flags: { visible: true, read: false }
     },
 

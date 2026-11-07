@@ -948,6 +948,19 @@ Replies
   max-height: 48px;
   overflow: hidden;
 }
+/* The message a tapped quote card is for, lit for a moment once it is scrolled to. */
+@-webkit-keyframes quote-flash {
+  from { background-color: rgba(47, 111, 179, 0.28); }
+  to { background-color: rgba(47, 111, 179, 0); }
+}
+@keyframes quote-flash {
+  from { background-color: rgba(47, 111, 179, 0.28); }
+  to { background-color: rgba(47, 111, 179, 0); }
+}
+.quote-target {
+  -webkit-animation: quote-flash 1.5s ease-out;
+  animation: quote-flash 1.5s ease-out;
+}
 .reply-quote-from {
   display: block;
   font-size: 12px;

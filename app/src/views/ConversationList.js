@@ -38,6 +38,7 @@ var kind = require('enyo/kind'),
     ConversationRow = require('./ConversationRow'),
     ConversationService = require('../data/ConversationService'),
     transportPicker = require('../util/transportPicker'),
+    quoteJump = require('../util/quoteJump'),
     composerEcho = require('../util/composerEcho'),
     callRequest = require('../util/callRequest'),
     messagingUtils = require('../util/messagingUtils'),
@@ -55,6 +56,8 @@ var FOLDERS = messagingUtils.message.FOLDERS;
  * between, up to MAX_MESSAGES. Drawing all 200 at once took about two seconds on a phone.
  */
 var FIRST_PAGE = 20, BACKFILL_STEP = 30, MAX_MESSAGES = 200, BACKFILL_GAP_MS = 120;
+// How long the message a quote was tapped for stays lit after it is scrolled to.
+var QUOTE_FLASH_MS = 1500;
 // Senders asked about per person query; well under what one db8 find hands back.
 var SENDER_BATCH = 50;
 // How long a send waits for a re-read account list before it reports the account missing.
@@ -356,6 +359,7 @@ module.exports = kind({
         }
         this.cancelRevealTimers();
         this.cancelBackfill();
+        this.cancelQuoteJump();
         this.cancelVoiceNote();
         if (this.conversationService) {
             this.conversationService.cancel();
@@ -398,6 +402,7 @@ module.exports = kind({
 
     chatThreadChanged: function (inOldChatThread) {
         this.dismissPopups();
+        this.cancelQuoteJump();
         if (!inOldChatThread && this.chatThread && this.chatThread._id) {
             this.setupNewChatThread();
         } else if (inOldChatThread && inOldChatThread._id && !this.chatThread) {
@@ -683,7 +688,69 @@ module.exports = kind({
             this.revealListBottomSoon();
         }
         this.scheduleBackfill(results.length);
+        if (this._wantedQuote) {
+            this.stepQuoteJump();
+        }
         return true;
+    },
+
+    // --- quote taps -----------------------------------------------------------------------
+
+    /** Bring up the message a tapped quote card is for (util/quoteJump). */
+    jumpToQuoted: function (id) {
+        this.cancelQuoteJump();
+        this._wantedQuote = id;
+        this.stepQuoteJump();
+    },
+
+    /** Show the wanted original if it is loaded; else let the backfill go on, or give up. */
+    stepQuoteJump: function () {
+        var messages = this.messages || [];
+        var step = quoteJump.next(messages, this._wantedQuote, messages.length,
+            this._limit || FIRST_PAGE, MAX_MESSAGES);
+        if (step.action === "wait") {
+            return;
+        }
+        this._wantedQuote = null;
+        if (step.action === "show") {
+            this.showQuoted(step.index);
+        }
+    },
+
+    /** Scroll the row at index to the middle of the list and light it up for a moment. */
+    showQuoted: function (index) {
+        var row = this.$.list.getChildForIndex(index);
+        var node = row && row.hasNode();
+        var scroller = this.$.scroller.hasNode();
+        if (!node || !scroller) {
+            return;
+        }
+        var bounds = this.$.scroller.getScrollBounds();
+        var top = bounds.top + node.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
+        this.$.scroller.setScrollTop(Math.max(0, top - Math.max(0, (bounds.clientHeight - node.offsetHeight) / 2)));
+        this._atEnd = isNearBottom(this.$.scroller.getScrollBounds());
+
+        this.clearQuoteFlash();
+        row.addClass("quote-target");
+        this._quoteFlash = { row: row };
+        var self = this;
+        this._quoteFlash.timer = setTimeout(function () { self.clearQuoteFlash(); }, QUOTE_FLASH_MS);
+    },
+
+    clearQuoteFlash: function () {
+        var flash = this._quoteFlash;
+        this._quoteFlash = null;
+        if (flash) {
+            clearTimeout(flash.timer);
+            if (!flash.row.destroyed) {
+                flash.row.removeClass("quote-target");
+            }
+        }
+    },
+
+    cancelQuoteJump: function () {
+        this._wantedQuote = null;
+        this.clearQuoteFlash();
     },
 
     // --- sender avatars ---------------------------------------------------------------------
@@ -1329,6 +1396,11 @@ module.exports = kind({
         var reaction = this.reactionBadgeAt(node);
         if (reaction) {
             this.toggleMyReaction(message, reaction);
+            return true;
+        }
+        var quoted = quoteJump.quotedIdAt(node, this.hasNode());
+        if (quoted) {
+            this.jumpToQuoted(quoted);
             return true;
         }
 
