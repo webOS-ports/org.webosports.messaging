@@ -201,6 +201,43 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             closed: true, chatStill: 'thread-family' });
     });
 
+    // Select, in the message menu: taps pick messages, the bar takes the composer's place with all
+    // its buttons on screen, and back leaves selecting before it leaves the chat.
+    it('selects several messages, in chat order, and leaves selecting on back', async function () {
+        var r = await session.evaluate('(async function () {' +
+            'var $ = require("enyo/dispatcher").$, Signals = require("enyo/Signals");' +
+            'var main = $.app_mainView, chat = $.app_mainView_chatView_conversationList;' +
+            'var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };' +
+            'main.selectThread(null, (await new Promise(function (res) {' +
+            '  var t = null; $.app_mainView_messaging_threadList.collection.forEach(function (m) {' +
+            '    if (m.attributes._id === "thread-family") { t = m.attributes; } }); res(t); })));' +
+            'for (var i = 0; i < 20 && !(chat.messages && chat.messages.length); i++) { await wait(100); }' +
+            'var m = chat.messages, ok = [], gone = -1;' +
+            'for (i = 0; i < m.length; i++) { if (m[i].deleted) { gone = i; } else { ok.push(i); } }' +
+            'var at = function (k) { return { model: chat.collection.at(k) }; }, last = ok[ok.length - 1];' +
+            'chat.selectedMessage = m[last]; chat.menuSelect(); await wait(100);' +
+            'chat.handleMessageTap(null, at(ok[0]));' +
+            'chat.handleMessageTap(null, at(ok[1]));' +
+            'chat.handleMessageTap(null, at(ok[1]));' +
+            'chat.handleMessageTap(null, at(gone));' +
+            'var picked = chat.selectedMessages().map(function (x) { return x._id; });' +
+            'var want = [m[ok[0]]._id, m[last]._id];' +
+            'var bar = chat.$.selectionBar.hasNode().getBoundingClientRect();' +
+            'var fits = Array.prototype.every.call(chat.$.selectionBar.hasNode().children, function (c) {' +
+            '  var b = c.getBoundingClientRect(); return b.width > 0 && b.right <= bar.right && c.scrollWidth <= c.clientWidth; });' +
+            'var state = { count: chat.$.selectionCount.getContent(), order: picked.join() === want.join(),' +
+            '  hasDeleted: gone >= 0,' +
+            '  lit: document.querySelectorAll(".msg-selected").length, fits: fits,' +
+            '  composer: chat.$.footer.showing, react: chat.$.reactRow.showing };' +
+            'Signals.send("onbackgesture", {}); await wait(300);' +
+            'state.after = { bar: chat.$.selectionBar.showing, composer: chat.$.footer.showing,' +
+            '  lit: document.querySelectorAll(".msg-selected").length, chat: chat.chatThread && chat.chatThread._id };' +
+            'return state;' +
+            '})()');
+        assert.deepEqual(r, { count: '2 selected', order: true, hasDeleted: true, lit: 2, fits: true, composer: false, react: false,
+            after: { bar: false, composer: true, lit: 0, chat: 'thread-family' } });
+    });
+
     // Only the conversations list hands the chat a thread with its person joined. Opened from
     // Buddies (or Favorites, a notification, a group sender) the chat got the bare record, so it
     // showed the default avatar and offered only the thread's own transport, not the person's

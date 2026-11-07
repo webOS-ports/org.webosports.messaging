@@ -314,5 +314,10 @@ module.exports = kind({
     /** Back closes Find in Chat before anything else. True when it was open. */
     closeSearch: function () {
         return this.$.conversationList.closeSearch();
+    },
+
+    /** Leave selecting messages; whether it was on. */
+    endSelection: function () {
+        return this.$.conversationList.endSelection();
     }
 });

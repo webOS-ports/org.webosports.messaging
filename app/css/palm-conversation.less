@@ -1001,6 +1001,31 @@ Replies
   background-color: rgba(47, 111, 179, 0.18);
 }
 
+/* Selecting messages: the bar in the composer's place, and the rows picked. */
+.conversation-selection {
+  -webkit-align-items: center;
+  align-items: center;
+}
+.conversation-selection > .onyx-button {
+  -webkit-flex: none;
+  flex: none;
+  margin-left: 4px;
+  padding-left: 6px;
+  padding-right: 6px;
+}
+/* Room for "10 selected" next to the four buttons on a phone. */
+.conversation-selection-count {
+  font-size: 16px;
+  min-width: 4.5em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-left: 4px;
+}
+.msg-selected {
+  background-color: rgba(47, 111, 179, 0.22);
+}
+
 /* The message a tapped quote card is for, lit for a moment once it is scrolled to. */
 @-webkit-keyframes quote-flash {
   from { background-color: rgba(47, 111, 179, 0.28); }

@@ -26,6 +26,20 @@ module.exports = kind({
     classes: "chat-balloon",
     reactEnabled: true,
 
+    /** Whether the list is selecting messages (ConversationList.startSelection). */
+    listSelecting: function () {
+        var list = this.owner && this.owner.repeater;
+        return !!(list && list.selecting);
+    },
+
+    /** While selecting, rows do not swipe: a tap picks a message and nothing else. */
+    dragstartHandler: function () {
+        if (this.listSelecting()) {
+            return false;
+        }
+        return this.inherited(arguments);
+    },
+
     published: {
         message: null
     },
@@ -720,6 +734,13 @@ module.exports = kind({
         var node = inEvent && (inEvent.target || (inEvent.domEvent && inEvent.domEvent.target));
         var root = this.hasNode();
 
+        // While selecting, a tap on a file, a player or a link picks the message as any tap does:
+        // nothing opens or plays, and the tap goes on to the list.
+        if (this.listSelecting()) {
+            this.cancelNativeNavigation(inEvent);
+            return false;
+        }
+
         while (node && node !== root) {
             if (node.getAttribute) {
                 // Inline video: mp4-family plays fullscreen in the stock player, since the media
@@ -809,6 +830,9 @@ module.exports = kind({
      * list and return true so the normal message tap does not also fire.
      */
     senderTapped: function (inSender, inEvent) {
+        if (this.listSelecting()) {
+            return false;
+        }
         this.doSelectSender({ index: this.index, message: this.message });
         return true;
     },

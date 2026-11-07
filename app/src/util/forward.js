@@ -48,6 +48,34 @@ function composeParams(message) {
     return (t || f) ? params : null;
 }
 
+/**
+ * ComposeView params for forwarding several messages (oldest first): their texts one after the
+ * other with a blank line between, and their files, in the same order. null for nothing.
+ */
+function composeParamsFor(messages) {
+    var texts = [], files = [];
+    for (var i = 0; messages && i < messages.length; i++) {
+        var t = text(messages[i]), f = file(messages[i]);
+        if (t) {
+            texts.push(t);
+        }
+        if (f) {
+            files.push(f);
+        }
+    }
+    if (!texts.length && !files.length) {
+        return null;
+    }
+    var params = {};
+    if (texts.length) {
+        params.messageText = texts.join("\n\n");
+    }
+    if (files.length) {
+        params.filePaths = files;
+    }
+    return params;
+}
+
 /** applicationManager launch params for Forward Via Email, or null for nothing to forward. */
 function emailLaunch(message) {
     var t = text(message), f = file(message);
@@ -61,4 +89,7 @@ function emailLaunch(message) {
     return { id: "com.palm.app.email", params: { newEmail: email } };
 }
 
-module.exports = { text: text, file: file, composeParams: composeParams, emailLaunch: emailLaunch };
+module.exports = {
+    text: text, file: file, composeParams: composeParams, composeParamsFor: composeParamsFor,
+    emailLaunch: emailLaunch
+};

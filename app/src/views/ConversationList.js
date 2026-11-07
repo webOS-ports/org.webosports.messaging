@@ -45,6 +45,7 @@ var kind = require('enyo/kind'),
     attachments = require('../util/attachments'),
     enyoUtils = require('enyo/utils'),
     messageState = require('../util/messageState'),
+    selection = require('../util/selection'),
     composerEcho = require('../util/composerEcho'),
     callRequest = require('../util/callRequest'),
     messagingUtils = require('../util/messagingUtils'),
@@ -232,6 +233,21 @@ module.exports = kind({
             ]
         },
 
+        // --- selecting messages (startSelection): takes the composer's place --------------
+        {
+            name: "selectionBar", kind: Toolbar, showing: false,
+            classes: "conversation-selection flex-row", components: [
+                { name: "selectionCount", classes: "conversation-selection-count flex-one" },
+                { name: "selectionCopy", kind: Button, content: $L("Copy"), ontap: "copySelected" },
+                { name: "selectionForward", kind: Button, content: $L("Forward"), ontap: "forwardSelected" },
+                {
+                    name: "selectionDelete", kind: Button, content: $L("Delete"),
+                    classes: "onyx-negative", ontap: "promptDeleteSelected"
+                },
+                { kind: Button, content: $L("Cancel"), ontap: "endSelection" }
+            ]
+        },
+
         // --- popups ---------------------------------------------------------------------
         {
             name: "transportMenu", kind: Menu, floating: true, onSelect: "transportChosen"
@@ -248,6 +264,7 @@ module.exports = kind({
                 { kind: MenuItem, content: $L("Forward"), ontap: "menuForward" },
                 { kind: MenuItem, content: $L("Forward Via Email"), ontap: "menuForwardEmail" },
                 { kind: MenuItem, content: $L("Copy Text"), ontap: "menuCopy" },
+                { kind: MenuItem, content: $L("Select"), ontap: "menuSelect" },
                 { classes: "onyx-menu-divider" },
                 { kind: MenuItem, content: $L("Delete"), ontap: "menuDelete" }
             ]
@@ -425,6 +442,7 @@ module.exports = kind({
         this.dismissPopups();
         this.cancelQuoteJump();
         this.closeSearch();
+        this.endSelection();
         if (!inOldChatThread && this.chatThread && this.chatThread._id) {
             this.setupNewChatThread();
         } else if (inOldChatThread && inOldChatThread._id && !this.chatThread) {
@@ -718,7 +736,114 @@ module.exports = kind({
         if (this._search) {
             this.refreshSearch(false);
         }
+        if (this._selected) {
+            this.showSelection();
+        }
         return true;
+    },
+
+    // --- selecting messages ---------------------------------------------------------------
+
+    /** Select messages, starting with message: taps then pick, and the bar acts on them all. */
+    startSelection: function (message) {
+        if (!this.chatThread || !selection.selectable(message)) {
+            return;
+        }
+        this.dismissPopups();
+        this.cancelReply();
+        this._selected = selection.start(message);
+        this.$.list.selecting = true;
+        this.$.footer.hide();
+        this.$.attachmentChips.hide();
+        this.$.selectionBar.show();
+        this.showSelection();
+        this.relayout();
+    },
+
+    /** Leave selecting; whether it was on, so back leaves it first. */
+    endSelection: function () {
+        var on = !!this._selected;
+        this._selected = null;
+        this.$.list.selecting = false;
+        this.markSelectedRows();
+        if (this.$.selectionBar.showing) {
+            this.$.selectionBar.hide();
+            this.$.footer.show();
+            this.$.attachmentChips.setShowing(this.outboundAttachments.length > 0);
+            this.relayout();
+        }
+        return on;
+    },
+
+    selectedMessages: function () {
+        return selection.picked(this.collection.map(function (m) { return m.attributes; }),
+            this._selected);
+    },
+
+    /** The bar and the rows as the selection now is. */
+    showSelection: function () {
+        var picked = this.selectedMessages();
+        this.$.selectionCount.setContent(picked.length === 1 ? $L("1 selected") :
+            $L("{n} selected").replace("{n}", picked.length));
+        var forwardable = forward.composeParamsFor(picked);
+        this.$.selectionCopy.setDisabled(!(forwardable && forwardable.messageText));
+        this.$.selectionForward.setDisabled(!forwardable);
+        this.$.selectionDelete.setDisabled(!picked.length);
+        this.markSelectedRows();
+    },
+
+    markSelectedRows: function () {
+        var rows = this.$.list.getClientControls ? this.$.list.getClientControls() : [];
+        for (var i = 0; i < rows.length; i++) {
+            var m = rows[i].model && rows[i].model.attributes;
+            rows[i].addRemoveClass("msg-selected", !!(this._selected && selection.has(this._selected, m)));
+        }
+    },
+
+    copySelected: function () {
+        var params = forward.composeParamsFor(this.selectedMessages());
+        this.endSelection();
+        if (params && params.messageText) {
+            var now = this.$.richText.get('value') || "";
+            this.$.richText.set('value', now + (now ? "\n" : "") + params.messageText);
+            this.growInput();
+        }
+        return true;
+    },
+
+    forwardSelected: function () {
+        var params = forward.composeParamsFor(this.selectedMessages());
+        if (params) {
+            this.endSelection();
+            this.doOpenComposeView({ params: params });
+        }
+        return true;
+    },
+
+    promptDeleteSelected: function () {
+        var n = this.selectedMessages().length;
+        if (!n) {
+            return true;
+        }
+        this.confirmAction = "deleteSelected";
+        this.$.confirmDialogTitle.setContent(n === 1 ? $L("Delete Message") : $L("Delete Messages"));
+        this.$.confirmDialogMessage.setContent(n === 1 ?
+            $L("Delete this message from this device?") :
+            $L("Delete these {n} messages from this device?").replace("{n}", n));
+        this.$.confirmAcceptButton.setContent($L("Delete"));
+        this.$.confirmDialog.show();
+        return true;
+    },
+
+    deleteSelected: function () {
+        var ids = this.selectedMessages().map(function (m) { return m._id; });
+        this.endSelection();
+        if (ids.length) {
+            this.deleteRecords(ids);
+            if (mockDb.enabled) {
+                this.runQuery();
+            }
+        }
     },
 
     // --- Find in Chat ---------------------------------------------------------------------
@@ -1546,6 +1671,11 @@ module.exports = kind({
             return true;
         }
         this.selectedMessage = message;
+        if (this._selected) {
+            this._selected = selection.toggle(this._selected, message);
+            this.showSelection();
+            return true;
+        }
 
         // A tap on a poll option votes; a tap on one of my reaction badges removes it.
         var node = inEvent && (inEvent.target || (inEvent.domEvent && inEvent.domEvent.target));
@@ -1575,7 +1705,7 @@ module.exports = kind({
 
     swipeDelete: function (inSender, inEvent) {
         var message = this.messageFor(inEvent);
-        if (message && message._id) {
+        if (message && message._id && !this._selected) {
             this.deleteRecords([message._id]);
             if (mockDb.enabled) {
                 this.runQuery();
@@ -1623,6 +1753,10 @@ module.exports = kind({
 
     /** Open an attachment, location or event in whichever app handles it. */
     openAttachment: function (inSender, inEvent) {
+        // While selecting, a tap on a file picks its message (handleMessageTap) instead.
+        if (this._selected) {
+            return true;
+        }
         var target = inEvent && inEvent.target;
         var attachmentKind = inEvent && inEvent.kind;
         if (!target) {
@@ -1780,7 +1914,7 @@ module.exports = kind({
 
     handleReactSwipe: function (inSender, inEvent) {
         var message = this.messageFor(inEvent);
-        if (message && !messageState.isDeleted(message)) {
+        if (message && !messageState.isDeleted(message) && !this._selected) {
             this.selectedMessage = message;
             this.openReactRow(inEvent);
         }
@@ -1920,6 +2054,11 @@ module.exports = kind({
             var text = messagingUtils.message.removeHtml(this.selectedMessage.messageText || "");
             this.$.richText.set('value', (this.$.richText.get('value') || "") + text);
         }
+        return true;
+    },
+
+    menuSelect: function () {
+        this.startSelection(this.selectedMessage);
         return true;
     },
 
@@ -2216,6 +2355,8 @@ module.exports = kind({
             this.deleteConversation();
         } else if (this.confirmAction === "block") {
             this.blockSender();
+        } else if (this.confirmAction === "deleteSelected") {
+            this.deleteSelected();
         }
         this.confirmAction = null;
         return true;

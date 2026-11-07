@@ -57,6 +57,28 @@ describe('forward.composeParams', function () {
     });
 });
 
+describe('forward.composeParamsFor', function () {
+    it('the texts in order, a blank line apart, and every file in order', function () {
+        assert.deepEqual(fw.composeParamsFor([
+            { messageText: 'one' },
+            { messageText: '', filePath: '/media/internal/a.jpg' },
+            { messageText: 'two<br>lines', filePath: 'file:///media/internal/b.pdf' }
+        ]), { messageText: 'one\n\ntwo\nlines', filePaths: ['/media/internal/a.jpg', '/media/internal/b.pdf'] });
+    });
+    it('only what there is: texts alone, files alone; a remote file is left out', function () {
+        assert.deepEqual(fw.composeParamsFor([{ messageText: 'a' }, { messageText: 'b' }]),
+            { messageText: 'a\n\nb' });
+        assert.deepEqual(fw.composeParamsFor([
+            { filePath: '/media/internal/a.jpg' }, { filePath: 'https://cdn.example/x.jpg' }
+        ]), { filePaths: ['/media/internal/a.jpg'] });
+    });
+    it('null for nothing to forward', function () {
+        assert.equal(fw.composeParamsFor([]), null);
+        assert.equal(fw.composeParamsFor(null), null);
+        assert.equal(fw.composeParamsFor([{ messageText: '' }, { filePath: 'x.jpg' }]), null);
+    });
+});
+
 describe('forward.emailLaunch', function () {
     it("the email app's newEmail, as plain text, with the file attached", function () {
         assert.deepEqual(fw.emailLaunch({ messageText: 'a &amp; b', filePath: '/m/a.jpg' }), {

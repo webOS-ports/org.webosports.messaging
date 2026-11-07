@@ -632,6 +632,9 @@ module.exports = kind({
         if (this.$.chatView.closeSearch()) {
             return true;
         }
+        if (this.$.chatView.endSelection()) {
+            return true;
+        }
         if (this.$.views.getIndex() !== 0) {
             this.$.views.setIndex(0);
             return true;
