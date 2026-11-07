@@ -1053,3 +1053,12 @@ Replies
   line-height: 16px;
   white-space: normal;
 }
+
+/* A hold on a message selects it (ConversationList.handleMessageHold), so the web view's own
+   long press - a word selected, its handles and callout - stays out of the bubbles. Copy Text and
+   Copy in the selection bar copy a message. */
+.chat-balloon {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}

@@ -243,7 +243,7 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             '  light: bg === "rgb(217, 217, 217)", helpShown: help.height > 0 && help.bottom <= box.bottom + 1 && help.bottom <= innerHeight,' +
             '  appDark: appBg !== "rgb(217, 217, 217)" };' +
             '})()');
-        assert.deepEqual(r, { rows: 6, whole: true, onScreen: true, mid: true, light: true, helpShown: true, appDark: true });
+        assert.deepEqual(r, { rows: 5, whole: true, onScreen: true, mid: true, light: true, helpShown: true, appDark: true });
     });
 
     // Holding a chat: pin it over the others, archive it behind "Archived chats", and back out of
@@ -282,7 +282,62 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             inside: true, back: { out: true, count: true }, restored: true, barAfter: false, archiveClosed: true });
     });
 
-    // Select, in the message menu: taps pick messages, the bar takes the composer's place with all
+    // A finger, through the touch events: a tap or a short press reacts, a half-second hold starts
+    // selecting with that message, and lifting after the hold is not a tap that picks it off again.
+    it('reacts on a tap and selects on a hold', async function () {
+        var at = async function (k) {
+            // The k-th plain text message from the end, at its text: a tap on a file or link opens
+            // it, one on a quote jumps to it, and one on the sender's name opens a chat with them.
+            return session.evaluate('(function () { var c = require("enyo/dispatcher").$.app_mainView_chatView_conversationList;' +
+                ' var rows = c.$.list.getClientControls().filter(function (row) { var m = row.model && row.model.attributes;' +
+                '  return m && !m.filePath && !m.deleted && !m.quotedText && !/[<&]/.test(m.messageText || "") && m.messageText; });' +
+                ' var row = rows[rows.length - ' + k + '];' +
+                ' if (!row) { throw new Error("plain rows " + rows.length + " of " + c.$.list.getClientControls().length); }' +
+                ' var r = row.hasNode().querySelector("[id$=_messageText]").getBoundingClientRect();' +
+                ' if (r.left < 0 || r.right > innerWidth) { throw new Error("off screen " + r.left + ".." + r.right); }' +
+                ' return { x: r.left + r.width / 2, y: r.top + Math.min(r.height / 2, 20) }; })()');
+        };
+        var touch = async function (p, ms) {
+            await session.send('Input.dispatchTouchEvent', { type: 'touchStart',
+                touchPoints: [{ x: p.x, y: p.y, radiusX: 1, radiusY: 1, force: 1, id: 1 }] });
+            await sleep(ms);
+            await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+            await sleep(300);
+        };
+        var state = function () {
+            return session.evaluate('(function () { var c = require("enyo/dispatcher").$.app_mainView_chatView_conversationList;' +
+                ' var s = { selecting: !!c._selected, picked: c._selected ? c.selectedMessages().length : 0, react: !!c.$.reactRow.showing };' +
+                ' c.dismissPopups(); return s; })()');
+        };
+        await session.evaluate('(async function () { var $ = require("enyo/dispatcher").$, c = $.app_mainView_chatView_conversationList;' +
+            ' c.endSelection();' +
+            ' $.app_mainView.selectThread(null, $.app_mainView_messaging_threadList.collection.models.filter(function (m) {' +
+            '  return m.attributes._id === "thread-anna"; })[0].attributes);' +
+            // Until the Anna chat's own rows are drawn: the last chat's messages linger until then.
+            ' for (var i = 0; i < 40 && !(c.chatThread && c.chatThread._id === "thread-anna" &&' +
+            '   c.$.list.getClientControls().length && c.collection.at(0).attributes.conversations.indexOf("thread-anna") >= 0); i++) {' +
+            '  await new Promise(function (r) { setTimeout(r, 100); }); }' +
+            ' return 1; })()');
+        // On one pane the chat slides in over the list: touch it once it is there.
+        await sleep(1500);
+        await touch(await at(1), 40);
+        var tap = await state();
+        await touch(await at(1), 300);
+        var short = await state();
+        await touch(await at(1), 800);
+        var hold = await state();
+        await touch(await at(2), 40);
+        var more = await state();
+        await session.evaluate('(require("enyo/dispatcher").$.app_mainView_chatView_conversationList.endSelection(), 1)');
+        assert.deepEqual({ tap: tap, short: short, hold: hold, more: more }, {
+            tap: { selecting: false, picked: 0, react: true },
+            short: { selecting: false, picked: 0, react: true },
+            hold: { selecting: true, picked: 1, react: false },
+            more: { selecting: true, picked: 2, react: false }
+        });
+    });
+
+    // Hold a message: taps then pick messages, the bar takes the composer's place with all
     // its buttons on screen, and back leaves selecting before it leaves the chat.
     it('selects several messages, in chat order, and leaves selecting on back', async function () {
         var r = await session.evaluate('(async function () {' +
@@ -296,7 +351,8 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             'var m = chat.messages, ok = [], gone = -1;' +
             'for (i = 0; i < m.length; i++) { if (m[i].deleted) { gone = i; } else { ok.push(i); } }' +
             'var at = function (k) { return { model: chat.collection.at(k) }; }, last = ok[ok.length - 1];' +
-            'chat.selectedMessage = m[last]; chat.menuSelect(); await wait(100);' +
+            // Held, as a finger does: Enyo decorates the event with the row's model.
+            'chat.handleMessageHold(null, { model: chat.collection.at(last) }); await wait(100);' +
             'chat.handleMessageTap(null, at(ok[0]));' +
             'chat.handleMessageTap(null, at(ok[1]));' +
             'chat.handleMessageTap(null, at(ok[1]));' +

@@ -55,6 +55,9 @@ var kind = require('enyo/kind'),
     $L = require('enyo/i18n').$L;
 
 var DB_SERVICE = 'luna://com.webos.service.db';
+
+/** How long a press on a message is before it is a hold (handleMessageHold). */
+var HOLD_MS = 500;
 var FOLDERS = messagingUtils.message.FOLDERS;
 
 /**
@@ -171,6 +174,9 @@ module.exports = kind({
             // the end of every flick. TouchScrollStrategy moves scrollTop throughout: no swap.
             strategyKind: TouchScrollStrategy,
             // Handlers sit on the scroller; row events arrive decorated with model and index.
+            // A tap reacts; a hold selects (startSelection), as press & hold enters a list's edit
+            // mode in HP's TouchPad guidelines.
+            ondown: "messageDown", onhold: "handleMessageHold",
             ontap: "handleMessageTap", onConfirm: "swipeDelete", onReact: "handleReactSwipe",
             onScrollStart: "dismissPopups", onScrollStop: "noteScrollPosition",
             onError: "showErrorDialog", onSelectSender: "senderRowSelected",
@@ -264,7 +270,6 @@ module.exports = kind({
                 { kind: MenuItem, content: $L("Forward"), ontap: "menuForward" },
                 { kind: MenuItem, content: $L("Forward Via Email"), ontap: "menuForwardEmail" },
                 { kind: MenuItem, content: $L("Copy Text"), ontap: "menuCopy" },
-                { kind: MenuItem, content: $L("Select"), ontap: "menuSelect" },
                 { classes: "onyx-menu-divider" },
                 { kind: MenuItem, content: $L("Delete"), ontap: "menuDelete" }
             ]
@@ -2075,8 +2080,33 @@ module.exports = kind({
         return true;
     },
 
-    menuSelect: function () {
-        this.startSelection(this.selectedMessage);
+    /**
+     * A hold on a message is half a second, as a long press is elsewhere: Enyo's 200ms default
+     * came before a finger resting at the start of a scroll had moved, and started selecting.
+     * Moving the finger still ends the hold (Enyo's moveTolerance), so a scroll never selects.
+     * preventTap here is what stops the finger lifting after a hold from being a tap as well,
+     * which picked the held message straight off again: the hold event's own preventTap() only
+     * marks that event (enyo/gesture: makeEvent), not the down the tap comes from.
+     */
+    messageDown: function (inSender, inEvent) {
+        if (inEvent && inEvent.configureHoldPulse) {
+            inEvent.configureHoldPulse({ events: [{ name: "hold", time: HOLD_MS }], preventTap: true });
+        }
+    },
+
+    /** Hold a message to start selecting with it; while selecting, a hold picks as a tap does. */
+    handleMessageHold: function (inSender, inEvent) {
+        var message = this.messageFor(inEvent);
+        if (!message) {
+            return false;
+        }
+        this.selectedMessage = message;
+        if (this._selected) {
+            this._selected = selection.toggle(this._selected, message);
+            this.showSelection();
+        } else {
+            this.startSelection(message);
+        }
         return true;
     },
 

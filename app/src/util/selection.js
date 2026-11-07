@@ -1,5 +1,5 @@
 /**
- * Selecting several messages in a chat (Select, in the message menu), to copy, forward or delete
+ * Selecting several messages in a chat (hold a message), to copy, forward or delete
  * them together. The selection is a set of message _ids; what is done with it goes in the order
  * the messages are in the chat, whatever order they were tapped in. A message deleted for
  * everyone cannot be selected: there is nothing of it to copy or forward.
