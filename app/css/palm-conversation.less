@@ -1165,3 +1165,57 @@ picked as chips, and the contacts to pick from in a list that scrolls inside the
 .contact-picker-cancel {
   width: 100%;
 }
+
+/* "N unread messages" above the first message unread when the chat opened (ConversationRow). */
+.conversation-unread-line {
+  margin: 6px 0;
+  padding: 3px 0;
+  text-align: center;
+  font-size: 13px;
+  color: #3d5c75;
+  background-color: rgba(214, 237, 255, 0.85);
+  border-top: 1px solid #b3d9f2;
+  border-bottom: 1px solid #b3d9f2;
+}
+/* Back to the newest message (ConversationList.updateJumpButton). Out of the rows' flow: placed
+   where the list ends, then lifted over its bottom right, so the composer's height does not
+   matter. */
+.conversation-jump {
+  position: absolute;
+  right: 14px;
+  width: 40px;
+  height: 40px;
+  margin-top: -54px;
+  z-index: 5;
+  -webkit-border-radius: 20px;
+  border-radius: 20px;
+  background-color: #f8f8f8;
+  border: 1px solid #c8c8c8;
+  -webkit-box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+.conversation-jump-arrow {
+  position: absolute;
+  left: 13px;
+  top: 10px;
+  width: 11px;
+  height: 11px;
+  border-right: 3px solid #5f7f99;
+  border-bottom: 3px solid #5f7f99;
+  -webkit-transform: rotate(45deg);
+  transform: rotate(45deg);
+}
+.conversation-jump-count {
+  position: absolute;
+  top: -8px;
+  right: -6px;
+  min-width: 12px;
+  padding: 1px 4px;
+  -webkit-border-radius: 9px;
+  border-radius: 9px;
+  background-color: #2f8ad6;
+  color: #ffffff;
+  font-size: 11px;
+  line-height: 15px;
+  text-align: center;
+}

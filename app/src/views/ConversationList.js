@@ -52,6 +52,7 @@ var kind = require('enyo/kind'),
     callRequest = require('../util/callRequest'),
     chatPresence = require('../util/chatPresence'),
     chatFlags = require('../util/chatFlags'),
+    unreadMarker = require('../util/unreadMarker'),
     chatActions = require('../util/chatActions'),
     deviceLocation = require('../util/deviceLocation'),
     GroupDialog = require('./GroupDialog'),
@@ -196,7 +197,7 @@ module.exports = kind({
             // mode in HP's TouchPad guidelines.
             ondown: "messageDown", onhold: "handleMessageHold",
             ontap: "handleMessageTap", onConfirm: "swipeDelete", onReply: "handleReplySwipe",
-            onScrollStart: "dismissPopups", onScrollStop: "noteScrollPosition",
+            onScrollStart: "dismissPopups", onScrollStop: "noteScrollPosition", onScroll: "listScrolled",
             onError: "showErrorDialog", onSelectSender: "senderRowSelected",
             onOpenAttachment: "openAttachment", onInviteResponse: "respondToInvite",
             components: [
@@ -230,6 +231,14 @@ module.exports = kind({
                         }
                     ]
                 }
+            ]
+        },
+        // Back to the newest message, while the reader is further up; with how many came in
+        // since (updateJumpButton). Out of the rows' flow: it sits over the list's bottom right.
+        {
+            name: "jumpButton", classes: "conversation-jump", showing: false, ontap: "jumpToBottom", components: [
+                { classes: "conversation-jump-arrow" },
+                { name: "jumpCount", classes: "conversation-jump-count", showing: false }
             ]
         },
         { classes: "footer-shadow" },
@@ -663,6 +672,14 @@ module.exports = kind({
         this._followToEnd = true;
         this._newestIncomingId = undefined;
 
+        // What was unread as it opened, for the "N unread messages" line (util/unreadMarker);
+        // clearing the count below does not change it.
+        this._unreadAtOpen = Number(this.chatThread.unreadCount) || 0;
+        this._unreadLine = null;
+        this._seenIncomingId = null;
+        this._jumpNew = 0;
+        this.$.jumpButton.hide();
+
         // Clear the thread's unread count now that it is on screen, and say it was read.
         this.doClearUnreadCount({ threadId: this.chatThread._id });
         this.markChatRead(true);
@@ -939,6 +956,7 @@ module.exports = kind({
         this._followToEnd = false;
 
         this.messages = results;
+        this.findUnreadLine(results);
 
         // Older messages backfilled in front: add them at the top, where PrependingRepeater draws
         // only them, and move the scroll position down by what was added, so the same messages
@@ -958,7 +976,10 @@ module.exports = kind({
         this.relayout();
         if (follow) {
             this.revealListBottomSoon();
+        } else if (this._unreadLine && this._unreadLine.moved) {
+            this.placeUnreadLine();
         }
+        this.countNewBelow(results, follow);
         this.scheduleBackfill(results.length);
         if (this._wantedQuote) {
             this.stepQuoteJump();
@@ -1382,11 +1403,117 @@ module.exports = kind({
     revealListBottom: function () {
         this.$.scroller.scrollToBottom();
         this._atEnd = true;
+        this.updateJumpButton();
     },
 
     /** Whether the newest message was in view when scrolling stopped; see handleResize. */
     noteScrollPosition: function () {
         this._atEnd = isNearBottom(this.$.scroller.getScrollBounds());
+        this.updateJumpButton();
+    },
+
+    listScrolled: function () {
+        this.updateJumpButton();
+    },
+
+    // --- unread line and jump to the newest message (util/unreadMarker) -------------------
+
+    /** The line's caption for the row of record, or "". */
+    unreadLineCaption: function (record) {
+        var line = this._unreadLine;
+        return line && record && record._id === line.id ? unreadMarker.caption(this._unreadAtOpen) : "";
+    },
+
+    /**
+     * Where the line goes, from the messages loaded. More unread than loaded: above the oldest
+     * loaded one, until the backfill brings in the rest (moved: it is to be placed again).
+     */
+    findUnreadLine: function (results) {
+        if (!this._unreadAtOpen || (this._unreadLine && this._unreadLine.exact)) {
+            return;
+        }
+        var found = unreadMarker.lineFor(results, this._unreadAtOpen);
+        var was = this._unreadLine;
+        if (!found || (was && was.id === found.id)) {
+            return;
+        }
+        this._unreadLine = { id: found.id, exact: found.exact, moved: !!was };
+        if (was) {
+            this.redrawRowOf(was.id);
+            this.redrawRowOf(found.id);
+        }
+    },
+
+    redrawRowOf: function (id) {
+        var index = -1;
+        this.collection.forEach(function (m, i) {
+            if (m.attributes._id === id) {
+                index = i;
+            }
+        });
+        var row = index >= 0 && this.$.list.childForIndex(index);
+        if (row && row.populateRow) {
+            row.populateRow();
+        }
+    },
+
+    /**
+     * On opening, the newest messages are scrolled to; if that takes the line off the top, the
+     * chat shows the line at its top instead, so the first unread message is read first. Only
+     * while the chat opens (settle: its last pass), or when the backfill moved the line: a new
+     * message later, at the bottom, does not take the reader back up.
+     */
+    placeUnreadLine: function (settle) {
+        var line = this._unreadLine;
+        if (!line || (line.settled && !line.moved)) {
+            return;
+        }
+        line.moved = false;
+        if (settle) {
+            line.settled = true;
+        }
+        // The line drawn now: a row it moved off keeps its hidden one.
+        var nodes = this.$.list.hasNode() ? this.$.list.hasNode().querySelectorAll(".conversation-unread-line") : [];
+        var node = Array.prototype.filter.call(nodes, function (n) { return !!n.offsetParent; })[0];
+        var scroller = this.$.scroller.hasNode();
+        if (!node || !scroller) {
+            return;
+        }
+        var top = node.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
+        if (top < 0) {
+            this.$.scroller.setScrollTop(Math.max(0, this.$.scroller.getScrollTop() + top - 4));
+            this._atEnd = false;
+            this.updateJumpButton();
+        }
+    },
+
+    /**
+     * Count what came in below while the reader was further up. Not when following: the list is
+     * scrolled down a moment later, and counting would flash the button meanwhile.
+     */
+    countNewBelow: function (results, follow) {
+        var newest = unreadMarker.newestIncoming(results);
+        if (!follow && this._seenIncomingId && newest !== this._seenIncomingId) {
+            this._jumpNew += unreadMarker.newSince(results, this._seenIncomingId);
+        }
+        this._seenIncomingId = newest;
+        this.updateJumpButton();
+    },
+
+    updateJumpButton: function () {
+        var away = !!this.collection && this.collection.length > 0 &&
+            !isNearBottom(this.$.scroller.getScrollBounds());
+        if (!away) {
+            this._jumpNew = 0;
+        }
+        this.$.jumpCount.setContent(this._jumpNew > 99 ? "99+" : String(this._jumpNew));
+        this.$.jumpCount.setShowing(away && this._jumpNew > 0);
+        this.$.jumpButton.setShowing(away);
+    },
+
+    jumpToBottom: function () {
+        this.revealListBottom();
+        return true;
     },
 
     /**
@@ -1401,6 +1528,7 @@ module.exports = kind({
             self._revealTimers.push(setTimeout(function () {
                 if (self.$ && self.$.scroller) {
                     self.revealListBottom();
+                    self.placeUnreadLine(delay === 400);
                 }
             }, delay));
         });

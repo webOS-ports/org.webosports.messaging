@@ -465,6 +465,73 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.deepEqual(r.cancelled, [1], 'the dead watch is ended');
     });
 
+    // A chat opened with unread messages (util/unreadMarker): "N unread messages" above the first
+    // of them, and the chat opens at the line when the newest would take it off the top; further
+    // up, a button back down, counting what comes in meanwhile.
+    it('marks the unread messages, and brings the reader back down to the newest', async function () {
+        var r = await session.evaluate('(async function () {' +
+            'var $ = require("enyo/dispatcher").$, mockDb = require("src/data/mockDb");' +
+            'var main = $.app_mainView, chat = $.app_mainView_chatView_conversationList;' +
+            'var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };' +
+            'var anna = mockDb.store["com.palm.message:1"].filter(function (m) { return m.conversations[0] === "thread-anna" && m.folder === "inbox"; })[0];' +
+            'var annaThread = mockDb.store["com.palm.chatthread:1"].filter(function (t) { return t._id === "thread-anna"; })[0];' +
+            'var made = [], t0 = Date.now() - 3600000;' +
+            'var add = function (i, folder) { var m = JSON.parse(JSON.stringify(anna)); m._id = "long-" + i; m.conversations = ["thread-long"];' +
+            '  m.folder = folder; m.localTimestamp = t0 + i * 60000; m.timestamp = m.localTimestamp; m.messageText = "Message number " + i + " with some words to fill a line or two of the bubble";' +
+            '  if (m.flags) { m.flags.read = true; } mockDb.merge([m]); made.push(m._id); return m; };' +
+            'for (var i = 1; i <= 30; i++) { add(i, i % 4 === 0 ? "outbox" : "inbox"); }' +
+            'var thread = JSON.parse(JSON.stringify(annaThread)); thread._id = "thread-long"; thread.displayName = "Long Chat";' +
+            'mockDb.merge([thread]);' +
+            'var open = async function (unread) { var t = JSON.parse(JSON.stringify(thread)); t.unreadCount = unread;' +
+            '  var other = JSON.parse(JSON.stringify(annaThread)); main.selectThread(null, other); await wait(300);' +
+            '  main.selectThread(null, t);' +
+            '  for (var k = 0; k < 30 && !(chat.chatThread && chat.chatThread._id === "thread-long" && chat.collection.length > 20); k++) { await wait(100); }' +
+            '  await wait(700); };' +
+            'var lines = function () { return Array.prototype.filter.call(chat.$.list.hasNode().querySelectorAll(".conversation-unread-line"), function (n) { return n.offsetParent; }); };' +
+            'var sb = function () { return chat.$.scroller.hasNode().getBoundingClientRect(); };' +
+            'var out = {};' +
+            'try {' +
+            // Three unread: the line above the third newest incoming message (long-27), newest in view.
+            ' await open(3);' +
+            ' var l = lines(); out.few = { count: l.length, text: l[0] && l[0].textContent,' +
+            '  above: !!(l[0] && l[0].parentNode.textContent.indexOf("Message number 27 ") >= 0), atEnd: chat._atEnd, button: chat.$.jumpButton.showing };' +
+            // Twenty unread: more than fit, so the line is at the top of the view.
+            ' await open(20);' +
+            ' l = lines(); var lt = l[0].getBoundingClientRect().top - sb().top;' +
+            ' out.many = { count: l.length, text: l[0].textContent, nearTop: lt >= -1 && lt < 20, button: chat.$.jumpButton.showing };' +
+            // Further up: the button, over the list at its bottom right; a new message counts.
+            ' chat.$.scroller.setScrollTop(0); chat.listScrolled(); await wait(100);' +
+            ' var jb = chat.$.jumpButton.hasNode().getBoundingClientRect(), s = sb();' +
+            ' out.up = { button: chat.$.jumpButton.showing, inList: jb.bottom <= s.bottom && jb.top >= s.top && jb.right <= s.right && jb.right > s.right - 40 && jb.width > 30 };' +
+            ' add(31, "inbox"); chat.messagesWatch(); await wait(400);' +
+            ' out.counted = { button: chat.$.jumpButton.showing, count: chat.$.jumpCount.showing ? chat.$.jumpCount.getContent() : null, scrolledTop: chat.$.scroller.getScrollTop() < 50 };' +
+            ' add(32, "outbox"); add(33, "inbox"); chat.messagesWatch(); await wait(400);' +
+            ' out.counted2 = chat.$.jumpCount.getContent();' +
+            // Down: at the newest, no button; the line stays where it was.
+            ' chat.jumpToBottom(); await wait(200);' +
+            ' out.down = { atEnd: chat._atEnd, button: chat.$.jumpButton.showing, lines: lines().length };' +
+            // A new message at the bottom does not take the reader back up to the line.
+            ' add(34, "inbox"); chat.messagesWatch(); await wait(800);' +
+            ' out.stays = { atEnd: require("src/util/isNearBottom")(chat.$.scroller.getScrollBounds()), button: chat.$.jumpButton.showing };' +
+            // None unread: no line.
+            ' await open(0);' +
+            ' out.none = lines().length;' +
+            '} finally {' +
+            ' mockDb.del(made.concat(["thread-long", "long-31", "long-32", "long-33", "long-34"]));' +
+            ' main.selectThread(null, JSON.parse(JSON.stringify(annaThread))); await wait(300);' +
+            '}' +
+            'return out;' +
+            '})()');
+        assert.deepEqual(r.few, { count: 1, text: '3 unread messages', above: true, atEnd: true, button: false });
+        assert.deepEqual(r.many, { count: 1, text: '20 unread messages', nearTop: true, button: true });
+        assert.deepEqual(r.up, { button: true, inList: true });
+        assert.deepEqual(r.counted, { button: true, count: '1', scrolledTop: true }, 'a new one is counted, and the reader stays');
+        assert.equal(r.counted2, '2', 'only incoming ones');
+        assert.deepEqual(r.down, { atEnd: true, button: false, lines: 1 });
+        assert.deepEqual(r.stays, { atEnd: true, button: false });
+        assert.equal(r.none, 0);
+    });
+
     // Hold a message: taps then pick messages, the bar takes the composer's place with all
     // its buttons on screen, and back leaves selecting before it leaves the chat.
     it('selects several messages, in chat order, and leaves selecting on back', async function () {

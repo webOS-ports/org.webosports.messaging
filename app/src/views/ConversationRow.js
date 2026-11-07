@@ -32,6 +32,9 @@ module.exports = kind({
 
     components: [
         { name: "divider", kind: Divider, classes: "conversationDivider", showing: false },
+        // "N unread messages", above the first message that was unread when the chat opened
+        // (ConversationList.unreadLineCaption, util/unreadMarker).
+        { name: "unreadLine", classes: "conversation-unread-line", showing: false },
         { name: "conversationItem", kind: ConversationItem }
     ],
 
@@ -61,7 +64,17 @@ module.exports = kind({
             return;
         }
         this.setupDivider(record);
+        this.setupUnreadLine(record);
         this.$.conversationItem.setMessage(record);
+    },
+
+    setupUnreadLine: function (record) {
+        var list = this.repeater && this.repeater.owner;
+        var caption = list && list.unreadLineCaption ? list.unreadLineCaption(record) : "";
+        if (caption) {
+            this.$.unreadLine.setContent(caption);
+        }
+        this.$.unreadLine.setShowing(!!caption);
     },
 
     /**
