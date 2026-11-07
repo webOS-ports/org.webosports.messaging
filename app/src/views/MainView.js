@@ -116,10 +116,6 @@ module.exports = kind({
         { name: "buddyDialog", kind: AddBuddyDialog },
         {
             name: "appMenu", kind: Menu, floating: true, scrolling: false, classes: "app-menu", components: [
-                {
-                    name: "findInChatMenuItem", kind: MenuItem, content: $L("Find in Chat"),
-                    ontap: "findInChat", showing: false
-                },
                 { name: "addBuddyMenuItem", kind: MenuItem, content: $L("Add Buddy"), ontap: "addBuddy" },
                 {
                     name: "showOfflineMenuItem", kind: MenuItem,
@@ -467,18 +463,7 @@ module.exports = kind({
     // none: it threw while hidden for sizing, and stayed invisible.
     showAppMenu: function (activator) {
         this.setOfflineMenuItem();
-        this.$.findInChatMenuItem.setShowing(!!appState.selectedThread &&
-            this.$.chatView.getViewName() === "conversationList");
         this.$.appMenu.requestMenuShow(this, { activator: activator });
-    },
-
-    findInChat: function () {
-        this.$.appMenu.hide();
-        if (Panels.isScreenNarrow()) {
-            this.$.slidingGroup.setIndex(1);
-        }
-        this.$.chatView.openSearch();
-        return true;
     },
 
     openHelp: function () {

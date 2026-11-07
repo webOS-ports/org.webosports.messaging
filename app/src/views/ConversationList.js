@@ -113,6 +113,11 @@ module.exports = kind({
                     showing: false, ontap: "voicecall", classes: "conversation-call-btn"
                 },
                 {
+                    // Find in Chat: opens the search bar under the header, or closes it.
+                    name: "searchButton", kind: IconButton, src: "assets/find-in-chat-icon.svg",
+                    ontap: "toggleSearch", classes: "conversation-call-btn"
+                },
+                {
                     // The service a reply goes out on: its icon and name, not the address. A
                     // dropdown drawn like the availability one, not a button.
                     name: "transportButton", classes: "conversation-header-type",
@@ -870,6 +875,16 @@ module.exports = kind({
             this.runQuery();
         }
         this.refreshSearch(false);
+    },
+
+    /** The header's magnifier: open Find in Chat, or close it when it is open. */
+    toggleSearch: function () {
+        if (this._search) {
+            this.closeSearch();
+        } else {
+            this.openSearch();
+        }
+        return true;
     },
 
     /** Whether the search bar is open; back closes it first. */

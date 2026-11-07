@@ -304,7 +304,7 @@ module.exports = kind({
         return this.$.conversationList.closeAttachmentPicker();
     },
 
-    /** Find in Chat, from the app menu: only while a conversation is the view shown. */
+    /** Find in Chat: only while a conversation is the view shown. */
     openSearch: function () {
         if (this.getViewName() === "conversationList") {
             this.$.conversationList.openSearch();

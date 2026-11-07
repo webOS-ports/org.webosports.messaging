@@ -170,8 +170,9 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             'px window, so it can never scroll');
     });
 
-    // Find in Chat, from the app menu: the newest match first, older from there, and back closes
-    // the bar before it leaves the chat.
+    // Find in Chat, from the magnifier in the chat's header between its name and the service it
+    // goes out on, not from the app menu: the newest match first, older from there, and back
+    // closes the bar before it leaves the chat; the magnifier closes it too.
     it('finds in a chat, newest match first, and closes on back', async function () {
         var r = await session.evaluate('(async function () {' +
             'var $ = require("enyo/dispatcher").$, Signals = require("enyo/Signals");' +
@@ -182,8 +183,16 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             '    if (m.attributes._id === "thread-family") { t = m.attributes; } }); res(t); })));' +
             'for (var i = 0; i < 20 && !(chat.messages && chat.messages.length); i++) { await wait(100); }' +
             'Signals.send("onmenubutton", {}); await wait(300);' +
-            'var offered = main.$.findInChatMenuItem.showing;' +
-            'main.findInChat(); await wait(300);' +
+            'var inMenu = Array.prototype.some.call(main.$.appMenu.hasNode().querySelectorAll(".onyx-menu-item"),' +
+            '  function (n) { return n.offsetParent && /Find in Chat/.test(n.textContent); });' +
+            'main.$.appMenu.hide();' +
+            'var box = function (c) { return c.hasNode().getBoundingClientRect(); };' +
+            'var name = box(chat.$.header), glass = box(chat.$.searchButton), service = box(chat.$.transportButton);' +
+            'var bar = box(chat.$.headerBar);' +
+            'var placed = glass.width > 0 && glass.left >= name.right - 1 && glass.right <= service.left + 1 &&' +
+            '  glass.top >= bar.top && glass.bottom <= bar.bottom;' +
+            'chat.toggleSearch(); await wait(300);' +
+            'var opened = chat.$.searchBar.showing;' +
             'chat.searchChanged(null, { value: "BRING" }); await wait(100);' +
             'var count = chat.$.searchCount.getContent();' +
             'var hit = document.querySelector(".search-hit");' +
@@ -193,11 +202,16 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             'hit = document.querySelector(".search-hit");' +
             'var olderHit = !!hit && /dessert/.test(hit.textContent);' +
             'Signals.send("onbackgesture", {}); await wait(300);' +
-            'return { offered: offered, count: count, newest: newest, older: older, olderHit: olderHit,' +
-            '  closed: !chat.$.searchBar.showing && !document.querySelector(".search-hit"),' +
+            'var closed = !chat.$.searchBar.showing && !document.querySelector(".search-hit");' +
+            'chat.toggleSearch(); await wait(100); var reopened = chat.$.searchBar.showing;' +
+            'chat.toggleSearch(); await wait(100); var toggled = !chat.$.searchBar.showing;' +
+            'return { inMenu: inMenu, placed: placed, opened: opened, reopened: reopened, toggled: toggled,' +
+            '  count: count, newest: newest, older: older, olderHit: olderHit,' +
+            '  closed: closed,' +
             '  chatStill: chat.chatThread && chat.chatThread._id };' +
             '})()');
-        assert.deepEqual(r, { offered: true, count: '2 of 2', newest: true, older: '1 of 2', olderHit: true,
+        assert.deepEqual(r, { inMenu: false, placed: true, opened: true, reopened: true, toggled: true,
+            count: '2 of 2', newest: true, older: '1 of 2', olderHit: true,
             closed: true, chatStill: 'thread-family' });
     });
 
