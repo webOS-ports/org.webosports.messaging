@@ -30,12 +30,44 @@ Header
 .conversation-header .status {
   margin-left: 8px;
 }
-/* After the name while the buddy types to us (ConversationList.renderHeader): quieter than the
-   name, so the name still reads first. */
-.conversation-typing {
-  color: #6b6b6b;
-  font-style: italic;
-  font-size: 15px;
+/* The buddy is typing (ConversationList.showTypingBubble): a received bubble, as wide as its
+   three dots, where their next message will come; the dots pulse one after the other. */
+.conversation-typing-row {
+  padding: 5px 8px 5px 13px;
+}
+.chat-balloon-received.conversation-typing-bubble {
+  display: inline-block;
+  min-height: 0;
+  padding: 9px 12px;
+  line-height: 0;
+}
+.conversation-typing-bubble > span {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin: 0 2px;
+  -webkit-border-radius: 4px;
+  border-radius: 4px;
+  background-color: #5f7f99;
+  opacity: 0.35;
+  -webkit-animation: typing-dot 1.2s infinite ease-in-out;
+  animation: typing-dot 1.2s infinite ease-in-out;
+}
+.conversation-typing-bubble > span:nth-child(2) {
+  -webkit-animation-delay: 0.2s;
+  animation-delay: 0.2s;
+}
+.conversation-typing-bubble > span:nth-child(3) {
+  -webkit-animation-delay: 0.4s;
+  animation-delay: 0.4s;
+}
+@-webkit-keyframes typing-dot {
+  0%, 60%, 100% { opacity: 0.35; }
+  30% { opacity: 1; }
+}
+@keyframes typing-dot {
+  0%, 60%, 100% { opacity: 0.35; }
+  30% { opacity: 1; }
 }
 /* The reply service: icon, name and the dropdown arrow, drawn like the availability picker. It
    keeps its full width; the contact's name is what gets shortened when the bar is short of room. */

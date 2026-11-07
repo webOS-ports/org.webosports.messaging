@@ -359,8 +359,8 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
     });
 
     // Typing and reading (util/chatPresence): opening a chat says it was read; typing in it says
-    // so once, and "none" once it is sent; a buddy typing to us shows after their name until it
-    // stops. With the mock db the calls are kept on mockDb.presenceCalls instead of sent.
+    // so once, and "none" once it is sent; a buddy typing to us shows as dots under the last
+    // message until it stops. With the mock db the calls are kept on mockDb.presenceCalls instead of sent.
     it('says a chat was read, passes our typing on, and shows theirs', async function () {
         var r = await session.evaluate('(async function () {' +
             'var $ = require("enyo/dispatcher").$, mockDb = require("src/data/mockDb");' +
@@ -385,12 +385,24 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             'var cleared = mockDb.presenceCalls.slice(typed.length);' +
             'var account = require("src/util/appState").accountService.getAccount("type_telegram");' +
             'var ev = function (state) { return { serviceName: "type_telegram", username: account.username, from: "anna.k", state: state }; };' +
-            'main.gotTyping(null, ev("typing")); await wait(50);' +
+            'chat.revealListBottom(); await wait(100);' +
+            'main.gotTyping(null, ev("typing")); await wait(300);' +
             'var header = chat.$.header.hasNode().textContent;' +
-            'var shown = !!chat.$.header.hasNode().querySelector(".conversation-typing");' +
+            'var bubble = chat.$.typingBubble;' +
+            'var shown = bubble.showing;' +
+            // Under the last message, and in view: the chat was at its newest message.
+            'var rows = chat.$.list.hasNode().querySelectorAll(".chat-balloon");' +
+            'var last = rows[rows.length - 1].getBoundingClientRect(), bb = bubble.hasNode().getBoundingClientRect();' +
+            'var sb = chat.$.scroller.hasNode().getBoundingClientRect();' +
+            'var dots = bubble.hasNode().querySelector(".conversation-typing-bubble").getBoundingClientRect();' +
+            'var place = { below: bb.top >= last.bottom - 0.5, inView: bb.bottom <= sb.bottom + 0.5 && bb.top >= sb.top,' +
+            '  small: dots.width > 20 && dots.width < 120, left: dots.left < sb.left + sb.width / 2 };' +
+            'main.gotTyping(null, ev("paused")); await wait(50);' +
+            'var paused = bubble.showing;' +
+            'main.gotTyping(null, ev("typing")); await wait(50);' +
             'main.gotTyping(null, ev("none")); await wait(50);' +
-            'var gone = !chat.$.header.hasNode().querySelector(".conversation-typing");' +
-            'return { read: read, typed: typed, cleared: cleared, account: account.username, header: header, shown: shown, gone: gone,' +
+            'var gone = !bubble.showing;' +
+            'return { read: read, typed: typed, cleared: cleared, account: account.username, header: header, shown: shown, gone: gone, place: place, paused: paused,' +
             '  name: chat.$.header.hasNode().textContent };' +
             '})()');
         var who = { serviceName: 'type_telegram', username: r.account, usernameTo: 'anna.k' };
@@ -398,8 +410,10 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.deepEqual(r.typed, [{ method: 'sendTyping', payload: Object.assign({ state: 'typing' }, who) }],
             'typing is said once, not on every key');
         assert.deepEqual(r.cleared, [{ method: 'sendTyping', payload: Object.assign({ state: 'none' }, who) }]);
-        assert.equal(r.shown, true, 'typing shows in the header');
-        assert.match(r.header, /^Anna Kowalski typing\.\.\.$/);
+        assert.equal(r.shown, true, 'typing shows as dots under the last message');
+        assert.deepEqual(r.place, { below: true, inView: true, small: true, left: true });
+        assert.equal(r.header, 'Anna Kowalski', 'and not in the header');
+        assert.equal(r.paused, false, 'paused is not typing');
         assert.equal(r.gone, true);
         assert.equal(r.name, 'Anna Kowalski');
     });
@@ -419,10 +433,10 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             'try {' +
             ' var account = require("src/util/appState").accountService.getAccount("type_telegram");' +
             ' main.gotTyping(null, { serviceName: "type_telegram", username: account.username, from: "anna.k", state: "typing" }); await wait(50);' +
-            ' var before = !!chat.$.header.hasNode().querySelector(".conversation-typing");' +
+            ' var before = chat.$.typingBubble.showing;' +
             ' main.gotTransportStatus(null, { serviceName: "com.palm.imlibpurple", connected: true });' +
             ' main.gotTransportStatus(null, { serviceName: "com.palm.imlibpurple", connected: false }); await wait(50);' +
-            ' var after = !!chat.$.header.hasNode().querySelector(".conversation-typing");' +
+            ' var after = chat.$.typingBubble.showing;' +
             ' main.gotTransportStatus(null, { serviceName: "com.palm.imlibpurple", connected: true });' +
             ' return { before: before, after: after, sent: sent, cancelled: cancelled };' +
             '} finally { w.send = send; w.cancel = cancel; main.typingFollower.request = null; }' +

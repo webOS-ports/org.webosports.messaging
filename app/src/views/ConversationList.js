@@ -204,6 +204,16 @@ module.exports = kind({
                 {
                     name: "list", kind: PrependingRepeater, classes: "conversation-messages",
                     components: [ { kind: ConversationRow } ]
+                },
+                // The buddy is typing to us: a received bubble of three dots under the last
+                // message, as WhatsApp draws it (showTypingBubble).
+                {
+                    name: "typingBubble", classes: "conversation-typing-row", showing: false, components: [
+                        {
+                            classes: "chat-balloon-received conversation-typing-bubble", allowHtml: true,
+                            content: "<span></span><span></span><span></span>"
+                        }
+                    ]
                 }
             ]
         },
@@ -710,14 +720,27 @@ module.exports = kind({
         this.renderHeader();
     },
 
-    /** The chat's name, and "typing..." after it while the buddy types to us. */
+    /** The chat's name; whether the buddy is typing shows under the last message (showTypingBubble). */
     renderHeader: function () {
-        var html = messagingUtils.message.emojifyEscaped(this._headerName || "");
-        var typing = this.typingState();
-        if (typing === "typing") {
-            html += ' <span class="conversation-typing">' + $L("typing...") + '</span>';
+        this.$.header.setContent(messagingUtils.message.emojifyEscaped(this._headerName || ""));
+        this.showTypingBubble();
+    },
+
+    /**
+     * The dots under the last message while the buddy types ("typing"; "paused" hides them, as
+     * WhatsApp does). Shown with the newest message in view, it is scrolled to as a new message
+     * would be; further up the chat it is left for when the reader comes down.
+     */
+    showTypingBubble: function () {
+        var typing = this.typingState() === "typing";
+        if (typing === this.$.typingBubble.showing) {
+            return;
         }
-        this.$.header.setContent(html);
+        var follow = typing && isNearBottom(this.$.scroller.getScrollBounds());
+        this.$.typingBubble.setShowing(typing);
+        if (follow) {
+            this.revealListBottom();
+        }
     },
 
     // --- typing and reading (util/chatPresence) -------------------------------------------
