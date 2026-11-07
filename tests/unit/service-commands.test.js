@@ -28,8 +28,9 @@ describe('the messaging service on the bus', function () {
     it('registers its methods under its name', function () {
         var env = boot();
         assert.equal(env.handle.name, "org.webosports.service.messaging");
-        assert.deepEqual(env.handle.methods.sort(), ["/assignMessages", "/deleteChatthread", "/info", "/loginsChanged",
-            "/messagesDeleted", "/putMessage", "/quit", "/readChanges", "/updateThreadValues"]);
+        assert.deepEqual(env.handle.methods.sort(), ["/assignMessages", "/changedAvailability", "/deleteChatthread", "/info",
+            "/loginsChanged", "/messagesDeleted", "/newBuddies", "/putMessage", "/quit", "/readChanges", "/restoreFinished",
+            "/updateThreadValues"]);
         env.service.bus.stop();
     });
 
