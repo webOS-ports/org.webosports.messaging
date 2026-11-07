@@ -654,8 +654,8 @@ var servers = [
     },
     {
         _id: "server-discord", _kind: "com.palm.imserver:1",
-        accountId: "acct-discord", serviceName: "type_discord",
-        displayName: "LuneOS Discord", unreadCount: 3
+        accountId: "acct-discord", serviceName: "type_discord", remoteId: "LuneOS Discord",
+        displayName: "LuneOS Discord", unreadCount: 3, muted: false, background: false
     },
     {
         _id: "server-irc", _kind: "com.palm.imserver:1",
@@ -672,13 +672,13 @@ var channels = [
     },
     {
         _id: "channel-general", _kind: "com.palm.imchannel:1",
-        serverId: "server-discord", serviceName: "type_discord",
-        displayName: "#general", threadId: "thread-old", unreadCount: 3
+        serverId: "server-discord", serviceName: "type_discord", remoteId: "1100000000000000001",
+        displayName: "#general", threadId: "thread-old", unreadCount: 3, muted: false, background: true
     },
     {
         _id: "channel-dev", _kind: "com.palm.imchannel:1",
-        serverId: "server-discord", serviceName: "type_discord",
-        displayName: "#development", threadId: "thread-old", unreadCount: 0
+        serverId: "server-discord", serviceName: "type_discord", remoteId: "1100000000000000002",
+        displayName: "#development", threadId: "thread-old", unreadCount: 0, muted: true, background: false
     },
     {
         _id: "channel-irc-webos", _kind: "com.palm.imchannel:1",

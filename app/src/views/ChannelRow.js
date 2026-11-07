@@ -16,12 +16,14 @@ module.exports = kind({
     published: {
         model: null,
         selectedRow: false,
-        unread: 0
+        unread: 0,
+        optionsSummary: ""
     },
 
     bindings: [
         { from: ".model.selected", to: ".selectedRow" },
-        { from: ".model.unread", to: ".unread" }
+        { from: ".model.unread", to: ".unread" },
+        { from: ".model.optionsSummary", to: ".optionsSummary" }
     ],
 
     components: [
@@ -57,7 +59,12 @@ module.exports = kind({
         // the same reference every time and a plain set() would see no change and not redraw.
         this.$.channelItem.set("record", record, { force: true });
         this.unreadChanged();
+        this.optionsSummaryChanged();
         this.selectedRowChanged();
+    },
+
+    optionsSummaryChanged: function () {
+        this.$.channelItem.setOptionsSummary(this.optionsSummary || "");
     },
 
     unreadChanged: function () {

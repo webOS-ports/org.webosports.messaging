@@ -8,7 +8,8 @@
  * with no extra plumbing.
  *
  * On an IRC network a channel is joined by name (promptJoin, from the footer's Join Channel) and
- * left by holding its row (see util/ircChannels).
+ * left by holding its row (see util/ircChannels). On Discord, holding a row mutes or unmutes the
+ * channel and chooses whether it delivers while closed (see util/channelOptions).
  */
 
 var kind = require('enyo/kind'),
@@ -26,6 +27,8 @@ var kind = require('enyo/kind'),
     Input = require('onyx/Input'),
     InputDecorator = require('onyx/InputDecorator'),
     ircChannels = require('../util/ircChannels'),
+    channelOptions = require('../util/channelOptions'),
+    ChannelOptionsPopup = require('./ChannelOptionsPopup'),
     ServerServices = require('../data/ServerService'),
     messagingUtils = require('../util/messagingUtils'),
     mockDb = require('../data/mockDb'),
@@ -121,6 +124,7 @@ module.exports = kind({
                 }
             ]
         },
+        { name: "optionsPopup", kind: ChannelOptionsPopup },
         {
             name: "leavePopup", kind: Popup, centered: true, floating: true, modal: true, scrim: true,
             style: "width: 20em;", components: [
@@ -231,6 +235,14 @@ module.exports = kind({
         this.runQuery();
     },
 
+    /** The server shown changed (muted, say): its channels' rows say so. */
+    serverUpdated: function (inServer) {
+        if (inServer && inServer._id === this.serverId) {
+            this.server = inServer;
+            this.decorateModels();
+        }
+    },
+
     runQuery: function () {
         if (!this.serverId) {
             // No server drilled into yet, so don't hit the db; the list stays empty until setServer.
@@ -316,6 +328,7 @@ module.exports = kind({
                 (record.chatThreadId && list.threadUnread[record.chatThreadId]) || 0;
             model.set('unread', unread);
             model.set('selected', selected);
+            model.set('optionsSummary', channelOptions.summary(record, false, list.server));
         });
     },
 
@@ -431,10 +444,16 @@ module.exports = kind({
 
     holdChannel: function (inSender, inEvent) {
         var record = this.recordFor(inEvent);
+        if (channelOptions.supports(record)) {
+            if (this.$.optionsPopup.showFor(record, false, this.server) && inEvent.preventTap) {
+                // The finger lifting after a hold is a tap too; that one should not open the channel.
+                inEvent.preventTap();
+            }
+            return true;
+        }
         if (!ircChannels.canLeave(record)) {
             return false;
         }
-        // The finger lifting after a hold is a tap too; that one should not open the channel.
         if (inEvent.preventTap) {
             inEvent.preventTap();
         }
