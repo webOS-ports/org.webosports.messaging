@@ -31,6 +31,10 @@ var UNIT = "\x1f";
  *   groupRemove               taking someone out of a group (purple-combined: whatsmeow
  *                             UpdateGroupParticipants remove; tdlib-purple 0035: setChatMemberStatus
  *                             Left; the service refuses it to a non-admin)
+ *   groupRename               giving a group a new name (renameGroup, the transport's
+ *                             webos-im-group-rename; purple-combined 0056: whatsmeow SetGroupName,
+ *                             tdlib-purple 0036: setChatTitle; the service may refuse it to a
+ *                             non-admin)
  *   mentions                  "@Name" in a group as a mention of that member
  *   location, contact         sent as the service's own location or contact message
  *   sticker                   a .webp file sent as the service's sticker (purple-combined
@@ -40,7 +44,7 @@ var UNIT = "\x1f";
 var ACTIONS = {
     type_whatsapp: {
         edit: true, editWindowMs: 20 * 60 * 1000, deleteForEveryone: true,
-        groupCreate: true, groupInvite: true, groupLeave: true, groupRemove: true,
+        groupCreate: true, groupInvite: true, groupLeave: true, groupRemove: true, groupRename: true,
         mentions: true, location: true, contact: true, sticker: true
     },
     type_signal: {
@@ -48,7 +52,7 @@ var ACTIONS = {
     },
     type_telegram: {
         edit: true, deleteForEveryone: true,
-        groupCreate: true, groupInvite: true, groupLeave: true, groupRemove: true,
+        groupCreate: true, groupInvite: true, groupLeave: true, groupRemove: true, groupRename: true,
         mentions: true, location: true, contact: true
     },
     // Groups are group DMs; a server's channels are not.
@@ -319,6 +323,15 @@ function removeCommand(kind, serviceName, account, group, members) {
     return command(kind, "removeFromGroup", serviceName, account, group, { members: list.join(UNIT) });
 }
 
+/** A new name for a group: trimmed, and null for an empty one. */
+function renameCommand(kind, serviceName, account, group, name) {
+    var title = String(name || "").replace(/\s+/g, " ").trim();
+    if (!group || !title) {
+        return null;
+    }
+    return command(kind, "renameGroup", serviceName, account, group, { name: title });
+}
+
 function leaveCommand(kind, serviceName, account, group) {
     if (!group) {
         return null;
@@ -551,6 +564,7 @@ module.exports = {
     isOwnAddress: isOwnAddress,
     createGroupCommand: createGroupCommand,
     removeCommand: removeCommand,
+    renameCommand: renameCommand,
     inviteCommand: inviteCommand,
     leaveCommand: leaveCommand,
     canBlock: canBlock,

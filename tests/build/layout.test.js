@@ -1452,6 +1452,76 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.equal(r.writersSwipe, false, 'who has written does not swipe');
     });
 
+    // Rename in Group Info: asks for the name with the present one chosen, Rename only once it is
+    // a new one, sends renameGroup with it, and the header says it at once. Back closes the
+    // question first.
+    it('renames a group from Group Info', async function () {
+        /* global require */
+        var page = async function () {
+            var $ = require('enyo/dispatcher').$, mockDb = require('src/data/mockDb');
+            var main = $.app_mainView, chat = $.app_mainView_chatView_conversationList;
+            var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+            var thread = null;
+            $.app_mainView_messaging_threadList.collection.forEach(function (m) {
+                if (m.attributes._id === 'thread-family') { thread = m.attributes; }
+            });
+            main.selectThread(null, thread);
+            for (var i = 0; i < 20 && !(chat.chatThread && chat.chatThread._id === 'thread-family' && chat.messages.length); i++) { await wait(100); }
+            await wait(200);
+            mockDb.imCommands = [];
+            var info = chat.$.groupInfo, out = {};
+            chat.handleHeaderTap(); await wait(300);
+            out.button = info.$.renameButton.getShowing();
+            // Add People, Rename and Leave Group side by side, each label whole.
+            out.whole = ['addButton', 'renameButton', 'leaveButton'].map(function (k) {
+                var n = info.$[k].hasNode();
+                return k + ':' + (n.scrollWidth <= n.clientWidth + 1);
+            });
+            info.renameTapped(); await wait(100);
+            var node = info.$.renameInput.hasNode();
+            out.asked = info.$.renameDialog.getShowing();
+            var dlg = info.$.renameDialog.hasNode().getBoundingClientRect(), box = node.getBoundingClientRect();
+            out.boxFits = box.left >= dlg.left && box.right <= dlg.right && box.width > dlg.width * 0.6;
+            out.prefilled = info.$.renameInput.get('value');
+            out.chosen = node.selectionStart === 0 && node.selectionEnd === node.value.length;
+            out.sameDisabled = !!info.$.renameConfirm.disabled;
+            // Back closes the question, not Group Info.
+            chat.closeGroupInfo();
+            out.backClosed = !info.$.renameDialog.getShowing() && info.getShowing();
+            info.renameTapped(); await wait(50);
+            info.$.renameInput.set('value', '   '); info.renameChanged();
+            out.emptyDisabled = !!info.$.renameConfirm.disabled;
+            info.renameConfirmed();
+            out.sentForEmpty = mockDb.imCommands.length;
+            info.$.renameInput.set('value', '  Family  trip '); info.renameChanged();
+            out.newEnabled = !info.$.renameConfirm.disabled;
+            info.renameConfirmed(); await wait(100);
+            out.sent = mockDb.imCommands.map(function (c) { return { command: c.command, to: c.targetUsername, params: c.params }; });
+            out.title = info.$.title.hasNode().textContent;
+            out.header = chat.$.header.hasNode().textContent;
+            info.doneTapped();
+            // A service that cannot: no Rename.
+            out.signalCan = chat.canRenameGroup({ replyService: 'type_signal' });
+            return out;
+        };
+        var r = await session.evaluate('(' + page.toString() + ')()');
+        assert.equal(r.button, true, 'Rename is offered for a WhatsApp group');
+        assert.deepEqual(r.whole, ['addButton:true', 'renameButton:true', 'leaveButton:true'], 'the three buttons fit');
+        assert.equal(r.asked, true);
+        assert.equal(r.boxFits, true, 'the name box fills the question');
+        assert.equal(r.prefilled, 'Family', 'the present name filled in');
+        assert.equal(r.chosen, true, 'and chosen, so typing replaces it');
+        assert.equal(r.sameDisabled, true, 'Rename waits for a new name');
+        assert.equal(r.backClosed, true, 'back closes the question first');
+        assert.equal(r.emptyDisabled, true, 'no empty name');
+        assert.equal(r.sentForEmpty, 0);
+        assert.equal(r.newEnabled, true);
+        assert.deepEqual(r.sent, [{ command: 'renameGroup', to: '120363041234567890@g.us', params: { name: 'Family trip' } }]);
+        assert.equal(r.title, 'Family trip');
+        assert.equal(r.header, 'Family trip', 'the header says it at once');
+        assert.equal(r.signalCan, false);
+    });
+
     // The keyboard New Conversation's "To" field brings up resizes the window; a resize on a phone
     // with no chat open went back to the chat list, so New Conversation vanished behind it and no
     // group could be made. With nothing in the pane, a resize still shows the list.

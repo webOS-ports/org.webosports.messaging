@@ -362,7 +362,7 @@ module.exports = kind({
         {
             name: "groupInfo", kind: GroupInfo, onMemberChat: "groupMemberChat",
             onMemberContact: "groupMemberContact", onAddPeople: "openGroupInvite", onLeaveGroup: "promptLeaveGroup",
-            onRemoveMember: "groupRemoveMember"
+            onRemoveMember: "groupRemoveMember", onRenameGroup: "groupRename"
         },
         {
             name: "reactRow", kind: Popup, floating: true, autoDismiss: true,
@@ -3177,7 +3177,8 @@ module.exports = kind({
                 transportPicker.serviceNameFor({ serviceName: thread.replyService })),
             members: pick.members, fromService: pick.fromService, loading: true,
             canAdd: !!this.$.groupAddButton.showing, canLeave: !!this.$.groupLeaveButton.showing,
-            canRemove: this.canRemoveMembers(thread)
+            canRemove: this.canRemoveMembers(thread),
+            canRename: this.canRenameGroup(thread)
         });
         var self = this, threadId = thread._id;
         var asked = this.loadChatMembers(function () {
@@ -3195,6 +3196,32 @@ module.exports = kind({
     canRemoveMembers: function (thread) {
         var actions = thread ? chatActions.actionsFor(thread.replyService, appState.accountService) : {};
         return !!(this.$.groupLeaveButton.showing && actions.groupRemove);
+    },
+
+    /** Whether Group Info offers Rename: a group we are in, on a service that can. */
+    canRenameGroup: function (thread) {
+        var actions = thread ? chatActions.actionsFor(thread.replyService, appState.accountService) : {};
+        return !!(this.$.groupLeaveButton.showing && actions.groupRename);
+    },
+
+    /**
+     * A new name given in Group Info: the transport renames the group (renameGroup). The header
+     * says it at once; the chat's own record follows when the service tells the transport.
+     */
+    groupRename: function (inSender, inEvent) {
+        var name = inEvent && inEvent.name, thread = this.chatThread;
+        if (!name || !thread) {
+            return true;
+        }
+        var sent = this.sendImCommand(thread.replyService, function (kind, account) {
+            return chatActions.renameCommand(kind, thread.replyService, account, thread.replyAddress, name);
+        });
+        if (!sent) {
+            this.showError($L("Unable to rename"), $L("No account can rename this group."));
+            return true;
+        }
+        this.setHeaderName(name);
+        return true;
     },
 
     /**

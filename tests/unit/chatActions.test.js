@@ -225,6 +225,21 @@ describe('chatActions: the commands, as the transport reads them', function () {
         assert.equal(ca.removeCommand(KIND, 'type_whatsapp', me, '', ['+447700900123']), null);
         assert.equal(ca.actionsFor('type_whatsapp').groupRemove, true);
         assert.equal(ca.actionsFor('type_telegram').groupRemove, true, 'tdlib-purple 0035');
+    });
+
+    it('a group is renamed with its new name, trimmed; none without one', function () {
+        var me = { _id: 'acct-1', username: 'me' };
+        var out = ca.renameCommand(KIND, 'type_telegram', me, 'chat-42', '  Trip   to\tRome ');
+        assert.equal(out.command, 'renameGroup');
+        assert.equal(out.targetUsername, 'chat-42');
+        assert.deepEqual(out.params, { name: 'Trip to Rome' });
+        assert.equal(ca.renameCommand(KIND, 'type_telegram', me, 'chat-42', '   '), null);
+        assert.equal(ca.renameCommand(KIND, 'type_telegram', me, '', 'Trip'), null);
+        assert.equal(ca.actionsFor('type_whatsapp').groupRename, true, 'purple-combined 0056');
+        assert.equal(ca.actionsFor('type_telegram').groupRename, true, 'tdlib-purple 0036');
+        ['type_discord', 'type_signal', 'type_matrix', 'type_sms'].forEach(function (s) {
+            assert.ok(!ca.actionsFor(s).groupRename, s + ' cannot rename a group');
+        });
         ['type_signal', 'type_discord', 'type_matrix'].forEach(function (s) {
             assert.ok(!ca.actionsFor(s).groupRemove, s + ' has no remove in its plugin');
         });

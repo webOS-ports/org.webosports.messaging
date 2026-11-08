@@ -1,7 +1,8 @@
 /**
  * Group Info: what a tap on a group chat's header shows (ConversationList.openGroupInfo). The
  * group's name and service, who is in it, and the group's own actions where its service has them
- * (Add People, Leave Group, as the row under the header offers them).
+ * (Add People, Leave Group, as the row under the header offers them, and Rename where the service
+ * can give a group a new name: it asks for the name and hands it on with onRenameGroup).
  *
  * Who is in it comes from the conversation list (util/groupInfo): the transport's member list, or
  * while it has none, who has written in the chat, which the line under the title then says. A tap
@@ -22,6 +23,8 @@ var kind = require('enyo/kind'),
     Menu = require('onyx/Menu'),
     MenuItem = require('onyx/MenuItem'),
     Scroller = require('enyo/Scroller'),
+    Input = require('onyx/Input'),
+    InputDecorator = require('onyx/InputDecorator'),
     Control = require('enyo/Control'),
     SwipeableItem = require('./widgets/SwipeableItem'),
     groupInfo = require('../util/groupInfo'),
@@ -45,7 +48,8 @@ module.exports = kind({
         onMemberContact: "",
         onAddPeople: "",
         onLeaveGroup: "",
-        onRemoveMember: ""
+        onRemoveMember: "",
+        onRenameGroup: ""
     },
 
     components: [
@@ -61,6 +65,7 @@ module.exports = kind({
         {
             name: "actions", classes: "flex-row group-info-actions", components: [
                 { name: "addButton", kind: Button, content: $L("Add People"), ontap: "addTapped" },
+                { name: "renameButton", kind: Button, content: $L("Rename"), ontap: "renameTapped" },
                 {
                     name: "leaveButton", kind: Button, content: $L("Leave Group"),
                     classes: "onyx-negative", ontap: "leaveTapped"
@@ -72,6 +77,30 @@ module.exports = kind({
             name: "memberMenu", kind: Menu, floating: true, scrolling: false, components: [
                 { name: "chatItem", kind: MenuItem, content: $L("Send Message"), ontap: "chatTapped" },
                 { name: "contactItem", kind: MenuItem, content: $L("Add to Contacts"), ontap: "contactTapped" }
+            ]
+        },
+        {
+            name: "renameDialog", kind: Popup, centered: true, floating: true, modal: true, scrim: true,
+            classes: "group-info-remove", components: [
+                { classes: "group-dialog-title", content: $L("Rename Group") },
+                {
+                    kind: InputDecorator, classes: "group-info-rename-box", components: [
+                        {
+                            name: "renameInput", kind: Input, classes: "group-info-rename-input",
+                            placeholder: $L("Group name"), oninput: "renameChanged", onkeydown: "renameKey"
+                        }
+                    ]
+                },
+                {
+                    classes: "flex-row", components: [
+                        { kind: Button, content: $L("Cancel"), ontap: "renameCancelled" },
+                        { classes: "flex-auto" },
+                        {
+                            name: "renameConfirm", kind: Button, content: $L("Rename"),
+                            classes: "onyx-affirmative", ontap: "renameConfirmed"
+                        }
+                    ]
+                }
             ]
         },
         {
@@ -95,7 +124,7 @@ module.exports = kind({
 
     /**
      * info: { title, serviceHtml, serviceName, members, fromService, loading, canAdd, canLeave,
-     * canRemove }.
+     * canRemove, canRename }.
      */
     open: function (info) {
         this.info = info || {};
@@ -103,7 +132,8 @@ module.exports = kind({
         this.$.service.setContent(this.info.serviceHtml || "");
         this.$.addButton.setShowing(!!this.info.canAdd);
         this.$.leaveButton.setShowing(!!this.info.canLeave);
-        this.$.actions.setShowing(!!(this.info.canAdd || this.info.canLeave));
+        this.$.renameButton.setShowing(!!this.info.canRename);
+        this.$.actions.setShowing(!!(this.info.canAdd || this.info.canLeave || this.info.canRename));
         this.show();
         this.setMembers(this.info.members, this.info.fromService, this.info.loading);
     },
@@ -233,6 +263,59 @@ module.exports = kind({
         return true;
     },
 
+    /** Rename: ask for the new name, the present one filled in and chosen, so typing replaces it. */
+    renameTapped: function () {
+        var name = this.info.title || "";
+        this.$.renameInput.set('value', name);
+        this.$.renameConfirm.setDisabled(true);
+        this.$.renameDialog.show();
+        var input = this.$.renameInput;
+        input.focus();
+        var node = input.hasNode();
+        if (node && node.select) {
+            node.select();
+        }
+        return true;
+    },
+
+    /** The name typed, cleaned as it would be sent; empty when there is none. */
+    renameValue: function () {
+        return String(this.$.renameInput.get('value') || "").replace(/\s+/g, " ").trim();
+    },
+
+    renameChanged: function () {
+        var name = this.renameValue();
+        this.$.renameConfirm.setDisabled(!name || name === (this.info.title || ""));
+        return true;
+    },
+
+    renameKey: function (inSender, inEvent) {
+        if (inEvent && inEvent.keyCode === 13) {
+            inEvent.preventDefault();
+            if (!this.$.renameConfirm.disabled) {
+                this.renameConfirmed();
+            }
+        }
+        return false;
+    },
+
+    renameCancelled: function () {
+        this.$.renameDialog.hide();
+        return true;
+    },
+
+    renameConfirmed: function () {
+        var name = this.renameValue();
+        if (!name || name === (this.info.title || "")) {
+            return true;
+        }
+        this.$.renameDialog.hide();
+        this.info.title = name;
+        this.$.title.setContent(messagingUtils.message.emojifyEscaped(name));
+        this.doRenameGroup({ name: name });
+        return true;
+    },
+
     leaveTapped: function () {
         this.hide();
         this.doLeaveGroup();
@@ -248,12 +331,13 @@ module.exports = kind({
         if (!this.showing) {
             SwipeableItem.cancelPending();
             this.$.removeDialog.hide();
+            this.$.renameDialog.hide();
             this.$.memberMenu.hide();
         }
     },
 
     /**
-     * The back gesture: closes what is on top - a member's menu, the remove question, a row's
+     * The back gesture: closes what is on top - a member's menu, the rename question, the remove question, a row's
      * Delete prompt, else Group Info itself. False when it was not open.
      */
     back: function () {
@@ -262,6 +346,8 @@ module.exports = kind({
         }
         if (this.$.memberMenu.showing) {
             this.$.memberMenu.hide();
+        } else if (this.$.renameDialog.showing) {
+            this.renameCancelled();
         } else if (this.$.removeDialog.showing) {
             this.removeCancelled();
         } else if (this.$.list.getClientControls().some(function (c) { return c.$ && c.$.confirm && c.$.confirm.getShowing(); })) {
