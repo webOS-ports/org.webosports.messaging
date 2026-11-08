@@ -855,6 +855,20 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             var card = sentNow()[0] || {};
             out.card = { text: card.messageText, vcard: card.contactCard && card.contactCard.vcard };
 
+            // Both drawn as a received one is: a chip, not the maps link or the numbers.
+            chat.runQuery(); await wait(400);
+            var bubbles = Array.prototype.slice.call(document.querySelectorAll('[id$="_messageText"]'));
+            var chipIn = function (kind) {
+                return bubbles.filter(function (b) { return b.querySelector('.msg-attachment[data-kind="' + kind + '"]'); });
+            };
+            var placeBubble = chipIn('location').filter(function (b) {
+                return b.querySelector('[data-open="52.3731,4.8925"]'); })[0];
+            var cardBubble = chipIn('contact').filter(function (b) { return /Sam Patel/.test(b.textContent); })[0];
+            out.drawn = {
+                place: !!placeBubble && !/maps\.google|My location/.test(placeBubble.textContent),
+                card: !!cardBubble && !/987/.test(cardBubble.textContent) && !cardBubble.querySelector('[data-open]')
+            };
+
             // A mention: "@Ma" offers Marta; picking her writes her name, sending says who it is.
             var node = chat.$.richText.hasNode();
             chat.$.richText.set('value', 'hi @Ma'); node.value = 'hi @Ma'; node.setSelectionRange(6, 6);
@@ -934,6 +948,7 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.deepEqual(r.place, { text: 'My location\nhttps://maps.google.com/?q=52.3731,4.8925',
             location: { latitude: 52.3731, longitude: 4.8925 }, to: GROUP });
         assert.equal(r.card.text.split('\n')[0], 'Sam Patel');
+        assert.deepEqual(r.drawn, { place: true, card: true }, 'what we send is drawn as what we receive');
         assert.match(r.card.vcard, /^BEGIN:VCARD\r\nVERSION:3\.0\r\nFN:Sam Patel\r\n[\s\S]*TEL;TYPE=CELL:[\s\S]*END:VCARD\r\n$/);
         assert.deepEqual(r.offered, ['Marta Lindqvist']);
         assert.equal(r.mentionText, 'hi @Marta Lindqvist ');

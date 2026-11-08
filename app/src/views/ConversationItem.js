@@ -16,6 +16,7 @@ var kind = require('enyo/kind'),
     messageState = require('../util/messageState'),
     poll = require('../util/poll'),
     launchTargets = require('../util/launchTargets'),
+    sentExtras = require('../util/sentExtras'),
     moment = require('moment'),
     $L = require('enyo/i18n').$L;
 
@@ -239,6 +240,12 @@ module.exports = kind({
             // turns it into a SECOND <br> and doubles every line break.
             inText = inText.replace(/(<br\s*\/?>)[\r\n]+/gi, "$1").replace(/\r|\n|\\r|\\n/g, "<br>");
         } else if (inMessage.folder === FOLDERS.OUTBOX) {
+            // A location or card we sent looks like one received: the chip, not its plain text.
+            var sentHtml = this.buildSentExtras(inMessage);
+            if (sentHtml) {
+                this.$.messageText.setContent(this.buildQuote(inMessage) + sentHtml + this.buildReactions(inMessage));
+                return;
+            }
             // Outgoing text needs sanitizing; incoming was sanitized on the way into the db.
             inText = launchTargets.outgoingHtml(inText, messagingUtils.message.escapeHtml);
         }
@@ -473,6 +480,26 @@ module.exports = kind({
             locations.push({ lat: m[1], lng: m[2] });
         }
         return locations;
+    },
+
+    /**
+     * The chip of a location or contact card we sent (util/sentExtras), as a received one has, or
+     * "". A location opens Maps and keeps its name below the chip. A card is not opened: there is
+     * no file of it for Contacts to read, and it came from our own contacts.
+     */
+    buildSentExtras: function (message) {
+        var escape = messagingUtils.message.escapeHtml;
+        var loc = sentExtras.sentLocation(message);
+        if (loc) {
+            return this.buildLocationChip(loc) + (loc.name ? messagingUtils.message.emojify(escape(loc.name)) : "");
+        }
+        var card = sentExtras.sentContact(message);
+        if (card) {
+            return '<div class="msg-attachment" data-kind="contact">' +
+                '<div class="msg-attachment-icon msg-attachment-contact"></div>' +
+                '<div class="msg-attachment-name">' + messagingUtils.message.emojify(escape(card.name)) + '</div></div>';
+        }
+        return "";
     },
 
     /** A tappable location pin chip; data-open carries "lat,lng" for the Maps app. */
