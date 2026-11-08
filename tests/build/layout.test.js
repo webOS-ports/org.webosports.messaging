@@ -1056,9 +1056,12 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             mockDb.presenceCalls = [];
             mockDb.launches = [];
             var info = chat.$.groupInfo, out = {};
+            // A row's name and address; a swiping row also holds its hidden Delete and Cancel.
             var rows = function () {
                 return info.$.list.getClientControls().map(function (c) {
-                    return c.hasNode() ? c.hasNode().textContent : '';
+                    var n = c.hasNode();
+                    return n ? [].map.call(n.querySelectorAll('.group-info-member-name, .group-info-member-address'),
+                        function (e) { return e.textContent; }).join('') : '';
                 });
             };
             var fits = function (c) {
@@ -1151,6 +1154,89 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.deepEqual(r.fallback, { count: 'Who has written here',
             rows: ['Marta Lindqvist+46701234567', 'Mum+15015550142'] });
         assert.equal(r.closed, false);
+    });
+
+    // Group Info with a big group: the sheet fits the window and its list scrolls inside it; a
+    // member swiped shows Delete and Cancel, Delete asks once more, and Remove has the transport
+    // take them out (removeFromGroup) and drops them from the list. Who has written - the list
+    // while the transport gives none - does not swipe.
+    it('fits a big group in Group Info, and swipes a member out after asking', async function () {
+        /* global require, innerHeight, innerWidth */
+        var page = async function () {
+            var $ = require('enyo/dispatcher').$, mockDb = require('src/data/mockDb');
+            var main = $.app_mainView, chat = $.app_mainView_chatView_conversationList;
+            var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+            var GROUP = '120363041234567890@g.us';
+            var thread = null;
+            $.app_mainView_messaging_threadList.collection.forEach(function (m) {
+                if (m.attributes._id === 'thread-family') { thread = m.attributes; }
+            });
+            main.selectThread(null, thread);
+            for (var i = 0; i < 20 && !(chat.chatThread && chat.chatThread._id === 'thread-family' && chat.messages.length); i++) { await wait(100); }
+            var keep = mockDb.chatMembers[GROUP];
+            var many = JSON.parse(JSON.stringify(keep));
+            for (var k = 0; k < 30; k++) {
+                many.members.push({ address: '+3161111' + (1000 + k), name: 'Member number ' + k + ' with a long name to cut short' });
+            }
+            mockDb.chatMembers[GROUP] = many;
+            chat._chatMembers = null;
+            mockDb.imCommands = [];
+            var info = chat.$.groupInfo, out = {};
+            var box = function (n) { var b = n.getBoundingClientRect(); return b; };
+            chat.handleHeaderTap(); await wait(300);
+            var b = box(info.hasNode()), sc = info.$.scroller.hasNode();
+            out.fits = b.left >= 0 && b.top >= 0 && b.right <= innerWidth && b.bottom <= innerHeight;
+            out.wide = b.width >= Math.min(innerWidth - 24, 480) - 1;
+            out.scrolls = sc.scrollHeight > sc.clientHeight + 100;
+            out.rowsInside = info.$.list.getClientControls().slice(0, 3).every(function (c) {
+                var r = box(c.hasNode());
+                return r.left >= b.left && r.right <= b.right;
+            });
+            out.doneOnScreen = box(info.$.actions.hasNode()).bottom <= innerHeight;
+            var rows = info.$.list.getClientControls();
+            var ben = rows.filter(function (c) { return /Ben Carter/.test(c.hasNode().textContent); })[0];
+            out.swipeable = !!(ben && ben.swipeable && ben.$.confirm);
+            ben.showConfirm(); await wait(50);
+            out.prompt = [ben.$.cancelButton.getContent(), ben.$.confirmButton.getContent(), ben.$.confirm.getShowing()];
+            ben.confirmTapped(ben.$.confirmButton, { preventDefault: function () {} }); await wait(100);
+            out.asked = info.$.removeDialog.getShowing() && info.$.removeMessage.hasNode().textContent;
+            out.sentBeforeYes = mockDb.imCommands.length;
+            info.removeCancelled(); await wait(50);
+            out.cancelKeeps = info.$.list.getClientControls().length === rows.length && mockDb.imCommands.length === 0;
+            ben = info.$.list.getClientControls().filter(function (c) { return /Ben Carter/.test(c.hasNode().textContent); })[0];
+            ben.showConfirm(); await wait(50);
+            ben.confirmTapped(ben.$.confirmButton, { preventDefault: function () {} }); await wait(100);
+            info.removeConfirmed(); await wait(20);
+            out.sent = mockDb.imCommands.map(function (c) { return { command: c.command, to: c.targetUsername, members: c.params.members }; });
+            out.gone = !info.$.list.getClientControls().some(function (c) { return /Ben Carter/.test(c.hasNode().textContent); });
+            out.count = info.$.count.getContent();
+            info.doneTapped();
+
+            // Who has written: no swipe.
+            delete mockDb.chatMembers[GROUP];
+            chat._chatMembers = null;
+            chat.handleHeaderTap(); await wait(300);
+            out.writersSwipe = info.$.list.getClientControls().some(function (c) { return !!c.swipeable; });
+            info.doneTapped();
+            mockDb.chatMembers[GROUP] = keep;
+            chat._chatMembers = null;
+            return out;
+        };
+        var r = await session.evaluate('(' + page.toString() + ')()');
+        assert.equal(r.fits, true, 'the sheet fits the window');
+        assert.equal(r.wide, true, 'the sheet takes the window less a margin');
+        assert.equal(r.scrolls, true, 'the members scroll inside it');
+        assert.equal(r.rowsInside, true, 'the rows stay inside the sheet');
+        assert.equal(r.doneOnScreen, true, 'its buttons stay on screen');
+        assert.equal(r.swipeable, true, 'a member the transport listed swipes');
+        assert.deepEqual(r.prompt, ['Cancel', 'Delete', true]);
+        assert.equal(r.asked, 'Remove Ben Carter from Family?');
+        assert.equal(r.sentBeforeYes, 0, 'nothing is sent before Remove');
+        assert.equal(r.cancelKeeps, true, 'Cancel keeps them');
+        assert.deepEqual(r.sent, [{ command: 'removeFromGroup', to: '120363041234567890@g.us', members: '+447700900123' }]);
+        assert.equal(r.gone, true, 'they leave the list');
+        assert.equal(r.count, '32 members');
+        assert.equal(r.writersSwipe, false, 'who has written does not swipe');
     });
 
     it('keeps the composer on screen through a reflow under a popup, and fits the group row and search box', async function () {

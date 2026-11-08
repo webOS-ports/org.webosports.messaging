@@ -28,6 +28,8 @@ var UNIT = "\x1f";
  *   edit, deleteForEveryone   one's own sent messages; editWindowMs is how long after sending
  *                             the service takes an edit (whatsmeow EditWindow), when it has one
  *   groupCreate/Invite/Leave  making a group, adding people to one, leaving it
+ *   groupRemove               taking someone out of a group (purple-combined: whatsmeow
+ *                             UpdateGroupParticipants remove; the service refuses it to a non-admin)
  *   mentions                  "@Name" in a group as a mention of that member
  *   location, contact         sent as the service's own location or contact message
  *   sticker                   a .webp file sent as the service's sticker (purple-combined
@@ -37,7 +39,7 @@ var UNIT = "\x1f";
 var ACTIONS = {
     type_whatsapp: {
         edit: true, editWindowMs: 20 * 60 * 1000, deleteForEveryone: true,
-        groupCreate: true, groupInvite: true, groupLeave: true,
+        groupCreate: true, groupInvite: true, groupLeave: true, groupRemove: true,
         mentions: true, location: true, contact: true, sticker: true
     },
     type_signal: {
@@ -307,6 +309,15 @@ function inviteCommand(kind, serviceName, account, group, members) {
     return command(kind, "inviteToGroup", serviceName, account, group, { members: list.join(UNIT) });
 }
 
+/** members: the addresses of the people to take out of the group. */
+function removeCommand(kind, serviceName, account, group, members) {
+    var list = cleanMembers(members);
+    if (!group || !list.length) {
+        return null;
+    }
+    return command(kind, "removeFromGroup", serviceName, account, group, { members: list.join(UNIT) });
+}
+
 function leaveCommand(kind, serviceName, account, group) {
     if (!group) {
         return null;
@@ -538,6 +549,7 @@ module.exports = {
     memberAddress: memberAddress,
     isOwnAddress: isOwnAddress,
     createGroupCommand: createGroupCommand,
+    removeCommand: removeCommand,
     inviteCommand: inviteCommand,
     leaveCommand: leaveCommand,
     canBlock: canBlock,

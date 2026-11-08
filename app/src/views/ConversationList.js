@@ -360,7 +360,8 @@ module.exports = kind({
         { name: "groupDialog", kind: GroupDialog },
         {
             name: "groupInfo", kind: GroupInfo, onMemberChat: "groupMemberChat",
-            onMemberContact: "groupMemberContact", onAddPeople: "openGroupInvite", onLeaveGroup: "promptLeaveGroup"
+            onMemberContact: "groupMemberContact", onAddPeople: "openGroupInvite", onLeaveGroup: "promptLeaveGroup",
+            onRemoveMember: "groupRemoveMember"
         },
         {
             name: "reactRow", kind: Popup, floating: true, autoDismiss: true,
@@ -3134,7 +3135,8 @@ module.exports = kind({
             serviceHtml: this.withServiceIcon(thread.replyService,
                 transportPicker.serviceNameFor({ serviceName: thread.replyService })),
             members: pick.members, fromService: pick.fromService, loading: true,
-            canAdd: !!this.$.groupAddButton.showing, canLeave: !!this.$.groupLeaveButton.showing
+            canAdd: !!this.$.groupAddButton.showing, canLeave: !!this.$.groupLeaveButton.showing,
+            canRemove: this.canRemoveMembers(thread)
         });
         var self = this, threadId = thread._id;
         var asked = this.loadChatMembers(function () {
@@ -3146,6 +3148,48 @@ module.exports = kind({
         if (!asked) {
             this.$.groupInfo.setMembers(pick.members, pick.fromService, false);
         }
+    },
+
+    /** Whether Group Info offers to take members out: a group we are in, on a service that can. */
+    canRemoveMembers: function (thread) {
+        var actions = thread ? chatActions.actionsFor(thread.replyService, appState.accountService) : {};
+        return !!(this.$.groupLeaveButton.showing && actions.groupRemove);
+    },
+
+    /**
+     * A member swiped and confirmed in Group Info: the transport takes them out (removeFromGroup).
+     * They leave the list at once; the transport is asked again shortly, so one the service kept
+     * (we are no admin, and the plugin says so in the chat) comes back.
+     */
+    groupRemoveMember: function (inSender, inEvent) {
+        var member = inEvent && inEvent.member, thread = this.chatThread;
+        if (!member || !thread) {
+            return true;
+        }
+        var sent = this.sendImCommand(thread.replyService, function (kind, account) {
+            return chatActions.removeCommand(kind, thread.replyService, account, thread.replyAddress, [member.id]);
+        });
+        if (!sent) {
+            this.showError($L("Unable to remove"), $L("No account can remove members from this group."));
+            return true;
+        }
+        var known = this._chatMembers;
+        if (known && known.threadId === thread._id) {
+            known.members = known.members.filter(function (m) { return m.id !== member.id; });
+        }
+        var pick = this.chatMembersPick();
+        this.$.groupInfo.setMembers(pick.members, pick.fromService, false);
+        var self = this, threadId = thread._id;
+        clearTimeout(this._membersRecheck);
+        this._membersRecheck = setTimeout(function () {
+            if (self.$.groupInfo.showing && self.chatThread && self.chatThread._id === threadId) {
+                self.loadChatMembers(function () {
+                    var now = self.chatMembersPick();
+                    self.$.groupInfo.setMembers(now.members, now.fromService, false);
+                });
+            }
+        }, mockDb.enabled ? 50 : 4000);
+        return true;
     },
 
     /** A member tapped in Group Info: a 1:1 with them, as a tapped group sender opens one. */

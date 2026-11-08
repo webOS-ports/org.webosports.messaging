@@ -216,6 +216,18 @@ describe('chatActions: the commands, as the transport reads them', function () {
         assert.deepEqual(leave.params, {});
         assert.equal(ca.leaveCommand(KIND, 'type_whatsapp', me, ''), null);
     });
+    it('someone is taken out of a group, only on a service that can', function () {
+        var out = ca.removeCommand(KIND, 'type_whatsapp', me, GROUP, ['+447700900123', ' +447700900123 ', '1501@lid']);
+        assert.equal(out.command, 'removeFromGroup');
+        assert.equal(out.targetUsername, GROUP);
+        assert.equal(out.params.members, '+447700900123\x1f1501@lid', 'each once, joined as invite joins them');
+        assert.equal(ca.removeCommand(KIND, 'type_whatsapp', me, GROUP, ['']), null);
+        assert.equal(ca.removeCommand(KIND, 'type_whatsapp', me, '', ['+447700900123']), null);
+        assert.equal(ca.actionsFor('type_whatsapp').groupRemove, true);
+        ['type_signal', 'type_telegram', 'type_discord', 'type_matrix'].forEach(function (s) {
+            assert.ok(!ca.actionsFor(s).groupRemove, s + ' has no remove in its plugin');
+        });
+    });
 });
 
 describe('chatActions: blocking, from the chat list', function () {

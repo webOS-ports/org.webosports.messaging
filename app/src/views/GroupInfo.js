@@ -5,7 +5,12 @@
  *
  * Who is in it comes from the conversation list (util/groupInfo): the transport's member list, or
  * while it has none, who has written in the chat, which the line under the title then says. A tap
- * on a member offers a 1:1 chat with them and making a contact of them.
+ * on a member offers a 1:1 chat with them and making a contact of them. Where the service can take
+ * someone out of a group (canRemove) and the transport said who is in it, a member's row swipes
+ * as the chat list's rows do, to Delete and Cancel; Delete asks once more before onRemoveMember.
+ *
+ * The sheet takes the window less a margin, the member list what is left of its height, so the
+ * list scrolls inside it however many there are; it is placed again once they are in.
  *
  * Drawn as the app's other dialogs: a light Enyo 1.0 sheet (palm-chrome.less), the rows as the
  * light popup menus' rows.
@@ -17,6 +22,8 @@ var kind = require('enyo/kind'),
     Menu = require('onyx/Menu'),
     MenuItem = require('onyx/MenuItem'),
     Scroller = require('enyo/Scroller'),
+    Control = require('enyo/Control'),
+    SwipeableItem = require('./widgets/SwipeableItem'),
     groupInfo = require('../util/groupInfo'),
     messagingUtils = require('../util/messagingUtils'),
     $L = require('enyo/i18n').$L;
@@ -37,7 +44,8 @@ module.exports = kind({
         onMemberChat: "",
         onMemberContact: "",
         onAddPeople: "",
-        onLeaveGroup: ""
+        onLeaveGroup: "",
+        onRemoveMember: ""
     },
 
     components: [
@@ -65,11 +73,29 @@ module.exports = kind({
                 { name: "chatItem", kind: MenuItem, content: $L("Send Message"), ontap: "chatTapped" },
                 { name: "contactItem", kind: MenuItem, content: $L("Add to Contacts"), ontap: "contactTapped" }
             ]
+        },
+        {
+            name: "removeDialog", kind: Popup, centered: true, floating: true, modal: true, scrim: true,
+            classes: "group-info-remove", components: [
+                { name: "removeTitle", classes: "group-dialog-title", content: $L("Remove Member") },
+                { name: "removeMessage", classes: "group-info-remove-message", allowHtml: true },
+                {
+                    classes: "flex-row", components: [
+                        { kind: Button, content: $L("Cancel"), ontap: "removeCancelled" },
+                        { classes: "flex-auto" },
+                        {
+                            name: "removeButton", kind: Button, content: $L("Remove"),
+                            classes: "onyx-negative", ontap: "removeConfirmed"
+                        }
+                    ]
+                }
+            ]
         }
     ],
 
     /**
-     * info: { title, serviceHtml, serviceName, members, fromService, loading, canAdd, canLeave }.
+     * info: { title, serviceHtml, serviceName, members, fromService, loading, canAdd, canLeave,
+     * canRemove }.
      */
     open: function (info) {
         this.info = info || {};
@@ -98,9 +124,13 @@ module.exports = kind({
         this.$.count.setContent(count);
         this.$.list.destroyClientControls();
         var shown = Math.min(n, MAX_ROWS);
+        // Only who the transport says is in it can be taken out; who has written may have left.
+        var removable = !!(this.info && this.info.canRemove && this.fromService);
         for (var i = 0; i < shown; i++) {
             var m = this.members[i], address = groupInfo.shownAddress(m);
             this.$.list.createComponent({
+                kind: removable ? SwipeableItem : Control, swipeable: removable,
+                onConfirm: "removeSwiped",
                 classes: "group-info-member", memberIndex: i, ontap: "memberTapped", components: [
                     {
                         classes: "group-info-member-name", allowHtml: true,
@@ -121,13 +151,55 @@ module.exports = kind({
         if (this.hasNode()) {
             this.$.list.render();
             this.$.scroller.scrollToTop();
+            if (this.showing) {
+                this.updatePosition();   // its height changed with the rows: centre it again
+            }
         }
     },
 
+    /** The member row a control is in, or null. */
+    rowOf: function (control) {
+        while (control && control.memberIndex === undefined) {
+            control = control.parent;
+        }
+        return control || null;
+    },
+
+    /** A member swiped to Delete: ask once more, naming them and the group. */
+    removeSwiped: function (inSender) {
+        var row = this.rowOf(inSender);
+        this.removing = row ? this.members[row.memberIndex] : null;
+        if (!this.removing) {
+            return true;
+        }
+        this.$.removeMessage.setContent($L("Remove {name} from {group}?")
+            .replace("{name}", "<b>" + messagingUtils.message.emojifyEscaped(this.removing.name) + "</b>")
+            .replace("{group}", messagingUtils.message.emojifyEscaped(this.info.title || $L("this group"))));
+        this.$.removeDialog.show();
+        return true;
+    },
+
+    removeCancelled: function () {
+        this.$.removeDialog.hide();
+        this.removing = null;
+        return true;
+    },
+
+    removeConfirmed: function () {
+        this.$.removeDialog.hide();
+        var member = this.removing;
+        this.removing = null;
+        if (member) {
+            this.doRemoveMember({ member: member });
+        }
+        return true;
+    },
+
     memberTapped: function (inSender, inEvent) {
-        var row = inSender;
-        while (row && row.memberIndex === undefined) {
-            row = row.parent;
+        var row = this.rowOf(inSender);
+        // A tap on a row's Delete or Cancel is the prompt's, not the member's.
+        if (row && row.$ && row.$.confirm && row.$.confirm.getShowing()) {
+            return true;
         }
         this.member = row ? this.members[row.memberIndex] : null;
         if (!this.member) {
@@ -165,6 +237,15 @@ module.exports = kind({
         this.hide();
         this.doLeaveGroup();
         return true;
+    },
+
+    /** Closed with a row's Delete showing: that prompt goes too, unanswered. */
+    showingChanged: function () {
+        this.inherited(arguments);
+        if (!this.showing) {
+            SwipeableItem.cancelPending();
+            this.$.removeDialog.hide();
+        }
     },
 
     doneTapped: function () {

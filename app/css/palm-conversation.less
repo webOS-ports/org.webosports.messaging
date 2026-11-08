@@ -1162,7 +1162,7 @@ picked as chips, and the contacts to pick from in a list that scrolls inside the
 .group-dialog,
 .contact-picker-popup {
   width: 22em;
-  max-width: calc(100vw - 32px);
+  max-width: ~"calc(100vw - 32px)";
   box-sizing: border-box;
 }
 .group-dialog-title {
@@ -1190,10 +1190,27 @@ picked as chips, and the contacts to pick from in a list that scrolls inside the
 }
 /* Group Info (GroupInfo.js): the group's name and service, then its members as the light popup
    menus' rows are drawn (palm-chrome.less), then its actions and Done. */
-.group-info {
-  width: 22em;
-  max-width: calc(100vw - 32px);
+.onyx-popup.group-info {
+  /* The window less a margin, so names and numbers have room; the list takes what height is left
+     and scrolls inside the sheet however many members there are. */
+  width: ~"calc(100vw - 24px)";
+  max-width: 480px;
+  max-height: ~"calc(100vh - 24px)";
+  padding: 10px;
   box-sizing: border-box;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-direction: column;
+  flex-direction: column;
+}
+.group-info > * {
+  -webkit-flex: none;
+  flex: none;
+}
+.group-info > .group-info-members {
+  -webkit-flex: 1 1 auto;
+  flex: 1 1 auto;
+  min-height: 64px;
 }
 .group-info-title {
   margin-bottom: 0.25rem;
@@ -1210,16 +1227,24 @@ picked as chips, and the contacts to pick from in a list that scrolls inside the
   margin-bottom: 0.5rem;
 }
 .group-info-members {
-  max-height: 45vh;
   margin: 0 -10px 0.75rem;
   background: #d9d9d9;
   border-top: 1px solid rgba(0, 0, 0, 0.2);
   border-bottom: 1px solid rgba(255, 255, 255, 0.5);
 }
 .group-info-member {
-  padding: 8px 16px;
+  box-sizing: border-box;
+  width: 100%;
+  background: #d9d9d9;
   border-top: 1px solid rgba(255, 255, 255, 0.5);
   border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+}
+.group-info-member > .swipeable-item-content,
+.group-info-member:not(.swipeable-item) {
+  padding: 8px 16px;
+}
+.group-info-member > .swipeable-item-content {
+  display: block;
 }
 .group-info-member:active {
   background: -webkit-linear-gradient(top, rgba(218, 235, 251, 0.7), rgba(197, 224, 249, 0.7));
@@ -1239,6 +1264,15 @@ picked as chips, and the contacts to pick from in a list that scrolls inside the
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.onyx-popup.group-info-remove {
+  width: ~"calc(100vw - 48px)";
+  max-width: 22em;
+  box-sizing: border-box;
+}
+.group-info-remove-message {
+  margin: 0.5rem 0 1rem;
+  overflow-wrap: break-word;
 }
 .group-info-more {
   padding: 8px 16px;
@@ -1276,7 +1310,7 @@ picked as chips, and the contacts to pick from in a list that scrolls inside the
    own, the way the bubbles show one received. */
 .sticker-picker-popup {
   width: 22em;
-  max-width: calc(100vw - 32px);
+  max-width: ~"calc(100vw - 32px)";
   box-sizing: border-box;
 }
 .sticker-picker-title {
