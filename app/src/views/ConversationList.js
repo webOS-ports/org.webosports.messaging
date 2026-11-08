@@ -46,6 +46,7 @@ var kind = require('enyo/kind'),
     SearchInput = require('./widgets/SearchInput'),
     forward = require('../util/forward'),
     attachments = require('../util/attachments'),
+    fileCarrier = require('../util/fileCarrier'),
     enyoUtils = require('enyo/utils'),
     messageState = require('../util/messageState'),
     selection = require('../util/selection'),
@@ -1903,6 +1904,12 @@ module.exports = kind({
             this.showError($L("Unable to send"), $L("No account can send to this recipient."));
             return;
         }
+        // Files staged on an IM transport and then the chat switched to SMS: the send would go
+        // out as text and the files would be cleared with the composer. Keep them and say so.
+        if (!extra && fileCarrier.wouldDrop(this.outboundAttachments, selectedTransport.serviceName)) {
+            this.showSmsAttachmentsError();
+            return;
+        }
 
         var resolved = sendAccount(selectedTransport, appState.accountService);
         if (resolved.state === "missing") {
@@ -1982,12 +1989,11 @@ module.exports = kind({
             params.serviceName = "sms";
         }
 
-        // One message per staged file, the text on the first (util/attachments). Only IM
-        // transports can carry an attachment path; SMS/MMS ignores it, so never stamp it on a
-        // text-message record.
+        // One message per staged file, the text on the first (util/attachments). Only a service
+        // that can carry a file gets the path (util/fileCarrier); SMS has no MMS sender yet.
         var parts = extra ? [{ text: params.messageText }] :
             attachments.messages(params.messageText, this.outboundAttachments,
-                !messagingUtils.utils.isTextMessage(params.serviceName));
+                fileCarrier.canCarry(params.serviceName));
         if (!parts.length) {
             return;
         }
@@ -2984,14 +2990,18 @@ module.exports = kind({
         return true;
     },
 
-    /** SMS cannot carry a file (no MMS sending yet); say so instead of dropping it at send. */
+    /** SMS cannot carry a file (no MMS sender, util/fileCarrier); say so before one is picked. */
     attachmentsUnsupported: function () {
         var transport = transportPicker.getSelectedTransport();
-        if (transport && messagingUtils.utils.isTextMessage(transport.serviceName)) {
-            this.showError($L("Attachments"), $L("Attachments can't be sent by SMS. Pick an IM service to send a file."));
+        if (transport && !fileCarrier.canCarry(transport.serviceName)) {
+            this.showSmsAttachmentsError();
             return true;
         }
         return false;
+    },
+
+    showSmsAttachmentsError: function () {
+        this.showError($L("Attachments"), $L("Attachments can't be sent by SMS. Pick an IM service to send a file."));
     },
 
     // The picker sends an array of {fullPath, attachmentType, size, ...}, several when more

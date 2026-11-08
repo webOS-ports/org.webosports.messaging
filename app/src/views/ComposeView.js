@@ -21,6 +21,7 @@ var kind = require('enyo/kind'),
     mockDb = require('../data/mockDb'),
     composerEcho = require('../util/composerEcho'),
     attachments = require('../util/attachments'),
+    fileCarrier = require('../util/fileCarrier'),
     enyoUtils = require('enyo/utils'),
     $L = require('enyo/i18n').$L;
 
@@ -279,8 +280,9 @@ module.exports = kind({
         }
 
         var serviceName = this.serviceNameForRecipient();
-        // No MMS sending yet: an SMS cannot carry the file, so say so rather than drop it.
-        if (this.files.length && messagingUtils.utils.isTextMessage(serviceName)) {
+        // No MMS sender yet (util/fileCarrier): an SMS cannot carry the file, so say so rather
+        // than drop it.
+        if (fileCarrier.wouldDrop(this.files, serviceName)) {
             this.showNotice($L("Attachments"),
                 $L("Attachments can't be sent by SMS. Pick an IM service to send a file."));
             return true;
@@ -399,7 +401,7 @@ module.exports = kind({
         // One message per forwarded file, the text on the first, a millisecond apart to keep the
         // order (util/attachments). An SMS carries none: sendTapped refuses that before here.
         var objects = attachments.messages(this.pendingMessageText, this.pendingFiles,
-            !messagingUtils.utils.isTextMessage(serviceName)).map(function (part, i) {
+            fileCarrier.canCarry(serviceName)).map(function (part, i) {
             var m = enyoUtils.clone(base);
             m.messageText = part.text;
             m.localTimestamp = base.localTimestamp + i;
