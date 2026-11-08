@@ -803,6 +803,15 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             // The group: Add People and Leave Group; no Block Sender.
             out.buttons = { add: chat.$.groupAddButton.getShowing(), leave: chat.$.groupLeaveButton.getShowing(),
                 block: !!chat.$.blockButton, del: !!chat.$.deleteButton };
+            // Add People in the header bar is drawn as a live button, as Group Info's is: not faded.
+            var look = function (c) {
+                var cs = getComputedStyle(c.hasNode());
+                return { opacity: cs.opacity, image: cs.backgroundImage, color: cs.color };
+            };
+            out.addLook = look(chat.$.groupAddButton);
+            out.leaveLook = look(chat.$.groupLeaveButton);
+            if (!chat.$.groupInfo.$.addButton.hasNode()) { chat.$.groupInfo.render(); }
+            out.infoAddLook = look(chat.$.groupInfo.$.addButton);
             chat.openGroupInvite(); await wait(100);
             var dialog = chat.$.groupDialog;
             out.inviteShown = dialog.getShowing();
@@ -1005,6 +1014,10 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.deepEqual(r.pickOwn, { shown: true, all: true, me: true });
         assert.deepEqual(r.pickMixed, { shown: true, all: false, me: true }, 'one of them is theirs');
         assert.deepEqual(r.forMe, { sent: 0, own: false, theirs: false, selecting: false, shown: false });
+        assert.equal(r.addLook.opacity, '1', 'Add People in the header is not faded');
+        assert.equal(r.leaveLook.opacity, '1', 'Leave Group in the header is not faded');
+        assert.deepEqual(r.addLook, r.infoAddLook, 'Add People in the header looks as it does in Group Info');
+        assert.equal(r.leaveLook.color, 'rgb(255, 255, 255)', 'Leave Group stays white on red');
         assert.deepEqual(r.buttons, { add: true, leave: true, block: false, del: false },
             'Block Sender and Delete Conversation are in the chat list now');
         assert.equal(r.inviteShown, true);
@@ -1402,7 +1415,7 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         }
         assert.deepEqual(r.reply, { close: true, send: true }, 'the reply bar\'s X and Send stay where a finger can reach them');
         assert.deepEqual(r.afterMenu, { send: true, views: true });
-        assert.deepEqual(r.row, ['groupAddButton:whole:rgb(243, 243, 243)', 'groupLeaveButton:whole:rgb(197, 22, 22)']);
+        assert.deepEqual(r.row, ['groupAddButton:whole:rgb(225, 225, 225)', 'groupLeaveButton:whole:rgb(197, 22, 22)']);
         assert.equal(r.rowLeft, 8, 'the row starts at its padding');
         assert.deepEqual(r.search, { glassInBox: true, boxInDialog: true });
     });
