@@ -842,6 +842,21 @@ module.exports = {
     /** Where the device is, for sending a location without a location service. */
     location: { latitude: 52.3731, longitude: 4.8925 },
 
+    /**
+     * What the transport's getChatMembers answers for a chat, by its address (util/groupInfo).
+     * The Family group: the two who wrote, Ben who has not, and us, whom the app leaves out.
+     */
+    chatMembers: {
+        "120363041234567890@g.us": {
+            returnValue: true, inChat: true, members: [
+                { address: "+15015550142", name: "Mum" },
+                { address: "+46701234567", name: "Marta Lindqvist" },
+                { address: "+447700900123", name: "Ben Carter" },
+                { address: "+15555550100", name: "+15555550100" }
+            ]
+        }
+    },
+
     /** Evaluate a db8-style query against the fixtures. */
     find: function (query) {
         query = query || {};

@@ -61,6 +61,8 @@ var kind = require('enyo/kind'),
     launchTargets = require('../util/launchTargets'),
     remoteCard = require('../util/remoteCard'),
     GroupDialog = require('./GroupDialog'),
+    GroupInfo = require('./GroupInfo'),
+    groupInfo = require('../util/groupInfo'),
     MsgAddrSearchList = require('./MsgAddrSearchList'),
     Signals = require('enyo/Signals'),
     messagingUtils = require('../util/messagingUtils'),
@@ -356,6 +358,10 @@ module.exports = kind({
             ]
         },
         { name: "groupDialog", kind: GroupDialog },
+        {
+            name: "groupInfo", kind: GroupInfo, onMemberChat: "groupMemberChat",
+            onMemberContact: "groupMemberContact", onAddPeople: "openGroupInvite", onLeaveGroup: "promptLeaveGroup"
+        },
         {
             name: "reactRow", kind: Popup, floating: true, autoDismiss: true,
             classes: "reaction-picker-popup", components: [
@@ -1725,6 +1731,11 @@ module.exports = kind({
     // --- header interaction --------------------------------------------------------------
 
     handleHeaderTap: function () {
+        // A group's header opens Group Info: who is in it, and its Add People and Leave Group.
+        if (groupInfo.isGroupChat(this.chatThread)) {
+            this.openGroupInfo();
+            return true;
+        }
         // Open the linked contact where there is one; otherwise there is nothing to show.
         if (this.chatThread && this.chatThread.personId) {
             this.$.launchApp.send({
@@ -2546,7 +2557,8 @@ module.exports = kind({
     dismissPopups: function () {
         // A delete prompt left open on a row goes too: the row it sits on is moving away.
         SwipeableItem.cancelPending();
-        var popups = ["reactRow", "messageMenu", "transportMenu", "attachMenu", "mentionMenu", "stickerPicker"];
+        var popups = ["reactRow", "messageMenu", "transportMenu", "attachMenu", "mentionMenu", "stickerPicker",
+            "groupInfo"];
         for (var i = 0; i < popups.length; i++) {
             var popup = this.$[popups[i]];
             if (popup && popup.showing) {
@@ -3052,9 +3064,113 @@ module.exports = kind({
 
     // --- mentions --------------------------------------------------------------------------
 
-    /** The people of this chat one can mention: who has written in it. */
+    /**
+     * The people of this chat, to show in Group Info and to mention: the transport's member list
+     * once it has given one for this chat, else who has written in it (util/groupInfo).
+     */
+    chatMembersPick: function () {
+        var writers = chatActions.groupMembers(this.collection.map(function (m) { return m.attributes; }));
+        var known = this._chatMembers;
+        var thread = this.chatThread;
+        return groupInfo.pick(known && thread && known.threadId === thread._id ? known.members : null, writers);
+    },
+
     chatMembers: function () {
-        return chatActions.groupMembers(this.collection.map(function (m) { return m.attributes; }));
+        return this.chatMembersPick().members;
+    },
+
+    /**
+     * Ask the transport who is in this chat (getChatMembers); done() once it answered, also when
+     * it could not. False, and done() never called, when there is no one to ask (no account). An
+     * answer for a chat no longer open is dropped.
+     */
+    loadChatMembers: function (done) {
+        var thread = this.chatThread;
+        var accountService = appState.accountService;
+        var account = thread && accountService ? accountService.getAccount(thread.replyService) : null;
+        var payload = groupInfo.request(thread, account);
+        if (!payload) {
+            return false;   // nothing to ask: who has written is all there is
+        }
+        var self = this, threadId = thread._id, serviceName = thread.replyService;
+        this._membersLoading = threadId;
+        var finish = function (reply) {
+            if (self._membersLoading === threadId) {
+                self._membersLoading = null;
+            }
+            if (!self.chatThread || self.chatThread._id !== threadId) {
+                return;
+            }
+            self._chatMembers = { threadId: threadId, members: groupInfo.fromReply(reply, account, serviceName) };
+            if (done) {
+                done();
+            }
+        };
+        if (mockDb.enabled) {
+            mockDb.presenceCalls = mockDb.presenceCalls || [];
+            mockDb.presenceCalls.push({ method: "getChatMembers", payload: payload });
+            var reply = mockDb.chatMembers && mockDb.chatMembers[payload.usernameTo];
+            setTimeout(function () { finish(reply || null); }, 0);
+            return true;
+        }
+        // An older transport has no getChatMembers: its error leaves who has written.
+        var request = new ServiceRequest({ service: "luna://com.palm.imlibpurple", method: "getChatMembers" });
+        request.response(function (inSender, inResponse) { finish(inResponse); });
+        request.error(function () { finish(null); });
+        request.go(payload);
+        return true;
+    },
+
+    // --- Group Info ------------------------------------------------------------------------
+
+    openGroupInfo: function () {
+        var thread = this.chatThread;
+        if (!thread) {
+            return;
+        }
+        var pick = this.chatMembersPick();
+        this.$.groupInfo.open({
+            title: thread.displayName || thread.replyAddress,
+            serviceHtml: this.withServiceIcon(thread.replyService,
+                transportPicker.serviceNameFor({ serviceName: thread.replyService })),
+            members: pick.members, fromService: pick.fromService, loading: true,
+            canAdd: !!this.$.groupAddButton.showing, canLeave: !!this.$.groupLeaveButton.showing
+        });
+        var self = this, threadId = thread._id;
+        var asked = this.loadChatMembers(function () {
+            if (self.$.groupInfo.showing && self.chatThread && self.chatThread._id === threadId) {
+                var now = self.chatMembersPick();
+                self.$.groupInfo.setMembers(now.members, now.fromService, false);
+            }
+        });
+        if (!asked) {
+            this.$.groupInfo.setMembers(pick.members, pick.fromService, false);
+        }
+    },
+
+    /** A member tapped in Group Info: a 1:1 with them, as a tapped group sender opens one. */
+    groupMemberChat: function (inSender, inEvent) {
+        var member = inEvent && inEvent.member;
+        if (member && this.chatThread) {
+            this.doSelectSender({ person: groupInfo.chatPerson(member, this.chatThread.replyService) });
+        }
+        return true;
+    },
+
+    /** Contacts offers a new contact for them, or to add them to one there is. */
+    groupMemberContact: function (inSender, inEvent) {
+        var launch = inEvent && inEvent.member && this.chatThread &&
+            groupInfo.contactLaunch(inEvent.member, this.chatThread.replyService);
+        if (!launch) {
+            return true;
+        }
+        if (mockDb.enabled) {
+            mockDb.launches = mockDb.launches || [];
+            mockDb.launches.push(launch);
+            return true;
+        }
+        this.$.launchApp.send(launch);
+        return true;
     },
 
     /** An "@" typed in a group or channel whose service mentions: offer who it may be. */
@@ -3064,6 +3180,13 @@ module.exports = kind({
         var actions = thread ? chatActions.actionsFor(thread.replyService, appState.accountService) : {};
         var inGroup = chatActions.isGroupThread(thread) || !!(thread && thread.channelId);
         var query = (actions.mentions && inGroup && node) ? chatActions.mentionQuery(node.value, node.selectionStart) : null;
+        // The transport's member list for this chat, asked for once, at the first "@".
+        if (query && thread && (!this._chatMembers || this._chatMembers.threadId !== thread._id) &&
+                this._membersLoading !== thread._id) {
+            if (!this.loadChatMembers(this.bindSafely("updateMentionMenu"))) {
+                this._chatMembers = { threadId: thread._id, members: [] };
+            }
+        }
         var members = query ? chatActions.mentionCandidates(this.chatMembers(), query.query) : [];
         this._mentionQuery = query;
         var menu = this.$.mentionMenu;

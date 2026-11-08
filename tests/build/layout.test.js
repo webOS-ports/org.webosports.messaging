@@ -1036,6 +1036,123 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.deepEqual(r.create, cmd('createGroup', '', { name: 'Climbing', members: '+46701234567' }));
     });
 
+    // A6: a tap on a group's header opens Group Info: its name, service and members from the
+    // transport's getChatMembers (mockDb.chatMembers), or who has written while it gives none,
+    // with Add People and Leave Group. A member opens a 1:1 or Contacts.
+    it('opens Group Info from a group header, with the transport\'s members or else who has written', async function () {
+        /* global require, innerHeight */
+        var page = async function () {
+            var $ = require('enyo/dispatcher').$, mockDb = require('src/data/mockDb');
+            var main = $.app_mainView, chat = $.app_mainView_chatView_conversationList;
+            var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+            var GROUP = '120363041234567890@g.us';
+            var thread = null;
+            $.app_mainView_messaging_threadList.collection.forEach(function (m) {
+                if (m.attributes._id === 'thread-family') { thread = m.attributes; }
+            });
+            main.selectThread(null, thread);
+            for (var i = 0; i < 20 && !(chat.chatThread && chat.chatThread._id === 'thread-family' && chat.messages.length); i++) { await wait(100); }
+            chat._chatMembers = null;
+            mockDb.presenceCalls = [];
+            mockDb.launches = [];
+            var info = chat.$.groupInfo, out = {};
+            var rows = function () {
+                return info.$.list.getClientControls().map(function (c) {
+                    return c.hasNode() ? c.hasNode().textContent : '';
+                });
+            };
+            var fits = function (c) {
+                var b = c.hasNode().getBoundingClientRect();
+                return b.left >= 0 && b.top >= 0 && b.right <= innerWidth && b.bottom <= innerHeight && b.width > 200;
+            };
+
+            chat.handleHeaderTap(); await wait(200);
+            out.shown = info.getShowing();
+            out.fits = fits(info);
+            out.title = info.$.title.hasNode().textContent;
+            out.service = info.$.service.hasNode().textContent;
+            out.asked = mockDb.presenceCalls.filter(function (c) { return c.method === 'getChatMembers'; })
+                .map(function (c) { return c.payload; });
+            out.count = info.$.count.getContent();
+            out.rows = rows();
+            out.actions = { add: info.$.addButton.getShowing(), leave: info.$.leaveButton.getShowing() };
+            out.light = getComputedStyle(info.hasNode()).color;
+
+            // A member: Send Message opens a 1:1 with them, as a tapped sender does.
+            var picked = [];
+            var doSelect = chat.doSelectSender;
+            chat.doSelectSender = function (e) { picked.push(e.person); };
+            var ben = info.$.list.getClientControls()[0];
+            info.memberTapped(ben, {}); await wait(100);
+            out.menu = { shown: info.$.memberMenu.getShowing(), contact: info.$.contactItem.getShowing() };
+            info.contactTapped(); await wait(50);
+            out.launch = mockDb.launches[0];
+            info.memberTapped(ben, {}); await wait(100);
+            info.chatTapped(); await wait(50);
+            chat.doSelectSender = doSelect;
+            out.chatWith = picked[0];
+            out.closedOnChat = info.getShowing();
+
+            // The group's own actions.
+            chat.handleHeaderTap(); await wait(200);
+            info.addTapped(); await wait(100);
+            out.invite = { info: info.getShowing(), dialog: chat.$.groupDialog.getShowing() };
+            chat.$.groupDialog.hide();
+            chat.handleHeaderTap(); await wait(200);
+            info.leaveTapped(); await wait(100);
+            out.leave = chat.$.confirmDialog.getShowing() && chat.$.confirmDialogTitle.getContent();
+            chat.$.confirmDialog.hide();
+
+            // @mentions offer the transport's members: Ben has not written here. Asked for at the
+            // first "@", not only by Group Info.
+            chat._chatMembers = null;
+            mockDb.presenceCalls = [];
+            var node = chat.$.richText.hasNode();
+            chat.$.richText.set('value', 'hi @Be'); node.value = 'hi @Be'; node.setSelectionRange(6, 6);
+            chat.composerInput(); await wait(150);
+            out.mentions = chat.$.mentionMenu.getClientControls().map(function (c) { return c.member.name; });
+            out.mentionAsked = mockDb.presenceCalls.filter(function (c) { return c.method === 'getChatMembers'; }).length;
+            chat.$.mentionMenu.hide();
+            chat.$.richText.set('value', ''); node.value = '';
+
+            // A transport that gives no one: who has written.
+            var keep = mockDb.chatMembers[GROUP];
+            delete mockDb.chatMembers[GROUP];
+            chat._chatMembers = null;
+            chat.handleHeaderTap(); await wait(200);
+            out.fallback = { count: info.$.count.getContent(), rows: rows() };
+            info.doneTapped();
+            out.closed = info.getShowing();
+            mockDb.chatMembers[GROUP] = keep;
+            chat._chatMembers = null;
+            return out;
+        };
+        var r = await session.evaluate('(' + page.toString() + ')()');
+        var GROUP = '120363041234567890@g.us';
+        assert.equal(r.shown, true, 'the header opens Group Info');
+        assert.equal(r.fits, true, 'it fits the window');
+        assert.equal(r.title, 'Family');
+        assert.match(r.service, /WhatsApp/);
+        assert.deepEqual(r.asked, [{ serviceName: 'type_whatsapp', username: '+15555550100', usernameTo: GROUP }]);
+        assert.equal(r.count, '3 members', 'we are not one of them');
+        assert.deepEqual(r.rows, ['Ben Carter+447700900123', 'Marta Lindqvist+46701234567', 'Mum+15015550142']);
+        assert.deepEqual(r.actions, { add: true, leave: true });
+        assert.equal(r.light, 'rgb(34, 34, 34)', 'dark text on the light sheet');
+        assert.deepEqual(r.menu, { shown: true, contact: true });
+        assert.deepEqual(r.launch, { id: 'com.palm.app.contacts', params: { launchType: 'newContact', contact: {
+            name: { givenName: 'Ben Carter' }, ims: [{ value: '+447700900123', type: 'type_whatsapp' }],
+            phoneNumbers: [{ value: '+447700900123', type: 'type_mobile' }] } } });
+        assert.deepEqual(r.chatWith, { username: '+447700900123', serviceName: 'type_whatsapp', displayName: 'Ben Carter' });
+        assert.equal(r.closedOnChat, false);
+        assert.deepEqual(r.invite, { info: false, dialog: true }, 'Add People opens the invite dialog');
+        assert.equal(r.leave, 'Leave Group', 'Leave Group asks first');
+        assert.deepEqual(r.mentions, ['Ben Carter']);
+        assert.equal(r.mentionAsked, 1, 'the first "@" asks the transport once');
+        assert.deepEqual(r.fallback, { count: 'Who has written here',
+            rows: ['Marta Lindqvist+46701234567', 'Mum+15015550142'] });
+        assert.equal(r.closed, false);
+    });
+
     it('keeps the composer on screen through a reflow under a popup, and fits the group row and search box', async function () {
         /* global require, innerHeight, innerWidth, getComputedStyle */
         var page = async function () {

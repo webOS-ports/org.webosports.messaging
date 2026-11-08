@@ -1188,6 +1188,75 @@ picked as chips, and the contacts to pick from in a list that scrolls inside the
   background-color: #d3e2f0;
   color: #333;
 }
+/* Group Info (GroupInfo.js): the group's name and service, then its members as the light popup
+   menus' rows are drawn (palm-chrome.less), then its actions and Done. */
+.group-info {
+  width: 22em;
+  max-width: calc(100vw - 32px);
+  box-sizing: border-box;
+}
+.group-info-title {
+  margin-bottom: 0.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.group-info-service {
+  color: #4c4c4c;
+  margin-bottom: 0.25rem;
+}
+.group-info-count {
+  color: #4c4c4c;
+  font-size: 13px;
+  margin-bottom: 0.5rem;
+}
+.group-info-members {
+  max-height: 45vh;
+  margin: 0 -10px 0.75rem;
+  background: #d9d9d9;
+  border-top: 1px solid rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+}
+.group-info-member {
+  padding: 8px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.5);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+}
+.group-info-member:active {
+  background: -webkit-linear-gradient(top, rgba(218, 235, 251, 0.7), rgba(197, 224, 249, 0.7));
+  background: linear-gradient(to bottom, rgba(218, 235, 251, 0.7), rgba(197, 224, 249, 0.7));
+}
+.group-info-member-name {
+  color: #222222;
+  font-size: 16px;
+  line-height: 22px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.group-info-member-address {
+  color: #666666;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.group-info-more {
+  padding: 8px 16px;
+  color: #4c4c4c;
+  font-size: 13px;
+}
+.group-info-actions {
+  gap: 8px;
+  margin-bottom: 0.5rem;
+}
+.group-info-actions > .onyx-button {
+  -webkit-flex: 1 1 auto;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.group-info-done {
+  width: 100%;
+}
 .group-dialog-people,
 .contact-picker-list {
   height: 40vh;
