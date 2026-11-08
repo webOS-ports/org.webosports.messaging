@@ -34,6 +34,24 @@ function isChatServer(server) {
         server.serviceName === "type_telegram");
 }
 
+/** The channels of a chat server (isChatServer), as a lookup from their _id. */
+function chatChannels(channels, servers) {
+    var chatServers = {};
+    for (var s = 0; servers && s < servers.length; s++) {
+        if (servers[s] && servers[s]._id && isChatServer(servers[s])) {
+            chatServers[servers[s]._id] = true;
+        }
+    }
+    var ids = {};
+    for (var i = 0; channels && i < channels.length; i++) {
+        var c = channels[i];
+        if (c && c._id && Object.prototype.hasOwnProperty.call(chatServers, c.serverId)) {
+            ids[c._id] = true;
+        }
+    }
+    return ids;
+}
+
 /**
  * The channels (imchannel records) the Chats list shows, as a lookup from their _id to how it
  * names them: those that deliver while closed, and every Discord group DM and Telegram chat. servers: the imserver
@@ -65,8 +83,10 @@ function deliveredChannels(channels, servers) {
 /**
  * threads without the channel threads, except those of delivered channels, which come as copies
  * carrying their Chats name in channelLabel. Keeps the order; the threads are not changed.
+ * chats: chatChannels - a group's chat is named as the thread is, as its header names it, since
+ * the transport renames the thread when the group is renamed and its channel keeps the old name.
  */
-function chatsThreads(threads, delivered) {
+function chatsThreads(threads, delivered, chats) {
     var out = [];
     for (var i = 0; threads && i < threads.length; i++) {
         var t = threads[i];
@@ -79,11 +99,14 @@ function chatsThreads(threads, delivered) {
                     copy[k] = t[k];
                 }
             }
-            copy.channelLabel = delivered[t.channelId];
+            copy.channelLabel = (chats && Object.prototype.hasOwnProperty.call(chats, t.channelId) && t.displayName) ||
+                delivered[t.channelId];
             out.push(copy);
         }
     }
     return out;
 }
 
-module.exports = { channelLabel: channelLabel, deliveredChannels: deliveredChannels, chatsThreads: chatsThreads };
+module.exports = {
+    channelLabel: channelLabel, chatChannels: chatChannels, deliveredChannels: deliveredChannels, chatsThreads: chatsThreads
+};

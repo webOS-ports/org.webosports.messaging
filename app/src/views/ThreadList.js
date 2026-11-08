@@ -123,6 +123,7 @@ module.exports = kind({
 
         // Channels whose messages arrive while closed are shown among the chats (util/chatsThreads).
         this.deliveredChannels = {};
+        this.chatChannels = {};
         this.allThreads = null;
         this.channels = null;
         this.servers = null;
@@ -176,6 +177,7 @@ module.exports = kind({
 
     refreshDelivered: function () {
         this.deliveredChannels = chatsThreads.deliveredChannels(this.channels, this.servers);
+        this.chatChannels = chatsThreads.chatChannels(this.channels, this.servers);
         if (this.allThreads) {
             this.gotThreads(null, { results: this.allThreads });
         }
@@ -240,7 +242,7 @@ module.exports = kind({
     gotThreads: function (inSender, inEvent) {
         var all = (inEvent && inEvent.results) || [];
         this.allThreads = all;
-        var chats = chatsThreads.chatsThreads(all, this.deliveredChannels);
+        var chats = chatsThreads.chatsThreads(all, this.deliveredChannels, this.chatChannels);
         // Muted chats for the alerts (DashboardManager); a search lists only some of them.
         if (!this.filterString) {
             appState.mutedThreads = chatFlags.mutedIds(chats);

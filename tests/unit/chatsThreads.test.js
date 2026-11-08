@@ -142,3 +142,30 @@ describe('chatsThreads: Telegram groups and channels', function () {
         assert.deepEqual(ct.deliveredChannels(channels, servers), { 'c-tg': 'Family', 'c-tg2': 'chat-42' });
     });
 });
+
+describe('chatsThreads: a renamed group', function () {
+    var servers = [
+        { _id: 's-tg', name: 'Telegram (tdlib)', serviceName: 'type_telegram' },
+        { _id: 's-dc', name: 'LuneOS', serviceName: 'type_discord' }
+    ];
+    var channels = [
+        { _id: 'c-tg', serverId: 's-tg', name: 'chat-1', displayName: 'Old name' },
+        { _id: 'c-tg2', serverId: 's-tg', name: 'chat-2', displayName: 'Only the channel' },
+        { _id: 'c-dc', serverId: 's-dc', name: 'general', background: true }
+    ];
+    var delivered = ct.deliveredChannels(channels, servers);
+    var chats = ct.chatChannels(channels, servers);
+
+    it('knows which channels are chats', function () {
+        assert.deepEqual(chats, { 'c-tg': true, 'c-tg2': true });
+    });
+
+    it('names a group as its thread is named, which follows a rename; a server channel keeps its label', function () {
+        var out = ct.chatsThreads([
+            { _id: 't1', channelId: 'c-tg', displayName: 'New name' },
+            { _id: 't2', channelId: 'c-tg2' },
+            { _id: 't3', channelId: 'c-dc', displayName: 'general' }
+        ], delivered, chats);
+        assert.deepEqual(out.map(function (t) { return t.channelLabel; }), ['New name', 'Only the channel', '# general · LuneOS']);
+    });
+});

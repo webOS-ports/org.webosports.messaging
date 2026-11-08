@@ -525,7 +525,8 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
             var made = ['server-gdm2', 'ch-gdm2', 'thread-gdm2', 'ch-quiet2', 'thread-quiet2'];
             var thread = function (id, channel, server) {
-                return { _id: id, _kind: 'com.palm.chatthread:1', displayName: 'raw-' + id, channelId: channel, serverId: server,
+                // The thread renamed with the group (the transport does), the channel not yet.
+                return { _id: id, _kind: 'com.palm.chatthread:1', displayName: 'Weekend, renamed', channelId: channel, serverId: server,
                     replyAddress: '1100000000000000088', normalizedAddress: '1100000000000000088', replyService: 'type_discord',
                     timestamp: Date.now(), unreadCount: 0, flags: { visible: true } };
             };
@@ -554,7 +555,7 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             }
         };
         var r = await session.evaluate('(' + page.toString() + ')()');
-        assert.deepEqual(r, { 'thread-gdm2': 'Weekend' }, 'the group DM is a chat named as itself; the quiet channel is not');
+        assert.deepEqual(r, { 'thread-gdm2': 'Weekend, renamed' }, 'the group DM is a chat, named as its thread is; the quiet channel is not');
     });
 
     // A Telegram group's chat is first stored as a plain one, and the transport ties it to its
