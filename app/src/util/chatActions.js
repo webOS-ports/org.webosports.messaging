@@ -199,7 +199,9 @@ function pollVoteCommand(kind, account, chat, message, selected) {
     return command(kind, "sendPollVote", message.serviceName, account, chat, {
         pollMessageId: message.serviceMessageId,
         optionNames: (selected || []).join(UNIT),
-        senderJid: senderOf(message)
+        // Who made the poll: the plugin finds its key by it once the poll has left its cache (a
+        // restart). Our own poll (made on the phone) is ours: the account, "+<number>".
+        senderJid: senderOf(message) || (message.folder === "outbox" ? account.username : "")
     });
 }
 

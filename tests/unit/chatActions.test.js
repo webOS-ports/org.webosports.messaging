@@ -183,6 +183,10 @@ describe('chatActions: the commands, as the transport reads them', function () {
             { pollMessageId: 'P1', optionNames: 'Sat\x1fSun', senderJid: '+1501' });
         assert.equal(ca.pollVoteCommand(KIND, me, GROUP, poll, []).params.optionNames, '');
     });
+    it('a vote on our own poll (made on the phone) names us as who made it', function () {
+        var ours = { serviceName: 'type_whatsapp', folder: 'outbox', serviceMessageId: 'P2' };
+        assert.equal(ca.pollVoteCommand(KIND, me, GROUP, ours, ['Sat']).params.senderJid, '+15555550100');
+    });
     it('a group is made with a name and the members\' addresses, each once', function () {
         var c = ca.createGroupCommand(KIND, 'type_whatsapp', me, ' Climbing ',
             ['46701234567@s.whatsapp.net', '', '46701234567@s.whatsapp.net', '1501@s.whatsapp.net']);
