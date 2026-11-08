@@ -6,7 +6,9 @@
  * name a message from them gets here:
  *
  *   request { serviceName, username: <our account>, usernameTo: <the chat: thread.replyAddress> }
- *   reply   { returnValue: true, inChat: bool, members: [ { address, name } ] }
+ *   reply   { returnValue: true, inChat: bool, joining: bool, members: [ { address, name } ] }
+ *           joining: the chat was not open in libpurple and the transport has just opened it;
+ *           its members follow, so the app asks again (askAgain).
  *
  * The plugins fill that list at different times (WhatsApp, Signal and Telegram when the chat is
  * opened in libpurple, Discord for a group DM on opening it and for a server's channel only who
@@ -21,6 +23,18 @@ var chatActions = require('./chatActions');
 /** Whether the chat has members to show: a group, or a channel's chat. */
 function isGroupChat(thread) {
     return !!(thread && (chatActions.isGroupThread(thread) || thread.channelId));
+}
+
+/** How long to wait before asking again, and how many times to ask in all. */
+var ASK_AGAIN_MS = 1000, ASK_AT_MOST = 5;
+
+/**
+ * Whether to ask again: the transport is opening the chat (joining) and gave no one yet, and it
+ * has been asked fewer than ASK_AT_MOST times.
+ */
+function askAgain(reply, asked) {
+    return !!(reply && reply.joining === true && !(reply.members && reply.members.length) &&
+        asked < ASK_AT_MOST);
 }
 
 /** The getChatMembers request for a thread, or null for a chat the transport does not carry. */
@@ -139,6 +153,8 @@ function contactLaunch(member, serviceName) {
 module.exports = {
     isGroupChat: isGroupChat,
     request: request,
+    askAgain: askAgain,
+    ASK_AGAIN_MS: ASK_AGAIN_MS,
     fromReply: fromReply,
     pick: pick,
     shownAddress: shownAddress,

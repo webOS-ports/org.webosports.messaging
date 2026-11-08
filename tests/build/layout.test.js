@@ -1522,6 +1522,44 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.equal(r.signalCan, false);
     });
 
+    // A group libpurple had not opened since the transport started: the transport opens it
+    // (joining) and the app asks again, so Group Info gets the members and they swipe out.
+    it('asks again for the members of a group the transport is opening', async function () {
+        /* global require */
+        var page = async function () {
+            var $ = require('enyo/dispatcher').$, mockDb = require('src/data/mockDb');
+            var main = $.app_mainView, chat = $.app_mainView_chatView_conversationList;
+            var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+            var GROUP = '120363041234567890@g.us';
+            var thread = null;
+            $.app_mainView_messaging_threadList.collection.forEach(function (m) {
+                if (m.attributes._id === 'thread-family') { thread = m.attributes; }
+            });
+            main.selectThread(null, thread);
+            for (var i = 0; i < 20 && !(chat.chatThread && chat.chatThread._id === 'thread-family' && chat.messages.length); i++) { await wait(100); }
+            var keep = mockDb.chatMembers[GROUP];
+            mockDb.chatMembers[GROUP] = [{ returnValue: true, inChat: false, joining: true, members: [] }, keep];
+            chat._chatMembers = null;
+            mockDb.presenceCalls = [];
+            var info = chat.$.groupInfo, out = {};
+            chat.handleHeaderTap(); await wait(200);
+            out.first = info.$.count.getContent();
+            await wait(1500);
+            out.asks = mockDb.presenceCalls.filter(function (c) { return c.method === 'getChatMembers'; }).length;
+            out.count = info.$.count.getContent();
+            out.swipe = info.$.list.getClientControls().every(function (c) { return !!c.swipeable; });
+            info.doneTapped ? info.doneTapped() : info.hide();
+            mockDb.chatMembers[GROUP] = keep;
+            chat._chatMembers = null;
+            return out;
+        };
+        var r = await session.evaluate('(' + page.toString() + ')()');
+        assert.equal(r.first, 'Who has written here', 'who has written, until the members come');
+        assert.equal(r.asks, 2, 'asked once more');
+        assert.match(r.count, /^\d+ members$/);
+        assert.equal(r.swipe, true, 'the members swipe out');
+    });
+
     // A group's own line ("Mum added Marta Lindqvist", sender "system") is italic, with no sender
     // name over it; a member's message is neither.
     it('draws a group\'s own line italic', async function () {

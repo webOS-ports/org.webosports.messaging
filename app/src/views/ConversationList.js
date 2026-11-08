@@ -3135,31 +3135,48 @@ module.exports = kind({
             return false;   // nothing to ask: who has written is all there is
         }
         var self = this, threadId = thread._id, serviceName = thread.replyService;
+        var asked = 0;
         this._membersLoading = threadId;
+        var ask;
         var finish = function (reply) {
+            if (!self.chatThread || self.chatThread._id !== threadId) {
+                if (self._membersLoading === threadId) {
+                    self._membersLoading = null;
+                }
+                return;
+            }
+            // A chat libpurple has not opened since the transport started: it opens it now
+            // (joining) and has its members a moment later, so ask again.
+            if (groupInfo.askAgain(reply, asked)) {
+                setTimeout(ask, groupInfo.ASK_AGAIN_MS);
+                return;
+            }
             if (self._membersLoading === threadId) {
                 self._membersLoading = null;
-            }
-            if (!self.chatThread || self.chatThread._id !== threadId) {
-                return;
             }
             self._chatMembers = { threadId: threadId, members: groupInfo.fromReply(reply, account, serviceName) };
             if (done) {
                 done();
             }
         };
-        if (mockDb.enabled) {
-            mockDb.presenceCalls = mockDb.presenceCalls || [];
-            mockDb.presenceCalls.push({ method: "getChatMembers", payload: payload });
-            var reply = mockDb.chatMembers && mockDb.chatMembers[payload.usernameTo];
-            setTimeout(function () { finish(reply || null); }, 0);
-            return true;
-        }
-        // An older transport has no getChatMembers: its error leaves who has written.
-        var request = new ServiceRequest({ service: "luna://com.palm.imlibpurple", method: "getChatMembers" });
-        request.response(function (inSender, inResponse) { finish(inResponse); });
-        request.error(function () { finish(null); });
-        request.go(payload);
+        ask = function () {
+            asked++;
+            if (mockDb.enabled) {
+                mockDb.presenceCalls = mockDb.presenceCalls || [];
+                mockDb.presenceCalls.push({ method: "getChatMembers", payload: payload });
+                var replies = mockDb.chatMembers && mockDb.chatMembers[payload.usernameTo];
+                // A list of replies is answered one per ask, the last one from then on.
+                var reply = Array.isArray(replies) ? replies[Math.min(asked, replies.length) - 1] : replies;
+                setTimeout(function () { finish(reply || null); }, 0);
+                return;
+            }
+            // An older transport has no getChatMembers: its error leaves who has written.
+            var request = new ServiceRequest({ service: "luna://com.palm.imlibpurple", method: "getChatMembers" });
+            request.response(function (inSender, inResponse) { finish(inResponse); });
+            request.error(function () { finish(null); });
+            request.go(payload);
+        };
+        ask();
         return true;
     },
 

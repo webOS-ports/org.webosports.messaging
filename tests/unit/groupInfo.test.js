@@ -158,3 +158,18 @@ describe('groupInfo: WhatsApp members known by a linked id, and their numbers', 
         assert.equal(l[0].phone, undefined);
     });
 });
+
+describe('groupInfo.askAgain', function () {
+    it('while the transport is opening the chat and gave no one, up to five asks', function () {
+        var joining = { returnValue: true, inChat: false, joining: true, members: [] };
+        assert.equal(gi.askAgain(joining, 1), true);
+        assert.equal(gi.askAgain(joining, 4), true);
+        assert.equal(gi.askAgain(joining, 5), false, 'five asks in all');
+    });
+    it('not once it has members, nor when it is not opening the chat', function () {
+        assert.equal(gi.askAgain({ joining: true, members: [{ address: 'a', name: 'A' }] }, 1), false);
+        assert.equal(gi.askAgain({ inChat: false, members: [] }, 1), false);
+        assert.equal(gi.askAgain({ joining: 'true', members: [] }, 1), false);
+        assert.equal(gi.askAgain(null, 1), false);
+    });
+});
