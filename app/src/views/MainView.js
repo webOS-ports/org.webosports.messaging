@@ -24,6 +24,7 @@ var kind = require('enyo/kind'),
     messagingUtils = require('../util/messagingUtils'),
     appState = require('../util/appState'),
     urlTarget = require('../util/urlTarget'),
+    imageViewer = require('../util/imageViewer'),
     formFactor = require('../util/formFactor'),
     firstUse = require('../util/firstUse'),
     mockDb = require('../data/mockDb'),
@@ -682,6 +683,10 @@ module.exports = kind({
     },
 
     goBack: function () {
+        // A picture full screen sits over everything: back closes it first.
+        if (imageViewer.close()) {
+            return true;
+        }
         // Group Info and its menus sit over the chat: back closes them one at a time first.
         if (this.$.chatView.closeGroupInfo()) {
             return true;

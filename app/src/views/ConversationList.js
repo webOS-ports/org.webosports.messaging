@@ -57,6 +57,8 @@ var kind = require('enyo/kind'),
     chatFlags = require('../util/chatFlags'),
     unreadMarker = require('../util/unreadMarker'),
     chatActions = require('../util/chatActions'),
+    imageViewer = require('../util/imageViewer'),
+    threadPictures = require('../util/threadPictures'),
     deviceLocation = require('../util/deviceLocation'),
     launchTargets = require('../util/launchTargets'),
     sentExtras = require('../util/sentExtras'),
@@ -2397,7 +2399,7 @@ module.exports = kind({
         }
 
         if (attachmentKind === "image") {
-            this.$.launchApp.send({ id: "com.palm.app.photos", params: { target: target } });
+            this.showPicture(target, inEvent.node);
             return true;
         }
 
@@ -2412,6 +2414,46 @@ module.exports = kind({
             });
         }
         return true;
+    },
+
+    /**
+     * A picture tapped in the chat, full screen (util/imageViewer), with the conversation's other
+     * pictures a swipe or the strip away.
+     */
+    showPicture: function (url, node) {
+        var pictures = threadPictures.list(this.messages), self = this;
+        var index = threadPictures.indexOf(pictures, url);
+        if (index < 0) {
+            pictures = [{ url: url }];
+            index = 0;
+        }
+        imageViewer.open(pictures, index, node, function (shown) {
+            self.openPictureElsewhere(shown);
+        }, function (picture) {
+            return self.pictureNode(picture.url);
+        });
+    },
+
+    /** A received picture in Photos; one that is only a link, in the browser. */
+    openPictureElsewhere: function (url) {
+        if (/^file:\/\//i.test(url)) {
+            this.$.launchApp.send({ id: "com.palm.app.photos", params: { target: url } });
+        } else {
+            this.$.openApp.send({ target: url });
+        }
+    },
+
+    /** The picture of url in the chat as drawn now, or null (scrolled out of the list). */
+    pictureNode: function (url) {
+        var root = this.hasNode(), escaped = String(url).replace(/"/g, "%22");
+        var imgs = root ? root.querySelectorAll("img.message-image") : [];
+        for (var i = 0; i < imgs.length; i++) {
+            var src = imgs[i].getAttribute("src");
+            if (src === url || src === escaped) {
+                return imgs[i];
+            }
+        }
+        return null;
     },
 
     /** Fetch a card that came as a link, then open it in Contacts; once fetched, it is not again. */
@@ -2494,6 +2536,13 @@ module.exports = kind({
      * the merge lands, does not revert the tick.
      */
     togglePollOption: function (message, option, max, optionNode) {
+        // A poll stored without its id (before the plug-in kept one for a poll sent from the
+        // phone) can take no vote: say so rather than tick an option nothing is sent for.
+        if (!message.serviceMessageId) {
+            this.showError($L("Can't vote on this poll"),
+                $L("This poll came in without what is needed to send a vote. Vote on it on another device."));
+            return;
+        }
         var current = (message.myPollVote || []).slice();
         var idx = current.indexOf(option);
 

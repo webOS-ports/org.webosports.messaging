@@ -793,6 +793,13 @@ module.exports = kind({
                 }
 
                 var name = (node.nodeName || node.tagName || "").toUpperCase();
+                // A picture opens full screen over the chat (ConversationList.showPicture), a
+                // linked one too, rather than in the browser.
+                if (name === "IMG" && /(?:^|\s)message-image(?:\s|$)/.test(node.className || "")) {
+                    this.cancelNativeNavigation(inEvent);
+                    this.doOpenAttachment({ target: node.getAttribute("src"), kind: "image", node: node });
+                    return true;
+                }
                 var target = node.getAttribute("data-open") ||
                     (name === "A" ? node.getAttribute("href") : null);
                 if (target) {

@@ -1632,6 +1632,121 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.deepEqual(r.member, { style: 'normal', sender: true }, 'a member\'s message');
     });
 
+    // A tap on a picture shows it full screen over the chat, as the chat apps do: a drag sideways
+    // or the strip at the bottom goes to the conversation's other pictures; back, the close
+    // button or a drag down closes it. A poll that came without its id says it takes no vote.
+    it('shows a picture full screen, steps through the others, and closes', async function () {
+        /* global require */
+        var page = async function () {
+            var $ = require('enyo/dispatcher').$, mockDb = require('src/data/mockDb');
+            var main = $.app_mainView, chat = $.app_mainView_chatView_conversationList;
+            var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+            var open = async function (id) {
+                var thread = null;
+                $.app_mainView_messaging_threadList.collection.forEach(function (m) {
+                    if (m.attributes._id === id) { thread = m.attributes; }
+                });
+                main.selectThread(null, thread);
+                for (var i = 0; i < 20 && !(chat.chatThread && chat.chatThread._id === id && chat.messages.length); i++) { await wait(100); }
+                await wait(300);
+            };
+            var out = {};
+            await open('thread-ben');
+            var pier = chat.messages.filter(function (m) { return m._id === 'msg-b1'; })[0];
+            mockDb.merge([{
+                _id: 'msg-b-pic2', _kind: 'com.palm.message:1', conversations: ['thread-ben'], folder: 'inbox',
+                messageText: pier.messageText.replace('pier.jpg', 'lake.jpg'), localTimestamp: pier.localTimestamp + 1000,
+                timestamp: pier.timestamp + 1000, status: 'successful', serviceName: 'type_whatsapp',
+                from: pier.from, flags: { visible: true, read: true }
+            }]);
+            chat.runQuery(); await wait(500);
+            var item = null;
+            chat.$.list.getClientControls().forEach(function (c) {
+                (function walk(k) {
+                    if (item || !k) { return; }
+                    if (k.message && k.message._id === 'msg-b1' && k.$ && k.$.messageText) { item = k; return; }
+                    (k.children || []).forEach(walk);
+                })(c.$ && (c.$.item || c));
+            });
+            var img = item && item.$.messageText.hasNode().querySelector('img.message-image');
+            out.found = !!img;
+            item.messageTapped(item.$.messageText, { target: img, preventDefault: function () {} });
+            var iv = require('src/util/imageViewer'), root = document.querySelector('.image-viewer');
+            await wait(260);
+            var cur = function () { var c = iv.current(); return c && { index: c.index, count: c.count, pic: c.url.replace(/.*\//, '') }; };
+            var big = root.querySelector('.image-viewer-image');
+            out.opened = { fromBubble: iv.current().fromBubble, cur: cur(), shown: getComputedStyle(root).display, covers: root.getBoundingClientRect().width === window.innerWidth,
+                thumbs: root.querySelectorAll('.image-viewer-thumb').length,
+                current: root.querySelector('.image-viewer-thumb-current') && root.querySelector('.image-viewer-thumb-current').getAttribute('data-index'),
+                reactRow: chat.$.reactRow.getShowing(), transform: big.style.transform };
+            // A drag to the left: the next picture.
+            var fire = function (type, x, y, id) {
+                big.dispatchEvent(new PointerEvent(type, { pointerId: id || 1, clientX: x, clientY: y, bubbles: true, cancelable: true, isPrimary: true }));
+            };
+            var W = window.innerWidth, H = window.innerHeight;
+            fire('pointerdown', W * 0.8, H / 2); fire('pointermove', W * 0.6, H / 2 + 3); fire('pointermove', W * 0.2, H / 2 + 5); fire('pointerup', W * 0.2, H / 2 + 5);
+            await wait(400);
+            out.swiped = cur();
+            // A short drag sideways is not enough: it stays.
+            fire('pointerdown', W * 0.5, H / 2); fire('pointermove', W * 0.55, H / 2); await wait(150); fire('pointermove', W * 0.6, H / 2); await wait(150); fire('pointerup', W * 0.6, H / 2);
+            await wait(400);
+            out.nudged = cur();
+            // The strip: back to the first.
+            root.querySelectorAll('.image-viewer-thumb')[0].click();
+            await wait(400);
+            out.strip = cur();
+            // Back closes it, and only it: the chat stays.
+            main.goBack(); await wait(300);
+            out.back = { open: iv.isOpen(), shown: getComputedStyle(root).display, chat: chat.chatThread && chat.chatThread._id };
+            // Again, and the close button.
+            item.messageTapped(item.$.messageText, { target: img, preventDefault: function () {} });
+            await wait(260);
+            root.querySelector('.image-viewer-close').click(); await wait(300);
+            out.closeButton = { open: iv.isOpen(), shown: getComputedStyle(root).display };
+            // Again, and a drag down.
+            item.messageTapped(item.$.messageText, { target: img, preventDefault: function () {} });
+            await wait(400);
+            fire('pointerdown', W / 2, H / 2); fire('pointermove', W / 2 + 2, H / 2 + 60); fire('pointermove', W / 2 + 4, H / 2 + 220); fire('pointerup', W / 2 + 4, H / 2 + 220);
+            await wait(300);
+            out.dragDown = { open: iv.isOpen() };
+            // The open button: the picture to Photos, or a link to the browser.
+            var sent = [];
+            var keep = chat.openPictureElsewhere;
+            chat.openPictureElsewhere = function (u) { sent.push(u.replace(/.*\//, '')); };
+            item.messageTapped(item.$.messageText, { target: img, preventDefault: function () {} });
+            await wait(260);
+            root.querySelector('.image-viewer-open').click(); await wait(50);
+            chat.openPictureElsewhere = keep;
+            out.openElsewhere = { sent: sent, open: iv.isOpen() };
+
+            // A poll with no id.
+            await open('thread-dora');
+            var poll = chat.messages.filter(function (m) { return m._id === 'msg-d2'; })[0];
+            chat.togglePollOption(poll, 'Friday', 1);
+            out.poll = { dialog: chat.$.errorDialog.getShowing(), title: chat.$.errorDialogTitle.getContent(), vote: poll.myPollVote || null };
+            chat.closeErrorDialog && chat.closeErrorDialog();
+            return JSON.stringify(out);
+        };
+        var r = JSON.parse(await session.evaluate('(' + page.toString() + ')()'));
+        assert.ok(r.found, 'the bubble draws the picture');
+        assert.deepEqual(r.opened.cur, { index: 0, count: 2, pic: 'pier.jpg' });
+        assert.equal(r.opened.fromBubble, true, 'it grows out of the picture tapped');
+        assert.equal(r.opened.shown, 'block');
+        assert.ok(r.opened.covers, 'full width');
+        assert.equal(r.opened.thumbs, 2);
+        assert.equal(r.opened.current, '0');
+        assert.equal(r.opened.reactRow, false, 'a tap on a picture opens no reactions');
+        assert.equal(r.opened.transform, 'translate(0px, 0px) scale(1)');
+        assert.deepEqual(r.swiped, { index: 1, count: 2, pic: 'lake.jpg' }, 'a drag to the left');
+        assert.deepEqual(r.nudged, { index: 1, count: 2, pic: 'lake.jpg' }, 'a slow short drag');
+        assert.deepEqual(r.strip, { index: 0, count: 2, pic: 'pier.jpg' }, 'the strip');
+        assert.deepEqual(r.back, { open: false, shown: 'none', chat: 'thread-ben' });
+        assert.deepEqual(r.closeButton, { open: false, shown: 'none' });
+        assert.deepEqual(r.dragDown, { open: false });
+        assert.deepEqual(r.openElsewhere, { sent: ['pier.jpg'], open: false });
+        assert.deepEqual(r.poll, { dialog: true, title: "Can't vote on this poll", vote: null });
+    });
+
     // A message we sent from the phone's WhatsApp comes back as HTML with a mention as
     // "<b>@Name</b>", in the outbox, whose text is drawn as plain: the mention is bold, not tags,
     // and any other tag stays text.

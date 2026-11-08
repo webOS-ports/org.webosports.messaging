@@ -1415,3 +1415,99 @@ picked as chips, and the contacts to pick from in a list that scrolls inside the
   line-height: 15px;
   text-align: center;
 }
+
+/*----------------------
+A picture full screen (util/imageViewer)
+----------------------*/
+.image-viewer {
+  display: none;
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10000;
+  overflow: hidden;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.image-viewer-backdrop {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: #000;
+}
+.image-viewer-image {
+  position: absolute;
+  max-width: none;
+  transform-origin: 50% 50%;
+  will-change: transform;
+  -webkit-user-drag: none;
+}
+.image-viewer-button {
+  position: absolute;
+  top: 12px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 150ms linear;
+  -webkit-tap-highlight-color: transparent;
+}
+.image-viewer-button:active {
+  background: rgba(255, 255, 255, 0.25);
+}
+.image-viewer-close {
+  right: 12px;
+}
+.image-viewer-open {
+  right: 64px;
+}
+.image-viewer-strip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 8px 8px 12px;
+  white-space: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  text-align: center;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0));
+  touch-action: pan-x;
+  transition: opacity 150ms linear;
+  scrollbar-width: none;
+}
+.image-viewer-strip::-webkit-scrollbar {
+  display: none;
+}
+.image-viewer-thumb {
+  display: inline-block;
+  width: 44px;
+  height: 44px;
+  margin: 0 3px;
+  object-fit: cover;
+  border-radius: 6px;
+  opacity: 0.55;
+  border: 2px solid transparent;
+  transition: opacity 120ms linear, transform 120ms ease-out;
+  -webkit-user-drag: none;
+}
+.image-viewer-thumb-current {
+  opacity: 1;
+  border-color: #fff;
+  transform: scale(1.08);
+}
+/* While a picture is dragged away, the buttons and the strip fade with the backdrop. */
+.image-viewer-chrome-hidden .image-viewer-button,
+.image-viewer-chrome-hidden .image-viewer-strip {
+  opacity: 0;
+}
