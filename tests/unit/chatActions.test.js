@@ -73,6 +73,10 @@ describe('chatActions: edit and delete for everyone', function () {
         assert.equal(ca.canEdit(sent({ timestamp: NOW - 20 * 60 * 1000 }), wa, NOW), true, 'at the edge');
         assert.equal(ca.canEdit(sent({ timestamp: NOW - 20 * 60 * 1000 - 1 }), wa, NOW), false);
         assert.equal(ca.canEdit(sent({ timestamp: undefined, localTimestamp: NOW - 1000 }), wa, NOW), true);
+        assert.equal(ca.canEdit(sent({ timestamp: Math.floor((NOW - 60 * 1000) / 1000) }), wa, NOW), true,
+            'a timestamp in seconds, as some transports store our own messages');
+        assert.equal(ca.canEdit(sent({ timestamp: Math.floor((NOW - 21 * 60 * 1000) / 1000) }), wa, NOW), false,
+            'in seconds and past the window');
     });
     it('not someone else\'s, not one still going or failed, not one without an id, not a deleted one', function () {
         assert.equal(ca.canEdit(sent({ folder: 'inbox' }), wa, NOW), false);

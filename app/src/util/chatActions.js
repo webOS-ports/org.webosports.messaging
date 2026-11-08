@@ -91,8 +91,14 @@ function isOwnSent(message) {
         message.serviceMessageId && message.deleted !== true);
 }
 
+/**
+ * When the message was sent, in ms. Some transports store their own messages' timestamp in
+ * seconds (a third of the sent rows on a phone); read as ms, those were sent in 1970 and the
+ * edit window had long passed. No message in ms is older than 1973 (1e11).
+ */
 function sentAt(message) {
-    return Number(message.timestamp || message.localTimestamp || 0);
+    var t = Number(message.timestamp || message.localTimestamp || 0);
+    return t > 0 && t < 1e11 ? t * 1000 : t;
 }
 
 /** Whether one's own message can still be edited: text only, and inside the service's window. */
