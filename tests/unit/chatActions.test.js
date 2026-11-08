@@ -237,7 +237,8 @@ describe('chatActions: the commands, as the transport reads them', function () {
         assert.equal(ca.renameCommand(KIND, 'type_telegram', me, '', 'Trip'), null);
         assert.equal(ca.actionsFor('type_whatsapp').groupRename, true, 'purple-combined 0056');
         assert.equal(ca.actionsFor('type_telegram').groupRename, true, 'tdlib-purple 0036');
-        ['type_discord', 'type_signal', 'type_matrix', 'type_sms'].forEach(function (s) {
+        assert.equal(ca.actionsFor('type_discord').groupRename, true, 'purple-discord 0030');
+        ['type_signal', 'type_matrix', 'type_sms'].forEach(function (s) {
             assert.ok(!ca.actionsFor(s).groupRename, s + ' cannot rename a group');
         });
         ['type_signal', 'type_discord', 'type_matrix'].forEach(function (s) {

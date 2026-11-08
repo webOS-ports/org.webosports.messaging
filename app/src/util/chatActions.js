@@ -33,8 +33,8 @@ var UNIT = "\x1f";
  *                             Left; the service refuses it to a non-admin)
  *   groupRename               giving a group a new name (renameGroup, the transport's
  *                             webos-im-group-rename; purple-combined 0056: whatsmeow SetGroupName,
- *                             tdlib-purple 0036: setChatTitle; the service may refuse it to a
- *                             non-admin)
+ *                             tdlib-purple 0036: setChatTitle, purple-discord 0030: PATCH a group
+ *                             DM's name; the service may refuse it to a non-admin)
  *   mentions                  "@Name" in a group as a mention of that member
  *   location, contact         sent as the service's own location or contact message
  *   sticker                   a .webp file sent as the service's sticker (purple-combined
@@ -58,7 +58,7 @@ var ACTIONS = {
     // Groups are group DMs; a server's channels are not.
     type_discord: {
         edit: true, deleteForEveryone: true,
-        groupCreate: true, groupInvite: true, groupLeave: true, mentions: true
+        groupCreate: true, groupInvite: true, groupLeave: true, groupRename: true, mentions: true
     }
 };
 
