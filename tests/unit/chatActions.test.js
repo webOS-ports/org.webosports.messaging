@@ -45,6 +45,12 @@ describe('chatActions: what a service does', function () {
         assert.equal(dc.edit && dc.deleteForEveryone && dc.groupCreate && dc.groupInvite && dc.groupLeave && dc.mentions, true);
         assert.equal(!!(dc.location || dc.contact || dc.editWindowMs), false);
     });
+    it('only WhatsApp sends a .webp as a sticker', function () {
+        assert.equal(ca.actionsFor('type_whatsapp').sticker, true);
+        ['type_signal', 'type_telegram', 'type_discord', 'type_irc', 'sms'].forEach(function (s) {
+            assert.equal(!!ca.actionsFor(s).sticker, false, s);
+        });
+    });
     it('nothing for a service not listed, and a template says otherwise', function () {
         assert.deepEqual(ca.actionsFor('type_irc'), {});
         assert.deepEqual(ca.actionsFor('sms'), {});

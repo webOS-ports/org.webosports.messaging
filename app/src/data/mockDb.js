@@ -687,6 +687,36 @@ var channels = [
     }
 ];
 
+// --- media index ---------------------------------------------------------------------------
+
+// What mediaindexer has of the device's pictures (com.palm.media.image.file:1): two stickers in
+// app/mock, newest first by mtime (seconds), one gone since it was indexed, a photo, and a synced
+// cloud picture that is no local file. The stickers need a file:// page to be drawn.
+var MOCK_PATH = /^file:\/\//i.test(MOCK_URL) ? decodeURI(MOCK_URL.replace(/^file:\/\//i, "")) : "/mock/";
+var nowSec = Math.floor(now / 1000);
+var images = [
+    {
+        _id: "image-star", _kind: "com.palm.media.image.file:1", type: "local", mimeType: "image/webp",
+        path: MOCK_PATH + "stickers/star.webp", modifiedTime: nowSec - 3600
+    },
+    {
+        _id: "image-heart", _kind: "com.palm.media.image.file:1", type: "local", mimeType: "image/webp",
+        path: MOCK_PATH + "stickers/heart.webp", modifiedTime: nowSec - 7200
+    },
+    {
+        _id: "image-gone", _kind: "com.palm.media.image.file:1", type: "local", mimeType: "image/webp",
+        path: MOCK_PATH + "stickers/gone.webp", modifiedTime: nowSec - 600
+    },
+    {
+        _id: "image-pier", _kind: "com.palm.media.image.file:1", type: "local", mimeType: "image/jpeg",
+        path: MOCK_PATH + "photos/pier.jpg", modifiedTime: nowSec - 60
+    },
+    {
+        _id: "image-cloud", _kind: "com.palm.media.image.file:1", type: "com.palm.pigallery2",
+        path: "/media/internal/.photosApp/cloud/thumb.webp"
+    }
+];
+
 // --- store & query evaluation -------------------------------------------------------------
 
 var store = {
@@ -698,7 +728,8 @@ var store = {
     "com.palm.smsmessage:1": messages,
     "com.palm.imloginstate:1": loginstates,
     "com.palm.imserver:1": servers,
-    "com.palm.imchannel:1": channels
+    "com.palm.imchannel:1": channels,
+    "com.palm.media.image.file:1": images
 };
 
 /**

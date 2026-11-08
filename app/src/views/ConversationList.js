@@ -47,6 +47,7 @@ var kind = require('enyo/kind'),
     forward = require('../util/forward'),
     attachments = require('../util/attachments'),
     fileCarrier = require('../util/fileCarrier'),
+    stickers = require('../util/stickers'),
     enyoUtils = require('enyo/utils'),
     messageState = require('../util/messageState'),
     selection = require('../util/selection'),
@@ -314,10 +315,12 @@ module.exports = kind({
             name: "transportMenu", kind: Menu, floating: true, scrolling: false, onSelect: "transportChosen"
         },
         {
-            // What the paperclip sends: a file, a photo taken now, where we are, or a contact's card.
+            // What the paperclip sends: a file, a photo taken now, a sticker where the service has
+            // them, where we are, or a contact's card.
             name: "attachMenu", kind: Menu, floating: true, scrolling: false, components: [
                 { kind: MenuItem, content: $L("File"), ontap: "openAttachmentPicker" },
                 { name: "takePhotoItem", kind: MenuItem, content: $L("Take Photo"), ontap: "takePhoto" },
+                { name: "stickerMenuItem", kind: MenuItem, content: $L("Sticker"), ontap: "openStickerPicker" },
                 { kind: MenuItem, content: $L("My Location"), ontap: "promptShareLocation" },
                 { kind: MenuItem, content: $L("Contact"), ontap: "openContactPicker" }
             ]
@@ -332,6 +335,24 @@ module.exports = kind({
                     classes: "contact-picker-list", onSelected: "contactPicked"
                 },
                 { kind: Button, content: $L("Cancel"), classes: "contact-picker-cancel", ontap: "closeContactPicker" }
+            ]
+        },
+        {
+            // The stickers on this device (util/stickers), newest first, a tap sends one.
+            name: "stickerPicker", kind: Popup, centered: true, floating: true, modal: true, scrim: true,
+            classes: "sticker-picker-popup", components: [
+                { classes: "sticker-picker-title", content: $L("Stickers") },
+                {
+                    name: "stickerScroller", kind: Scroller, classes: "sticker-picker-scroller",
+                    horizontal: "hidden", touch: true, components: [
+                        { name: "stickerGrid", classes: "sticker-picker-grid" },
+                        {
+                            name: "stickerEmpty", classes: "sticker-picker-empty", showing: false,
+                            content: $L("No stickers on this device yet. A sticker is a .webp file: one you sent or received, or one copied to the device.")
+                        }
+                    ]
+                },
+                { kind: Button, content: $L("Cancel"), classes: "sticker-picker-cancel", ontap: "closeStickerPicker" }
             ]
         },
         { name: "groupDialog", kind: GroupDialog },
@@ -427,6 +448,11 @@ module.exports = kind({
             // The open thread's person, when it came without one; see lookUpThreadPerson.
             name: 'threadPersonFind', kind: LunaService, service: DB_SERVICE, method: 'find',
             onResponse: 'gotThreadPerson', onError: 'serviceErr'
+        },
+        {
+            // The newest pictures in the media index, for the .webp files among them (util/stickers).
+            name: 'stickerFind', kind: LunaService, service: DB_SERVICE, method: 'find',
+            onResponse: 'gotStickerIndex', onError: 'stickerIndexFailed'
         },
         { name: 'dbDelete', kind: LunaService, service: DB_SERVICE, method: 'del', onError: 'serviceErr' },
         // The server of a channel's chat, whose name tells a group (chatActions.isChannelGroup).
@@ -1990,8 +2016,10 @@ module.exports = kind({
         }
 
         // One message per staged file, the text on the first (util/attachments). Only a service
-        // that can carry a file gets the path (util/fileCarrier); SMS has no MMS sender yet.
-        var parts = extra ? [{ text: params.messageText }] :
+        // that can carry a file gets the path (util/fileCarrier); SMS has no MMS sender yet. A
+        // sticker comes as extra.file, alone.
+        var parts = extra ? [{ text: params.messageText,
+            file: (extra.file && fileCarrier.canCarry(params.serviceName)) ? extra.file : null }] :
             attachments.messages(params.messageText, this.outboundAttachments,
                 fileCarrier.canCarry(params.serviceName));
         if (!parts.length) {
@@ -2518,7 +2546,7 @@ module.exports = kind({
     dismissPopups: function () {
         // A delete prompt left open on a row goes too: the row it sits on is moving away.
         SwipeableItem.cancelPending();
-        var popups = ["reactRow", "messageMenu", "transportMenu", "attachMenu", "mentionMenu"];
+        var popups = ["reactRow", "messageMenu", "transportMenu", "attachMenu", "mentionMenu", "stickerPicker"];
         for (var i = 0; i < popups.length; i++) {
             var popup = this.$[popups[i]];
             if (popup && popup.showing) {
@@ -2528,8 +2556,15 @@ module.exports = kind({
         this.closeAttachmentPicker();
     },
 
-    /** Closes the file picker if it is open; true when it was. The back key uses this first. */
+    /**
+     * Closes the file picker, or the sticker picker, if it is open; true when it was. The back
+     * key uses this first.
+     */
     closeAttachmentPicker: function () {
+        if (this.$.stickerPicker.showing) {
+            this.$.stickerPicker.hide();
+            return true;
+        }
         var picker = this.$.attachmentPicker;
         if (!picker || !picker.showing) {
             return false;
@@ -2828,8 +2863,16 @@ module.exports = kind({
     // --- location and contact cards --------------------------------------------------------
 
     openAttachMenu: function () {
+        this.$.stickerMenuItem.setShowing(!!this.sendActions().sticker);
         this.$.attachMenu.requestMenuShow(this, { activator: this.$.attachButton });
         return true;
+    },
+
+    /** What the service a message would go out on now can send besides text. */
+    sendActions: function () {
+        var transport = transportPicker.getSelectedTransport();
+        var service = transport ? transport.serviceName : (this.chatThread && this.chatThread.replyService);
+        return service ? chatActions.actionsFor(service, appState.accountService) : {};
     },
 
     /** Where we are goes only to whom it is meant for: ask first. */
@@ -2918,6 +2961,92 @@ module.exports = kind({
             return true;
         }
         this.sendMessage({ text: chatActions.contactText(contact), fields: { contactCard: card } });
+        return true;
+    },
+
+    // --- stickers --------------------------------------------------------------------------
+
+    /**
+     * The stickers this chat has, at once, and those in the media index as soon as db8 answers.
+     * Off the device the mock store stands in for the index.
+     */
+    openStickerPicker: function () {
+        if (!this.chatThread) {
+            return true;
+        }
+        this._stickersFromIndex = null;   // not answered yet: "no stickers" would be early
+        this.renderStickers();
+        this.$.stickerPicker.show();
+        var query = stickers.indexQuery();
+        if (mockDb.enabled) {
+            setTimeout(this.gotStickerIndex.bind(this, null, mockDb.find(query)), 0);
+        } else {
+            this.$.stickerFind.send({ query: query });
+        }
+        return true;
+    },
+
+    gotStickerIndex: function (inSender, inResponse) {
+        if (!this.$.stickerPicker.showing) {
+            return true;
+        }
+        this._stickersFromIndex = stickers.fromIndex(inResponse && inResponse.results);
+        this.renderStickers();
+        return true;
+    },
+
+    /** No index to read (no mediaindexer, no grant): the chat's own stickers are still there. */
+    stickerIndexFailed: function (inSender, inError) {
+        this.warn("sticker index:", inError && (inError.errorText || inError));
+        this._stickersFromIndex = [];
+        if (this.$.stickerPicker.showing) {
+            this.renderStickers();
+        }
+        return true;
+    },
+
+    renderStickers: function () {
+        var messages = this.collection.map(function (m) { return m.attributes; });
+        var list = stickers.merge([stickers.fromMessages(messages), this._stickersFromIndex || []]);
+        var grid = this.$.stickerGrid;
+        grid.destroyClientControls();
+        for (var i = 0; i < list.length; i++) {
+            grid.createComponent({
+                classes: "sticker-picker-cell", stickerPath: list[i].path, ontap: "stickerPicked",
+                components: [{
+                    kind: Image, classes: "sticker-picker-image", src: stickers.src(list[i].path),
+                    onerror: "stickerImageFailed"
+                }]
+            }, { owner: this });
+        }
+        this.$.stickerEmpty.setShowing(!list.length && !!this._stickersFromIndex);
+        if (grid.hasNode()) {
+            grid.render();
+        }
+    },
+
+    /** A file gone since it was sent or indexed is not offered. */
+    stickerImageFailed: function (inSender) {
+        if (inSender.parent) {
+            inSender.parent.hide();
+        }
+        return true;
+    },
+
+    /** Goes at once, alone: whatever is typed stays in the composer. */
+    stickerPicked: function (inSender) {
+        var cell = inSender && inSender.stickerPath ? inSender : inSender && inSender.parent;
+        var path = cell && cell.stickerPath;
+        this.$.stickerPicker.hide();
+        if (!path) {
+            return true;
+        }
+        this.sendMessage({ text: "", file: stickers.asAttachment(path) });
+        return true;
+    },
+
+    closeStickerPicker: function () {
+        this.$.stickerPicker.hide();
         return true;
     },
 

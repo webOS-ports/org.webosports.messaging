@@ -30,13 +30,15 @@ var UNIT = "\x1f";
  *   groupCreate/Invite/Leave  making a group, adding people to one, leaving it
  *   mentions                  "@Name" in a group as a mention of that member
  *   location, contact         sent as the service's own location or contact message
+ *   sticker                   a .webp file sent as the service's sticker (purple-combined
+ *                             send_file.go sends a WebP file as a WhatsApp StickerMessage)
  * What is not listed is not done.
  */
 var ACTIONS = {
     type_whatsapp: {
         edit: true, editWindowMs: 20 * 60 * 1000, deleteForEveryone: true,
         groupCreate: true, groupInvite: true, groupLeave: true,
-        mentions: true, location: true, contact: true
+        mentions: true, location: true, contact: true, sticker: true
     },
     type_signal: {
         edit: true, deleteForEveryone: true, mentions: true, contact: true

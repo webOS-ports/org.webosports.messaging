@@ -1202,6 +1202,52 @@ picked as chips, and the contacts to pick from in a list that scrolls inside the
   width: 100%;
 }
 
+/* The stickers to send (ConversationList.openStickerPicker): a title, a grid that scrolls inside
+   the popup, and Cancel, as the contact picker. A sticker is drawn whole, on no background of its
+   own, the way the bubbles show one received. */
+.sticker-picker-popup {
+  width: 22em;
+  max-width: calc(100vw - 32px);
+  box-sizing: border-box;
+}
+.sticker-picker-title {
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+.sticker-picker-scroller {
+  height: 40vh;
+  margin-bottom: 0.75rem;
+}
+.sticker-picker-grid {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-wrap: wrap;
+  flex-wrap: wrap;
+}
+.sticker-picker-cell {
+  width: 25%;
+  padding: 4px;
+  box-sizing: border-box;
+}
+.sticker-picker-cell:active {
+  background-color: rgba(47, 111, 179, 0.22);
+  border-radius: 6px;
+}
+.sticker-picker-image {
+  display: block;
+  width: 100%;
+  height: 72px;
+  object-fit: contain;
+}
+.sticker-picker-empty {
+  padding: 1rem 0.5rem;
+  color: #666;
+  text-align: center;
+}
+.sticker-picker-cancel {
+  width: 100%;
+}
+
 /* "N unread messages" above the first message unread when the chat opened (ConversationRow). */
 .conversation-unread-line {
   margin: 6px 0;

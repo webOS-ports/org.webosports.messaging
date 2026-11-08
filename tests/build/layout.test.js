@@ -1106,6 +1106,124 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.deepEqual(r.search, { glassInBox: true, boxInDialog: true });
     });
 
+    // A3: WhatsApp sends a .webp as a sticker (purple-combined send_file.go). The paperclip offers
+    // Sticker there, and the picker shows the .webp files the media index and the chat know of,
+    // newest first, each once, a file gone since left out; a tap sends it alone.
+    it('offers WhatsApp stickers from the paperclip, newest first, and sends the one tapped', async function () {
+        /* global require, innerHeight, innerWidth, getComputedStyle */
+        var page = async function (dir) {
+            var $ = require('enyo/dispatcher').$, mockDb = require('src/data/mockDb');
+            var main = $.app_mainView, chat = $.app_mainView_chatView_conversationList;
+            var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+            var open = async function (id) {
+                var thread = null;
+                $.app_mainView_messaging_threadList.collection.forEach(function (m) {
+                    if (m.attributes._id === id) { thread = m.attributes; }
+                });
+                main.selectThread(null, JSON.parse(JSON.stringify(thread)));
+                for (var i = 0; i < 30 && !(chat.chatThread && chat.chatThread._id === id && chat.messages.length); i++) { await wait(100); }
+                await wait(200);
+            };
+            var offers = function () {
+                chat.openAttachMenu();
+                var shown = chat.$.stickerMenuItem.getShowing();
+                chat.$.attachMenu.hide();
+                return shown;
+            };
+            var name = function (p) { return p.slice(p.lastIndexOf('/') + 1); };
+            var out = {};
+            var before = mockDb.store['com.palm.message:1'].map(function (m) { return m._id; });
+            // The index's stickers, where the test put their files (a production pack has no mock/).
+            var images = mockDb.store['com.palm.media.image.file:1'], paths = {};
+            images.forEach(function (r) { paths[r._id] = r.path; r.path = r.path.replace(/^.*\/stickers\//, dir + '/'); });
+            var star = dir + '/star.webp', heart = dir + '/heart.webp';
+
+            await open('thread-anna');
+            out.telegram = offers();
+            await open('thread-family');
+            out.whatsapp = offers();
+
+            // Nothing in the index nor the chat: said so, once the index has answered.
+            mockDb.store['com.palm.media.image.file:1'] = [];
+            chat.openStickerPicker();
+            out.none = { asking: chat.$.stickerEmpty.getShowing() };
+            await wait(200);
+            out.none.answered = chat.$.stickerEmpty.getShowing();
+            out.none.cells = chat.$.stickerGrid.getClientControls().length;
+            chat.closeStickerPicker();
+            mockDb.store['com.palm.media.image.file:1'] = images;
+
+            // Heart was sent from this chat a moment ago: it comes first, once. Star came in a day
+            // ago, but its file is newer (an hour) than that, so it goes by the file, after gone.
+            mockDb.merge([{
+                _id: 'msg-sticker-sent', _kind: 'com.palm.message:1', conversations: ['thread-family'], folder: 'outbox',
+                status: 'successful', serviceName: 'type_whatsapp', filePath: heart, messageText: '',
+                localTimestamp: Date.now() - 1000, timestamp: Date.now() - 1000,
+                from: { addr: '+15555550100' }, flags: { visible: true, read: true }
+            }, {
+                _id: 'msg-sticker-in', _kind: 'com.palm.message:1', conversations: ['thread-family'], folder: 'inbox',
+                status: 'successful', serviceName: 'type_whatsapp', messageText: 'file://' + star,
+                localTimestamp: Date.now() - 86400000, timestamp: Date.now() - 86400000,
+                from: { addr: '+46701234567' }, flags: { visible: true, read: true }
+            }]);
+            chat.runQuery(); await wait(300);
+            chat.$.richText.set('value', 'typed, not sent');
+            chat.openStickerPicker(); await wait(600);
+            var cells = chat.$.stickerGrid.getClientControls();
+            out.listed = cells.map(function (c) { return name(c.stickerPath); });
+            out.shown = cells.filter(function (c) { return c.getShowing(); }).map(function (c) { return name(c.stickerPath); });
+            var pop = chat.$.stickerPicker.hasNode().getBoundingClientRect();
+            out.fits = pop.left >= 0 && pop.top >= 0 && pop.right <= innerWidth && pop.bottom <= innerHeight;
+            var first = cells[0].hasNode().getBoundingClientRect();
+            out.grid = first.width > 50 && first.height > 50 && cells.filter(function (c) { return c.getShowing(); })
+                .every(function (c) { var img = c.hasNode().querySelector('img'); return img.complete && img.naturalWidth === 512; });
+            out.light = getComputedStyle(chat.$.stickerPicker.hasNode()).color === 'rgb(34, 34, 34)';
+            out.empty = chat.$.stickerEmpty.getShowing();
+
+            // Tap Star: it goes alone, as the file the plugin makes a sticker of.
+            var count = mockDb.store['com.palm.message:1'].length;
+            var starCell = cells.filter(function (c) { return name(c.stickerPath) === 'star.webp'; })[0];
+            chat.stickerPicked(starCell); await wait(300);
+            var sent = mockDb.store['com.palm.message:1'].slice(count);
+            out.sent = sent.map(function (m) {
+                return { filePath: m.filePath === star, text: m.messageText, service: m.serviceName, folder: m.folder,
+                    to: m.to && m.to[0].addr };
+            });
+            out.after = { open: chat.$.stickerPicker.getShowing(), composer: chat.$.richText.get('value') };
+
+            // Back closes the picker, not the chat.
+            chat.openStickerPicker(); await wait(100);
+            var pane = main.$.slidingGroup.getIndex();
+            main.goBack(); await wait(400);
+            out.back = { open: chat.$.stickerPicker.getShowing(), stays: main.$.slidingGroup.getIndex() === pane };
+
+            chat.$.richText.set('value', '');
+            images.forEach(function (r) { r.path = paths[r._id]; });
+            var added = mockDb.store['com.palm.message:1'].map(function (m) { return m._id; })
+                .filter(function (id) { return before.indexOf(id) < 0; });
+            mockDb.del(added);
+            chat.runQuery(); await wait(200);
+            return out;
+        };
+        // Beside the pack, as the Chromium profile is: star and heart, and no gone.webp.
+        var dir = path.join(path.dirname(PACK), 'sticker-fixtures');
+        fs.rmSync(dir, { recursive: true, force: true });
+        fs.mkdirSync(dir, { recursive: true });
+        ['star.webp', 'heart.webp'].forEach(function (f) {
+            fs.copyFileSync(path.join(__dirname, '..', '..', 'app', 'mock', 'stickers', f), path.join(dir, f));
+        });
+        var r = await session.evaluate('(' + page.toString() + ')(' + JSON.stringify(dir) + ')');
+        assert.deepEqual(r, {
+            telegram: false, whatsapp: true, none: { asking: false, answered: true, cells: 0 },
+            listed: ['heart.webp', 'gone.webp', 'star.webp'],
+            shown: ['heart.webp', 'star.webp'],
+            fits: true, grid: true, light: true, empty: false,
+            sent: [{ filePath: true, text: '', service: 'type_whatsapp', folder: 'outbox', to: '120363041234567890@g.us' }],
+            after: { open: false, composer: 'typed, not sent' },
+            back: { open: false, stays: true }
+        });
+    });
+
     it('offers Block Sender on a long tap in the chat list, for one person on IM, and asks first', async function () {
         /* global require */
         var page = async function () {
@@ -1213,7 +1331,7 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             return out;
         };
         var r = await session.evaluate('(' + page.toString() + ')()');
-        assert.deepEqual(r.menu, ['File', 'Take Photo', 'My Location', 'Contact']);
+        assert.deepEqual(r.menu, ['File', 'Take Photo', 'Sticker', 'My Location', 'Contact'], 'on WhatsApp, which has stickers');
         assert.deepEqual(r.launched, [{ id: 'org.webosports.app.camera', params: {} }]);
         assert.deepEqual(r.early, { staged: 0, waiting: true });
         assert.deepEqual(r.staged, [{ path: '/media/internal/DCIM/2026-11-08-10-00-05.jpg',
