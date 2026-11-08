@@ -1154,4 +1154,73 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.deepEqual(r, { one: true, group: false, oneOffers: 'Block Sender', asked: true, beforeYes: 0,
             cmd: { command: 'blockBuddy', to: true, service: true }, closed: true, cancelled: 0 });
     });
+
+    it('takes a photo from the paperclip: opens the Camera app and stages what it took', async function () {
+        /* global require */
+        var page = async function () {
+            var $ = require('enyo/dispatcher').$, Signals = require('enyo/Signals'), mockDb = require('src/data/mockDb');
+            var main = $.app_mainView, chat = $.app_mainView_chatView_conversationList;
+            var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+            var family = null;
+            $.app_mainView_messaging_threadList.collection.forEach(function (m) {
+                if (m.attributes._id === 'thread-family') { family = m.attributes; } });
+            main.selectThread(null, JSON.parse(JSON.stringify(family)));
+            for (var i = 0; i < 30 && !(chat.chatThread && chat.chatThread._id === 'thread-family'); i++) { await wait(100); }
+            await wait(300);
+            var out = {};
+
+            chat.openAttachMenu(); await wait(200);
+            out.menu = chat.$.attachMenu.getClientControls().map(function (c) { return c.content; });
+            chat.$.attachMenu.hide();
+
+            mockDb.launches = [];
+            var kind = 'com.palm.media.image.file:1';
+            mockDb.store[kind] = [];
+            chat.$.takePhotoItem.bubble('ontap', {});   // the menu item, as a finger taps it
+            out.launched = mockDb.launches.slice();
+
+            // Back before a photo is filed: nothing staged, still waiting.
+            Signals.send('onactivate', {}); await wait(200);
+            out.early = { staged: chat.outboundAttachments.length, waiting: !!chat.photoRequest };
+
+            // The Camera app took one; a screenshot and an older photo are filed beside it.
+            var since = chat.photoRequest.since;
+            mockDb.store[kind].push(
+                { _id: 'img-new', _kind: kind, path: '/media/internal/DCIM/2026-11-08-10-00-05.jpg', modifiedTime: since + 2 },
+                { _id: 'img-shot', _kind: kind, path: '/media/internal/screencaptures/shot.png', modifiedTime: since + 3 },
+                { _id: 'img-old', _kind: kind, path: '/media/internal/DCIM/older.jpg', modifiedTime: since - 60 });
+            Signals.send('onactivate', {}); await wait(300);
+            out.staged = chat.outboundAttachments.slice();
+            out.done = !chat.photoRequest;
+            var chip = chat.$.attachmentChips;
+            out.chip = { shown: chip.getShowing(),
+                thumb: !!chip.hasNode().querySelector('img[src="file:///media/internal/DCIM/2026-11-08-10-00-05.jpg"]') };
+
+            // Sent like a picked file.
+            var count = mockDb.store['com.palm.message:1'].length;
+            chat.sendMessage(); await wait(200);
+            var sent = mockDb.store['com.palm.message:1'].slice(count);
+            out.sent = sent.map(function (m) { return m.filePath; });
+
+            // A later return stages nothing again.
+            Signals.send('onactivate', {}); await wait(200);
+            out.again = chat.outboundAttachments.length;
+
+            mockDb.del(sent.map(function (m) { return m._id; }));
+            delete mockDb.store[kind];
+            mockDb.launches = [];
+            chat.runQuery(); await wait(200);
+            return out;
+        };
+        var r = await session.evaluate('(' + page.toString() + ')()');
+        assert.deepEqual(r.menu, ['File', 'Take Photo', 'My Location', 'Contact']);
+        assert.deepEqual(r.launched, [{ id: 'org.webosports.app.camera', params: {} }]);
+        assert.deepEqual(r.early, { staged: 0, waiting: true });
+        assert.deepEqual(r.staged, [{ path: '/media/internal/DCIM/2026-11-08-10-00-05.jpg',
+            name: '2026-11-08-10-00-05.jpg', type: 'image' }], 'only the photo taken since, not the screenshot');
+        assert.equal(r.done, true);
+        assert.deepEqual(r.chip, { shown: true, thumb: true });
+        assert.deepEqual(r.sent, ['/media/internal/DCIM/2026-11-08-10-00-05.jpg']);
+        assert.equal(r.again, 0);
+    });
 });

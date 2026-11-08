@@ -24,6 +24,7 @@ var kind = require('enyo/kind'),
     senderImages = require('../util/senderImages'),
     sendAccount = require('../util/sendAccount'),
     showInFiles = require('../util/showInFiles').showInFiles,
+    cameraCapture = require('../util/cameraCapture'),
     Toolbar = require('onyx/Toolbar'),
     Button = require('onyx/Button'),
     IconButton = require('onyx/IconButton'),
@@ -312,9 +313,10 @@ module.exports = kind({
             name: "transportMenu", kind: Menu, floating: true, scrolling: false, onSelect: "transportChosen"
         },
         {
-            // What the paperclip sends: a file, where we are, or a contact's card.
+            // What the paperclip sends: a file, a photo taken now, where we are, or a contact's card.
             name: "attachMenu", kind: Menu, floating: true, scrolling: false, components: [
                 { kind: MenuItem, content: $L("File"), ontap: "openAttachmentPicker" },
+                { name: "takePhotoItem", kind: MenuItem, content: $L("Take Photo"), ontap: "takePhoto" },
                 { kind: MenuItem, content: $L("My Location"), ontap: "promptShareLocation" },
                 { kind: MenuItem, content: $L("Contact"), ontap: "openContactPicker" }
             ]
@@ -443,7 +445,8 @@ module.exports = kind({
             name: 'readMarker', kind: LunaService, service: 'luna://com.palm.imlibpurple',
             method: 'markRead', onError: 'presenceFailed'
         },
-        { kind: Signals, onTypingChanged: "showTyping" },
+        // onactivate: back in front, as from the Camera app after Take Photo.
+        { kind: Signals, onTypingChanged: "showTyping", onactivate: "cameraReturned" },
         {
             name: 'threadMerge', kind: LunaService, service: DB_SERVICE, method: 'merge',
             onError: 'serviceErr'
@@ -512,6 +515,7 @@ module.exports = kind({
         this.cancelBackfill();
         this.cancelQuoteJump();
         this.cancelVoiceNote();
+        this.cancelTakePhoto();
         if (this.conversationService) {
             this.conversationService.cancel();
         }
@@ -3049,6 +3053,86 @@ module.exports = kind({
         this.outboundAttachments = [];
         this.renderAttachmentChips();
         return true;
+    },
+
+    // --- take photo ------------------------------------------------------------------------
+
+    /**
+     * The Camera app takes the photo; when Messaging is back in front, the photos it took since are
+     * staged like picked files (cameraCapture says why it goes this way round).
+     */
+    takePhoto: function () {
+        if (!this.chatThread || this.attachmentsUnsupported()) {
+            return true;
+        }
+        this.cancelTakePhoto();
+        this.photoRequest = cameraCapture.request(this.chatThread._id, Date.now());
+        var launch = cameraCapture.launch();
+        if (mockDb.enabled) {
+            mockDb.launches = mockDb.launches || [];
+            mockDb.launches.push(launch);
+            return true;
+        }
+        this.$.launchApp.send(launch);
+        return true;
+    },
+
+    /**
+     * Back in front: look for the photos. The indexer files a new one a moment after the Camera
+     * app writes it, so look again a few times before leaving the request for the next return.
+     */
+    cameraReturned: function () {
+        var req = this.photoRequest;
+        if (!req) {
+            return;
+        }
+        if (cameraCapture.expired(req, Date.now()) || !this.chatThread || this.chatThread._id !== req.threadId) {
+            this.cancelTakePhoto();
+            return;
+        }
+        var self = this, tries = 0;
+        this.cancelPhotoLookup();
+        var look = function () {
+            self._photoTimer = null;
+            self.photoFind(cameraCapture.query(req), function (error, results) {
+                if (self.destroyed || self.photoRequest !== req) {
+                    return;
+                }
+                var found = error ? [] : cameraCapture.photos(results, req);
+                if (found.length) {
+                    self.photoRequest = null;
+                    self.stageAttachments(found);
+                } else if (++tries < 4) {
+                    self._photoTimer = setTimeout(look, 1000);
+                }
+            });
+        };
+        look();
+    },
+
+    /** One find on the media index: done(error, results). */
+    photoFind: function (query, done) {
+        if (mockDb.enabled) {
+            var found = mockDb.find(query);
+            setTimeout(function () { done(null, found.results); }, 0);
+            return;
+        }
+        var request = new ServiceRequest({ service: DB_SERVICE, method: "find" });
+        request.response(function (inSender, inResponse) { done(null, inResponse && inResponse.results); });
+        request.error(function (inSender, inError) { done(inError || "service error"); });
+        request.go({ query: query });
+    },
+
+    cancelPhotoLookup: function () {
+        if (this._photoTimer) {
+            clearTimeout(this._photoTimer);
+            this._photoTimer = null;
+        }
+    },
+
+    cancelTakePhoto: function () {
+        this.cancelPhotoLookup();
+        this.photoRequest = null;
     },
 
     // --- voice notes -----------------------------------------------------------------------
