@@ -792,6 +792,22 @@ module.exports = {
     /** The imcommands the app wrote (reactions, edits, groups, ...), for the tests to read. */
     imCommands: [],
 
+    /** The downloads the app asked for, for the tests to read. */
+    downloads: [],
+
+    /**
+     * A download, as com.webos.service.downloadmanager's last reply for it would be: finished,
+     * at targetDir/targetFilename. A test may set downloadFails to see a failed one.
+     */
+    download: function (params) {
+        this.downloads.push(params);
+        if (this.downloadFails) {
+            return { completed: true, completionStatusCode: -5, httpStatus: 404, target: "" };
+        }
+        return { completed: true, completionStatusCode: 0, httpStatus: 200,
+            target: params.targetDir + "/" + params.targetFilename };
+    },
+
     /** Where the device is, for sending a location without a location service. */
     location: { latitude: 52.3731, longitude: 4.8925 },
 

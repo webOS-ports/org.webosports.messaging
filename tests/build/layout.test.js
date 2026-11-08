@@ -879,6 +879,41 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
                 return b.querySelector('.msg-attachment[data-kind="location"][data-open="50.4501,30.5234"]'); })[0];
             out.drawn.received = !!tgPlace && !/Location:/.test(tgPlace.textContent);
 
+            // Discord: a place shared from Android is text with a degrees line; a card is a link.
+            var CARD = 'https://cdn.discordapp.com/attachments/1/2/Jane.vcf?ex=6a&amp;is=6b';
+            mockDb.merge([{
+                _id: 'msg-dc-place', _kind: 'com.palm.message:1', conversations: ['thread-family'], folder: 'inbox',
+                status: 'successful', serviceName: 'type_discord',
+                messageText: 'https://maps.app.goo.gl/AbCd<br />\n52°22\'12.3"N 4°53\'45.6"E<br />\nSun Nov 8 07:59:00 2026',
+                localTimestamp: Date.now(), timestamp: Date.now(), from: { addr: 'anna' }, flags: { visible: true, read: true }
+            }, {
+                _id: 'msg-dc-card', _kind: 'com.palm.message:1', conversations: ['thread-family'], folder: 'inbox',
+                status: 'successful', serviceName: 'type_discord', messageText: CARD,
+                localTimestamp: Date.now() + 1, timestamp: Date.now() + 1, from: { addr: 'anna' }, flags: { visible: true, read: true }
+            }]);
+            chat.runQuery(); await wait(400);
+            var texts = Array.prototype.slice.call(document.querySelectorAll('[id$="_messageText"]'));
+            var dcPlace = texts.filter(function (b) {
+                return b.querySelector('.msg-attachment[data-kind="location"][data-open="52.370083,4.896"]'); })[0];
+            var dcCard = texts.filter(function (b) { return b.querySelector('.msg-attachment[data-kind="contact"]'); })
+                .filter(function (b) { return /cdn\.discordapp\.com/.test(b.querySelector('.msg-attachment[data-kind="contact"]').getAttribute('data-open')); })[0];
+            var launched = [], sendLaunch = chat.$.launchApp.send;
+            chat.$.launchApp.send = function (p) { launched.push(p); return null; };
+            mockDb.downloads.length = 0;
+            dcCard.querySelector('.msg-attachment[data-kind="contact"]').click(); await wait(100);
+            dcCard.querySelector('.msg-attachment[data-kind="contact"]').click(); await wait(100);
+            mockDb.downloadFails = true;
+            chat.openAttachment(null, { target: CARD.replace('/2/', '/3/'), kind: 'contact' }); await wait(100);
+            mockDb.downloadFails = false;
+            out.discord = {
+                place: !!dcPlace && !/°/.test(dcPlace.textContent) && /maps\.app\.goo\.gl/.test(dcPlace.textContent),
+                downloads: mockDb.downloads.map(function (d) { return d.targetDir + '|' + /^card-[0-9a-f]{8}\.vcf$/.test(d.targetFilename) + '|' + d.target; }),
+                launched: launched.map(function (l) { return l.id + ' ' + /^file:\/\/\/media\/internal\/\.im-attachments\/cards\/card-[0-9a-f]{8}\.vcf$/.test(l.params.target); }),
+                error: chat.$.errorDialog.getShowing()
+            };
+            chat.$.launchApp.send = sendLaunch;
+            chat.$.errorDialog.hide();
+
             // A mention: "@Ma" offers Marta; picking her writes her name, sending says who it is.
             var node = chat.$.richText.hasNode();
             chat.$.richText.set('value', 'hi @Ma'); node.value = 'hi @Ma'; node.setSelectionRange(6, 6);
@@ -959,6 +994,15 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             location: { latitude: 52.3731, longitude: 4.8925 }, to: GROUP });
         assert.equal(r.card.text.split('\n')[0], 'Sam Patel');
         assert.deepEqual(r.drawn, { place: true, card: true, received: true }, 'what we send is drawn as what we receive');
+        assert.deepEqual(r.discord, {
+            place: true,
+            downloads: [
+                '/media/internal/.im-attachments/cards|true|https://cdn.discordapp.com/attachments/1/2/Jane.vcf?ex=6a&is=6b',
+                '/media/internal/.im-attachments/cards|true|https://cdn.discordapp.com/attachments/1/3/Jane.vcf?ex=6a&is=6b'
+            ],
+            launched: ['com.palm.app.contacts true', 'com.palm.app.contacts true'],
+            error: true
+        }, 'a Discord place is a chip; a card link is fetched once, then opened in Contacts; a failed fetch says so');
         assert.match(r.card.vcard, /^BEGIN:VCARD\r\nVERSION:3\.0\r\nFN:Sam Patel\r\n[\s\S]*TEL;TYPE=CELL:[\s\S]*END:VCARD\r\n$/);
         assert.deepEqual(r.offered, ['Marta Lindqvist']);
         assert.equal(r.mentionText, 'hi @Marta Lindqvist ');

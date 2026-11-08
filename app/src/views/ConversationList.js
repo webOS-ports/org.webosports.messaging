@@ -56,6 +56,7 @@ var kind = require('enyo/kind'),
     chatActions = require('../util/chatActions'),
     deviceLocation = require('../util/deviceLocation'),
     launchTargets = require('../util/launchTargets'),
+    remoteCard = require('../util/remoteCard'),
     GroupDialog = require('./GroupDialog'),
     MsgAddrSearchList = require('./MsgAddrSearchList'),
     Signals = require('enyo/Signals'),
@@ -450,6 +451,11 @@ module.exports = kind({
         {
             name: 'launchApp', kind: LunaService,
             service: 'luna://com.webos.applicationManager', method: 'launch', onError: 'serviceErr'
+        },
+        {
+            // A contact card that came as a link is fetched before Contacts opens it (util/remoteCard).
+            name: 'cardDownload', kind: LunaService, service: 'luna://com.webos.service.downloadmanager',
+            method: 'download', subscribe: true, onResponse: 'cardDownloadReply', onError: 'cardDownloadFailed'
         },
         {
             name: 'openApp', kind: LunaService,
@@ -2303,6 +2309,8 @@ module.exports = kind({
             var contacts = launchTargets.contactLaunch(target);
             if (contacts) {
                 this.$.launchApp.send(contacts);
+            } else if (remoteCard.isRemote(target)) {
+                this.fetchCard(target);
             }
             return true;
         }
@@ -2323,6 +2331,54 @@ module.exports = kind({
             });
         }
         return true;
+    },
+
+    /** Fetch a card that came as a link, then open it in Contacts; once fetched, it is not again. */
+    fetchCard: function (url) {
+        var params = remoteCard.request(url);
+        this._cards = this._cards || {};
+        if (this._cards[params.target]) {
+            this.openFetchedCard(this._cards[params.target]);
+            return;
+        }
+        this._cardUrl = params.target;
+        if (mockDb.enabled) {
+            this.cardDownloadReply(null, mockDb.download(params));
+            return;
+        }
+        this.$.cardDownload.send(params);
+    },
+
+    cardDownloadReply: function (inSender, inResponse) {
+        var result = remoteCard.outcome(inResponse);
+        if (result.state === "pending" || !this._cardUrl) {
+            return true;
+        }
+        var url = this._cardUrl;
+        this._cardUrl = null;
+        if (!mockDb.enabled) {
+            this.$.cardDownload.cancel();
+        }
+        if (result.state === "done") {
+            this._cards[url] = result.path;
+            this.openFetchedCard(result.path);
+        } else {
+            this.cardDownloadFailed();
+        }
+        return true;
+    },
+
+    cardDownloadFailed: function () {
+        this._cardUrl = null;
+        this.showError($L("Unable to open contact card"), $L("The contact card could not be downloaded."));
+        return true;
+    },
+
+    openFetchedCard: function (path) {
+        var contacts = launchTargets.contactLaunch("file://" + path);
+        if (contacts) {
+            this.$.launchApp.send(contacts);
+        }
     },
 
     // --- polls -----------------------------------------------------------------------------
