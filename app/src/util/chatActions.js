@@ -88,6 +88,11 @@ function isGroupThread(thread) {
     if (/@g\.us$/i.test(String(thread.replyAddress || ""))) {
         return true;
     }
+    // A Signal group's thread is addressed by its group id, 64 hex digits (purple-presage), and
+    // has neither a groupChatId nor a channel.
+    if (thread.replyService === "type_signal" && /^[0-9a-f]{64}$/i.test(String(thread.replyAddress || ""))) {
+        return true;
+    }
     return !!(!thread.channelId && thread.groupChatId);
 }
 

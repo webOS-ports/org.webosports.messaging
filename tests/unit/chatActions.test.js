@@ -70,6 +70,16 @@ describe('chatActions: groups', function () {
             'a WhatsApp group the threader linked to an imchannel is still one');
         assert.equal(ca.isGroupThread(null), false);
     });
+    it('a Signal group by its 64-hex-digit group id; not a Signal number or account', function () {
+        var id = '0123456789abcdef0123456789ABCDEF0123456789abcdef0123456789abcdef';
+        assert.equal(ca.isGroupThread({ replyService: 'type_signal', replyAddress: id }), true);
+        assert.equal(ca.isGroupThread({ replyService: 'type_signal', replyAddress: '+31600000001' }), false);
+        assert.equal(ca.isGroupThread({ replyService: 'type_signal',
+            replyAddress: '0f0e0d0c-0b0a-4908-8706-050403020100' }), false, 'an account UUID');
+        assert.equal(ca.isGroupThread({ replyService: 'type_signal', replyAddress: id.slice(1) }), false);
+        assert.equal(ca.isGroupThread({ replyService: 'type_telegram', replyAddress: id }), false,
+            'only on Signal');
+    });
 });
 
 describe('chatActions: edit and delete for everyone', function () {
