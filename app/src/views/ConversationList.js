@@ -2346,7 +2346,9 @@ module.exports = kind({
             this.cardDownloadReply(null, mockDb.download(params));
             return;
         }
-        this.$.cardDownload.send(params);
+        // The subscription is ended through the request send returns; LunaService.cancel()
+        // without it throws, which left the card unopened and fetched it again on every tap.
+        this._cardRequest = this.$.cardDownload.send(params);
     },
 
     cardDownloadReply: function (inSender, inResponse) {
@@ -2354,10 +2356,11 @@ module.exports = kind({
         if (result.state === "pending" || !this._cardUrl) {
             return true;
         }
-        var url = this._cardUrl;
+        var url = this._cardUrl, request = this._cardRequest;
         this._cardUrl = null;
-        if (!mockDb.enabled) {
-            this.$.cardDownload.cancel();
+        this._cardRequest = null;
+        if (request && typeof request.cancel === "function") {
+            request.cancel();
         }
         if (result.state === "done") {
             this._cards[url] = result.path;
@@ -2370,6 +2373,7 @@ module.exports = kind({
 
     cardDownloadFailed: function () {
         this._cardUrl = null;
+        this._cardRequest = null;
         this.showError($L("Unable to open contact card"), $L("The contact card could not be downloaded."));
         return true;
     },

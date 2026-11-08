@@ -911,6 +911,23 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
                 launched: launched.map(function (l) { return l.id + ' ' + /^file:\/\/\/media\/internal\/\.im-attachments\/cards\/card-[0-9a-f]{8}\.vcf$/.test(l.params.target); }),
                 error: chat.$.errorDialog.getShowing()
             };
+            // On a device: the reply ends the download's subscription through its request, and
+            // the card opens; the manager's first reply (the ticket) changes nothing yet.
+            var sent = [], cancelled = 0, sendDownload = chat.$.cardDownload.send;
+            chat.$.cardDownload.send = function (p) { sent.push(p); return { cancel: function () { cancelled++; } }; };
+            launched.length = 0;
+            mockDb.enabled = false;
+            try {
+                chat.openAttachment(null, { target: CARD.replace('/2/', '/4/'), kind: 'contact' });
+                chat.cardDownloadReply(null, { returnValue: true, ticket: 7, subscribed: true });
+                var early = { cancelled: cancelled, launched: launched.length };
+                chat.cardDownloadReply(null, { completed: true, completionStatusCode: 0, httpStatus: 200,
+                    target: '/media/internal/.im-attachments/cards/' + sent[0].targetFilename });
+                out.device = { sent: sent.length, early: early, cancelled: cancelled, launched: launched.length };
+            } finally {
+                mockDb.enabled = true;
+                chat.$.cardDownload.send = sendDownload;
+            }
             chat.$.launchApp.send = sendLaunch;
             chat.$.errorDialog.hide();
 
@@ -1003,6 +1020,8 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             launched: ['com.palm.app.contacts true', 'com.palm.app.contacts true'],
             error: true
         }, 'a Discord place is a chip; a card link is fetched once, then opened in Contacts; a failed fetch says so');
+        assert.deepEqual(r.device, { sent: 1, early: { cancelled: 0, launched: 0 }, cancelled: 1, launched: 1 },
+            'on a device the download is ended through its request, then the card opens');
         assert.match(r.card.vcard, /^BEGIN:VCARD\r\nVERSION:3\.0\r\nFN:Sam Patel\r\n[\s\S]*TEL;TYPE=CELL:[\s\S]*END:VCARD\r\n$/);
         assert.deepEqual(r.offered, ['Marta Lindqvist']);
         assert.equal(r.mentionText, 'hi @Marta Lindqvist ');
