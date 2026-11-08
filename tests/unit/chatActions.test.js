@@ -224,7 +224,8 @@ describe('chatActions: the commands, as the transport reads them', function () {
         assert.equal(ca.removeCommand(KIND, 'type_whatsapp', me, GROUP, ['']), null);
         assert.equal(ca.removeCommand(KIND, 'type_whatsapp', me, '', ['+447700900123']), null);
         assert.equal(ca.actionsFor('type_whatsapp').groupRemove, true);
-        ['type_signal', 'type_telegram', 'type_discord', 'type_matrix'].forEach(function (s) {
+        assert.equal(ca.actionsFor('type_telegram').groupRemove, true, 'tdlib-purple 0035');
+        ['type_signal', 'type_discord', 'type_matrix'].forEach(function (s) {
             assert.ok(!ca.actionsFor(s).groupRemove, s + ' has no remove in its plugin');
         });
     });

@@ -29,7 +29,8 @@ var UNIT = "\x1f";
  *                             the service takes an edit (whatsmeow EditWindow), when it has one
  *   groupCreate/Invite/Leave  making a group, adding people to one, leaving it
  *   groupRemove               taking someone out of a group (purple-combined: whatsmeow
- *                             UpdateGroupParticipants remove; the service refuses it to a non-admin)
+ *                             UpdateGroupParticipants remove; tdlib-purple 0035: setChatMemberStatus
+ *                             Left; the service refuses it to a non-admin)
  *   mentions                  "@Name" in a group as a mention of that member
  *   location, contact         sent as the service's own location or contact message
  *   sticker                   a .webp file sent as the service's sticker (purple-combined
@@ -47,7 +48,7 @@ var ACTIONS = {
     },
     type_telegram: {
         edit: true, deleteForEveryone: true,
-        groupCreate: true, groupInvite: true, groupLeave: true,
+        groupCreate: true, groupInvite: true, groupLeave: true, groupRemove: true,
         mentions: true, location: true, contact: true
     },
     // Groups are group DMs; a server's channels are not.

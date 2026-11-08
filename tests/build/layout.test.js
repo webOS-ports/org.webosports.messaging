@@ -621,6 +621,7 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
                 list.serversWatch(); list.channelsWatch(); list.threadsWatch();
                 await wait(600);
                 out.linked = buttons();
+                out.canRemove = chat.canRemoveMembers(chat.chatThread);
                 out.stillInChats = inList('thread-tg3');
             } finally {
                 mockDb.del(made.concat(['ch-tg3']));
@@ -636,6 +637,7 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.equal(r.staleServer, false, 'a chat with no server does not keep the last chat\'s server name');
         assert.deepEqual(r.linked, { add: true, leave: true, row: true }, 'tied to its channel: Add People and Leave Group');
         assert.equal(r.stillInChats, true, 'and still among the chats');
+        assert.equal(r.canRemove, true, 'Group Info can take a member out of it (tdlib-purple 0035)');
     });
 
     // A chat opened with unread messages (util/unreadMarker): "N unread messages" above the first
