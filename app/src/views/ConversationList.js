@@ -3114,7 +3114,10 @@ module.exports = kind({
         var writers = chatActions.groupMembers(this.collection.map(function (m) { return m.attributes; }));
         var known = this._chatMembers;
         var thread = this.chatThread;
-        return groupInfo.pick(known && thread && known.threadId === thread._id ? known.members : null, writers);
+        var ours = known && thread && known.threadId === thread._id;
+        var pick = groupInfo.pick(ours ? known.members : null, writers);
+        pick.nobody = !!(ours && known.nobody);
+        return pick;
     },
 
     chatMembers: function () {
@@ -3154,7 +3157,10 @@ module.exports = kind({
             if (self._membersLoading === threadId) {
                 self._membersLoading = null;
             }
-            self._chatMembers = { threadId: threadId, members: groupInfo.fromReply(reply, account, serviceName) };
+            self._chatMembers = {
+                threadId: threadId, members: groupInfo.fromReply(reply, account, serviceName),
+                nobody: groupInfo.nobodyThere(reply)
+            };
             if (done) {
                 done();
             }
@@ -3201,11 +3207,11 @@ module.exports = kind({
         var asked = this.loadChatMembers(function () {
             if (self.$.groupInfo.showing && self.chatThread && self.chatThread._id === threadId) {
                 var now = self.chatMembersPick();
-                self.$.groupInfo.setMembers(now.members, now.fromService, false);
+                self.$.groupInfo.setMembers(now.members, now.fromService, false, now.nobody);
             }
         });
         if (!asked) {
-            this.$.groupInfo.setMembers(pick.members, pick.fromService, false);
+            this.$.groupInfo.setMembers(pick.members, pick.fromService, false, pick.nobody);
         }
     },
 
@@ -3263,14 +3269,14 @@ module.exports = kind({
             known.members = known.members.filter(function (m) { return m.id !== member.id; });
         }
         var pick = this.chatMembersPick();
-        this.$.groupInfo.setMembers(pick.members, pick.fromService, false);
+        this.$.groupInfo.setMembers(pick.members, pick.fromService, false, pick.nobody);
         var self = this, threadId = thread._id;
         clearTimeout(this._membersRecheck);
         this._membersRecheck = setTimeout(function () {
             if (self.$.groupInfo.showing && self.chatThread && self.chatThread._id === threadId) {
                 self.loadChatMembers(function () {
                     var now = self.chatMembersPick();
-                    self.$.groupInfo.setMembers(now.members, now.fromService, false);
+                    self.$.groupInfo.setMembers(now.members, now.fromService, false, now.nobody);
                 });
             }
         }, mockDb.enabled ? 50 : 4000);

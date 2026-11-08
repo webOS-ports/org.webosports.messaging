@@ -173,3 +173,17 @@ describe('groupInfo.askAgain', function () {
         assert.equal(gi.askAgain(null, 1), false);
     });
 });
+
+describe('groupInfo.nobodyThere', function () {
+    it('the chat is open, done opening, and lists no one: a group we have left', function () {
+        assert.equal(gi.nobodyThere({ returnValue: true, inChat: true, members: [] }), true);
+        assert.equal(gi.nobodyThere({ returnValue: true, inChat: true }), true);
+    });
+    it('not while opening, not when it is not open, not with members, not on an error', function () {
+        assert.equal(gi.nobodyThere({ returnValue: true, inChat: true, joining: true, members: [] }), false);
+        assert.equal(gi.nobodyThere({ returnValue: true, inChat: false, members: [] }), false);
+        assert.equal(gi.nobodyThere({ returnValue: true, inChat: true, members: [{ address: 'a', name: 'A' }] }), false);
+        assert.equal(gi.nobodyThere({ returnValue: false, inChat: true, members: [] }), false);
+        assert.equal(gi.nobodyThere(null), false);
+    });
+});

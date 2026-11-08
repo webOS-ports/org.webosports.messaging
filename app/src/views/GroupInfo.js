@@ -138,13 +138,19 @@ module.exports = kind({
         this.setMembers(this.info.members, this.info.fromService, this.info.loading);
     },
 
-    /** The members to list; fromService: the transport gave them, else they are who has written. */
-    setMembers: function (members, fromService, loading) {
+    /**
+     * The members to list; fromService: the transport gave them, else they are who has written.
+     * nobody: the service says no one is in it, as WhatsApp does for a group we have left.
+     */
+    setMembers: function (members, fromService, loading, nobody) {
         this.members = members || [];
         this.fromService = !!fromService;
         var n = this.members.length;
         var count;
-        if (!n) {
+        if (nobody && !fromService && !loading) {
+            count = n ? $L("You may have left this group. Who has written here:") :
+                $L("You may have left this group.");
+        } else if (!n) {
             count = loading ? $L("Looking up members...") : $L("No members known yet.");
         } else if (fromService) {
             count = n === 1 ? $L("1 member") : $L("{n} members").replace("{n}", n);

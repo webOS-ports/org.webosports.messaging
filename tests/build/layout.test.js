@@ -1522,6 +1522,40 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.equal(r.signalCan, false);
     });
 
+    // A group we have left: the transport has it open and WhatsApp names no one. Group Info says
+    // we may have left it, over who has written, and no one swipes out.
+    it('says we may have left a group the service lists no one in', async function () {
+        /* global require */
+        var page = async function () {
+            var $ = require('enyo/dispatcher').$, mockDb = require('src/data/mockDb');
+            var main = $.app_mainView, chat = $.app_mainView_chatView_conversationList;
+            var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+            var GROUP = '120363041234567890@g.us';
+            var thread = null;
+            $.app_mainView_messaging_threadList.collection.forEach(function (m) {
+                if (m.attributes._id === 'thread-family') { thread = m.attributes; }
+            });
+            main.selectThread(null, thread);
+            for (var i = 0; i < 20 && !(chat.chatThread && chat.chatThread._id === 'thread-family' && chat.messages.length); i++) { await wait(100); }
+            var keep = mockDb.chatMembers[GROUP];
+            mockDb.chatMembers[GROUP] = { returnValue: true, inChat: true, members: [] };
+            chat._chatMembers = null;
+            var info = chat.$.groupInfo, out = {};
+            chat.handleHeaderTap(); await wait(400);
+            out.count = info.$.count.getContent();
+            out.rows = info.$.list.getClientControls().length;
+            out.swipe = info.$.list.getClientControls().some(function (c) { return !!c.swipeable; });
+            info.doneTapped();
+            mockDb.chatMembers[GROUP] = keep;
+            chat._chatMembers = null;
+            return out;
+        };
+        var r = await session.evaluate('(' + page.toString() + ')()');
+        assert.equal(r.count, 'You may have left this group. Who has written here:');
+        assert.ok(r.rows > 0, 'who has written is still listed');
+        assert.equal(r.swipe, false, 'no one swipes out');
+    });
+
     // A group libpurple had not opened since the transport started: the transport opens it
     // (joining) and the app asks again, so Group Info gets the members and they swipe out.
     it('asks again for the members of a group the transport is opening', async function () {

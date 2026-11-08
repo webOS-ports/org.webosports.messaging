@@ -37,6 +37,15 @@ function askAgain(reply, asked) {
         asked < ASK_AT_MOST);
 }
 
+/**
+ * Whether the service says no one is in the chat: the transport has it open, is done opening it,
+ * and lists no one. WhatsApp answers so for a group we have left.
+ */
+function nobodyThere(reply) {
+    return !!(reply && reply.returnValue !== false && reply.inChat === true && reply.joining !== true &&
+        !(Array.isArray(reply.members) && reply.members.length));
+}
+
 /** The getChatMembers request for a thread, or null for a chat the transport does not carry. */
 function request(thread, account) {
     if (!isGroupChat(thread) || !thread.replyAddress || !thread.replyService ||
@@ -154,6 +163,7 @@ module.exports = {
     isGroupChat: isGroupChat,
     request: request,
     askAgain: askAgain,
+    nobodyThere: nobodyThere,
     ASK_AGAIN_MS: ASK_AGAIN_MS,
     fromReply: fromReply,
     pick: pick,
