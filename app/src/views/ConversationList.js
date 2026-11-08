@@ -59,6 +59,7 @@ var kind = require('enyo/kind'),
     chatActions = require('../util/chatActions'),
     deviceLocation = require('../util/deviceLocation'),
     launchTargets = require('../util/launchTargets'),
+    sentExtras = require('../util/sentExtras'),
     remoteCard = require('../util/remoteCard'),
     GroupDialog = require('./GroupDialog'),
     GroupInfo = require('./GroupInfo'),
@@ -2329,6 +2330,14 @@ module.exports = kind({
         }
         var target = inEvent && inEvent.target;
         var attachmentKind = inEvent && inEvent.kind;
+        // A card we sent: its person in Contacts, found from the message (util/sentExtras).
+        if (attachmentKind === "sent-contact") {
+            var shown = launchTargets.sentContactLaunch(sentExtras.sentContact(inEvent.message));
+            if (shown) {
+                this.launch(shown);
+            }
+            return true;
+        }
         if (!target) {
             return true;
         }
@@ -2973,6 +2982,11 @@ module.exports = kind({
             this.showError($L("Contact"), $L("This contact has no number or address to send."));
             return true;
         }
+        // Kept with the card, so a tap on it shows this person in Contacts (sentExtras).
+        var personId = person && person.get('_id');
+        if (typeof personId === "string" && personId) {
+            card.personId = personId;
+        }
         this.sendMessage({ text: chatActions.contactText(contact), fields: { contactCard: card } });
         return true;
     },
@@ -3199,6 +3213,16 @@ module.exports = kind({
             this.doSelectSender({ person: groupInfo.chatPerson(member, this.chatThread.replyService) });
         }
         return true;
+    },
+
+    /** Launch an app (launchApp), or in the mock note what would have been launched. */
+    launch: function (params) {
+        if (mockDb.enabled) {
+            mockDb.launches = mockDb.launches || [];
+            mockDb.launches.push(params);
+            return;
+        }
+        this.$.launchApp.send(params);
     },
 
     /** Contacts offers a new contact for them, or to add them to one there is. */

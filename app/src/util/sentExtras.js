@@ -12,6 +12,10 @@
  * The record keeps what was sent beside it: location { latitude, longitude, name } and
  * contactCard { vcard }. A received one is drawn as a chip (ConversationItem), so a sent one is
  * drawn from these fields the same way rather than from its text.
+ *
+ * A tap on a sent card shows its person in Contacts: by the personId the card was sent with, or,
+ * for a card sent before that was kept, the card itself (name, numbers, addresses), which Contacts
+ * shows and offers to add (util/launchTargets sentContactLaunch).
  */
 
 var $L = require('enyo/i18n').$L;
@@ -46,19 +50,43 @@ function vcardName(vcard) {
     return m ? vcardUnescape(m[1]).trim() : "";
 }
 
-/** { name } of a contact card we sent, or null. */
+/** Each value of a vCard property (TEL, EMAIL), its folded lines joined and escapes undone. */
+function vcardValues(vcard, prop) {
+    var text = String(vcard || "").replace(/\r?\n[ \t]/g, "");
+    var re = new RegExp("^" + prop + "(?:;[^:\\r\\n]*)?:(.*)$", "gim"), out = [], m;
+    while ((m = re.exec(text)) !== null) {
+        var v = vcardUnescape(m[1]).trim();
+        if (v && out.indexOf(v) < 0) {
+            out.push(v);
+        }
+    }
+    return out;
+}
+
+/**
+ * { name, personId, phones, emails } of a contact card we sent, or null. personId is the contact's
+ * it was sent from, when the card kept it ("" otherwise).
+ */
 function sentContact(message) {
     var card = message && message.folder === OUTBOX && message.contactCard;
     if (!card || typeof card.vcard !== "string" || !/BEGIN:VCARD/i.test(card.vcard)) {
         return null;
     }
-    var name = vcardName(card.vcard) ||
+    var fromCard = vcardName(card.vcard);
+    var name = fromCard ||
         String(message.messageText || "").split(/\r?\n|<br\s*\/?>/i)[0].trim();
-    return { name: name || $L("Contact card") };
+    return {
+        name: name || $L("Contact card"),
+        fullName: fromCard || name,
+        personId: typeof card.personId === "string" ? card.personId : "",
+        phones: vcardValues(card.vcard, "TEL"),
+        emails: vcardValues(card.vcard, "EMAIL")
+    };
 }
 
 module.exports = {
     sentLocation: sentLocation,
     sentContact: sentContact,
-    vcardName: vcardName
+    vcardName: vcardName,
+    vcardValues: vcardValues
 };

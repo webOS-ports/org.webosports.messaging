@@ -59,3 +59,18 @@ describe('launchTargets.outgoingHtml', function () {
         assert.equal(lt.outgoingHtml(null, escapeHtml), '');
     });
 });
+
+describe('launchTargets.sentContactLaunch', function () {
+    it('the person a card was sent from', function () {
+        assert.deepEqual(lt.sentContactLaunch({ personId: 'p1', fullName: 'Ann', phones: ['+1'], emails: [] }),
+            { id: 'com.palm.app.contacts', params: { launchType: 'showPerson', id: 'p1' } });
+    });
+    it('else the card, to show and offer to add', function () {
+        assert.deepEqual(lt.sentContactLaunch({ personId: '', fullName: 'Ann', phones: ['+15550100'], emails: ['a@b.c'] }),
+            { id: 'com.palm.app.contacts', params: { launchType: 'pseudo-card', contact: {
+                name: { givenName: 'Ann' }, phoneNumbers: [{ value: '+15550100', type: 'type_mobile' }],
+                emails: [{ value: 'a@b.c', type: 'type_home' }] } } });
+        assert.equal(lt.sentContactLaunch({ personId: '', fullName: 'Ann', phones: [], emails: [] }), null, 'nothing to show');
+        assert.equal(lt.sentContactLaunch(null), null);
+    });
+});

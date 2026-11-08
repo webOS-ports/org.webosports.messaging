@@ -475,8 +475,9 @@ module.exports = kind({
 
     /**
      * The chip of a location or contact card we sent (util/sentExtras), as a received one has, or
-     * "". A location opens Maps and keeps its name below the chip. A card is not opened: there is
-     * no file of it for Contacts to read, and it came from our own contacts.
+     * "". A location opens Maps and keeps its name below the chip. A card shows its person in
+     * Contacts (data-kind "sent-contact": there is no file of it, ConversationList finds what to
+     * show from the message).
      */
     buildSentExtras: function (message) {
         var escape = messagingUtils.message.escapeHtml;
@@ -486,7 +487,7 @@ module.exports = kind({
         }
         var card = sentExtras.sentContact(message);
         if (card) {
-            return '<div class="msg-attachment" data-kind="contact">' +
+            return '<div class="msg-attachment" data-kind="sent-contact">' +
                 '<div class="msg-attachment-icon msg-attachment-contact"></div>' +
                 '<div class="msg-attachment-name">' + messagingUtils.message.emojify(escape(card.name)) + '</div></div>';
         }
@@ -779,6 +780,13 @@ module.exports = kind({
                     return true;
                 }
 
+                // A card we sent has no file: the list shows its person from the message.
+                if (node.getAttribute("data-kind") === "sent-contact") {
+                    this.cancelNativeNavigation(inEvent);
+                    this.doOpenAttachment({ target: "", kind: "sent-contact", message: this.message });
+                    return true;
+                }
+
                 var name = (node.nodeName || node.tagName || "").toUpperCase();
                 var target = node.getAttribute("data-open") ||
                     (name === "A" ? node.getAttribute("href") : null);
@@ -786,6 +794,10 @@ module.exports = kind({
                     this.cancelNativeNavigation(inEvent);
                     var kind = node.getAttribute("data-kind") || this.mediaKind(target);
                     this.doOpenAttachment({ target: target.replace(/&amp;/g, "&"), kind: kind });
+                    return true;
+                }
+                // Any other chip is the chip's, opened or not: a tap on it never reacts.
+                if (/(?:^|\s)msg-attachment(?:\s|$)/.test(node.className || "")) {
                     return true;
                 }
             }

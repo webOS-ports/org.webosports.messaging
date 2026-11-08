@@ -45,6 +45,33 @@ function contactLaunch(url) {
 }
 
 /**
+ * The Contacts launch for a card we sent (util/sentExtras sentContact): the person it was sent
+ * from, else the card to show and offer to add. null when it holds nothing to show.
+ */
+function sentContactLaunch(card) {
+    if (!card) {
+        return null;
+    }
+    if (card.personId) {
+        return { id: CONTACTS_APP, params: { launchType: "showPerson", id: card.personId } };
+    }
+    var contact = {};
+    if (card.fullName) {
+        contact.name = { givenName: card.fullName };
+    }
+    if (card.phones && card.phones.length) {
+        contact.phoneNumbers = card.phones.map(function (v) { return { value: v, type: "type_mobile" }; });
+    }
+    if (card.emails && card.emails.length) {
+        contact.emails = card.emails.map(function (v) { return { value: v, type: "type_home" }; });
+    }
+    if (!contact.phoneNumbers && !contact.emails) {
+        return null;
+    }
+    return { id: CONTACTS_APP, params: { launchType: "pseudo-card", contact: contact } };
+}
+
+/**
  * An outgoing message's text as HTML. What was typed here is plain text, escaped whole. A message
  * sent from the phone's own app comes back through the bridge the way a received one does, with
  * each line break written "<br />" and a newline (purple's strdup_withhtml); that break is kept
@@ -60,5 +87,6 @@ module.exports = {
     mapsLaunch: mapsLaunch,
     vcardPath: vcardPath,
     contactLaunch: contactLaunch,
+    sentContactLaunch: sentContactLaunch,
     outgoingHtml: outgoingHtml
 };

@@ -863,11 +863,25 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             };
             var placeBubble = chipIn('location').filter(function (b) {
                 return b.querySelector('[data-open="52.3731,4.8925"]'); })[0];
-            var cardBubble = chipIn('contact').filter(function (b) { return /Sam Patel/.test(b.textContent); })[0];
+            var cardBubble = chipIn('sent-contact').filter(function (b) { return /Sam Patel/.test(b.textContent); })[0];
             out.drawn = {
                 place: !!placeBubble && !/maps\.google|My location/.test(placeBubble.textContent),
                 card: !!cardBubble && !/987/.test(cardBubble.textContent) && !cardBubble.querySelector('[data-open]')
             };
+            // A tap on the card shows it in Contacts, and never opens the reactions.
+            mockDb.launches = [];
+            chat.$.reactRow.hide();
+            cardBubble.querySelector('.msg-attachment[data-kind="sent-contact"]').click(); await wait(150);
+            out.cardTap = { launches: mockDb.launches.slice(), reacted: chat.$.reactRow.getShowing() };
+            chat.$.reactRow.hide();
+            // A chip with nothing to open, as cards we sent were drawn before: still no reactions.
+            var bare = cardBubble.querySelector('.msg-attachment[data-kind="sent-contact"]');
+            bare.setAttribute('data-kind', 'contact');
+            mockDb.launches = [];
+            bare.click(); await wait(150);
+            out.bareTap = { launches: mockDb.launches.length, reacted: chat.$.reactRow.getShowing() };
+            bare.setAttribute('data-kind', 'sent-contact');
+            chat.$.reactRow.hide();
             // A place Telegram sent: the database has only its "Location: lat, lng" line.
             mockDb.merge([{
                 _id: 'msg-tg-place', _kind: 'com.palm.message:1', conversations: ['thread-family'], folder: 'inbox',
@@ -1012,6 +1026,10 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             location: { latitude: 52.3731, longitude: 4.8925 }, to: GROUP });
         assert.equal(r.card.text.split('\n')[0], 'Sam Patel');
         assert.deepEqual(r.drawn, { place: true, card: true, received: true }, 'what we send is drawn as what we receive');
+        assert.deepEqual(r.cardTap, { reacted: false, launches: [{ id: 'com.palm.app.contacts', params: { launchType: 'pseudo-card',
+            contact: { name: { givenName: 'Sam Patel' }, phoneNumbers: [{ value: '+1 555 987 6543', type: 'type_mobile' }] } } }] },
+            'a sent card shows in Contacts on a tap, and does not react');
+        assert.deepEqual(r.bareTap, { launches: 0, reacted: false }, 'a chip with nothing to open does not react either');
         assert.deepEqual(r.discord, {
             place: true,
             downloads: [

@@ -42,7 +42,19 @@ describe('sentExtras.sentContact', function () {
     it('the name of a card we sent, as chatActions writes it', function () {
         var person = { name: 'Vera van Dijk, PhD', phoneNumbers: [{ value: '+31 6 1234 5678' }] };
         assert.deepEqual(se.sentContact(out({ contactCard: ca.contactCard(person), messageText: ca.contactText(person) })),
-            { name: 'Vera van Dijk, PhD' });
+            { name: 'Vera van Dijk, PhD', fullName: 'Vera van Dijk, PhD', personId: '', phones: ['+31 6 1234 5678'], emails: [] });
+    });
+    it('keeps the person it was sent from, and the numbers and addresses, each once', function () {
+        var card = ca.contactCard({ name: 'Ann', phoneNumbers: [{ value: '+15550100' }, { value: '+15550101' }],
+            emails: [{ value: 'ann@example.org' }] });
+        card.personId = 'p1';
+        var c = se.sentContact(out({ contactCard: card }));
+        assert.equal(c.personId, 'p1');
+        assert.deepEqual(c.phones, ['+15550100', '+15550101']);
+        assert.deepEqual(c.emails, ['ann@example.org']);
+        assert.deepEqual(se.vcardValues('BEGIN:VCARD\r\nTEL;TYPE=CELL:+1\r\n 555\r\ntel:+1555\r\nEND:VCARD', 'TEL'), ['+1555'],
+            'folded, any case, each once');
+        assert.equal(se.sentContact(out({ contactCard: { vcard: card.vcard, personId: 7 } })).personId, '', 'only a string id');
     });
     it('reads FN with parameters, folded, and escaped', function () {
         assert.equal(se.vcardName('BEGIN:VCARD\r\nFN;CHARSET=UTF-8:Ann\r\n  Lee\; Jr.\r\nEND:VCARD'), 'Ann Lee; Jr.');
@@ -51,9 +63,10 @@ describe('sentExtras.sentContact', function () {
     });
     it('without an FN, the first line of the text, else "Contact card"', function () {
         var vcard = 'BEGIN:VCARD\r\nVERSION:3.0\r\nTEL:+15550100\r\nEND:VCARD\r\n';
-        assert.deepEqual(se.sentContact(out({ contactCard: { vcard: vcard }, messageText: 'Sam\n+15550100' })), { name: 'Sam' });
-        assert.deepEqual(se.sentContact(out({ contactCard: { vcard: vcard }, messageText: 'Sam<br />\n+15550100' })), { name: 'Sam' });
-        assert.deepEqual(se.sentContact(out({ contactCard: { vcard: vcard } })), { name: 'Contact card' });
+        assert.equal(se.sentContact(out({ contactCard: { vcard: vcard }, messageText: 'Sam\n+15550100' })).name, 'Sam');
+        assert.equal(se.sentContact(out({ contactCard: { vcard: vcard }, messageText: 'Sam<br />\n+15550100' })).name, 'Sam');
+        assert.equal(se.sentContact(out({ contactCard: { vcard: vcard } })).name, 'Contact card');
+        assert.equal(se.sentContact(out({ contactCard: { vcard: vcard } })).fullName, '', 'no name to give Contacts');
     });
     it('nothing for a received message or one with no card', function () {
         var card = { vcard: 'BEGIN:VCARD\r\nFN:X\r\nEND:VCARD' };
