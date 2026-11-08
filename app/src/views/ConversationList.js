@@ -2578,6 +2578,11 @@ module.exports = kind({
         this.closeAttachmentPicker();
     },
 
+    /** The back gesture over Group Info: closes its top layer; true when it was open. */
+    closeGroupInfo: function () {
+        return this.$.groupInfo.back();
+    },
+
     /**
      * Closes the file picker, or the sticker picker, if it is open; true when it was. The back
      * key uses this first.

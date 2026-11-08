@@ -676,6 +676,10 @@ module.exports = kind({
     },
 
     goBack: function () {
+        // Group Info and its menus sit over the chat: back closes them one at a time first.
+        if (this.$.chatView.closeGroupInfo()) {
+            return true;
+        }
         // The file picker sits over the chat: back closes it, not the chat underneath.
         if (this.$.chatView.closeAttachmentPicker()) {
             return true;

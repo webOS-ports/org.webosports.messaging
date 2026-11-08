@@ -239,13 +239,37 @@ module.exports = kind({
         return true;
     },
 
-    /** Closed with a row's Delete showing: that prompt goes too, unanswered. */
+    /**
+     * Closed: a row's Delete prompt, the remove question and a member's menu go too, unanswered.
+     * They float on their own, so they would stay on screen without it.
+     */
     showingChanged: function () {
         this.inherited(arguments);
         if (!this.showing) {
             SwipeableItem.cancelPending();
             this.$.removeDialog.hide();
+            this.$.memberMenu.hide();
         }
+    },
+
+    /**
+     * The back gesture: closes what is on top - a member's menu, the remove question, a row's
+     * Delete prompt, else Group Info itself. False when it was not open.
+     */
+    back: function () {
+        if (!this.showing) {
+            return false;
+        }
+        if (this.$.memberMenu.showing) {
+            this.$.memberMenu.hide();
+        } else if (this.$.removeDialog.showing) {
+            this.removeCancelled();
+        } else if (this.$.list.getClientControls().some(function (c) { return c.$ && c.$.confirm && c.$.confirm.getShowing(); })) {
+            SwipeableItem.cancelPending();
+        } else {
+            this.hide();
+        }
+        return true;
     },
 
     doneTapped: function () {

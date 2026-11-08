@@ -309,6 +309,10 @@ module.exports = kind({
         return this.$.conversationList.closeAttachmentPicker();
     },
 
+    closeGroupInfo: function () {
+        return this.$.conversationList.closeGroupInfo();
+    },
+
     /** Find in Chat: only while a conversation is the view shown. */
     openSearch: function () {
         if (this.getViewName() === "conversationList") {

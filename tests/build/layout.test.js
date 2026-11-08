@@ -1142,6 +1142,21 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             chat._chatMembers = null;
             chat.handleHeaderTap(); await wait(200);
             out.fallback = { count: info.$.count.getContent(), rows: rows() };
+            // The back gesture closes a member's menu first, then Group Info, and leaves the chat.
+            var Signals = require('enyo/Signals');
+            info.memberTapped(info.$.list.getClientControls()[0], {}); await wait(100);
+            var pane = main.$.slidingGroup.getIndex();
+            Signals.send('onbackgesture', {}); await wait(100);
+            out.back1 = { menu: info.$.memberMenu.getShowing(), info: info.getShowing() };
+            Signals.send('onbackgesture', {}); await wait(100);
+            out.back2 = { menu: info.$.memberMenu.getShowing(), info: info.getShowing(), chat: !!chat.chatThread,
+                pane: main.$.slidingGroup.getIndex() === pane };
+            // Closed with the menu open: the menu goes with it.
+            chat.handleHeaderTap(); await wait(200);
+            info.memberTapped(info.$.list.getClientControls()[0], {}); await wait(100);
+            info.doneTapped(); await wait(50);
+            out.menuWithDone = info.$.memberMenu.getShowing();
+            chat.handleHeaderTap(); await wait(200);
             info.doneTapped();
             out.closed = info.getShowing();
             mockDb.chatMembers[GROUP] = keep;
@@ -1172,6 +1187,9 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.deepEqual(r.fallback, { count: 'Who has written here',
             rows: ['Marta Lindqvist+46701234567', 'Mum+15015550142'] });
         assert.equal(r.closed, false);
+        assert.deepEqual(r.back1, { menu: false, info: true }, 'back closes the member menu first');
+        assert.deepEqual(r.back2, { menu: false, info: false, chat: true, pane: true }, 'then Group Info, leaving the chat open');
+        assert.equal(r.menuWithDone, false, 'closing Group Info takes its member menu along');
     });
 
     // A click that reaches a link in a message - the one the browser sends after a menu closed on a

@@ -123,3 +123,38 @@ describe('groupInfo.contactLaunch', function () {
         assert.equal(gi.contactLaunch({ id: 'a' }, ''), null);
     });
 });
+
+describe('groupInfo: WhatsApp members known by a linked id, and their numbers', function () {
+    var me = { username: '+15555550100' };
+    var reply = { returnValue: true, members: [
+        { address: '222222222222222@lid', name: 'Sam', phone: '447700900123' },
+        { address: '111111111111111@lid', name: 'Sam', phone: '+31 6 1111 1111' },
+        { address: '333333333333333@lid', name: 'Ann' },
+        { address: '444444444444444@lid', name: 'Me', phone: '+1 555 555 0100' },
+        { address: '555555555555555@lid', name: '', phone: '+46701234567' }
+    ] };
+    var list = gi.fromReply(reply, me, 'type_whatsapp');
+    it('keeps the number beside the linked id, as +digits, and leaves us out by our number', function () {
+        assert.deepEqual(list.map(function (m) { return [m.name, m.phone || '']; }),
+            [['+46701234567', '+46701234567'], ['Ann', ''], ['Sam', '+31611111111'], ['Sam', '+447700900123']],
+            'by name, namesakes by number');
+    });
+    it('shows the number under the name, so namesakes are told apart', function () {
+        assert.deepEqual(list.map(gi.shownAddress), ['', '', '+31611111111', '+447700900123'],
+            'not the number again under a member named by it, nothing for a linked id alone');
+        assert.equal(gi.shownAddress({ id: '31611111111@s.whatsapp.net', name: 'Sam' }), '+31611111111');
+    });
+    it('opens a 1:1 and offers Contacts by the number', function () {
+        var sam = list[2];
+        assert.deepEqual(gi.chatPerson(sam, 'type_whatsapp'),
+            { username: '+31611111111', serviceName: 'type_whatsapp', displayName: 'Sam' });
+        assert.deepEqual(gi.contactLaunch(sam, 'type_whatsapp').params.contact, {
+            ims: [{ value: '+31611111111', type: 'type_whatsapp' }], name: { givenName: 'Sam' },
+            phoneNumbers: [{ value: '+31611111111', type: 'type_mobile' }] });
+        assert.equal(gi.chatPerson(list[1], 'type_whatsapp').username, '333333333333333@lid', 'no number: the id');
+    });
+    it('takes no phone that is no number', function () {
+        var l = gi.fromReply({ returnValue: true, members: [{ address: 'a@lid', name: 'A', phone: 'abc' }] }, me, 'type_whatsapp');
+        assert.equal(l[0].phone, undefined);
+    });
+});

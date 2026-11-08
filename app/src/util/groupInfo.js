@@ -36,23 +36,39 @@ function tidy(s) {
     return String(s === undefined || s === null ? "" : s).replace(/[\x1e\x1f]/g, "").trim();
 }
 
+/** A phone number as "+<digits>", or "" when it is none ("31 6..." and "+31-6..." alike). */
+function phoneOf(s) {
+    var digits = tidy(s).replace(/[\s().\-\/]/g, "").replace(/^\+/, "");
+    return /^\d{6,15}$/.test(digits) ? "+" + digits : "";
+}
+
 /**
  * The members in a getChatMembers reply: each address once, never ours (account, serviceName as
- * chatActions.isOwnAddress takes them), the address as the name where there is none; by name.
+ * chatActions.isOwnAddress takes them, by the address or the number), the address as the name
+ * where there is none; by name, then number, so namesakes sit together told apart by number.
+ *
+ * A WhatsApp member's address is often a linked id ("<digits>@lid"), which is no number; the
+ * transport then gives the number beside it as phone, when the plugin knows it.
  */
 function fromReply(reply, account, serviceName) {
     var list = (reply && reply.returnValue !== false && Array.isArray(reply.members)) ? reply.members : [];
     var seen = {}, out = [];
     list.forEach(function (m) {
         var address = tidy(m && m.address);
-        if (!address || seen[address] || chatActions.isOwnAddress(address, account, serviceName)) {
+        var phone = phoneOf(m && m.phone);
+        if (!address || seen[address] || chatActions.isOwnAddress(address, account, serviceName) ||
+                (phone && chatActions.isOwnAddress(phone, account, serviceName))) {
             return;
         }
         seen[address] = true;
-        out.push({ id: address, name: tidy(m.name) || address });
+        var member = { id: address, name: tidy(m.name) || phone || address };
+        if (phone) {
+            member.phone = phone;
+        }
+        out.push(member);
     });
     return out.sort(function (a, b) {
-        return a.name.localeCompare(b.name);
+        return a.name.localeCompare(b.name) || (a.phone || a.id).localeCompare(b.phone || b.id);
     });
 }
 
@@ -68,11 +84,19 @@ function pick(serviceMembers, writers) {
 }
 
 /**
- * The address to show under a member's name, or "" when it says nothing more: the name already, or
- * an id that is no one's to read (a WhatsApp linked id, a Signal account's UUID).
+ * The address to show under a member's name, or "" when it says nothing more: their number when
+ * the transport gave one, a WhatsApp address as its number, else the address unless it is the
+ * name already or an id that is no one's to read (a WhatsApp linked id, a Signal account's UUID).
  */
 function shownAddress(member) {
+    if (member && member.phone) {
+        return member.phone === member.name ? "" : member.phone;
+    }
     var address = String((member && member.id) || "");
+    var wa = /^(\d{6,15})@s\.whatsapp\.net$/i.exec(address);
+    if (wa) {
+        address = "+" + wa[1];
+    }
     if (!address || address === member.name || /@lid$/i.test(address) ||
             /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(address)) {
         return "";
@@ -80,9 +104,13 @@ function shownAddress(member) {
     return address;
 }
 
-/** The person a 1:1 chat with a member opens on, as a tapped group sender is (ChatView). */
+/**
+ * The person a 1:1 chat with a member opens on, as a tapped group sender is (ChatView): on
+ * WhatsApp by their number when the transport gave it, as its 1:1 chats are.
+ */
 function chatPerson(member, serviceName) {
-    return { username: member.id, serviceName: serviceName, displayName: member.name || member.id };
+    var username = (serviceName === "type_whatsapp" && member.phone) ? member.phone : member.id;
+    return { username: username, serviceName: serviceName, displayName: member.name || username };
 }
 
 /**
@@ -95,12 +123,15 @@ function contactLaunch(member, serviceName) {
     if (!member || !member.id || !serviceName) {
         return null;
     }
-    var contact = { ims: [{ value: member.id, type: serviceName }] };
-    if (member.name && member.name !== member.id) {
+    // A WhatsApp member known by a linked id is filed by their number, when we have it.
+    var number = member.phone || (/^\+\d{7,15}$/.test(member.id) ? member.id : "");
+    var im = (serviceName === "type_whatsapp" && member.phone) ? member.phone : member.id;
+    var contact = { ims: [{ value: im, type: serviceName }] };
+    if (member.name && member.name !== member.id && member.name !== member.phone) {
         contact.name = { givenName: member.name };
     }
-    if ((serviceName === "type_whatsapp" || serviceName === "type_signal") && /^\+\d{7,15}$/.test(member.id)) {
-        contact.phoneNumbers = [{ value: member.id, type: "type_mobile" }];
+    if ((serviceName === "type_whatsapp" || serviceName === "type_signal") && number) {
+        contact.phoneNumbers = [{ value: number, type: "type_mobile" }];
     }
     return { id: "com.palm.app.contacts", params: { launchType: "newContact", contact: contact } };
 }
