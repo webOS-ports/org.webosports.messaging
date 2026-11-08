@@ -117,6 +117,16 @@ function canDeleteForEveryone(message, actions, now) {
 }
 
 /**
+ * Whether a delete of these messages can offer "for everyone": every one is our own sent message
+ * on a service that takes the delete. actionsOf(message) gives that message's service's actions.
+ */
+function canDeleteAllForEveryone(messages, actionsOf, now) {
+    return !!(messages && messages.length) && messages.every(function (message) {
+        return canDeleteForEveryone(message, actionsOf(message), now);
+    });
+}
+
+/**
  * One imcommand. kind: accountService.getImCommandKind(serviceName); account: ours on the service
  * (its username); target: the chat's address, "" for a command with no chat.
  */
@@ -518,6 +528,7 @@ module.exports = {
     chatOf: chatOf,
     canEdit: canEdit,
     canDeleteForEveryone: canDeleteForEveryone,
+    canDeleteAllForEveryone: canDeleteAllForEveryone,
     reactionCommand: reactionCommand,
     pollVoteCommand: pollVoteCommand,
     editCommand: editCommand,

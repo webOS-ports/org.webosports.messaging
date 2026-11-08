@@ -1069,6 +1069,30 @@ Replies
   background-color: rgba(47, 111, 179, 0.18);
 }
 
+/* Delete: a title, a line, and the choices stacked full width, the destructive ones first and
+   Cancel last, as webOS's alert dialogs laid them out. */
+.delete-dialog {
+  width: 280px;
+  max-width: ~"calc(100vw - 32px)";
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+.delete-dialog-title {
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+.delete-dialog-message {
+  margin: 0.5rem 0 1rem;
+}
+.delete-dialog > .onyx-button {
+  display: block;
+  width: 100%;
+  margin: 0 0 8px 0;
+}
+.delete-dialog > .onyx-button:last-child {
+  margin-bottom: 0;
+}
+
 /* Selecting messages: the bar in the composer's place, and the rows picked. */
 .conversation-selection {
   -webkit-align-items: center;

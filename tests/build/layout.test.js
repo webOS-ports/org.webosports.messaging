@@ -723,11 +723,19 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             out.reaction = last();
             chat.toggleMyReaction(marta, 'X');   // and off again
 
-            // Theirs has no Edit or Delete for Everyone.
+            // Delete asks: for everyone, for me, or cancel. Theirs has no Edit and no "for everyone".
+            var prompt = function () {
+                return { shown: chat.$.deleteDialog.getShowing(), all: chat.$.deleteEveryoneButton.getShowing(),
+                    me: chat.$.deleteMeButton.getShowing() };
+            };
             chat.selectedMessage = marta;
             chat.reactMore(null, {}); await wait(100);
-            out.theirs = { edit: chat.$.menuEditItem.getShowing(), all: chat.$.menuDeleteAllItem.getShowing() };
+            out.theirs = { edit: chat.$.menuEditItem.getShowing() };
             chat.$.messageMenu.hide();
+            chat.menuDelete();
+            out.theirs.prompt = prompt();
+            chat.closeDeleteDialog();
+            out.theirs.kept = { shown: chat.$.deleteDialog.getShowing(), there: record('msg-f2')._id === 'msg-f2' };
 
             // Ours, sent a minute ago, has both.
             mockDb.merge([{
@@ -740,8 +748,11 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             var own = chat.messages.filter(function (m) { return m._id === 'msg-own'; })[0];
             chat.selectedMessage = own;
             chat.reactMore(null, {}); await wait(100);
-            out.ours = { edit: chat.$.menuEditItem.getShowing(), all: chat.$.menuDeleteAllItem.getShowing() };
+            out.ours = { edit: chat.$.menuEditItem.getShowing() };
             chat.$.messageMenu.hide();
+            chat.menuDelete();
+            out.ours.prompt = prompt();
+            chat.closeDeleteDialog();
 
             chat.menuEdit(); await wait(50);
             out.editing = { bar: chat.$.replyBar.getShowing(), text: chat.$.richText.get('value') };
@@ -752,11 +763,42 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
                 composer: chat.$.richText.get('value'), bar: chat.$.replyBar.getShowing() };
 
             chat.selectedMessage = own;
-            chat.menuDeleteForEveryone();
-            out.deletePrompt = chat.$.confirmDialog.getShowing();
-            chat.confirmAccepted(); await wait(200);
+            chat.menuDelete();
+            out.deletePrompt = prompt();
+            chat.deleteChosenForEveryone(); await wait(200);
             out.del = last();
-            out.deleted = record('msg-own').deleted;
+            out.deleted = { deleted: record('msg-own').deleted, shown: chat.$.deleteDialog.getShowing() };
+
+            // Selected in the bar: "for everyone" only while every one picked is ours; for me
+            // takes them off this device, sends nothing, and ends selecting.
+            mockDb.merge([{
+                _id: 'msg-own2', _kind: 'com.palm.message:1', conversations: ['thread-family'], folder: 'outbox',
+                status: 'successful', serviceName: 'type_whatsapp', chatType: 'groupchat', serviceMessageId: '3EB0OWN2',
+                messageText: 'Running late', localTimestamp: Date.now() - 30000, timestamp: Date.now() - 30000,
+                from: { addr: '+15555550100' }, flags: { visible: true, read: true }
+            }, {
+                _id: 'msg-in2', _kind: 'com.palm.message:1', conversations: ['thread-family'], folder: 'inbox',
+                status: 'successful', serviceName: 'type_whatsapp', chatType: 'groupchat', serviceMessageId: '3EB0IN2',
+                messageText: 'No rush', localTimestamp: Date.now() - 20000, timestamp: Date.now() - 20000,
+                from: { addr: '+46701234567' }, flags: { visible: true, read: true }
+            }]);
+            chat.runQuery(); await wait(300);
+            var row = function (id) {
+                for (var k = 0; k < chat.collection.length; k++) {
+                    if (chat.collection.at(k).get('_id') === id) { return { model: chat.collection.at(k) }; }
+                }
+            };
+            var commands = mockDb.imCommands.length;
+            chat.handleMessageHold(null, row('msg-own2')); await wait(100);
+            chat.promptDeleteSelected();
+            out.pickOwn = prompt();
+            chat.closeDeleteDialog();
+            chat.handleMessageTap(null, row('msg-in2'));
+            chat.promptDeleteSelected();
+            out.pickMixed = prompt();
+            chat.deleteChosenForMe(); await wait(300);
+            out.forMe = { sent: mockDb.imCommands.length - commands, own: !!record('msg-own2')._id, theirs: !!record('msg-in2')._id,
+                selecting: chat.$.selectionBar.getShowing(), shown: chat.$.deleteDialog.getShowing() };
 
             // The group: Add People and Leave Group; no Block Sender.
             out.buttons = { add: chat.$.groupAddButton.getShowing(), leave: chat.$.groupLeaveButton.getShowing(),
@@ -860,14 +902,18 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         var GROUP = '120363041234567890@g.us';
         assert.deepEqual(r.reaction, cmd('sendReaction', GROUP,
             { targetServiceMessageId: '3EB0C4F1A2', emoji: 'X', remove: false, targetSender: '+46701234567' }));
-        assert.deepEqual(r.theirs, { edit: false, all: false });
-        assert.deepEqual(r.ours, { edit: true, all: true });
+        assert.deepEqual(r.theirs, { edit: false, prompt: { shown: true, all: false, me: true },
+            kept: { shown: false, there: true } }, 'Cancel deletes nothing');
+        assert.deepEqual(r.ours, { edit: true, prompt: { shown: true, all: true, me: true } });
         assert.deepEqual(r.editing, { bar: true, text: 'See you at six' });
         assert.deepEqual(r.edit, cmd('editMessage', GROUP, { targetServiceMessageId: '3EB0OWN', text: 'See you at seven' }));
         assert.deepEqual(r.edited, { text: 'See you at seven', edited: true, composer: '', bar: false });
-        assert.equal(r.deletePrompt, true, 'asked first');
+        assert.deepEqual(r.deletePrompt, { shown: true, all: true, me: true }, 'asked first');
         assert.deepEqual(r.del, cmd('deleteMessage', GROUP, { targetServiceMessageId: '3EB0OWN' }));
-        assert.equal(r.deleted, true);
+        assert.deepEqual(r.deleted, { deleted: true, shown: false });
+        assert.deepEqual(r.pickOwn, { shown: true, all: true, me: true });
+        assert.deepEqual(r.pickMixed, { shown: true, all: false, me: true }, 'one of them is theirs');
+        assert.deepEqual(r.forMe, { sent: 0, own: false, theirs: false, selecting: false, shown: false });
         assert.deepEqual(r.buttons, { add: true, leave: true, block: false, del: false },
             'Block Sender and Delete Conversation are in the chat list now');
         assert.equal(r.inviteShown, true);

@@ -345,11 +345,7 @@ module.exports = kind({
                 { kind: MenuItem, content: $L("Copy Text"), ontap: "menuCopy" },
                 { name: "menuEditItem", kind: MenuItem, content: $L("Edit"), ontap: "menuEdit" },
                 { classes: "onyx-menu-divider" },
-                { kind: MenuItem, content: $L("Delete"), ontap: "menuDelete" },
-                {
-                    name: "menuDeleteAllItem", kind: MenuItem, content: $L("Delete for Everyone"),
-                    ontap: "menuDeleteForEveryone"
-                }
+                { kind: MenuItem, content: $L("Delete"), ontap: "menuDelete" }
             ]
         },
         {
@@ -367,6 +363,24 @@ module.exports = kind({
                         }
                     ]
                 }
+            ]
+        },
+        {
+            // Delete, from the message menu or the selection bar: for everyone when the service
+            // can, for this device, or not at all. Stacked full width, as webOS's alert dialogs.
+            name: "deleteDialog", kind: Popup, centered: true, floating: true, modal: true,
+            classes: "delete-dialog", components: [
+                { name: "deleteDialogTitle", classes: "delete-dialog-title" },
+                { name: "deleteDialogMessage", classes: "delete-dialog-message" },
+                {
+                    name: "deleteEveryoneButton", kind: Button, content: $L("Delete for Everyone"),
+                    classes: "onyx-negative", ontap: "deleteChosenForEveryone"
+                },
+                {
+                    name: "deleteMeButton", kind: Button, content: $L("Delete for Me"),
+                    classes: "onyx-negative", ontap: "deleteChosenForMe"
+                },
+                { kind: Button, content: $L("Cancel"), ontap: "closeDeleteDialog" }
             ]
         },
         {
@@ -1104,29 +1118,79 @@ module.exports = kind({
     },
 
     promptDeleteSelected: function () {
-        var n = this.selectedMessages().length;
-        if (!n) {
+        return this.promptDelete(this.selectedMessages(), true);
+    },
+
+    /**
+     * Ask how to delete these messages: for everyone (all ours, and the service takes it), for
+     * this device, or not. fromSelection: they were picked in the selection bar, which ends then.
+     */
+    promptDelete: function (messages, fromSelection) {
+        messages = (messages || []).filter(function (m) { return m && m._id; });
+        if (!messages.length) {
             return true;
         }
-        this.confirmAction = "deleteSelected";
-        this.$.confirmDialogTitle.setContent(n === 1 ? $L("Delete Message") : $L("Delete Messages"));
-        this.$.confirmDialogMessage.setContent(n === 1 ?
-            $L("Delete this message from this device?") :
-            $L("Delete these {n} messages from this device?").replace("{n}", n));
-        this.$.confirmAcceptButton.setContent($L("Delete"));
-        this.$.confirmDialog.show();
+        var n = messages.length, now = Date.now(), accountService = appState.accountService;
+        var everyone = chatActions.canDeleteAllForEveryone(messages, function (m) {
+            return chatActions.actionsFor(m.serviceName, accountService);
+        }, now);
+        this.pendingDelete = { messages: messages, fromSelection: !!fromSelection };
+        this.$.deleteDialogTitle.setContent(n === 1 ? $L("Delete Message") : $L("Delete Messages"));
+        this.$.deleteDialogMessage.setContent(n === 1 ? $L("Delete this message?") :
+            $L("Delete these {n} messages?").replace("{n}", n));
+        this.$.deleteEveryoneButton.setShowing(everyone);
+        this.$.deleteDialog.show();
         return true;
     },
 
-    deleteSelected: function () {
-        var ids = this.selectedMessages().map(function (m) { return m._id; });
-        this.endSelection();
+    closeDeleteDialog: function () {
+        this.$.deleteDialog.hide();
+        this.pendingDelete = null;
+        return true;
+    },
+
+    /** Take the pending delete, closing the prompt and the selection it came from. */
+    takePendingDelete: function () {
+        var pending = this.pendingDelete;
+        this.pendingDelete = null;
+        this.$.deleteDialog.hide();
+        if (pending && pending.fromSelection) {
+            this.endSelection();
+        }
+        return pending ? pending.messages : [];
+    },
+
+    deleteChosenForMe: function () {
+        var ids = this.takePendingDelete().map(function (m) { return m._id; });
         if (ids.length) {
             this.deleteRecords(ids);
             if (mockDb.enabled) {
                 this.runQuery();
             }
         }
+        return true;
+    },
+
+    /** Delete our messages on the service, and draw them deleted at once, as the transport will. */
+    deleteChosenForEveryone: function () {
+        var messages = this.takePendingDelete(), thread = this.chatThread, failed = 0;
+        messages.forEach(function (message) {
+            var sent = this.sendImCommand(message.serviceName, function (kind, account) {
+                return chatActions.deleteCommand(kind, account, chatActions.chatOf(message, thread), message);
+            });
+            if (!sent) {
+                failed++;
+                return;
+            }
+            // The words DeleteHandler leaves, for the thread's summary.
+            this.mergeRecord({ _id: message._id, _kind: message._kind, deleted: true, messageText: "This message was deleted." });
+        }, this);
+        if (failed) {
+            this.showError($L("Unable to delete"), failed === 1 ?
+                $L("This message cannot be deleted for everyone.") :
+                $L("{n} messages cannot be deleted for everyone.").replace("{n}", failed));
+        }
+        return true;
     },
 
     // --- Find in Chat ---------------------------------------------------------------------
@@ -2421,12 +2485,11 @@ module.exports = kind({
         return true;
     },
 
-    /** Edit and Delete for Everyone only for our own sent message, where the service does them. */
+    /** Edit only for our own sent message, where the service does it. */
     updateMessageMenu: function (message) {
         var actions = message ? chatActions.actionsFor(message.serviceName, appState.accountService) : {};
         var now = Date.now();
         this.$.menuEditItem.setShowing(chatActions.canEdit(message, actions, now));
-        this.$.menuDeleteAllItem.setShowing(chatActions.canDeleteForEveryone(message, actions, now));
     },
 
     /**
@@ -2571,13 +2634,7 @@ module.exports = kind({
     },
 
     menuDelete: function () {
-        if (this.selectedMessage && this.selectedMessage._id) {
-            this.deleteRecords([this.selectedMessage._id]);
-            if (mockDb.enabled) {
-                this.runQuery();
-            }
-        }
-        return true;
+        return this.promptDelete([this.selectedMessage], false);
     },
 
     enterReply: function (message) {
@@ -2653,37 +2710,6 @@ module.exports = kind({
             this.mergeRecord({ _id: message._id, _kind: message._kind, messageText: text, edited: true });
         }
         this.cancelReply();
-    },
-
-    menuDeleteForEveryone: function () {
-        if (!this.selectedMessage) {
-            return true;
-        }
-        this.pendingDelete = this.selectedMessage;
-        this.confirmAction = "deleteForEveryone";
-        this.$.confirmDialogTitle.setContent($L("Delete for Everyone"));
-        this.$.confirmDialogMessage.setContent($L("Delete this message for everyone in the chat?"));
-        this.$.confirmAcceptButton.setContent($L("Delete"));
-        this.$.confirmDialog.show();
-        return true;
-    },
-
-    /** Delete our message on the service, and draw it deleted at once, as the transport will. */
-    deleteForEveryone: function () {
-        var message = this.pendingDelete, thread = this.chatThread;
-        this.pendingDelete = null;
-        if (!message) {
-            return;
-        }
-        var sent = this.sendImCommand(message.serviceName, function (kind, account) {
-            return chatActions.deleteCommand(kind, account, chatActions.chatOf(message, thread), message);
-        });
-        if (!sent) {
-            this.showError($L("Unable to delete"), $L("This message cannot be deleted for everyone."));
-            return;
-        }
-        // The words DeleteHandler leaves, for the thread's summary.
-        this.mergeRecord({ _id: message._id, _kind: message._kind, deleted: true, messageText: "This message was deleted." });
     },
 
     // --- groups ----------------------------------------------------------------------------
@@ -3119,11 +3145,7 @@ module.exports = kind({
 
     confirmAccepted: function () {
         this.$.confirmDialog.hide();
-        if (this.confirmAction === "deleteSelected") {
-            this.deleteSelected();
-        } else if (this.confirmAction === "deleteForEveryone") {
-            this.deleteForEveryone();
-        } else if (this.confirmAction === "leaveGroup") {
+        if (this.confirmAction === "leaveGroup") {
             this.leaveGroup();
         } else if (this.confirmAction === "sendLocation") {
             this.shareLocation();

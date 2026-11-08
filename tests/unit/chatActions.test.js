@@ -102,6 +102,17 @@ describe('chatActions: edit and delete for everyone', function () {
         assert.equal(ca.canDeleteForEveryone(sent({ timestamp: NOW - 11 }), { deleteForEveryone: true, deleteWindowMs: 10 }, NOW), false);
         assert.equal(ca.canEdit(sent(), null, NOW), false);
     });
+    it('a delete offers "for everyone" only when every message chosen can be', function () {
+        var of = function (m) { return ca.actionsFor(m.serviceName); };
+        assert.equal(ca.canDeleteAllForEveryone([sent()], of, NOW), true);
+        assert.equal(ca.canDeleteAllForEveryone([sent(), sent({ serviceName: 'type_signal' })], of, NOW), true);
+        assert.equal(ca.canDeleteAllForEveryone([sent(), sent({ folder: 'inbox' })], of, NOW), false, 'one is theirs');
+        assert.equal(ca.canDeleteAllForEveryone([sent(), sent({ serviceMessageId: '' })], of, NOW), false,
+            'one the service never confirmed');
+        assert.equal(ca.canDeleteAllForEveryone([sent({ serviceName: 'type_irc' })], of, NOW), false, 'a service without it');
+        assert.equal(ca.canDeleteAllForEveryone([], of, NOW), false);
+        assert.equal(ca.canDeleteAllForEveryone(null, of, NOW), false);
+    });
 });
 
 describe('chatActions: the chat a message is in', function () {
