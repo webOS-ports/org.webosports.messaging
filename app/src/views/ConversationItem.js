@@ -17,6 +17,7 @@ var kind = require('enyo/kind'),
     poll = require('../util/poll'),
     launchTargets = require('../util/launchTargets'),
     sentExtras = require('../util/sentExtras'),
+    receivedLocation = require('../util/receivedLocation'),
     moment = require('moment'),
     $L = require('enyo/i18n').$L;
 
@@ -263,10 +264,10 @@ module.exports = kind({
             }
         }
 
-        // A shared location arrives as "name\naddress\ngeo:lat,lng" text. There is no map-bubble UI,
-        // but the geo: URI is parseable, so turn it into a tappable pin chip.
+        // A shared location arrives as text: WhatsApp's with a geo: URI, Telegram's as a
+        // "Location: lat, lng" line (util/receivedLocation). Each becomes a tappable pin chip.
         var locationsHtml = "";
-        var locations = this.extractLocations(raw);
+        var locations = receivedLocation.find(raw);
         for (var li = 0; li < locations.length; li++) {
             locationsHtml += this.buildLocationChip(locations[li]);
         }
@@ -309,7 +310,7 @@ module.exports = kind({
 
         // Drop the matched media URLs and any geo:/event:/poll: token from the displayed text —
         // they are now rendered as an image/chip/block below.
-        inText = inText.replace(this.mediaUrlRe(), "").replace(this.geoUrlRe(), "")
+        inText = receivedLocation.strip(inText.replace(this.mediaUrlRe(), ""))
             .replace(this.eventUrlRe(), "").replace(this.pollUrlRe(), "")
             .replace(/(?:\s|<br>)+$/g, "");
 
@@ -470,16 +471,6 @@ module.exports = kind({
             urls.push({ url: url, kind: this.mediaKind(url), name: this.mediaName(url) });
         }
         return urls;
-    },
-
-    geoUrlRe: function () { return /geo:(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/gi; },
-
-    extractLocations: function (text) {
-        var re = this.geoUrlRe(), locations = [], m;
-        while ((m = re.exec(text)) !== null) {
-            locations.push({ lat: m[1], lng: m[2] });
-        }
-        return locations;
     },
 
     /**

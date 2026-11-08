@@ -868,6 +868,16 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
                 place: !!placeBubble && !/maps\.google|My location/.test(placeBubble.textContent),
                 card: !!cardBubble && !/987/.test(cardBubble.textContent) && !cardBubble.querySelector('[data-open]')
             };
+            // A place Telegram sent: the database has only its "Location: lat, lng" line.
+            mockDb.merge([{
+                _id: 'msg-tg-place', _kind: 'com.palm.message:1', conversations: ['thread-family'], folder: 'inbox',
+                status: 'successful', serviceName: 'type_whatsapp', messageText: 'Location: 50.4501, 30.5234',
+                localTimestamp: Date.now(), timestamp: Date.now(), from: { addr: '+46701234567' }, flags: { visible: true, read: true }
+            }]);
+            chat.runQuery(); await wait(400);
+            var tgPlace = Array.prototype.slice.call(document.querySelectorAll('[id$="_messageText"]')).filter(function (b) {
+                return b.querySelector('.msg-attachment[data-kind="location"][data-open="50.4501,30.5234"]'); })[0];
+            out.drawn.received = !!tgPlace && !/Location:/.test(tgPlace.textContent);
 
             // A mention: "@Ma" offers Marta; picking her writes her name, sending says who it is.
             var node = chat.$.richText.hasNode();
@@ -948,7 +958,7 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.deepEqual(r.place, { text: 'My location\nhttps://maps.google.com/?q=52.3731,4.8925',
             location: { latitude: 52.3731, longitude: 4.8925 }, to: GROUP });
         assert.equal(r.card.text.split('\n')[0], 'Sam Patel');
-        assert.deepEqual(r.drawn, { place: true, card: true }, 'what we send is drawn as what we receive');
+        assert.deepEqual(r.drawn, { place: true, card: true, received: true }, 'what we send is drawn as what we receive');
         assert.match(r.card.vcard, /^BEGIN:VCARD\r\nVERSION:3\.0\r\nFN:Sam Patel\r\n[\s\S]*TEL;TYPE=CELL:[\s\S]*END:VCARD\r\n$/);
         assert.deepEqual(r.offered, ['Marta Lindqvist']);
         assert.equal(r.mentionText, 'hi @Marta Lindqvist ');
