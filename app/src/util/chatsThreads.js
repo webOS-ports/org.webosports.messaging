@@ -11,8 +11,10 @@
  * its own name ("general") would read as a person's.
  *
  * A Discord group DM is a channel too: purple-discord keeps group DMs in its buddy-list group
- * "Discord", so the transport files them under a server of that name. It is a chat with people,
- * as a WhatsApp group is, so it is always among the chats, under its own name.
+ * "Discord", so the transport files them under a server of that name. And every Telegram group or
+ * channel is one, filed under the account's single Telegram server (whatever the plug-in calls
+ * it); Telegram's own app lists them with the rest of the chats. Both are chats with people, as a
+ * WhatsApp group is, so they are always among the chats, under their own names.
  */
 
 var $L = require('enyo/i18n').$L;
@@ -23,14 +25,18 @@ function channelLabel(channel) {
     return (String(name).charAt(0) === "#") ? name : ("# " + name);
 }
 
-/** The server the transport files Discord's group DMs under (see the top of this file). */
-function isGroupDmServer(server) {
-    return !!server && server.serviceName === "type_discord" && server.name === "Discord";
+/**
+ * A server whose channels are chats (see the top of this file): Discord's group DMs' "Discord",
+ * and Telegram's one server.
+ */
+function isChatServer(server) {
+    return !!server && ((server.serviceName === "type_discord" && server.name === "Discord") ||
+        server.serviceName === "type_telegram");
 }
 
 /**
  * The channels (imchannel records) the Chats list shows, as a lookup from their _id to how it
- * names them: those that deliver while closed, and every Discord group DM. servers: the imserver
+ * names them: those that deliver while closed, and every Discord group DM and Telegram chat. servers: the imserver
  * records, for the server's name.
  */
 function deliveredChannels(channels, servers) {
@@ -38,7 +44,7 @@ function deliveredChannels(channels, servers) {
     for (var s = 0; servers && s < servers.length; s++) {
         if (servers[s] && servers[s]._id) {
             names[servers[s]._id] = servers[s].displayName || servers[s].name || "";
-            if (isGroupDmServer(servers[s])) {
+            if (isChatServer(servers[s])) {
                 groupDms[servers[s]._id] = true;
             }
         }

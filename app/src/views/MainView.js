@@ -81,6 +81,7 @@ module.exports = kind({
                             onSelectThread: "threadSelected",
                             onDeleteThread: "deleteThread",
                             onThreadLocked: "threadLocked",
+                            onThreadLinked: "threadLinked",
                             onOpenComposeView: "openComposeView",
                             onNewBuddy: "addBuddy",
                             onNewFavorite: "showAddFavoriteList",
@@ -415,6 +416,11 @@ module.exports = kind({
 
     threadLocked: function (inSender, inEvent) {
         this.$.chatView.threadLocked(inEvent && inEvent.thread);
+        return true;
+    },
+
+    threadLinked: function (inSender, inEvent) {
+        this.$.chatView.threadLinked(inEvent && inEvent.thread);
         return true;
     },
 

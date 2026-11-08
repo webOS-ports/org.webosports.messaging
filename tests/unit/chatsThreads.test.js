@@ -126,3 +126,19 @@ describe('chatsThreads: Discord group DMs', function () {
         assert.deepEqual(out.map(function (t) { return [t._id, t.channelLabel]; }), [['t-dm', 'Weekend']]);
     });
 });
+
+describe('chatsThreads: Telegram groups and channels', function () {
+    var servers = [
+        { _id: 's-tg', name: 'Telegram (tdlib)', serviceName: 'type_telegram' },
+        { _id: 's-dc', name: 'LuneOS', serviceName: 'type_discord' }
+    ];
+    var channels = [
+        { _id: 'c-tg', serverId: 's-tg', name: 'chat-1234567890', displayName: 'Family', background: false },
+        { _id: 'c-tg2', serverId: 's-tg', name: 'chat-42' },
+        { _id: 'c-dc', serverId: 's-dc', name: 'general', background: false }
+    ];
+
+    it('every Telegram chat is among the chats, named as itself, whatever its server is called', function () {
+        assert.deepEqual(ct.deliveredChannels(channels, servers), { 'c-tg': 'Family', 'c-tg2': 'chat-42' });
+    });
+});

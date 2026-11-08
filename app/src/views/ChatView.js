@@ -131,6 +131,10 @@ module.exports = kind({
         this.$.conversationList.threadLocked(inThread);
     },
 
+    threadLinked: function (inThread) {
+        this.$.conversationList.threadLinked(inThread);
+    },
+
     accountsChanged: function () {
         this.$.conversationList.accountsChanged();
     },

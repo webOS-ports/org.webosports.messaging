@@ -42,6 +42,7 @@ module.exports = kind({
         onSelectThread: "",
         onDeleteThread: "",
         onThreadLocked: "",
+        onThreadLinked: "",
         onOpenComposeView: "",
         onNewBuddy: "",
         onNewFavorite: "",
@@ -102,7 +103,7 @@ module.exports = kind({
                 {
                     name: "threadList", kind: ThreadList,
                     onSelectThread: "doSelectThread", onDeleteThread: "doDeleteThread",
-                    onThreadLocked: "doThreadLocked", onUnreadCountChanged: "updateUnreadCount",
+                    onThreadLocked: "doThreadLocked", onThreadLinked: "doThreadLinked", onUnreadCountChanged: "updateUnreadCount",
                     onClearUnreadCount: "doClearUnreadCount"
                 },
                 {

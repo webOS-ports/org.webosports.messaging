@@ -557,6 +557,86 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.deepEqual(r, { 'thread-gdm2': 'Weekend' }, 'the group DM is a chat named as itself; the quiet channel is not');
     });
 
+    // A Telegram group's chat is first stored as a plain one, and the transport ties it to its
+    // channel and server a moment later. The open chat kept the first record: no Add People, no
+    // Leave Group. And the Chats list then dropped it, as it leaves a channel's chat to the
+    // Servers tab. The open chat now takes the new ids, and a Telegram chat stays among the chats.
+    it('gives a Telegram group its buttons once the transport ties it to its channel, and keeps it in Chats', async function () {
+        /* global require */
+        var page = async function () {
+            var $ = require('enyo/dispatcher').$, mockDb = require('src/data/mockDb');
+            var main = $.app_mainView, chat = $.app_mainView_chatView_conversationList;
+            var list = $.app_mainView_messaging_threadList;
+            var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+            var threads = mockDb.store['com.palm.chatthread:1'];
+            var anna = mockDb.store['com.palm.message:1'].filter(function (m) { return m.conversations[0] === 'thread-anna'; })[0];
+            var made = ['server-tg3', 'ch-tg3', 'thread-tg3', 'msg-tg3', 'server-gdm3', 'thread-gdm3', 'msg-gdm3'];
+            var buttons = function () {
+                return { add: chat.$.groupAddButton.getShowing(), leave: chat.$.groupLeaveButton.getShowing(), row: chat.$.listButtons.getShowing() };
+            };
+            var inList = function (id) {
+                var found = false;
+                list.collection.forEach(function (m) { if (m.attributes._id === id) { found = true; } });
+                return found;
+            };
+            var open = async function (t) {
+                main.selectThread(null, t);
+                for (var k = 0; k < 20 && !(chat.chatThread && chat.chatThread._id === t._id && chat.collection.length); k++) { await wait(100); }
+                await wait(300);
+            };
+            var message = function (id, thread, svc) {
+                var m = JSON.parse(JSON.stringify(anna)); m._id = id; m.conversations = [thread]; m.serviceName = svc; return m;
+            };
+            var out = {};
+            try {
+                // First a Discord group DM, so the last server's name is "Discord".
+                mockDb.merge([
+                    { _id: 'server-gdm3', _kind: 'com.palm.imserver:1', serviceName: 'type_discord', name: 'Discord', displayName: 'Discord' },
+                    { _id: 'thread-gdm3', _kind: 'com.palm.chatthread:1', displayName: 'Weekend', channelId: 'ch-gdm3', serverId: 'server-gdm3',
+                        replyAddress: '1100000000000000099', replyService: 'type_discord', timestamp: Date.now(), unreadCount: 0, flags: { visible: true } },
+                    message('msg-gdm3', 'thread-gdm3', 'type_discord')
+                ]);
+                await open(JSON.parse(JSON.stringify(mockDb.get(['thread-gdm3']).results[0])));
+                out.discord = buttons();
+
+                // The Telegram group, still a plain chat.
+                var plain = { _id: 'thread-tg3', _kind: 'com.palm.chatthread:1', displayName: 'Family TG', replyAddress: 'chat-1234567890',
+                    normalizedAddress: 'chat-1234567890', replyService: 'type_telegram', timestamp: Date.now(), unreadCount: 0, flags: { visible: true } };
+                mockDb.merge([plain, message('msg-tg3', 'thread-tg3', 'type_telegram')]);
+                list.threadsWatch(); await wait(300);
+                var shown = null;
+                list.collection.forEach(function (m) { if (m.attributes._id === 'thread-tg3') { shown = JSON.parse(JSON.stringify(m.attributes)); } });
+                await open(shown);
+                out.plain = buttons();
+                out.staleServer = chat._serverName === 'Discord';
+
+                // The transport ties it to its channel and server.
+                mockDb.merge([
+                    { _id: 'server-tg3', _kind: 'com.palm.imserver:1', serviceName: 'type_telegram', name: 'Telegram (tdlib)', displayName: 'Telegram (tdlib)' },
+                    { _id: 'ch-tg3', _kind: 'com.palm.imchannel:1', serverId: 'server-tg3', serviceName: 'type_telegram', name: 'chat-1234567890',
+                        displayName: 'Family TG', chatThreadId: 'thread-tg3', background: false },
+                    { _id: 'thread-tg3', _kind: 'com.palm.chatthread:1', channelId: 'ch-tg3', serverId: 'server-tg3' }
+                ]);
+                list.serversWatch(); list.channelsWatch(); list.threadsWatch();
+                await wait(600);
+                out.linked = buttons();
+                out.stillInChats = inList('thread-tg3');
+            } finally {
+                mockDb.del(made.concat(['ch-tg3']));
+                list.serversWatch(); list.channelsWatch(); list.threadsWatch();
+                main.selectThread(null, JSON.parse(JSON.stringify(threads.filter(function (t) { return t._id === 'thread-anna'; })[0])));
+                await wait(300);
+            }
+            return out;
+        };
+        var r = await session.evaluate('(' + page.toString() + ')()');
+        assert.deepEqual(r.discord, { add: true, leave: true, row: true }, 'the Discord group DM first');
+        assert.deepEqual(r.plain, { add: false, leave: false, row: false }, 'a plain chat has no group buttons');
+        assert.equal(r.staleServer, false, 'a chat with no server does not keep the last chat\'s server name');
+        assert.deepEqual(r.linked, { add: true, leave: true, row: true }, 'tied to its channel: Add People and Leave Group');
+        assert.equal(r.stillInChats, true, 'and still among the chats');
+    });
+
     // A chat opened with unread messages (util/unreadMarker): "N unread messages" above the first
     // of them, and the chat opens at the line when the newest would take it off the top; further
     // up, a button back down, counting what comes in meanwhile.

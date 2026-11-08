@@ -41,6 +41,7 @@ module.exports = kind({
         onSelectThread: "",
         onDeleteThread: "",
         onThreadLocked: "",
+        onThreadLinked: "",
         onUnreadCountChanged: "",
         onClearUnreadCount: ""
     },
@@ -260,6 +261,24 @@ module.exports = kind({
         if (!mockDb.enabled && openThread.droppedOut(this.selectedRecord, all, this.filterString)) {
             this.checkingThreadId = this.selectedRecord._id;
             this.$.openThreadCheck.send({ ids: [this.checkingThreadId] });
+        }
+
+        // The transport tied the open chat to a channel (or a server) after it was opened - a
+        // Telegram group's chat is first stored as a plain one: hand the open conversation the new
+        // record, so it is a group with its buttons. Looked for among all the threads, as a chat
+        // tied to a channel may have left this list.
+        if (this.selectedRecord) {
+            for (var a = 0; a < all.length; a++) {
+                if (all[a]._id === this.selectedRecord._id) {
+                    if ((all[a].channelId || "") !== (this.selectedRecord.channelId || "") ||
+                            (all[a].serverId || "") !== (this.selectedRecord.serverId || "")) {
+                        this.selectedRecord.channelId = all[a].channelId;
+                        this.selectedRecord.serverId = all[a].serverId;
+                        this.doThreadLinked({ thread: all[a] });
+                    }
+                    break;
+                }
+            }
         }
 
         // Report any thread whose lock state changed out from under the open conversation.

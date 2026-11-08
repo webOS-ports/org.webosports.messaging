@@ -633,7 +633,13 @@ module.exports = kind({
 
     /** The server of a channel's chat, for its name (updateListButtons). */
     lookUpChatServer: function (thread) {
-        if (!thread.serverId || thread.serverId === this._serverId) {
+        if (!thread.serverId) {
+            // No server: not the name of the last chat's.
+            this._serverId = undefined;
+            this._serverName = undefined;
+            return;
+        }
+        if (thread.serverId === this._serverId) {
             return;
         }
         this._serverId = thread.serverId;
@@ -837,6 +843,22 @@ module.exports = kind({
     threadLocked: function (inThread) {
         this.chatThread = inThread;
         this.lockConversationList(inThread.flags && inThread.flags.locked);
+    },
+
+    /**
+     * The transport tied the open chat to a channel or server after it was opened (ThreadList):
+     * take the new ids, so a group shows its Add People and Leave Group.
+     */
+    threadLinked: function (inThread) {
+        if (!inThread || !this.chatThread || inThread._id !== this.chatThread._id) {
+            return;
+        }
+        this.chatThread.channelId = inThread.channelId;
+        this.chatThread.serverId = inThread.serverId;
+        this.lookUpChatServer(this.chatThread);
+        this.updateListButtons(this.chatThread);
+        this.showListButtons(this.collection && this.collection.length > 0);
+        this.relayout();
     },
 
     setDeletedChatThread: function (inThread) {
