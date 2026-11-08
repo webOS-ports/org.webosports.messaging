@@ -43,3 +43,20 @@ describe('mentionMarkup.mark', function () {
         assert.equal(mm.mark('', [{ name: 'rad' }], escapeHtml), '');
     });
 });
+
+describe('mentionMarkup.keepBold', function () {
+    var lt = require('./bootstrap').load('util/launchTargets.js');
+    function sent(text) { return mm.keepBold(lt.outgoingHtml(text, escapeHtml)); }
+
+    it('bolds a mention a message sent from another device brought as HTML', function () {
+        assert.equal(sent('hi <b>@Anna K</b>, ok'), 'hi <b>@Anna K</b>, ok');
+        assert.equal(sent('<b>@A</b><b>@B</b>'), '<b>@A</b><b>@B</b>');
+    });
+
+    it('keeps the name escaped, and makes no other tag', function () {
+        assert.equal(sent('<b>@<i>x</i></b>'), '&lt;b&gt;@&lt;i&gt;x&lt;/i&gt;&lt;/b&gt;');
+        assert.equal(sent('<b>@a&b</b>'), '<b>@a&amp;b</b>');
+        assert.equal(sent('<b>bold</b> <script>@x</script>'), '&lt;b&gt;bold&lt;/b&gt; &lt;script&gt;@x&lt;/script&gt;');
+        assert.equal(sent('<b>@</b>'), '&lt;b&gt;@&lt;/b&gt;');
+    });
+});

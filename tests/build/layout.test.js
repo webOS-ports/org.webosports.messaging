@@ -1632,6 +1632,47 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.deepEqual(r.member, { style: 'normal', sender: true }, 'a member\'s message');
     });
 
+    // A message we sent from the phone's WhatsApp comes back as HTML with a mention as
+    // "<b>@Name</b>", in the outbox, whose text is drawn as plain: the mention is bold, not tags,
+    // and any other tag stays text.
+    it('bolds a mention in a message we sent from another device', async function () {
+        /* global require */
+        var page = async function () {
+            var $ = require('enyo/dispatcher').$, mockDb = require('src/data/mockDb');
+            var main = $.app_mainView, chat = $.app_mainView_chatView_conversationList;
+            var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+            var thread = null;
+            $.app_mainView_messaging_threadList.collection.forEach(function (m) {
+                if (m.attributes._id === 'thread-family') { thread = m.attributes; }
+            });
+            main.selectThread(null, thread);
+            for (var i = 0; i < 20 && !(chat.chatThread && chat.chatThread._id === 'thread-family' && chat.messages.length); i++) { await wait(100); }
+            mockDb.merge([{
+                _id: 'msg-phone', _kind: 'com.palm.message:1', conversations: ['thread-family'], folder: 'outbox',
+                status: 'successful', serviceName: 'type_whatsapp', chatType: 'groupchat', serviceMessageId: '3EB0PHONE',
+                messageText: 'hi <b>@Anna K</b> &amp; <i>x</i>', localTimestamp: Date.now(), timestamp: Date.now(),
+                from: { addr: '+15555550100' }, flags: { visible: true, read: true }
+            }]);
+            chat.runQuery(); await wait(500);
+            var node = null;
+            chat.$.list.getClientControls().forEach(function (c) {
+                (function walk(k) {
+                    if (node || !k) { return; }
+                    if (k.message && k.message._id === 'msg-phone' && k.$ && k.$.messageText) { node = k.$.messageText.hasNode(); return; }
+                    (k.children || []).forEach(walk);
+                })(c.$ && (c.$.item || c));
+            });
+            if (!node) { return JSON.stringify(null); }
+            return JSON.stringify({ bold: Array.prototype.map.call(node.querySelectorAll('b'), function (b) { return b.textContent; }),
+                italic: node.querySelectorAll('i').length, text: node.textContent });
+        };
+        var r = JSON.parse(await session.evaluate('(' + page.toString() + ')()'));
+        assert.ok(r, 'the message is drawn');
+        assert.deepEqual(r.bold, ['@Anna K']);
+        assert.equal(r.italic, 0);
+        assert.ok(/<i>x<\/i>/.test(r.text) && r.text.indexOf('<b>') === -1, r.text);
+    });
+
     // The keyboard New Conversation's "To" field brings up resizes the window; a resize on a phone
     // with no chat open went back to the chat list, so New Conversation vanished behind it and no
     // group could be made. With nothing in the pane, a resize still shows the list.

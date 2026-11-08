@@ -42,4 +42,15 @@ function mark(html, mentions, escapeHtml) {
     }).join("");
 }
 
-module.exports = { mark: mark };
+/**
+ * A message we sent from another device (the phone's WhatsApp, Discord in a browser) comes back
+ * through the plugin as HTML, with a mention as "<b>@Name</b>", but is stored in the outbox, whose
+ * text is drawn as plain (launchTargets.outgoingHtml), so the tags showed as text. html: that
+ * escaped text. Each escaped "<b>@...</b>" is bold again; its name stays escaped, and nothing
+ * else, not even a "<b>" without "@", becomes a tag.
+ */
+function keepBold(html) {
+    return String(html || "").replace(/&lt;b&gt;(@(?:(?!&lt;)[^<>])+?)&lt;\/b&gt;/g, "<b>$1</b>");
+}
+
+module.exports = { mark: mark, keepBold: keepBold };

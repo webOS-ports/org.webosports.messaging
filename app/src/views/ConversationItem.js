@@ -251,7 +251,7 @@ module.exports = kind({
                 return;
             }
             // Outgoing text needs sanitizing; incoming was sanitized on the way into the db.
-            inText = launchTargets.outgoingHtml(inText, messagingUtils.message.escapeHtml);
+            inText = mentionMarkup.keepBold(launchTargets.outgoingHtml(inText, messagingUtils.message.escapeHtml));
             // Who it mentions, bold, as a received mention is (util/mentionMarkup).
             inText = mentionMarkup.mark(inText, inMessage.mentions, messagingUtils.message.escapeHtml);
         }
