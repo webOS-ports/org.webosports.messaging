@@ -494,7 +494,8 @@ function groupMembers(messages) {
     var byAddr = {}, order = [];
     (messages || []).forEach(function (m) {
         var from = m && m.folder !== "outbox" && m.from;
-        if (!from || !from.addr || !from.name) {
+        // purple-combined's own lines in a group ("X added Y") come from "system": no one in it.
+        if (!from || !from.addr || !from.name || from.addr === "system") {
             return;
         }
         if (!byAddr[from.addr]) {

@@ -1522,6 +1522,44 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.equal(r.signalCan, false);
     });
 
+    // A group's own line ("Mum added Marta Lindqvist", sender "system") is italic, with no sender
+    // name over it; a member's message is neither.
+    it('draws a group\'s own line italic', async function () {
+        /* global require */
+        var page = async function () {
+            var $ = require('enyo/dispatcher').$;
+            var main = $.app_mainView, chat = $.app_mainView_chatView_conversationList;
+            var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+            var thread = null;
+            $.app_mainView_messaging_threadList.collection.forEach(function (m) {
+                if (m.attributes._id === 'thread-family') { thread = m.attributes; }
+            });
+            main.selectThread(null, thread);
+            for (var i = 0; i < 20 && !(chat.chatThread && chat.chatThread._id === 'thread-family' && chat.messages.length); i++) { await wait(100); }
+            await wait(300);
+            var look = function (id) {
+                var item = null;
+                chat.$.list.getClientControls().forEach(function (c) {
+                    var it = c.$ && (c.$.item || c);
+                    (function walk(k) {
+                        if (item || !k) { return; }
+                        if (k.message && k.message._id === id && k.$ && k.$.messageText) { item = k; return; }
+                        (k.children || []).forEach(walk);
+                    })(it);
+                });
+                if (!item) { return null; }
+                return {
+                    style: getComputedStyle(item.$.messageText.hasNode()).fontStyle,
+                    sender: item.$.senderName.getShowing()
+                };
+            };
+            return JSON.stringify({ notice: look('msg-f0'), member: look('msg-f1') });
+        };
+        var r = JSON.parse(await session.evaluate('(' + page.toString() + ')()'));
+        assert.deepEqual(r.notice, { style: 'italic', sender: false }, 'the group\'s line');
+        assert.deepEqual(r.member, { style: 'normal', sender: true }, 'a member\'s message');
+    });
+
     // The keyboard New Conversation's "To" field brings up resizes the window; a resize on a phone
     // with no chat open went back to the chat list, so New Conversation vanished behind it and no
     // group could be made. With nothing in the pane, a resize still shows the list.

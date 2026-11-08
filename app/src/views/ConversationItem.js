@@ -161,7 +161,7 @@ module.exports = kind({
         var isGroup = !!(inMessage.channelName || inMessage.chatType === "groupchat");
         var sender = (inMessage.from && inMessage.from.name) ? inMessage.from.name : "";
 
-        if (isIncoming && isGroup && sender) {
+        if (isIncoming && isGroup && sender && !messageState.isSystemLine(inMessage)) {
             // from.name may carry astral-emoji entities from the transport: neutralise tags but keep
             // the entities so emojify() can turn them into inline images.
             var safe = String(sender).replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -224,6 +224,8 @@ module.exports = kind({
 
     updateMessageText: function (inMessage, skipTextIndexer) {
         var raw = inMessage.messageText || "";
+        // The service's own line (a member added or taken out, a rename) is drawn italic.
+        this.$.messageText.addRemoveClass("system-line", messageState.isSystemLine(inMessage));
         var inText = raw;
 
         if (messagingUtils.message.isMMSMessage(inMessage)) {

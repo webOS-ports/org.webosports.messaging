@@ -349,6 +349,7 @@ describe('chatActions: mentions', function () {
             { folder: 'outbox', from: { addr: '+15555550100', name: 'Me' } },
             { folder: 'inbox', from: { addr: '+1501', name: 'Mum' } },
             { folder: 'inbox', from: { addr: '+99' } },
+            { folder: 'inbox', from: { addr: 'system', name: 'Family' } },
             { folder: 'inbox' }
         ];
         assert.deepEqual(ca.groupMembers(msgs), [{ id: '+4670', name: 'Marta Lindqvist' }, { id: '+1501', name: 'Mum' }]);

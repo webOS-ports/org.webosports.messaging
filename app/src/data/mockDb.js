@@ -480,6 +480,15 @@ var messages = [
 
     // thread-family: a WhatsApp group with three senders.
     {
+        // The group's own line, as purple-combined writes one (sender "system").
+        _id: "msg-f0", _kind: "com.palm.message:1", conversations: ["thread-family"],
+        folder: "inbox", messageText: "Mum added Marta Lindqvist",
+        localTimestamp: ago(0, 5), timestamp: ago(0, 5), status: "successful",
+        serviceName: "type_whatsapp", chatType: "groupchat", channelName: "Family",
+        from: { addr: "system", name: "Family" },
+        flags: { visible: true, read: true, noNotification: true }
+    },
+    {
         _id: "msg-f1", _kind: "com.palm.message:1", conversations: ["thread-family"],
         folder: "inbox", messageText: "Dinner at ours on Sunday?",
         localTimestamp: ago(0, 4.5), timestamp: ago(0, 4.5), status: "successful",

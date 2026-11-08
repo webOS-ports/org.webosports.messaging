@@ -42,3 +42,18 @@ describe('messageState.deletedHtml', function () {
         assert.equal(ms.deletedHtml(), '<span class="msg-deleted">This message was deleted.</span>');
     });
 });
+
+describe('messageState.isSystemLine', function () {
+    it('a received line with no sender (tdlib-purple), or the sender "system" (purple-combined)', function () {
+        assert.equal(ms.isSystemLine({ folder: 'inbox', from: { addr: '', name: ' ' } }), true);
+        assert.equal(ms.isSystemLine({ folder: 'inbox', from: { addr: ' ', name: '' } }), true);
+        assert.equal(ms.isSystemLine({ folder: 'inbox', from: { addr: 'system', name: 'Family' } }), true);
+    });
+    it('not anyone\'s message, nor one we sent, nor one with no from at all', function () {
+        assert.equal(ms.isSystemLine({ folder: 'inbox', from: { addr: '+447700900123', name: 'Ben' } }), false);
+        assert.equal(ms.isSystemLine({ folder: 'inbox', from: { addr: '', name: 'Ben' } }), false);
+        assert.equal(ms.isSystemLine({ folder: 'outbox', from: { addr: '', name: '' } }), false);
+        assert.equal(ms.isSystemLine({ folder: 'inbox' }), false);
+        assert.equal(ms.isSystemLine(null), false);
+    });
+});
