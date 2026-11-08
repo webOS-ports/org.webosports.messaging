@@ -610,13 +610,17 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             '  hasDeleted: gone >= 0,' +
             '  lit: document.querySelectorAll(".msg-selected").length, fits: fits,' +
             '  composer: chat.$.footer.showing, react: chat.$.reactRow.showing };' +
+            // The light Enyo 1 bar the composer is, not Onyx's dark toolbar.
+            'var sb = getComputedStyle(chat.$.selectionBar.hasNode()), cb = getComputedStyle(chat.$.footer.hasNode());' +
+            'state.light = /gradient/.test(sb.backgroundImage) && sb.backgroundImage === cb.backgroundImage &&' +
+            '  sb.color === cb.color;' +
             'Signals.send("onbackgesture", {}); await wait(300);' +
             'state.after = { bar: chat.$.selectionBar.showing, composer: chat.$.footer.showing,' +
             '  lit: document.querySelectorAll(".msg-selected").length, chat: chat.chatThread && chat.chatThread._id };' +
             'return state;' +
             '})()');
         assert.deepEqual(r, { count: '2 selected', order: true, hasDeleted: true, lit: 2, fits: true, composer: false, react: false,
-            after: { bar: false, composer: true, lit: 0, chat: 'thread-family' } });
+            light: true, after: { bar: false, composer: true, lit: 0, chat: 'thread-family' } });
     });
 
     // Palm's stylesheet capped names and previews at fixed widths (190px, less beside a badge)

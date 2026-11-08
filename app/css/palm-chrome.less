@@ -79,8 +79,10 @@ Toolbars
   justify-content: center;
 }
 
-/* The composer carries its hairline on top instead, and grows with the field. */
-.onyx-toolbar.conversation-bottom {
+/* The composer carries its hairline on top instead, and grows with the field. The bar that
+   takes its place while messages are selected is the same light bar, not Onyx's dark one. */
+.onyx-toolbar.conversation-bottom,
+.onyx-toolbar.conversation-selection {
   min-height: 53px;
   padding: 6px 8px;
   background: #e2e2e2;
