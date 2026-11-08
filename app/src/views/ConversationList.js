@@ -55,6 +55,7 @@ var kind = require('enyo/kind'),
     unreadMarker = require('../util/unreadMarker'),
     chatActions = require('../util/chatActions'),
     deviceLocation = require('../util/deviceLocation'),
+    launchTargets = require('../util/launchTargets'),
     GroupDialog = require('./GroupDialog'),
     MsgAddrSearchList = require('./MsgAddrSearchList'),
     Signals = require('enyo/Signals'),
@@ -2213,11 +2214,10 @@ module.exports = kind({
         }
 
         if (attachmentKind === "location") {
-            var parts = String(target).split(",");
-            this.$.launchApp.send({
-                id: "com.palm.app.maps",
-                params: { latitude: parts[0], longitude: parts[1] }
-            });
+            var maps = launchTargets.mapsLaunch(target);
+            if (maps) {
+                this.$.launchApp.send(maps);
+            }
             return true;
         }
 
@@ -2236,9 +2236,10 @@ module.exports = kind({
         }
 
         if (attachmentKind === "contact") {
-            this.$.launchApp.send({
-                id: "com.palm.app.contacts", params: { vcard: target, launchType: "importVCard" }
-            });
+            var contacts = launchTargets.contactLaunch(target);
+            if (contacts) {
+                this.$.launchApp.send(contacts);
+            }
             return true;
         }
 

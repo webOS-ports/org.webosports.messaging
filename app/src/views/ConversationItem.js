@@ -15,6 +15,7 @@ var kind = require('enyo/kind'),
     mediaUrl = require('../util/mediaUrl'),
     messageState = require('../util/messageState'),
     poll = require('../util/poll'),
+    launchTargets = require('../util/launchTargets'),
     moment = require('moment'),
     $L = require('enyo/i18n').$L;
 
@@ -239,7 +240,7 @@ module.exports = kind({
             inText = inText.replace(/(<br\s*\/?>)[\r\n]+/gi, "$1").replace(/\r|\n|\\r|\\n/g, "<br>");
         } else if (inMessage.folder === FOLDERS.OUTBOX) {
             // Outgoing text needs sanitizing; incoming was sanitized on the way into the db.
-            inText = messagingUtils.message.escapeHtml(inText);
+            inText = launchTargets.outgoingHtml(inText, messagingUtils.message.escapeHtml);
         }
 
         // Media the networks deliver as URLs in the body (or a local attachment file): images
