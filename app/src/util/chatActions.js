@@ -30,7 +30,8 @@ var UNIT = "\x1f";
  *   groupCreate/Invite/Leave  making a group, adding people to one, leaving it
  *   groupRemove               taking someone out of a group (purple-combined: whatsmeow
  *                             UpdateGroupParticipants remove; tdlib-purple 0035: setChatMemberStatus
- *                             Left; the service refuses it to a non-admin)
+ *                             Left; purple-discord 0031: DELETE a group DM's recipient; the
+ *                             service refuses it to a non-admin)
  *   groupRename               giving a group a new name (renameGroup, the transport's
  *                             webos-im-group-rename; purple-combined 0056: whatsmeow SetGroupName,
  *                             tdlib-purple 0036: setChatTitle, purple-discord 0030: PATCH a group
@@ -58,7 +59,8 @@ var ACTIONS = {
     // Groups are group DMs; a server's channels are not.
     type_discord: {
         edit: true, deleteForEveryone: true,
-        groupCreate: true, groupInvite: true, groupLeave: true, groupRename: true, mentions: true
+        groupCreate: true, groupInvite: true, groupLeave: true, groupRemove: true, groupRename: true,
+        mentions: true
     }
 };
 

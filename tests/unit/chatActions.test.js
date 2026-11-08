@@ -225,6 +225,7 @@ describe('chatActions: the commands, as the transport reads them', function () {
         assert.equal(ca.removeCommand(KIND, 'type_whatsapp', me, '', ['+447700900123']), null);
         assert.equal(ca.actionsFor('type_whatsapp').groupRemove, true);
         assert.equal(ca.actionsFor('type_telegram').groupRemove, true, 'tdlib-purple 0035');
+        assert.equal(ca.actionsFor('type_discord').groupRemove, true, 'purple-discord 0031');
     });
 
     it('a group is renamed with its new name, trimmed; none without one', function () {
@@ -241,7 +242,7 @@ describe('chatActions: the commands, as the transport reads them', function () {
         ['type_signal', 'type_matrix', 'type_sms'].forEach(function (s) {
             assert.ok(!ca.actionsFor(s).groupRename, s + ' cannot rename a group');
         });
-        ['type_signal', 'type_discord', 'type_matrix'].forEach(function (s) {
+        ['type_signal', 'type_matrix'].forEach(function (s) {
             assert.ok(!ca.actionsFor(s).groupRemove, s + ' has no remove in its plugin');
         });
     });
