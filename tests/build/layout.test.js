@@ -1156,6 +1156,37 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.equal(r.closed, false);
     });
 
+    // A click that reaches a link in a message - the one the browser sends after a menu closed on a
+    // tap above it - must not load the link in the app's card (util/linkGuard): a Signal place's
+    // maps link once opened Google's consent page in Messaging behind the Camera.
+    it('never follows a link in a message on a click', async function () {
+        /* global document */
+        var page = function () {
+            var list = document.querySelector('[id$="_messageText"]') || document.body;
+            var a = document.createElement('a');
+            a.href = 'https://maps.google.com/maps?q=52.1%2C5.1';
+            a.textContent = 'https://maps.google.com/maps?q=52.1%2C5.1';
+            list.appendChild(a);
+            var e = new MouseEvent('click', { bubbles: true, cancelable: true });
+            var span = document.createElement('span');
+            a.appendChild(span);
+            var e2 = new MouseEvent('click', { bubbles: true, cancelable: true });
+            var notPrevented = a.dispatchEvent(e);
+            span.dispatchEvent(e2);
+            var plain = new MouseEvent('click', { bubbles: true, cancelable: true });
+            var plainFollowed = list.dispatchEvent(plain);
+            a.remove();
+            return { link: e.defaultPrevented, inner: e2.defaultPrevented, notPrevented: notPrevented,
+                plain: plainFollowed, href: location.href };
+        };
+        var before = await session.evaluate('location.href');
+        var r = await session.evaluate('(' + page.toString() + ')()');
+        assert.equal(r.link, true, 'a click on the link is not followed');
+        assert.equal(r.inner, true, 'nor one on something inside it');
+        assert.equal(r.plain, true, 'other clicks are left alone');
+        assert.equal(r.href, before, 'the page stayed');
+    });
+
     // Group Info with a big group: the sheet fits the window and its list scrolls inside it; a
     // member swiped shows Delete and Cancel, Delete asks once more, and Remove has the transport
     // take them out (removeFromGroup) and drops them from the list. Who has written - the list
