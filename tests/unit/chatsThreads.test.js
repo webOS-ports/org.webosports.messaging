@@ -99,3 +99,30 @@ describe('chatsThreads.chatsThreads', function () {
         assert.deepEqual(ct.chatsThreads([], { a: '# a' }), []);
     });
 });
+
+describe('chatsThreads: Discord group DMs', function () {
+    var servers = [
+        { _id: 's-dm', name: 'Discord', serviceName: 'type_discord' },
+        { _id: 's-guild', name: 'Discord', serviceName: 'type_irc' },
+        { _id: 's-other', name: 'LuneOS', serviceName: 'type_discord' }
+    ];
+    var channels = [
+        { _id: 'c-dm', serverId: 's-dm', name: 'Weekend', background: false },
+        { _id: 'c-dm2', serverId: 's-dm', displayName: 'Shown', name: 'raw' },
+        { _id: 'c-dm3', serverId: 's-dm' },
+        { _id: 'c-irc', serverId: 's-guild', name: 'Discord-ish', background: false },
+        { _id: 'c-guild', serverId: 's-other', name: 'general', background: false }
+    ];
+
+    it('every group DM is a chat, named as itself; no other quiet channel is', function () {
+        assert.deepEqual(ct.deliveredChannels(channels, servers), {
+            'c-dm': 'Weekend', 'c-dm2': 'Shown', 'c-dm3': 'Group'
+        });
+    });
+
+    it('so a new group DM shows among the chats', function () {
+        var delivered = ct.deliveredChannels(channels, servers);
+        var out = ct.chatsThreads([{ _id: 't-dm', channelId: 'c-dm' }, { _id: 't-g', channelId: 'c-guild' }], delivered);
+        assert.deepEqual(out.map(function (t) { return [t._id, t.channelLabel]; }), [['t-dm', 'Weekend']]);
+    });
+});

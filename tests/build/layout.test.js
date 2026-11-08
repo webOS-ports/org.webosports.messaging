@@ -514,6 +514,49 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.deepEqual(r.noServer, { add: false, leave: false, row: false }, 'no server, no group');
     });
 
+    // A Discord group DM is a channel of the server "Discord" (purple-discord's buddy-list group),
+    // and the Chats list left every quiet channel to the Servers tab, so a group just made was
+    // nowhere to be seen among the chats. It is a chat with people: shown there, named as itself.
+    it('shows a Discord group DM among the chats, under its own name, and no quiet server channel', async function () {
+        /* global require */
+        var page = async function () {
+            var $ = require('enyo/dispatcher').$, mockDb = require('src/data/mockDb');
+            var list = $.app_mainView_messaging_threadList;
+            var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+            var made = ['server-gdm2', 'ch-gdm2', 'thread-gdm2', 'ch-quiet2', 'thread-quiet2'];
+            var thread = function (id, channel, server) {
+                return { _id: id, _kind: 'com.palm.chatthread:1', displayName: 'raw-' + id, channelId: channel, serverId: server,
+                    replyAddress: '1100000000000000088', normalizedAddress: '1100000000000000088', replyService: 'type_discord',
+                    timestamp: Date.now(), unreadCount: 0, flags: { visible: true } };
+            };
+            var shown = function () {
+                var out = {};
+                list.collection.forEach(function (m) {
+                    if (/^thread-(gdm2|quiet2)$/.test(m.attributes._id)) { out[m.attributes._id] = m.attributes.channelLabel || null; }
+                });
+                return out;
+            };
+            try {
+                mockDb.merge([
+                    { _id: 'server-gdm2', _kind: 'com.palm.imserver:1', serviceName: 'type_discord', remoteId: 'Discord', name: 'Discord', displayName: 'Discord' },
+                    { _id: 'ch-gdm2', _kind: 'com.palm.imchannel:1', serverId: 'server-gdm2', serviceName: 'type_discord', name: 'Weekend', position: 0, background: false },
+                    { _id: 'ch-quiet2', _kind: 'com.palm.imchannel:1', serverId: 'server-discord', serviceName: 'type_discord', name: 'quiet', position: 5, background: false },
+                    thread('thread-gdm2', 'ch-gdm2', 'server-gdm2'),
+                    thread('thread-quiet2', 'ch-quiet2', 'server-discord')
+                ]);
+                list.serversWatch(); list.channelsWatch(); list.threadsWatch();
+                await wait(500);
+                return shown();
+            } finally {
+                mockDb.del(made);
+                list.serversWatch(); list.channelsWatch(); list.threadsWatch();
+                await wait(300);
+            }
+        };
+        var r = await session.evaluate('(' + page.toString() + ')()');
+        assert.deepEqual(r, { 'thread-gdm2': 'Weekend' }, 'the group DM is a chat named as itself; the quiet channel is not');
+    });
+
     // A chat opened with unread messages (util/unreadMarker): "N unread messages" above the first
     // of them, and the chat opens at the line when the newest would take it off the top; further
     // up, a button back down, counting what comes in meanwhile.

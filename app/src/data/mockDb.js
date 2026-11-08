@@ -895,7 +895,25 @@ module.exports = {
         }
 
         // Hand back copies so a view mutating a row cannot corrupt the fixtures.
-        return { returnValue: true, results: JSON.parse(JSON.stringify(results)) };
+        results = JSON.parse(JSON.stringify(results));
+        // As db8 does: with a select, a row holds only the properties asked for.
+        if (query.select && query.select.length) {
+            results = results.map(function (r) {
+                var picked = {};
+                for (var k = 0; k < query.select.length; k++) {
+                    var v = valueAt(r, query.select[k]);
+                    if (v !== undefined) {
+                        var parts = String(query.select[k]).split("."), at = picked;
+                        for (var p = 0; p < parts.length - 1; p++) {
+                            at = at[parts[p]] = (at[parts[p]] && typeof at[parts[p]] === "object") ? at[parts[p]] : {};
+                        }
+                        at[parts[parts.length - 1]] = v;
+                    }
+                }
+                return picked;
+            });
+        }
+        return { returnValue: true, results: results };
     },
 
     /** db8 `get` by id. */

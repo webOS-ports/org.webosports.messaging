@@ -146,7 +146,7 @@ module.exports = kind({
     },
 
     runServerQuery: function () {
-        this.serverService.call({ query: { select: ["_id", "displayName", "name"] } });
+        this.serverService.call({ query: { select: ["_id", "displayName", "name", "serviceName"] } });
     },
 
     serversWatch: function () {
