@@ -1011,6 +1011,12 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             chat.sendMessage(); await wait(200);
             var mention = sentNow()[0] || {};
             out.mention = { text: mention.messageText, mentions: mention.mentions };
+            // Drawn with the name bold, as a received mention is.
+            chat.runQuery(); await wait(400);
+            var drawn = Array.prototype.slice.call(document.querySelectorAll('[id$="_messageText"]')).filter(function (n) {
+                return /bring the cake/.test(n.textContent);
+            })[0];
+            out.mentionBold = drawn ? Array.prototype.map.call(drawn.querySelectorAll('b'), function (b) { return b.textContent; }) : null;
 
             // New Group, from the app menu.
             main.showAppMenu(main.$.appMenuAnchor); await wait(100);
@@ -1100,6 +1106,7 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.match(r.card.vcard, /^BEGIN:VCARD\r\nVERSION:3\.0\r\nFN:Sam Patel\r\n[\s\S]*TEL;TYPE=CELL:[\s\S]*END:VCARD\r\n$/);
         assert.deepEqual(r.offered, ['Marta Lindqvist']);
         assert.equal(r.mentionText, 'hi @Marta Lindqvist ');
+        assert.deepEqual(r.mentionBold, ['@Marta Lindqvist'], 'a sent mention is drawn bold');
         assert.deepEqual(r.mention, { text: 'hi @Marta Lindqvist bring the cake',
             mentions: [{ id: '+46701234567', name: 'Marta Lindqvist' }] });
         assert.equal(r.newGroupItem, true);

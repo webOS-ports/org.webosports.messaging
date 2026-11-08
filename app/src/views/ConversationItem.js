@@ -16,6 +16,7 @@ var kind = require('enyo/kind'),
     messageState = require('../util/messageState'),
     poll = require('../util/poll'),
     launchTargets = require('../util/launchTargets'),
+    mentionMarkup = require('../util/mentionMarkup'),
     sentExtras = require('../util/sentExtras'),
     receivedLocation = require('../util/receivedLocation'),
     moment = require('moment'),
@@ -249,6 +250,8 @@ module.exports = kind({
             }
             // Outgoing text needs sanitizing; incoming was sanitized on the way into the db.
             inText = launchTargets.outgoingHtml(inText, messagingUtils.message.escapeHtml);
+            // Who it mentions, bold, as a received mention is (util/mentionMarkup).
+            inText = mentionMarkup.mark(inText, inMessage.mentions, messagingUtils.message.escapeHtml);
         }
 
         // Media the networks deliver as URLs in the body (or a local attachment file): images
