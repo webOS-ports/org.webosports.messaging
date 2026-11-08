@@ -804,7 +804,7 @@ module.exports = {
         if (this.downloadFails) {
             return { completed: true, completionStatusCode: -5, httpStatus: 404, target: "" };
         }
-        return { completed: true, completionStatusCode: 0, httpStatus: 200,
+        return { completed: true, completionStatusCode: 200, httpStatus: 200,
             target: params.targetDir + "/" + params.targetFilename };
     },
 

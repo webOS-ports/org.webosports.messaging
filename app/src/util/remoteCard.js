@@ -12,7 +12,11 @@
  *
  *   download { target: url, targetDir, targetFilename, subscribe: true }
  *     first reply   { returnValue, ticket, target }        the path it will write
- *     updates       { completed, completionStatusCode, httpStatus, target, aborted, interrupted }
+ *     updates       { amountReceived, amountTotal }, then the last one:
+ *                   { completed, completionStatusCode, httpStatus, target, aborted, interrupted }
+ *
+ * completionStatusCode is the HTTP code when the transfer ran (200 for a card fetched, as seen on
+ * the device) and negative when it did not (DOWNLOADMANAGER_COMPLETIONSTATUS_*, DownloadManager.h).
  *
  * targetDir must lie under /media/internal (isPathInMedia), and the manager makes the folder.
  */
@@ -46,6 +50,11 @@ function request(url) {
     };
 }
 
+/** A status that is no failure: absent, or an HTTP 2xx. */
+function success(code) {
+    return code === undefined || (typeof code === "number" && code >= 200 && code < 300);
+}
+
 /**
  * What a reply says: { state: "done", path } once the file is all there, { state: "failed" } when
  * the download ended any other way or could not start, else { state: "pending" }.
@@ -59,9 +68,7 @@ function outcome(reply) {
         return { state: "failed" };
     }
     if (reply.completed === true) {
-        var http = reply.httpStatus;
-        var ok = (reply.completionStatusCode === undefined || reply.completionStatusCode === 0) &&
-            (http === undefined || (http >= 200 && http < 300));
+        var ok = success(reply.completionStatusCode) && success(reply.httpStatus);
         return ok && reply.target ? { state: "done", path: String(reply.target) } : { state: "failed" };
     }
     return { state: "pending" };

@@ -35,16 +35,22 @@ describe('remoteCard', function () {
     });
     it('reads the manager\'s replies', function () {
         assert.deepEqual(rc.outcome({ returnValue: true, ticket: 4, target: '/x/card.vcf', subscribed: true }), { state: 'pending' });
-        assert.deepEqual(rc.outcome({ completed: true, completionStatusCode: 0, httpStatus: 200, target: '/x/card.vcf' }),
+        // The last reply for a card fetched, as Sargo's download manager sends it (fields cut down).
+        assert.deepEqual(rc.outcome({ completed: true, interrupted: false, aborted: false, httpStatus: 200,
+            completionStatusCode: 200, errorCode: 0, errorText: 'No error', target: '/x/card.vcf', returnValue: true }),
             { state: 'done', path: '/x/card.vcf' });
+        assert.deepEqual(rc.outcome({ completed: true, completionStatusCode: 0, target: '/x/card.vcf' }), { state: 'failed' },
+            'a 0 is no HTTP status');
         assert.deepEqual(rc.outcome({ completed: true, target: '/x/card.vcf' }), { state: 'done', path: '/x/card.vcf' });
-        assert.deepEqual(rc.outcome({ completed: true, completionStatusCode: 0, httpStatus: 404, target: '/x/c.vcf' }), { state: 'failed' });
+        assert.deepEqual(rc.outcome({ completed: true, completionStatusCode: -5, httpStatus: 404, target: '/x/c.vcf',
+            errorText: 'No error' }), { state: 'failed' }, 'as the device reports a 404');
+        assert.deepEqual(rc.outcome({ completed: true, completionStatusCode: 200, httpStatus: 404, target: '/x/c.vcf' }), { state: 'failed' });
         assert.deepEqual(rc.outcome({ completed: true, completionStatusCode: -5, target: '/x/c.vcf' }), { state: 'failed' });
-        assert.deepEqual(rc.outcome({ completed: true, completionStatusCode: 0 }), { state: 'failed' }, 'no path');
+        assert.deepEqual(rc.outcome({ completed: true, completionStatusCode: 200, httpStatus: 200 }), { state: 'failed' }, 'no path');
         assert.deepEqual(rc.outcome({ completed: false, aborted: true }), { state: 'failed' });
         assert.deepEqual(rc.outcome({ completed: false, interrupted: true, completionStatusCode: 11 }), { state: 'failed' });
         assert.deepEqual(rc.outcome({ returnValue: false, errorCode: '-5' }), { state: 'failed' });
         assert.deepEqual(rc.outcome(null), { state: 'failed' });
-        assert.deepEqual(rc.outcome({ amountReceived: 10, amountTotal: 20 }), { state: 'pending' });
+        assert.deepEqual(rc.outcome({ amountReceived: 10, amountTotal: 20, returnValue: true }), { state: 'pending' });
     });
 });

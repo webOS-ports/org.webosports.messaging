@@ -921,7 +921,8 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
                 chat.openAttachment(null, { target: CARD.replace('/2/', '/4/'), kind: 'contact' });
                 chat.cardDownloadReply(null, { returnValue: true, ticket: 7, subscribed: true });
                 var early = { cancelled: cancelled, launched: launched.length };
-                chat.cardDownloadReply(null, { completed: true, completionStatusCode: 0, httpStatus: 200,
+                chat.cardDownloadReply(null, { amountReceived: 512, amountTotal: 512, returnValue: true });
+                chat.cardDownloadReply(null, { completed: true, completionStatusCode: 200, httpStatus: 200,
                     target: '/media/internal/.im-attachments/cards/' + sent[0].targetFilename });
                 out.device = { sent: sent.length, early: early, cancelled: cancelled, launched: launched.length };
             } finally {
