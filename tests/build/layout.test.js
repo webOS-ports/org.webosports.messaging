@@ -1288,6 +1288,37 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.equal(r.writersSwipe, false, 'who has written does not swipe');
     });
 
+    // The keyboard New Conversation's "To" field brings up resizes the window; a resize on a phone
+    // with no chat open went back to the chat list, so New Conversation vanished behind it and no
+    // group could be made. With nothing in the pane, a resize still shows the list.
+    it('keeps New Conversation showing when the keyboard resizes the window', async function () {
+        var state = '(function () { var $ = require("enyo/dispatcher").$, main = $.app_mainView;' +
+            ' return JSON.stringify({ pane: main.$.slidingGroup.getIndex(), chat: main.$.chatView.getIndex() }); })()';
+        var keyboard = async function (h) {
+            await session.send('Emulation.setDeviceMetricsOverride', { width: WIDTH, height: h, deviceScaleFactor: 1, mobile: true });
+            await session.evaluate('(window.dispatchEvent(new Event("resize")), true)');
+            await sleep(400);
+        };
+        await session.evaluate('(function () { var main = require("enyo/dispatcher").$.app_mainView;' +
+            ' main.$.messaging.doOpenComposeView(); return true; })()');
+        await sleep(400);
+        var opened = JSON.parse(await session.evaluate(state));
+        await keyboard(380);
+        var withKeyboard = JSON.parse(await session.evaluate(state));
+        await keyboard(HEIGHT);
+        var after = JSON.parse(await session.evaluate(state));
+        // Cancel: nothing in the pane now, and a resize shows the list as before.
+        await session.evaluate('(function () { var $ = require("enyo/dispatcher").$;' +
+            ' $.app_mainView.$.chatView.closeCompose(); return true; })()');
+        await keyboard(380);
+        var empty = JSON.parse(await session.evaluate(state));
+        await keyboard(HEIGHT);
+        assert.deepEqual(opened, { pane: 1, chat: 1 }, 'New Conversation is open');
+        assert.deepEqual(withKeyboard, { pane: 1, chat: 1 }, 'still open with the keyboard up');
+        assert.deepEqual(after, { pane: 1, chat: 1 }, 'and once it is down');
+        assert.equal(empty.pane, 0, 'with nothing open, a resize shows the chat list');
+    });
+
     it('keeps the composer on screen through a reflow under a popup, and fits the group row and search box', async function () {
         /* global require, innerHeight, innerWidth, getComputedStyle */
         var page = async function () {

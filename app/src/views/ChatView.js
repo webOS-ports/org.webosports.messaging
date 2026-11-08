@@ -110,6 +110,11 @@ module.exports = kind({
         }
     },
 
+    /** Whether the pane shows something of its own: a chat, or New Conversation being written. */
+    hasContent: function () {
+        return this.getIndex() !== 0;
+    },
+
     setChatThread: function (thread) {
         this.chatThread = thread;
         if (thread) {

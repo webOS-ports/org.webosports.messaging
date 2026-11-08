@@ -264,8 +264,11 @@ module.exports = kind({
             this.$.slidingGroup.reflow();
         }
         // Coming back to one pane with the conversation showing would otherwise leave the list
-        // unreachable, since there is no Back affordance until a thread is open.
-        if (!wide && this.$.slidingGroup && !appState.selectedThread) {
+        // unreachable, since there is no Back affordance until a thread is open. Not while the
+        // pane shows New Conversation, which has no thread either: the keyboard its "To" field
+        // brings up resizes the window, and that took the phone back to the list, hiding it.
+        if (!wide && this.$.slidingGroup && !appState.selectedThread &&
+                !(this.$.chatView && this.$.chatView.hasContent())) {
             this.$.slidingGroup.setIndex(0);
         }
     },
