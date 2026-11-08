@@ -14,6 +14,7 @@
  *   Discord    has no location message. A place shared to it from Android is text: a maps link, a
  *              line of degrees, minutes and seconds ("52°22'12.3\"N 4°53'45.6\"E"), the time, and
  *              the link again.
+ *   Signal     the address, then "https://maps.google.com/maps?q=lat%2Clng" (the comma escaped).
  *   anyone     a Google Maps link with "?q=lat,lng", which is what this app itself sends a place as
  *              to a service that has no location message (util/chatActions locationText).
  *
@@ -32,7 +33,8 @@ var LINE = new RegExp(BEFORE +
 var DMS = new RegExp(BEFORE +
     "(\\d{1,2})°(\\d{1,2})'(\\d{1,2}(?:\\.\\d+)?)\"([NS]) (\\d{1,3})°(\\d{1,2})'(\\d{1,2}(?:\\.\\d+)?)\"([EW])" +
     AFTER, "g");
-var MAPS_Q = /https?:\/\/maps\.google\.[a-z.]{2,6}\/(?:maps)?\?(?:[^\s<"]*?&(?:amp;)?)?q=(-?\d{1,2}(?:\.\d+)?),(-?\d{1,3}(?:\.\d+)?)/gi;
+// The comma may be written as %2C: Signal's Android app sends "https://maps.google.com/maps?q=lat%2Clng".
+var MAPS_Q = /https?:\/\/maps\.google\.[a-z.]{2,6}\/(?:maps)?\?(?:[^\s<"]*?&(?:amp;)?)?q=(-?\d{1,2}(?:\.\d+)?)(?:,|%2C)(-?\d{1,3}(?:\.\d+)?)/gi;
 
 function inRange(lat, lng) {
     return Math.abs(Number(lat)) <= 90 && Math.abs(Number(lng)) <= 180;

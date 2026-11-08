@@ -56,6 +56,10 @@ describe('receivedLocation', function () {
         assert.deepEqual(rl.find('geo:52.3731,4.8925 https://maps.google.com/?q=52.37310,4.89250'), [{ lat: '52.3731', lng: '4.8925' }]);
         assert.equal(rl.strip('https://maps.google.com/?q=52.3731,4.8925'), 'https://maps.google.com/?q=52.3731,4.8925', 'the link stays');
         assert.deepEqual(rl.find('https://maps.google.com/?q=Dam+Square'), []);
+        // Signal from Android, as the database has it: the address, then the link with %2C.
+        assert.deepEqual(rl.find('Dam 1, 1012 JS Amsterdam, Netherlands<br />\nhttps://maps.google.com/maps?q=52.373080277777776%2C4.892522222222222'),
+            [{ lat: '52.373080277777776', lng: '4.892522222222222' }]);
+        assert.deepEqual(rl.find('https://maps.google.com/maps?q=52.37%2c4.89'), [{ lat: '52.37', lng: '4.89' }]);
     });
     it('finds each time it is asked, not from where the last search stopped', function () {
         var t = 'Location: 1.5, 2.5';
