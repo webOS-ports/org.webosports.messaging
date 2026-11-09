@@ -3874,7 +3874,8 @@ module.exports = kind({
         this.errorMessage = message;
         this.showError(
             $L("Message not sent"),
-            messagingUtils.message.getMessageErrorFromCode(message.errorCategory, message),
+            messagingUtils.message.getMessageErrorFromCode(
+                messagingUtils.message.failureCode(message), message),
             true);
         return true;
     },
@@ -3887,10 +3888,7 @@ module.exports = kind({
     retryMessage: function () {
         this.$.errorDialog.hide();
         if (this.errorMessage && this.errorMessage._id) {
-            this.mergeRecord({
-                _id: this.errorMessage._id, _kind: this.errorMessage._kind,
-                status: "pending", errorCategory: null
-            });
+            this.mergeRecord(messagingUtils.message.retryRecord(this.errorMessage));
         }
         return true;
     },

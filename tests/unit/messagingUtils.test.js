@@ -841,3 +841,75 @@ describe('imLoginState.getErrorMessage', function () {
                      'AcctMgr_Something_New');
     });
 });
+
+/*
+ * A failed MMS: webos-telephonyd merges { status: "failed", errorCode } into the outbox record
+ * (src/mmscore.h has the codes), where an SMS carries errorCategory. The conversation view shows
+ * the "!" and "Message not sent" with the reason, and Retry puts the record back in the outbox.
+ */
+describe('a failed MMS', function () {
+    var MMS = 'com.palm.mmsmessage:1';
+    var TELEPHONYD_CODES = ['mmsErrorUnspecified', 'mmsErrorNetwork', 'mmsErrorSendingAddressUnresolved',
+        'mmsErrorAttachmentTooLarge', 'mmsErrorRejected', 'mmsErrorServiceDenied', 'mmsErrorContentCorrupt',
+        'mmsErrorUnsupportedMessage', 'mmsErrorServiceNotInitialized', 'mmsErrorDbError'];
+
+    function failedMms(code) {
+        return { _id: 'm1', _kind: MMS, serviceName: 'mms', folder: 'outbox', status: 'failed', errorCode: code };
+    }
+
+    it('every code telephonyd sends has its own reason, not the generic fallback', function () {
+        var seen = {};
+        TELEPHONYD_CODES.forEach(function (code) {
+            var text = message.getMessageErrorFromCode(message.failureCode(failedMms(code)), failedMms(code));
+            assert.notEqual(text, 'Could not send your message. Try again.', code);
+            assert.ok(!/download/i.test(text), code + ' speaks of downloading: ' + text);
+            assert.ok(!seen[text], code + ' repeats ' + seen[text]);
+            seen[text] = code;
+        });
+    });
+
+    it('a too large picture says so plainly', function () {
+        assert.equal(message.getMessageErrorFromCode(message.failureCode(failedMms('mmsErrorAttachmentTooLarge'))),
+            'The picture or file is too large to send as MMS.');
+    });
+
+    it('the reason is read from errorCode on an MMS, and errorCategory still wins', function () {
+        assert.equal(message.failureCode(failedMms('mmsErrorNetwork')), 'mmsErrorNetwork');
+        var both = failedMms('mmsErrorNetwork');
+        both.errorCategory = 'smsnetworkerror';
+        assert.equal(message.failureCode(both), 'smsnetworkerror');
+    });
+
+    it('errorCode counts only on an MMS, and telephonyd\'s empty one is no reason', function () {
+        assert.equal(message.failureCode({ _kind: 'com.palm.smsmessage:1', status: 'failed', errorCode: 'x' }), '');
+        assert.equal(message.failureCode(failedMms('')), '');
+        assert.equal(message.failureCode(undefined), '');
+    });
+
+    it('shows the "!" for a failed MMS as for a failed SMS, and not before it failed', function () {
+        assert.equal(message.showsFailure(failedMms('mmsErrorAttachmentTooLarge')), true);
+        var undeliverable = failedMms('mmsErrorRejected');
+        undeliverable.status = 'permanent-fail';
+        assert.equal(message.showsFailure(undeliverable), true);
+        assert.equal(message.showsFailure({ _kind: 'com.palm.smsmessage:1', status: 'failed',
+            errorCategory: 'smsnetworkerror' }), true);
+        ['pending', 'sending', 'successful'].forEach(function (status) {
+            var m = failedMms('mmsErrorNetwork');
+            m.status = status;
+            assert.equal(message.showsFailure(m), false, status + ', even with a code left on it');
+        });
+        assert.equal(message.showsFailure(failedMms('')), false);
+    });
+
+    it('Retry puts an MMS back in the outbox as pending, with its errorCode gone', function () {
+        assert.deepEqual(message.retryRecord(failedMms('mmsErrorNetwork')), {
+            _id: 'm1', _kind: MMS, status: 'pending', errorCategory: null, folder: 'outbox', errorCode: null
+        });
+    });
+
+    it('Retry of an SMS merges what it always has', function () {
+        assert.deepEqual(message.retryRecord({ _id: 's1', _kind: 'com.palm.smsmessage:1', status: 'failed',
+            folder: 'outbox', errorCategory: 'smsnetworkerror' }),
+            { _id: 's1', _kind: 'com.palm.smsmessage:1', status: 'pending', errorCategory: null });
+    });
+});

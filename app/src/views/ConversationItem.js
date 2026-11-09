@@ -124,7 +124,7 @@ module.exports = kind({
         this.updateContactImage(m.personImage);
         this.updateSentReceived(m.folder);
         this.updateTime(m);
-        this.updateMessageStatus(m.status, m.errorCategory);
+        this.updateMessageStatus(m);
         this.updateDeliveryStatus(m.deliveryStatus, m.folder);
         this.updateInvite(m);
         this.updatePriority(m);
@@ -143,15 +143,13 @@ module.exports = kind({
             !!(message.priority && (message.priority === 2 || message.priority === 3)));
     },
 
-    updateMessageStatus: function (inStatus, errorCategory) {
-        if (inStatus !== "successful") {
+    updateMessageStatus: function (inMessage) {
+        if (inMessage.status !== "successful") {
             this.$.message.setClasses("chat-balloon-error");
         }
         // Show/hide only — never toggle showing via re-creation. On a recycled row an ungenerated
         // node means a later show() renders nothing, and tapping the "!" would stop working.
-        var failed = inStatus === messagingUtils.message.MESSAGE_STATUS.FAILED ||
-            inStatus === messagingUtils.message.MESSAGE_STATUS.UNDELIVERABLE;
-        this.$.errorIcon.setShowing(!!(errorCategory && failed));
+        this.$.errorIcon.setShowing(messagingUtils.message.showsFailure(inMessage));
     },
 
     /**
