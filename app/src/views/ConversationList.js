@@ -319,7 +319,8 @@ module.exports = kind({
 
         // --- popups ---------------------------------------------------------------------
         {
-            name: "transportMenu", kind: Menu, floating: true, scrolling: false, onSelect: "transportChosen"
+            name: "transportMenu", kind: Menu, classes: "transport-menu", floating: true, scrolling: false,
+            onSelect: "transportChosen"
         },
         {
             // What the paperclip sends: a file, a photo taken now, a sticker where the service has

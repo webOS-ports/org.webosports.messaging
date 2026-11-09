@@ -212,6 +212,39 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
     // Find in Chat, from the magnifier in the chat's header between its name and the service it
     // goes out on, not from the app menu: the newest match first, older from there, and back
     // closes the bar before it leaves the chat; the magnifier closes it too.
+    it('shows every account in the service menu in full, inside the window', async function () {
+        var r = await session.evaluate('(async function () {' +
+            'var $ = require("enyo/dispatcher").$, picker = require("src/util/transportPicker");' +
+            'var main = $.app_mainView, chat = $.app_mainView_chatView_conversationList;' +
+            'var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };' +
+            'main.selectThread(null, (await new Promise(function (res) {' +
+            '  var t = null; $.app_mainView_messaging_threadList.collection.forEach(function (m) {' +
+            '    if (m.attributes._id === "thread-family") { t = m.attributes; } }); res(t); })));' +
+            'for (var i = 0; i < 20 && !(chat.messages && chat.messages.length); i++) { await wait(100); }' +
+            // Eight accounts as a person with numbers on SMS, WhatsApp and Signal, and long IM names.
+            'var list = [' +
+            '  { serviceName: "type_teams", replyAddress: "someone.with.a.long.name@example.onmicrosoft.com" },' +
+            '  { serviceName: "type_telegram", replyAddress: "id8864003412345" },' +
+            '  { serviceName: "type_signal", replyAddress: "+31612345678" },' +
+            '  { serviceName: "type_whatsapp", replyAddress: "+31612345678" },' +
+            '  { serviceName: "type_signal", replyAddress: "+31687654321" },' +
+            '  { serviceName: "type_whatsapp", replyAddress: "+31687654321" },' +
+            '  { serviceName: "sms", replyAddress: "+31687654321", isPhone: true },' +
+            '  { serviceName: "sms", replyAddress: "+31612345678", isPhone: true }];' +
+            'var real = picker.getTransports; picker.getTransports = function () { return list; };' +
+            'try { chat.openTransportMenu(); } finally { picker.getTransports = real; }' +
+            'await wait(300);' +
+            'var menu = chat.$.transportMenu.hasNode(), m = menu.getBoundingClientRect();' +
+            'var rows = Array.prototype.filter.call(menu.querySelectorAll(".onyx-menu-item"), function (n) { return n.offsetParent; });' +
+            'var cut = rows.filter(function (n) { return n.scrollWidth > n.clientWidth + 1; }).map(function (n) { return n.textContent; });' +
+            'var out = { rows: rows.length, cut: cut,' +
+            '  inside: m.left >= 0 && m.right <= window.innerWidth + 0.5 && m.width > 0,' +
+            '  narrowerThanWindow: m.width < window.innerWidth };' +
+            'chat.$.transportMenu.hide(); await wait(100);' +
+            'return out; })()');
+        assert.deepEqual(r, { rows: 8, cut: [], inside: true, narrowerThanWindow: true });
+    });
+
     it('finds in a chat, newest match first, and closes on back', async function () {
         var r = await session.evaluate('(async function () {' +
             'var $ = require("enyo/dispatcher").$, Signals = require("enyo/Signals");' +

@@ -529,6 +529,20 @@ Balloons
 .transport-picker .onyx-menu-item {
   border: none;
 }
+/* Which account a message goes over: each row is an account name or a phone number, and two of
+   them often differ only at the end (+31612... over SMS, WhatsApp and Signal), so a row must show
+   all of it. Anchored at the service button on the right, a menu sized to the room left of it cut
+   every row off; it is as wide as its longest row instead (Menu.adjustPosition then moves it left
+   to stay on screen), and only a row wider than the screen is cut. !important because the popup
+   writes its activator's width on the node as an inline style. */
+.onyx-menu.transport-menu {
+  width: -webkit-max-content !important;
+  width: max-content !important;
+  max-width: ~"calc(100vw - 16px)";
+}
+.onyx-menu.transport-menu .onyx-menu-item {
+  white-space: nowrap;
+}
 .transport-picker-phoneLabel {
   font-size: 12px;
   display: block;
