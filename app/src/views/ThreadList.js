@@ -8,18 +8,26 @@
  */
 
 var kind = require('enyo/kind'),
-    FittableRows = require('layout/FittableRows'),
+    FittableRows = require('./widgets/FitRows'),
     DataRepeater = require('enyo/DataRepeater'),
     Scroller = require('enyo/Scroller'),
     Collection = require('enyo/Collection'),
     RecordModel = require('../data/RecordModel'),
     syncCollection = require('../util/syncCollection'),
+    chatFlags = require('../util/chatFlags'),
+    Menu = require('onyx/Menu'),
+    MenuItem = require('onyx/MenuItem'),
+    Popup = require('onyx/Popup'),
+    Button = require('onyx/Button'),
+    chatActions = require('../util/chatActions'),
     openThread = require('../util/openThread'),
     Control = require('enyo/Control'),
     LunaService = require('enyo-webos/LunaService'),
     ThreadRow = require('./ThreadRow'),
     SearchInput = require('./widgets/SearchInput'),
     ThreadService = require('../data/ThreadService'),
+    ServerServices = require('../data/ServerService'),
+    chatsThreads = require('../util/chatsThreads'),
     mockDb = require('../data/mockDb'),
     messagingUtils = require('../util/messagingUtils'),
     appState = require('../util/appState'),
@@ -33,12 +41,22 @@ module.exports = kind({
         onSelectThread: "",
         onDeleteThread: "",
         onThreadLocked: "",
-        onUnreadCountChanged: ""
+        onThreadLinked: "",
+        onUnreadCountChanged: "",
+        onClearUnreadCount: ""
     },
 
     components: [
         { name: "search", kind: SearchInput, onSearchChange: "filterList" },
         { classes: "header-shadow header-app-shadow" },
+        {
+            // "Archived chats (n)" over the list, or the way back from them (util/chatFlags).
+            name: "archiveBar", classes: "archive-bar flex-row", showing: false, ontap: "toggleArchive",
+            components: [
+                { name: "archiveLabel", classes: "archive-bar-label flex-one" },
+                { name: "archiveUnread", classes: "unread-count", showing: false }
+            ]
+        },
         { name: "emptyMessage", classes: "messageTexts", showing: false },
         {
             // A Scroller around a DataRepeater rather than a DataList: DataList is
@@ -47,10 +65,34 @@ module.exports = kind({
             // that entire feedback loop.
             name: "scroller", kind: Scroller, fit: true, horizontal: "hidden", touch: true,
             classes: "threads-list messaging-listsDivider",
-            ontap: "selectThread", onConfirm: "swipeDelete",
+            ontap: "selectThread", onConfirm: "swipeDelete", onhold: "holdThread",
             components: [
                 { name: "list", kind: DataRepeater, components: [ { kind: ThreadRow } ] }
             ]
+        },
+        { name: "chatMenu", kind: Menu, floating: true, scrolling: false },
+        {
+            // Block Sender, from the chat menu: asked first, as the conversation used to ask.
+            name: "blockDialog", kind: Popup, centered: true, floating: true, modal: true, scrim: true,
+            components: [
+                { content: $L("Block Sender"), style: "font-weight: bold; margin-bottom: 0.5rem;" },
+                { content: $L("Are you sure you want to block this sender?"), style: "margin: 0.5rem 0 1rem;" },
+                {
+                    classes: "flex-row", components: [
+                        { kind: Button, content: $L("Cancel"), ontap: "closeBlockDialog" },
+                        { classes: "flex-auto" },
+                        { name: "blockAccept", kind: Button, classes: "onyx-negative", content: $L("Block"), ontap: "blockAccepted" }
+                    ]
+                }
+            ]
+        },
+        {
+            name: 'blockCommandPut', kind: LunaService, service: 'luna://com.webos.service.db',
+            method: 'put', onError: 'deleteThreadErr'
+        },
+        {
+            name: 'threadMerge', kind: LunaService, service: 'luna://com.webos.service.db',
+            method: 'merge', onError: 'deleteThreadErr'
         },
         {
             name: 'deleteThreadService', kind: LunaService,
@@ -68,6 +110,7 @@ module.exports = kind({
         this.inherited(arguments);
         this.filterString = "";
         this.selectedRecord = null;
+        this.inArchive = false;
 
         this.collection = new Collection({ model: RecordModel });
         this.$.list.set("collection", this.collection);
@@ -78,12 +121,78 @@ module.exports = kind({
             onWatch: "threadsWatch"
         }, { owner: this });
 
+        // Channels whose messages arrive while closed are shown among the chats (util/chatsThreads).
+        this.deliveredChannels = {};
+        this.chatChannels = {};
+        this.allThreads = null;
+        this.channels = null;
+        this.servers = null;
+        this.channelService = this.createComponent({
+            kind: ServerServices.ChannelService,
+            onResults: "gotChannels", onWatch: "channelsWatch"
+        }, { owner: this });
+        this.serverService = this.createComponent({
+            kind: ServerServices.ServerService,
+            onResults: "gotServers", onWatch: "serversWatch"
+        }, { owner: this });
+
         this.runQuery();
+        this.runChannelQuery();
+        this.runServerQuery();
+    },
+
+    runChannelQuery: function () {
+        this.channelService.call({
+            query: { select: ["_id", "background", "serverId", "displayName", "name", "remoteId"] }
+        });
+    },
+
+    runServerQuery: function () {
+        this.serverService.call({ query: { select: ["_id", "displayName", "name", "serviceName"] } });
+    },
+
+    serversWatch: function () {
+        this.serverService.cancel();
+        this.runServerQuery();
+        return true;
+    },
+
+    gotServers: function (inSender, inEvent) {
+        this.servers = (inEvent && inEvent.results) || [];
+        this.refreshDelivered();
+        return true;
+    },
+
+    channelsWatch: function () {
+        this.channelService.cancel();
+        this.runChannelQuery();
+        return true;
+    },
+
+    gotChannels: function (inSender, inEvent) {
+        this.channels = (inEvent && inEvent.results) || [];
+        this.refreshDelivered();
+        return true;
+    },
+
+    refreshDelivered: function () {
+        this.deliveredChannels = chatsThreads.deliveredChannels(this.channels, this.servers);
+        this.chatChannels = chatsThreads.chatChannels(this.channels, this.servers);
+        if (this.allThreads) {
+            this.gotThreads(null, { results: this.allThreads });
+        }
+        return true;
     },
 
     destroy: function () {
         if (this.threadService) {
             this.threadService.cancel();
+        }
+        if (this.channelService) {
+            this.channelService.cancel();
+        }
+        if (this.serverService) {
+            this.serverService.cancel();
         }
         if (this.collection) {
             this.collection.destroy();
@@ -132,12 +241,46 @@ module.exports = kind({
 
     gotThreads: function (inSender, inEvent) {
         var all = (inEvent && inEvent.results) || [];
-        var results = this.excludeChannelThreads(all);
+        this.allThreads = all;
+        var chats = chatsThreads.chatsThreads(all, this.deliveredChannels, this.chatChannels);
+        // Muted chats for the alerts (DashboardManager); a search lists only some of them.
+        if (!this.filterString) {
+            appState.mutedThreads = chatFlags.mutedIds(chats);
+        }
+        // A search finds archived chats too; otherwise they wait behind "Archived chats".
+        var arranged = chatFlags.arrange(chats, this.inArchive);
+        if (this.filterString && !this.inArchive) {
+            arranged.list = chatFlags.arrange(chats, false).list.concat(chatFlags.arrange(chats, true).list);
+        }
+        if (this.inArchive && !arranged.archivedCount && !this.filterString) {
+            this.inArchive = false;
+            arranged = chatFlags.arrange(chats, false);
+        }
+        var results = arranged.list;
+        this.updateArchiveBar(arranged);
 
         // The open thread left the list: find out whether it was deleted under the conversation.
         if (!mockDb.enabled && openThread.droppedOut(this.selectedRecord, all, this.filterString)) {
             this.checkingThreadId = this.selectedRecord._id;
             this.$.openThreadCheck.send({ ids: [this.checkingThreadId] });
+        }
+
+        // The transport tied the open chat to a channel (or a server) after it was opened - a
+        // Telegram group's chat is first stored as a plain one: hand the open conversation the new
+        // record, so it is a group with its buttons. Looked for among all the threads, as a chat
+        // tied to a channel may have left this list.
+        if (this.selectedRecord) {
+            for (var a = 0; a < all.length; a++) {
+                if (all[a]._id === this.selectedRecord._id) {
+                    if ((all[a].channelId || "") !== (this.selectedRecord.channelId || "") ||
+                            (all[a].serverId || "") !== (this.selectedRecord.serverId || "")) {
+                        this.selectedRecord.channelId = all[a].channelId;
+                        this.selectedRecord.serverId = all[a].serverId;
+                        this.doThreadLinked({ thread: all[a] });
+                    }
+                    break;
+                }
+            }
         }
 
         // Report any thread whose lock state changed out from under the open conversation.
@@ -156,30 +299,138 @@ module.exports = kind({
             this.markSelected(this.selectedRecord._id);
         }
         this.updateEmptyMessage(results);
-        this.reportUnreadCount(results);
+        this.reportUnreadCount(chats);
         return true;
     },
 
-    /**
+    // --- archive -------------------------------------------------------------------------
+
+    updateArchiveBar: function (arranged) {
+        var show = this.inArchive || (arranged.archivedCount > 0 && !this.filterString);
+        this.$.archiveBar.setShowing(show);
+        this.$.archiveBar.addRemoveClass("archive-bar-open", this.inArchive);
+        this.$.archiveLabel.setContent(this.inArchive ? $L("Back to Chats") :
+            $L("Archived chats ({n})").replace("{n}", arranged.archivedCount));
+        this.$.archiveUnread.setContent(arranged.archivedUnread);
+        this.$.archiveUnread.setShowing(!this.inArchive && arranged.archivedUnread > 0);
+    },
+
+    toggleArchive: function () {
+        this.inArchive = !this.inArchive;
+        this.runQuery();
+        return true;
+    },
+
+    /** Leave the archived chats; whether they were shown, so back leaves them first. */
+    closeArchive: function () {
+        if (!this.inArchive) {
+            return false;
+        }
+        this.inArchive = false;
+        this.runQuery();
+        return true;
+    },
+
+    // --- chat options (hold a row) -------------------------------------------------------
+
+    holdThread: function (inSender, inEvent) {
+        var record = this.recordFor(inEvent);
+        var list = chatFlags.actions(record);
+        if (list.length && chatActions.canBlock(record, appState.accountService)) {
+            list.push({ label: $L("Block Sender"), block: true });
+        }
+        if (!list.length) {
+            return false;
+        }
+        // The finger lifting after a hold is a tap too; that one should not open the chat.
+        if (inEvent.preventTap) {
+            inEvent.preventTap();
+        }
+        this.heldRecord = record;
+        var menu = this.$.chatMenu;
+        menu.destroyClientControls();
+        for (var i = 0; i < list.length; i++) {
+            menu.createComponent({
+                kind: MenuItem, content: list[i].label, change: list[i].change, block: !!list[i].block,
+                ontap: "chatOptionTapped"
+            }, { owner: this });
+        }
+        menu.render();
+        // Anchored to the finger, as the message menu; without an activatorOffset the open menu
+        // throws on every resize.
+        menu.activatorOffset = { top: inEvent.pageY || 0, left: inEvent.pageX || 0, width: 0, height: 0 };
+        menu.showAtEvent(inEvent);
+        return true;
+    },
+
+    chatOptionTapped: function (inSender) {
+        this.$.chatMenu.hide();
+        var record = this.heldRecord;
+        if (inSender.block) {
+            this.blockRecord = record;
+            this.$.blockDialog.show();
+            return true;
+        }
+        var change = inSender.change;
+        var m = chatFlags.merge(record, change);
+        if (!m) {
+            return true;
+        }
+        m._kind = messagingUtils.thread.dbKind;
+        if (change.read) {
+            // As opening it does: MainView marks its messages read and clears the count.
+            this.doClearUnreadCount({ threadId: record._id });
+        }
+        if (mockDb.enabled) {
+            mockDb.merge([m]);
+            this.runQuery();
+        } else {
+            this.$.threadMerge.send({ objects: [m] });
+        }
+        return true;
+    },
+
+    closeBlockDialog: function () {
+        this.$.blockDialog.hide();
+        this.blockRecord = null;
+        return true;
+    },
+
+    /** Write the blockBuddy imcommand for the held chat's person; the transport blocks them. */
+    blockAccepted: function () {
+        this.$.blockDialog.hide();
+        var record = this.blockRecord, accountService = appState.accountService;
+        this.blockRecord = null;
+        if (!record || !chatActions.canBlock(record, accountService)) {
+            return true;
+        }
+        var cmd = chatActions.blockCommand(accountService.getImCommandKind(record.replyService), record,
+            accountService.getAccount(record.replyService));
+        if (!cmd) {
+            return true;
+        }
+        if (mockDb.enabled) {
+            mockDb.imCommands.push(cmd);
+        } else {
+            this.$.blockCommandPut.send({ objects: [cmd] });
+        }
+        return true;
+    },
+
+    /*
      * Servers/Rooms (channels, status updates, ...) are com.palm.chatthread records too, and the
      * chatthreader stamps flags.visible:true on them so the server/channel unread queries keep
-     * working — which means the "flags.visible = true" query above cannot tell them apart from a
+     * working, which means the "flags.visible = true" query above cannot tell them apart from a
      * real 1:1/group chat. There is no db8 index on channelId to exclude them at the query level
-     * (com.palm.chatthread is a stock kind), so strip them here instead.
+     * (com.palm.chatthread is a stock kind), so util/chatsThreads strips them in gotThreads, all but
+     * the channels that deliver while closed.
      */
-    excludeChannelThreads: function (results) {
-        var filtered = [];
-        for (var i = 0; i < results.length; i++) {
-            if (!results[i].channelId) {
-                filtered.push(results[i]);
-            }
-        }
-        return filtered;
-    },
 
     updateEmptyMessage: function (results) {
         if (results.length === 0) {
-            if (this.filterString && this.filterString.length > 0) {
+            if (this.inArchive) {
+                this.$.emptyMessage.hide();
+            } else if (this.filterString && this.filterString.length > 0) {
                 this.showEmptyMessage(messagingUtils.CONSTANTS.NO_SEARCH_RESULTS);
             } else {
                 this.showEmptyMessage($L("Your conversation list is empty."));
@@ -201,7 +452,7 @@ module.exports = kind({
             var thread = results[i];
             if (!appState.selectedThread || thread._id !== appState.selectedThread._id ||
                     appState.getAppDeactivated() === true) {
-                cnt += (thread.unreadCount || 0);
+                cnt += chatFlags.unreadWeight(thread);
             }
         }
         this.doUnreadCountChanged({ count: cnt });

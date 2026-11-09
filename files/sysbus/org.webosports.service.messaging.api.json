@@ -1,5 +1,8 @@
 {
   "messaging-service.operation": [
       "org.webosports.service.messaging/*"
+  ],
+  "messaging-service.backup": [
+      "org.webosports.service.messaging/restoreFinished"
   ]
 }

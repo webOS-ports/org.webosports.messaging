@@ -1,10 +1,13 @@
 /**
  * Enyo 2 stand-in for Mojo's enyo.SwipeableItem: drag a row sideways to reveal a confirm button.
  *
- * Swipe distance bands match ConversationItem's override in the Mojo app:
- *   short right swipe            -> onReact  (only when reactEnabled)
- *   long right swipe, any left   -> reveal the confirm prompt, which fires onConfirm when tapped
+ * Swipe distance bands (util/swipeAction.js), as the Mojo app's later ConversationItem had them:
+ *   short right swipe            -> onReply  (only when replyEnabled)
+ *   long right swipe, any left   -> reveal the confirm prompt: its confirm button fires onConfirm,
+ *                                   its Cancel button or a tap beside them fires onCancel
  *   anything shorter             -> snap back and fire onCancel
+ * A prompt left unanswered goes away when a finger comes down on another row, a drag starts on
+ * its own row, or the list scrolls (util/swipeArm); that fires onCancel too.
  *
  * The sliding content and the confirm prompt are created in initComponents rather than declared in
  * a `components` block: under Enyo 2 a subkind's `components` REPLACES the base kind's, so chrome
@@ -17,6 +20,8 @@ var kind = require('enyo/kind'),
     Control = require('enyo/Control'),
     Button = require('onyx/Button'),
     dom = require('enyo/dom'),
+    swipeAction = require('../../util/swipeAction'),
+    swipeArm = require('../../util/swipeArm'),
     $L = require('enyo/i18n').$L;
 
 module.exports = kind({
@@ -26,10 +31,11 @@ module.exports = kind({
 
     published: {
         confirmCaption: $L("Delete"),
+        cancelCaption: $L("Cancel"),
         /** Set false on rows that must not be swipe-deleted. */
         swipeable: true,
-        /** When true a short right swipe fires onReact instead of arming the delete prompt. */
-        reactEnabled: false,
+        /** When true a short right swipe fires onReply instead of arming the delete prompt. */
+        replyEnabled: false,
         /** Row index, set by the owning list so handlers know which record was swiped. */
         index: -1
     },
@@ -37,25 +43,31 @@ module.exports = kind({
     events: {
         onConfirm: "",
         onCancel: "",
-        onReact: ""
+        onReply: ""
+    },
+
+    statics: {
+        /** Close whichever row's prompt is showing, as when the list scrolls. */
+        cancelPending: function () {
+            swipeArm.cancel();
+        }
     },
 
     handlers: {
+        ondown: "downHandler",
         ondragstart: "dragstartHandler",
         ondrag: "dragHandler",
         ondragfinish: "dragfinishHandler"
     },
 
-    /** Minimum right-swipe distance, in px, that counts as a react rather than a stray drag. */
-    reactMinPx: 45,
-    /** Fraction of the row width past which a right swipe means delete rather than react. */
-    deleteRatio: 0.55,
-
     /** Chrome, kept off `components` so subkind component blocks cannot clobber it. */
     swipeChrome: [
         { name: "content", classes: "swipeable-item-content" },
         {
-            name: "confirm", classes: "swipeable-confirm", showing: false, components: [
+            // As the Mojo app's ScrimmedConfirmPrompt: Cancel, then the confirm button, centred.
+            name: "confirm", classes: "swipeable-confirm", showing: false, ontap: "cancelTapped",
+            components: [
+                { name: "cancelButton", kind: Button, ontap: "cancelTapped" },
                 {
                     name: "confirmButton", kind: Button, classes: "onyx-negative",
                     ontap: "confirmTapped"
@@ -75,20 +87,37 @@ module.exports = kind({
         this.inherited(arguments);
         this.handlingDrag = false;
         this.confirmCaptionChanged();
+        this.cancelCaptionChanged();
+    },
+
+    destroy: function () {
+        swipeArm.closed(this);
+        this.inherited(arguments);
     },
 
     confirmCaptionChanged: function () {
         this.$.confirmButton.setContent(this.confirmCaption);
     },
 
+    cancelCaptionChanged: function () {
+        this.$.cancelButton.setContent(this.cancelCaption);
+    },
+
     // --- dragging ------------------------------------------------------------------------
 
+    /** A finger on this row closes another row's prompt; this row's own prompt answers it. */
+    downHandler: function () {
+        swipeArm.down(this);
+        return false;
+    },
+
     dragstartHandler: function (inSender, inEvent) {
-        if (!this.swipeable || !inEvent.horizontal) {
+        // A drag on a row whose prompt is showing closes the prompt, and the list scrolls.
+        if (this.$.confirm.getShowing()) {
+            this.cancelPending();
             return false;
         }
-        // A revealed prompt swallows the drag; tapping its button or elsewhere dismisses it.
-        if (this.$.confirm.getShowing()) {
+        if (!this.swipeable || !inEvent.horizontal) {
             return false;
         }
         this.handlingDrag = true;
@@ -107,9 +136,8 @@ module.exports = kind({
         if (!this.handlingDrag) {
             return false;
         }
-        var dx = inEvent.dx || 0;
         var width = (this.getBounds && this.getBounds().width) || 0;
-        var deletePx = Math.floor(width * this.deleteRatio);
+        var action = swipeAction(inEvent.dx, width, this.replyEnabled);
 
         this.handlingDrag = false;
         this.resetPosition();
@@ -117,12 +145,10 @@ module.exports = kind({
             inEvent.preventTap();
         }
 
-        if (dx <= -this.reactMinPx || (!this.reactEnabled && dx >= this.reactMinPx) || dx >= deletePx) {
-            // A left swipe of any length, or a long right swipe, arms the delete prompt. With
-            // reactions off, any right swipe past the threshold does too.
+        if (action === "confirm") {
             this.showConfirm();
-        } else if (this.reactEnabled && dx >= this.reactMinPx) {
-            this.doReact({ index: this.index });
+        } else if (action === "reply") {
+            this.doReply({ index: this.index });
         } else {
             this.doCancel({ index: this.index });
         }
@@ -141,16 +167,40 @@ module.exports = kind({
 
     showConfirm: function () {
         this.$.confirm.setShowing(true);
+        swipeArm.shown(this);
     },
 
     hideConfirm: function () {
         this.$.confirm.setShowing(false);
+        swipeArm.closed(this);
+    },
+
+    /** Close the prompt unanswered: the row stays as it was (swipeArm calls this). */
+    cancelPending: function () {
+        if (this.$.confirm.getShowing()) {
+            this.hideConfirm();
+            this.doCancel({ index: this.index });
+        }
     },
 
     confirmTapped: function (inSender, inEvent) {
         this.hideConfirm();
         this.doConfirm({ index: this.index });
         inEvent.preventDefault();
+        return true;
+    },
+
+    /**
+     * Cancel, or a tap on the prompt beside its buttons: close it and leave the row as it was.
+     * Returning true keeps the tap from reaching the row, which would open the reactions on a
+     * message or the chat on a chat row.
+     */
+    cancelTapped: function (inSender, inEvent) {
+        this.hideConfirm();
+        this.doCancel({ index: this.index });
+        if (inEvent && inEvent.preventDefault) {
+            inEvent.preventDefault();
+        }
         return true;
     }
 });

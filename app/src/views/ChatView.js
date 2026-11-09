@@ -6,7 +6,7 @@
 var kind = require('enyo/kind'),
     Panels = require('layout/Panels'),
     CardArranger = require('layout/CardArranger'),
-    FittableRows = require('layout/FittableRows'),
+    FittableRows = require('./widgets/FitRows'),
     Toolbar = require('onyx/Toolbar'),
     Image = require('enyo/Image'),
     LunaService = require('enyo-webos/LunaService'),
@@ -110,6 +110,11 @@ module.exports = kind({
         }
     },
 
+    /** Whether the pane shows something of its own: a chat, or New Conversation being written. */
+    hasContent: function () {
+        return this.getIndex() !== 0;
+    },
+
     setChatThread: function (thread) {
         this.chatThread = thread;
         if (thread) {
@@ -124,6 +129,10 @@ module.exports = kind({
 
     threadLocked: function (inThread) {
         this.$.conversationList.threadLocked(inThread);
+    },
+
+    threadLinked: function (inThread) {
+        this.$.conversationList.threadLinked(inThread);
     },
 
     accountsChanged: function () {
@@ -143,10 +152,10 @@ module.exports = kind({
     },
 
     openComposeView: function (inSender, inEvent) {
+        // A forward brings its text and file; nothing from a compose left before may stay.
+        this.$.composeView.reset();
         if (inEvent && inEvent.params) {
             this.$.composeView.set('params', inEvent.params);
-        } else {
-            this.$.composeView.reset();
         }
         this.selectViewByName("composeView");
         return true;
@@ -302,5 +311,26 @@ module.exports = kind({
 
     closeAttachmentPicker: function () {
         return this.$.conversationList.closeAttachmentPicker();
+    },
+
+    closeGroupInfo: function () {
+        return this.$.conversationList.closeGroupInfo();
+    },
+
+    /** Find in Chat: only while a conversation is the view shown. */
+    openSearch: function () {
+        if (this.getViewName() === "conversationList") {
+            this.$.conversationList.openSearch();
+        }
+    },
+
+    /** Back closes Find in Chat before anything else. True when it was open. */
+    closeSearch: function () {
+        return this.$.conversationList.closeSearch();
+    },
+
+    /** Leave selecting messages; whether it was on. */
+    endSelection: function () {
+        return this.$.conversationList.endSelection();
     }
 });

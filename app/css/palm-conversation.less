@@ -30,6 +30,53 @@ Header
 .conversation-header .status {
   margin-left: 8px;
 }
+/* The buddy is typing (ConversationList.showTypingBubble): a received message's row, its picture
+   and a bubble as wide as its three dots, where their next message will come; the dots pulse one
+   after the other. */
+.chat-balloon-received.conversation-typing-bubble {
+  /* As wide as its dots, and as tall as a one-line message with its time (52px: the picture's
+     50px and the border), so that the picture and the tail sit beside it as they do beside every
+     received message; the dots in the middle. */
+  display: -webkit-inline-box;
+  display: -webkit-inline-flex;
+  display: inline-flex;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+  align-items: center;
+  height: 52px;
+  line-height: 0;
+  padding: 0 12px;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+.conversation-typing-bubble > span {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin: 0 2px;
+  -webkit-border-radius: 4px;
+  border-radius: 4px;
+  background-color: #5f7f99;
+  opacity: 0.35;
+  -webkit-animation: typing-dot 1.2s infinite ease-in-out;
+  animation: typing-dot 1.2s infinite ease-in-out;
+}
+.conversation-typing-bubble > span:nth-child(2) {
+  -webkit-animation-delay: 0.2s;
+  animation-delay: 0.2s;
+}
+.conversation-typing-bubble > span:nth-child(3) {
+  -webkit-animation-delay: 0.4s;
+  animation-delay: 0.4s;
+}
+@-webkit-keyframes typing-dot {
+  0%, 60%, 100% { opacity: 0.35; }
+  30% { opacity: 1; }
+}
+@keyframes typing-dot {
+  0%, 60%, 100% { opacity: 0.35; }
+  30% { opacity: 1; }
+}
 /* The reply service: icon, name and the dropdown arrow, drawn like the availability picker. It
    keeps its full width; the contact's name is what gets shortened when the bar is short of room. */
 .conversation-header-type {
@@ -91,23 +138,35 @@ Header
   box-shadow: none;
 }
 
+/*
+ * A group's Add People and Leave Group. Each button is as wide as its label and they share what is
+ * left, so the labels are not cut; the row starts at the edge rather than under the header's dot.
+ */
 .block-delete-box {
-  padding: 0 12px 0 68px;
+  padding: 0 8px;
   display: -webkit-flex;
   display: flex;
   -webkit-flex-flow: row;
   flex-flow: row;
+  /* gap, not a margin on each next button, so a hidden button before one adds no space. */
+  gap: 8px;
+}
+.block-delete-box > .onyx-button {
+  -webkit-flex: 1 1 auto;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-left: 8px;
+  padding-right: 8px;
 }
 .button-left {
   margin-right: 10px;
 }
-.blocksender-bt,
-.deleteconversation-bt {
-  opacity: 0.5;
-  color: #333;
-}
-.blocksender-bt {
-  margin-right: 8px;
+/* Leave Group cannot be undone: red, as onyx-negative is. */
+.block-delete-box > .onyx-button.danger-bt {
+  color: #fff;
+  background-color: #c51616;
+  background-image: none;
+  border-color: #a51010;
 }
 .accept-decline-box {
   margin-top: 3px;
@@ -224,6 +283,14 @@ Staged attachment chip (above the input once a file is picked)
   background-color: #d3e2f0;
   border-top: 1px solid rgba(0, 0, 0, 0.12);
   border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+/* Several staged files stack; keep the composer on screen however many there are. */
+.attachment-chips {
+  max-height: 156px;
+  overflow-y: auto;
+}
+.attachment-chips > .attachment-chip + .attachment-chip {
+  border-top: none;
 }
 .attachment-chip-thumb {
   width: 40px;
@@ -675,6 +742,27 @@ Inline media attachment chip (tap to open in the associated app)
   font-size: 15px;
   color: #234766;
 }
+/* A file offered rather than fetched (util/fileOffer): its name, and under it the size and what
+   a tap does. */
+.msg-file-offer-text {
+  -webkit-flex: 1;
+  flex: 1;
+  min-width: 0;
+}
+.msg-file-offer-text > .msg-attachment-name {
+  display: block;
+}
+.msg-file-offer-status {
+  margin-top: 2px;
+  font-size: 13px;
+  color: #666666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.msg-file-offer[data-state="failed"] .msg-file-offer-status {
+  color: #b42318;
+}
 
 /*----------------------
 Polls
@@ -716,6 +804,18 @@ Polls
      next re-render silently reverts it - looking like "the tap did not stick". Route every tap
      through the label so togglePollOption is the only thing that sets .checked. */
   pointer-events: none;
+}
+.msg-poll-name {
+  -webkit-flex: 1;
+  flex: 1;
+}
+/* How many chose the option, where the transport counts them (util/poll). */
+.msg-poll-count {
+  margin-left: 8px;
+  min-width: 16px;
+  text-align: right;
+  font-size: 12px;
+  color: #8f9aa6;
 }
 .msg-poll-option-checked {
   background-color: rgba(74, 144, 217, 0.12);
@@ -936,6 +1036,17 @@ Replies
   margin-left: 4px;
 }
 
+/* A message the sender deleted for everyone. */
+.msg-deleted {
+  font-style: italic;
+  color: #777777;
+}
+
+/* A group's own line: someone added or taken out, a rename (util/messageState.isSystemLine). */
+.system-line {
+  font-style: italic;
+}
+
 /* Inline quoted-original card at the top of a reply bubble; mirrors the composer's reply bar. */
 .reply-quote {
   display: block;
@@ -947,6 +1058,108 @@ Replies
   border-radius: 2px;
   max-height: 48px;
   overflow: hidden;
+}
+/* Find in Chat: the bar under the header, and the match shown. */
+.conversation-search {
+  -webkit-align-items: center;
+  align-items: center;
+  padding: 2px 6px;
+  background-color: #e4e4e4;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+.conversation-search .messaging-search {
+  min-width: 0;
+}
+.conversation-search-count {
+  font-size: 13px;
+  color: #555555;
+  margin: 0 4px;
+  white-space: nowrap;
+}
+/* The arrow image is smaller than the button: centred, so turning the button keeps it in place. */
+.conversation-search-older,
+.conversation-search-newer {
+  -webkit-flex: none;
+  flex: none;
+  background-position: center !important;
+  background-repeat: no-repeat;
+}
+.conversation-search-older {
+  -webkit-transform: rotate(180deg);
+  transform: rotate(180deg);
+}
+.conversation-search-done {
+  -webkit-flex: none;
+  flex: none;
+  margin-left: 4px;
+  min-width: 64px;
+}
+.search-hit {
+  background-color: rgba(47, 111, 179, 0.18);
+}
+
+/* The conversation's dialogs (Delete, Leave Group, Send My Location, a message not sent, a poll
+   that takes no vote): a title, a line, and the choices stacked full width, the one asked for
+   first and Cancel or OK last, as webOS's alert dialogs laid them out. */
+.alert-dialog {
+  width: 280px;
+  max-width: ~"calc(100vw - 32px)";
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+.alert-dialog-title {
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+.alert-dialog-message {
+  margin: 0.5rem 0 1rem;
+}
+.alert-dialog > .onyx-button {
+  display: block;
+  width: 100%;
+  margin: 0 0 8px 0;
+}
+.alert-dialog > .onyx-button:last-child {
+  margin-bottom: 0;
+}
+
+/* Selecting messages: the bar in the composer's place, and the rows picked. */
+.conversation-selection {
+  -webkit-align-items: center;
+  align-items: center;
+}
+.conversation-selection > .onyx-button {
+  -webkit-flex: none;
+  flex: none;
+  margin-left: 4px;
+  padding-left: 6px;
+  padding-right: 6px;
+}
+/* Room for "10 selected" next to the four buttons on a phone. */
+.conversation-selection-count {
+  font-size: 16px;
+  min-width: 4.5em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-left: 4px;
+}
+.msg-selected {
+  background-color: rgba(47, 111, 179, 0.22);
+}
+
+/* The message a tapped quote card is for, lit for a moment once it is scrolled to. */
+@-webkit-keyframes quote-flash {
+  from { background-color: rgba(47, 111, 179, 0.28); }
+  to { background-color: rgba(47, 111, 179, 0); }
+}
+@keyframes quote-flash {
+  from { background-color: rgba(47, 111, 179, 0.28); }
+  to { background-color: rgba(47, 111, 179, 0); }
+}
+.quote-target {
+  -webkit-animation: quote-flash 1.5s ease-out;
+  animation: quote-flash 1.5s ease-out;
 }
 .reply-quote-from {
   display: block;
@@ -961,4 +1174,392 @@ Replies
   color: #444444;
   line-height: 16px;
   white-space: normal;
+}
+
+/* A hold on a message selects it (ConversationList.handleMessageHold), so the web view's own
+   long press - a word selected, its handles and callout - stays out of the bubbles. Copy Text and
+   Copy in the selection bar copy a message. */
+.chat-balloon {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/*----------------------
+New Group / Add People (GroupDialog) and the contact to send (contactPicker): a name, the people
+picked as chips, and the contacts to pick from in a list that scrolls inside the popup.
+----------------------*/
+.group-dialog,
+.contact-picker-popup {
+  width: 22em;
+  max-width: ~"calc(100vw - 32px)";
+  box-sizing: border-box;
+}
+.group-dialog-title {
+  font-weight: bold;
+  margin-bottom: 0.75rem;
+}
+.group-dialog-name {
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 0.5rem;
+}
+.group-dialog-chosen {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-wrap: wrap;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+.group-dialog-member {
+  padding: 4px 10px;
+  margin: 0 6px 6px 0;
+  border-radius: 12px;
+  background-color: #d3e2f0;
+  color: #333;
+}
+/* Group Info (GroupInfo.js): the group's name and service, then its members as the light popup
+   menus' rows are drawn (palm-chrome.less), then its actions and Done. */
+.onyx-popup.group-info {
+  /* The window less a margin, so names and numbers have room; the list takes what height is left
+     and scrolls inside the sheet however many members there are. */
+  width: ~"calc(100vw - 24px)";
+  max-width: 480px;
+  max-height: ~"calc(100vh - 24px)";
+  padding: 10px;
+  box-sizing: border-box;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-direction: column;
+  flex-direction: column;
+}
+.group-info > * {
+  -webkit-flex: none;
+  flex: none;
+}
+.group-info > .group-info-members {
+  -webkit-flex: 1 1 auto;
+  flex: 1 1 auto;
+  min-height: 64px;
+}
+.group-info-title {
+  margin-bottom: 0.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.group-info-service {
+  color: #4c4c4c;
+  margin-bottom: 0.25rem;
+}
+.group-info-count {
+  color: #4c4c4c;
+  font-size: 13px;
+  margin-bottom: 0.5rem;
+}
+.group-info-members {
+  margin: 0 -10px 0.75rem;
+  background: #d9d9d9;
+  border-top: 1px solid rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+}
+.group-info-member {
+  box-sizing: border-box;
+  width: 100%;
+  background: #d9d9d9;
+  border-top: 1px solid rgba(255, 255, 255, 0.5);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+}
+.group-info-member > .swipeable-item-content,
+.group-info-member:not(.swipeable-item) {
+  padding: 8px 16px;
+}
+.group-info-member > .swipeable-item-content {
+  display: block;
+}
+.group-info-member:active {
+  background: -webkit-linear-gradient(top, rgba(218, 235, 251, 0.7), rgba(197, 224, 249, 0.7));
+  background: linear-gradient(to bottom, rgba(218, 235, 251, 0.7), rgba(197, 224, 249, 0.7));
+}
+.group-info-member-name {
+  color: #222222;
+  font-size: 16px;
+  line-height: 22px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.group-info-member-address {
+  color: #666666;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.onyx-popup.group-info-remove {
+  width: ~"calc(100vw - 48px)";
+  max-width: 22em;
+  box-sizing: border-box;
+}
+/* Rename's name box: as wide as the question. */
+.group-info-rename-box {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0.5rem 0 1rem;
+}
+.group-info-rename-input {
+  width: 100%;
+}
+.group-info-remove-message {
+  margin: 0.5rem 0 1rem;
+  overflow-wrap: break-word;
+}
+.group-info-more {
+  padding: 8px 16px;
+  color: #4c4c4c;
+  font-size: 13px;
+}
+.group-info-actions {
+  gap: 8px;
+  margin-bottom: 0.5rem;
+}
+.group-info-actions > .onyx-button {
+  -webkit-flex: 1 1 auto;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.group-info-done {
+  width: 100%;
+}
+.group-dialog-people,
+.contact-picker-list {
+  height: 40vh;
+  margin-bottom: 0.75rem;
+}
+.group-dialog-people .enyo-data-list,
+.contact-picker-list .enyo-data-list {
+  -webkit-flex: 1;
+  flex: 1;
+}
+.contact-picker-cancel {
+  width: 100%;
+}
+
+/* The stickers to send (ConversationList.openStickerPicker): a title, a grid that scrolls inside
+   the popup, and Cancel, as the contact picker. A sticker is drawn whole, on no background of its
+   own, the way the bubbles show one received. */
+.sticker-picker-popup {
+  width: 22em;
+  max-width: ~"calc(100vw - 32px)";
+  box-sizing: border-box;
+}
+.sticker-picker-title {
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+.sticker-picker-scroller {
+  height: 40vh;
+  margin-bottom: 0.75rem;
+}
+.sticker-picker-grid {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-wrap: wrap;
+  flex-wrap: wrap;
+}
+.sticker-picker-cell {
+  width: 25%;
+  padding: 4px;
+  box-sizing: border-box;
+}
+.sticker-picker-cell:active {
+  background-color: rgba(47, 111, 179, 0.22);
+  border-radius: 6px;
+}
+.sticker-picker-image {
+  display: block;
+  width: 100%;
+  height: 72px;
+  object-fit: contain;
+}
+.sticker-picker-empty {
+  padding: 1rem 0.5rem;
+  color: #666;
+  text-align: center;
+}
+.sticker-picker-cancel {
+  width: 100%;
+}
+
+/* "N unread messages" above the first message unread when the chat opened (ConversationRow). */
+.conversation-unread-line {
+  margin: 6px 0;
+  padding: 3px 0;
+  text-align: center;
+  font-size: 13px;
+  color: #3d5c75;
+  background-color: rgba(214, 237, 255, 0.85);
+  border-top: 1px solid #b3d9f2;
+  border-bottom: 1px solid #b3d9f2;
+}
+/* Back to the newest message (ConversationList.updateJumpButton). Out of the rows' flow: placed
+   where the list ends, then lifted over its bottom right, so the composer's height does not
+   matter. */
+.conversation-jump {
+  position: absolute;
+  right: 14px;
+  width: 40px;
+  height: 40px;
+  margin-top: -54px;
+  z-index: 5;
+  -webkit-border-radius: 20px;
+  border-radius: 20px;
+  background-color: #f8f8f8;
+  border: 1px solid #c8c8c8;
+  -webkit-box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+.conversation-jump-arrow {
+  position: absolute;
+  left: 13px;
+  top: 10px;
+  width: 11px;
+  height: 11px;
+  border-right: 3px solid #5f7f99;
+  border-bottom: 3px solid #5f7f99;
+  -webkit-transform: rotate(45deg);
+  transform: rotate(45deg);
+}
+.conversation-jump-count {
+  position: absolute;
+  top: -8px;
+  right: -6px;
+  min-width: 12px;
+  padding: 1px 4px;
+  -webkit-border-radius: 9px;
+  border-radius: 9px;
+  background-color: #2f8ad6;
+  color: #ffffff;
+  font-size: 11px;
+  line-height: 15px;
+  text-align: center;
+}
+
+/*----------------------
+A picture full screen (util/imageViewer)
+----------------------*/
+.image-viewer {
+  display: none;
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10000;
+  overflow: hidden;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.image-viewer-backdrop {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: #000;
+}
+.image-viewer-image {
+  position: absolute;
+  max-width: none;
+  transform-origin: 50% 50%;
+  will-change: transform;
+  -webkit-user-drag: none;
+}
+.image-viewer-button {
+  position: absolute;
+  top: 12px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 150ms linear;
+  -webkit-tap-highlight-color: transparent;
+}
+.image-viewer-button:active {
+  background: rgba(255, 255, 255, 0.25);
+}
+.image-viewer-close {
+  right: 12px;
+}
+.image-viewer-save {
+  right: 64px;
+}
+/* How a Save went, for a moment, above the strip. */
+.image-viewer-status {
+  position: absolute;
+  left: 50%;
+  bottom: 84px;
+  max-width: ~"calc(100% - 32px)";
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  padding: 8px 16px;
+  border-radius: 18px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  font-size: 15px;
+  text-align: center;
+  -webkit-transform: translateX(-50%);
+  transform: translateX(-50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms linear;
+}
+.image-viewer-status.shown {
+  opacity: 1;
+}
+.image-viewer-strip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 8px 8px 12px;
+  white-space: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  text-align: center;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0));
+  touch-action: pan-x;
+  transition: opacity 150ms linear;
+  scrollbar-width: none;
+}
+.image-viewer-strip::-webkit-scrollbar {
+  display: none;
+}
+.image-viewer-thumb {
+  display: inline-block;
+  width: 44px;
+  height: 44px;
+  margin: 0 3px;
+  object-fit: cover;
+  border-radius: 6px;
+  opacity: 0.55;
+  border: 2px solid transparent;
+  transition: opacity 120ms linear, transform 120ms ease-out;
+  -webkit-user-drag: none;
+}
+.image-viewer-thumb-current {
+  opacity: 1;
+  border-color: #fff;
+  transform: scale(1.08);
+}
+/* While a picture is dragged away, the buttons and the strip fade with the backdrop. */
+.image-viewer-chrome-hidden .image-viewer-button,
+.image-viewer-chrome-hidden .image-viewer-strip {
+  opacity: 0;
 }

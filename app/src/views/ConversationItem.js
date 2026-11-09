@@ -13,6 +13,13 @@ var kind = require('enyo/kind'),
     SwipeableItem = require('./widgets/SwipeableItem'),
     messagingUtils = require('../util/messagingUtils'),
     mediaUrl = require('../util/mediaUrl'),
+    messageState = require('../util/messageState'),
+    poll = require('../util/poll'),
+    launchTargets = require('../util/launchTargets'),
+    mentionMarkup = require('../util/mentionMarkup'),
+    fileOffer = require('../util/fileOffer'),
+    sentExtras = require('../util/sentExtras'),
+    receivedLocation = require('../util/receivedLocation'),
     moment = require('moment'),
     $L = require('enyo/i18n').$L;
 
@@ -23,7 +30,21 @@ module.exports = kind({
     kind: SwipeableItem,
     confirmCaption: $L("Delete"),
     classes: "chat-balloon",
-    reactEnabled: true,
+    replyEnabled: true,
+
+    /** Whether the list is selecting messages (ConversationList.startSelection). */
+    listSelecting: function () {
+        var list = this.owner && this.owner.repeater;
+        return !!(list && list.selecting);
+    },
+
+    /** While selecting, rows do not swipe: a tap picks a message and nothing else. */
+    dragstartHandler: function () {
+        if (this.listSelecting()) {
+            return false;
+        }
+        return this.inherited(arguments);
+    },
 
     published: {
         message: null
@@ -34,7 +55,7 @@ module.exports = kind({
         onSelectSender: "",
         onOpenAttachment: "",
         onInviteResponse: "",
-        onReact: ""
+        onReply: ""
     },
 
     components: [
@@ -100,7 +121,7 @@ module.exports = kind({
         this.updateMessageText(m, m.folder !== FOLDERS.OUTBOX && m.folder !== FOLDERS.INBOX);
         this.updateContactImage(m.personImage);
         this.updateSentReceived(m.folder);
-        this.updateTime(m.localTimestamp);
+        this.updateTime(m);
         this.updateMessageStatus(m.status, m.errorCategory);
         this.updateDeliveryStatus(m.deliveryStatus, m.folder);
         this.updateInvite(m);
@@ -141,7 +162,7 @@ module.exports = kind({
         var isGroup = !!(inMessage.channelName || inMessage.chatType === "groupchat");
         var sender = (inMessage.from && inMessage.from.name) ? inMessage.from.name : "";
 
-        if (isIncoming && isGroup && sender) {
+        if (isIncoming && isGroup && sender && !messageState.isSystemLine(inMessage)) {
             // from.name may carry astral-emoji entities from the transport: neutralise tags but keep
             // the entities so emojify() can turn them into inline images.
             var safe = String(sender).replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -157,8 +178,9 @@ module.exports = kind({
             personImage || messagingUtils.person.getDisplayImage(null));
     },
 
-    updateTime: function (localTimestamp) {
-        this.$.messageTime.setContent(localTimestamp ? moment(localTimestamp).format("LT") : "");
+    updateTime: function (message) {
+        var time = message.localTimestamp ? moment(message.localTimestamp).format("LT") : "";
+        this.$.messageTime.setContent(messageState.timeLine(message, time));
     },
 
     updateSentReceived: function (inFolder) {
@@ -203,10 +225,17 @@ module.exports = kind({
 
     updateMessageText: function (inMessage, skipTextIndexer) {
         var raw = inMessage.messageText || "";
+        // The service's own line (a member added or taken out, a rename) is drawn italic.
+        this.$.messageText.addRemoveClass("system-line", messageState.isSystemLine(inMessage));
         var inText = raw;
 
         if (messagingUtils.message.isMMSMessage(inMessage)) {
             this.$.messageText.setContent(messagingUtils.message.getMMSDisplayMessage());
+            return;
+        }
+        // Deleted for everyone: say so, and draw nothing of what it said (util/messageState).
+        if (messageState.isDeleted(inMessage)) {
+            this.$.messageText.setContent(messageState.deletedHtml());
             return;
         }
 
@@ -216,8 +245,16 @@ module.exports = kind({
             // turns it into a SECOND <br> and doubles every line break.
             inText = inText.replace(/(<br\s*\/?>)[\r\n]+/gi, "$1").replace(/\r|\n|\\r|\\n/g, "<br>");
         } else if (inMessage.folder === FOLDERS.OUTBOX) {
+            // A location or card we sent looks like one received: the chip, not its plain text.
+            var sentHtml = this.buildSentExtras(inMessage);
+            if (sentHtml) {
+                this.$.messageText.setContent(this.buildQuote(inMessage) + sentHtml + this.buildReactions(inMessage));
+                return;
+            }
             // Outgoing text needs sanitizing; incoming was sanitized on the way into the db.
-            inText = messagingUtils.message.escapeHtml(inText);
+            inText = mentionMarkup.keepBold(launchTargets.outgoingHtml(inText, messagingUtils.message.escapeHtml));
+            // Who it mentions, bold, as a received mention is (util/mentionMarkup).
+            inText = mentionMarkup.mark(inText, inMessage.mentions, messagingUtils.message.escapeHtml);
         }
 
         // Media the networks deliver as URLs in the body (or a local attachment file): images
@@ -233,10 +270,19 @@ module.exports = kind({
             }
         }
 
-        // A shared location arrives as "name\naddress\ngeo:lat,lng" text. There is no map-bubble UI,
-        // but the geo: URI is parseable, so turn it into a tappable pin chip.
+        // A file the transport offers rather than fetched (a video, a large document): a card
+        // that downloads it on a tap (util/fileOffer); the caption stays below it.
+        var offerHtml = "";
+        var offer = inMessage.folder === FOLDERS.INBOX ? fileOffer.find(raw) : null;
+        if (offer) {
+            offerHtml = this.buildFileOffer(offer, inMessage.downloadAsked === true);
+            inText = fileOffer.strip(inText);
+        }
+
+        // A shared location arrives as text: WhatsApp's with a geo: URI, Telegram's as a
+        // "Location: lat, lng" line (util/receivedLocation). Each becomes a tappable pin chip.
         var locationsHtml = "";
-        var locations = this.extractLocations(raw);
+        var locations = receivedLocation.find(raw);
         for (var li = 0; li < locations.length; li++) {
             locationsHtml += this.buildLocationChip(locations[li]);
         }
@@ -279,7 +325,7 @@ module.exports = kind({
 
         // Drop the matched media URLs and any geo:/event:/poll: token from the displayed text —
         // they are now rendered as an image/chip/block below.
-        inText = inText.replace(this.mediaUrlRe(), "").replace(this.geoUrlRe(), "")
+        inText = receivedLocation.strip(inText.replace(this.mediaUrlRe(), ""))
             .replace(this.eventUrlRe(), "").replace(this.pollUrlRe(), "")
             .replace(/(?:\s|<br>)+$/g, "");
 
@@ -290,7 +336,7 @@ module.exports = kind({
         // Media on top, caption below it. .message-image is display:block, so the caption flows onto
         // the next line with no separator. The caption often keeps a LEADING <br> where the stripped
         // media URL sat, so strip that to avoid a blank line between image and caption.
-        var mediaHtml = imagesHtml + chipsHtml + locationsHtml + eventsHtml + pollsHtml +
+        var mediaHtml = offerHtml + imagesHtml + chipsHtml + locationsHtml + eventsHtml + pollsHtml +
             localAttachmentHtml;
         if (mediaHtml) {
             // The break can be <br>, <br/> or <br /> — match all spellings.
@@ -442,14 +488,36 @@ module.exports = kind({
         return urls;
     },
 
-    geoUrlRe: function () { return /geo:(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/gi; },
-
-    extractLocations: function (text) {
-        var re = this.geoUrlRe(), locations = [], m;
-        while ((m = re.exec(text)) !== null) {
-            locations.push({ lat: m[1], lng: m[2] });
+    /**
+     * The chip of a location or contact card we sent (util/sentExtras), as a received one has, or
+     * "". A location opens Maps and keeps its name below the chip. A card shows its person in
+     * Contacts (data-kind "sent-contact": there is no file of it, ConversationList finds what to
+     * show from the message).
+     */
+    buildSentExtras: function (message) {
+        var escape = messagingUtils.message.escapeHtml;
+        var loc = sentExtras.sentLocation(message);
+        if (loc) {
+            return this.buildLocationChip(loc) + (loc.name ? messagingUtils.message.emojify(escape(loc.name)) : "");
         }
-        return locations;
+        var card = sentExtras.sentContact(message);
+        if (card) {
+            return '<div class="msg-attachment" data-kind="sent-contact">' +
+                '<div class="msg-attachment-icon msg-attachment-contact"></div>' +
+                '<div class="msg-attachment-name">' + messagingUtils.message.emojify(escape(card.name)) + '</div></div>';
+        }
+        return "";
+    },
+
+    /** The card of an offered file (util/fileOffer): its kind, name, size and what a tap does. */
+    buildFileOffer: function (offer, asked) {
+        var escape = messagingUtils.message.escapeHtml;
+        var kind = offer.type === "video" ? "video" : offer.type === "audio" ? "audio" : "file";
+        var name = offer.name || (kind === "video" ? $L("Video") : kind === "audio" ? $L("Audio") : $L("Attachment"));
+        return '<div class="msg-attachment msg-file-offer" data-kind="file-offer" data-state="' + offer.state + '">' +
+            '<div class="msg-attachment-icon msg-attachment-' + kind + '"></div>' +
+            '<div class="msg-file-offer-text"><div class="msg-attachment-name">' + escape(name) + '</div>' +
+            '<div class="msg-file-offer-status">' + escape(fileOffer.status(offer, asked, $L)) + '</div></div></div>';
     },
 
     /** A tappable location pin chip; data-open carries "lat,lng" for the Maps app. */
@@ -475,15 +543,8 @@ module.exports = kind({
      * selection — rather than the static token, so it survives a row re-render.
      */
     buildPollBlock: function (token, inMessage) {
-        var payload;
-        try {
-            var b64 = token.replace(/-/g, "+").replace(/_/g, "/");
-            while (b64.length % 4) { b64 += "="; }
-            payload = JSON.parse(decodeURIComponent(escape(atob(b64))));
-        } catch (e) {
-            return "";
-        }
-        if (!payload || !payload.options || !payload.options.length) { return ""; }
+        var payload = poll.decode(token);
+        if (!payload) { return ""; }
 
         var max = payload.max || 0;
         var type = (max === 1) ? "radio" : "checkbox";
@@ -496,10 +557,12 @@ module.exports = kind({
             var checked = (mine.indexOf(raw) >= 0);
             var opt = messagingUtils.message.emojify(messagingUtils.message.escapeHtml(raw));
             var optAttr = raw.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+            var votes = poll.votesFor(payload, i);
             rows += '<label class="msg-poll-option' + (checked ? ' msg-poll-option-checked' : '') +
                 '" data-poll-option="' + optAttr + '" data-poll-max="' + max + '">' +
-                '<input type="' + type + '"' + (checked ? ' checked' : '') + '/><span>' + opt +
-                '</span></label>';
+                '<input type="' + type + '"' + (checked ? ' checked' : '') + '/><span class="msg-poll-name">' + opt +
+                '</span>' + (votes === null ? '' : '<span class="msg-poll-count">' + votes + '</span>') +
+                '</label>';
         }
 
         var footer;
@@ -713,6 +776,13 @@ module.exports = kind({
         var node = inEvent && (inEvent.target || (inEvent.domEvent && inEvent.domEvent.target));
         var root = this.hasNode();
 
+        // While selecting, a tap on a file, a player or a link picks the message as any tap does:
+        // nothing opens or plays, and the tap goes on to the list.
+        if (this.listSelecting()) {
+            this.cancelNativeNavigation(inEvent);
+            return false;
+        }
+
         while (node && node !== root) {
             if (node.getAttribute) {
                 // Inline video: mp4-family plays fullscreen in the stock player, since the media
@@ -736,13 +806,38 @@ module.exports = kind({
                     return true;
                 }
 
+                // An offered file: a tap downloads it (ConversationList.downloadOffered).
+                if (node.getAttribute("data-kind") === "file-offer") {
+                    this.cancelNativeNavigation(inEvent);
+                    this.doOpenAttachment({ target: "", kind: "file-offer", message: this.message });
+                    return true;
+                }
+
+                // A card we sent has no file: the list shows its person from the message.
+                if (node.getAttribute("data-kind") === "sent-contact") {
+                    this.cancelNativeNavigation(inEvent);
+                    this.doOpenAttachment({ target: "", kind: "sent-contact", message: this.message });
+                    return true;
+                }
+
                 var name = (node.nodeName || node.tagName || "").toUpperCase();
+                // A picture opens full screen over the chat (ConversationList.showPicture), a
+                // linked one too, rather than in the browser.
+                if (name === "IMG" && /(?:^|\s)message-image(?:\s|$)/.test(node.className || "")) {
+                    this.cancelNativeNavigation(inEvent);
+                    this.doOpenAttachment({ target: node.getAttribute("src"), kind: "image", node: node });
+                    return true;
+                }
                 var target = node.getAttribute("data-open") ||
                     (name === "A" ? node.getAttribute("href") : null);
                 if (target) {
                     this.cancelNativeNavigation(inEvent);
                     var kind = node.getAttribute("data-kind") || this.mediaKind(target);
                     this.doOpenAttachment({ target: target.replace(/&amp;/g, "&"), kind: kind });
+                    return true;
+                }
+                // Any other chip is the chip's, opened or not: a tap on it never reacts.
+                if (/(?:^|\s)msg-attachment(?:\s|$)/.test(node.className || "")) {
                     return true;
                 }
             }
@@ -802,6 +897,9 @@ module.exports = kind({
      * list and return true so the normal message tap does not also fire.
      */
     senderTapped: function (inSender, inEvent) {
+        if (this.listSelecting()) {
+            return false;
+        }
         this.doSelectSender({ index: this.index, message: this.message });
         return true;
     },

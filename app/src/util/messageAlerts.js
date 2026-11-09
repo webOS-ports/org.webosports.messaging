@@ -77,6 +77,7 @@ function feedbackSound(prefs) {
  * ctx.prefs           the messaging prefs record, or undefined before it has loaded
  * ctx.filterAll       true while every notification is held back
  * ctx.onScreenThread  the id of the thread on screen in a foregrounded app, if any
+ * ctx.muted           muted(threadId): whether that chat is muted, if known
  * ctx.now             the time now, in ms
  */
 function decide(message, ctx) {
@@ -87,8 +88,13 @@ function decide(message, ctx) {
     if (ctx.filterAll) {
         return null;
     }
-    // A muted chat: the legacy processChanges skipped these, as the service's threader does.
+    // A muted message: the legacy processChanges skipped these, as the service's threader does.
     if (message.flags && message.flags.noNotification) {
+        return null;
+    }
+    // A chat muted from the Chats list (util/chatFlags).
+    var chat = message.conversations && message.conversations[0];
+    if (ctx.muted && ctx.muted(chat)) {
         return null;
     }
     // During a history sync the transports back-fill old messages with their original send time,

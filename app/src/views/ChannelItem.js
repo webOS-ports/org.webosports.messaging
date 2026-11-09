@@ -9,7 +9,7 @@
 var kind = require('enyo/kind'),
     Control = require('enyo/Control'),
     messagingUtils = require('../util/messagingUtils'),
-    $L = require('enyo/i18n').$L;
+    chatsThreads = require('../util/chatsThreads');
 
 module.exports = kind({
     name: "ChannelItem",
@@ -23,7 +23,9 @@ module.exports = kind({
     components: [
         {
             classes: "message-summary", components: [
-                { name: "displayName", classes: "contact-name", allowHtml: true }
+                { name: "displayName", classes: "contact-name", allowHtml: true },
+                // What is set on the channel (muted, delivered while closed); hidden for nothing.
+                { name: "options", classes: "message-preview", showing: false }
             ]
         },
         { name: "unreadCount", classes: "unread-count channel-unread", showing: false }
@@ -38,6 +40,11 @@ module.exports = kind({
     setChannel: function (inChannel) {
         this.$.displayName.setContent(
             messagingUtils.message.emojifyEscaped(this.getChannelLabel(inChannel)));
+    },
+
+    setOptionsSummary: function (inSummary) {
+        this.$.options.setContent(inSummary || "");
+        this.$.options.setShowing(!!inSummary);
     },
 
     /**
@@ -57,7 +64,6 @@ module.exports = kind({
      * Prefixed with "#", but not doubled for IRC channels whose name already starts with one.
      */
     getChannelLabel: function (inChannel) {
-        var name = inChannel.displayName || inChannel.name || inChannel.remoteId || $L("channel");
-        return (String(name).charAt(0) === "#") ? name : ("# " + name);
+        return chatsThreads.channelLabel(inChannel);
     }
 });

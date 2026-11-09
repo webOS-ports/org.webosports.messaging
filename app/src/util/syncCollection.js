@@ -16,24 +16,30 @@ module.exports = function syncCollection(collection, records) {
     }
     records = records || [];
 
-    // add() only purges when at least one model is kept (Collection.add tests
-    // `purge && keep.length`), so an empty result would leave the previous list in place: tapping a
-    // server with no channels showed the channels of the server tapped before it.
-    if (!records.length) {
-        if (collection.length) {
-            collection.remove(collection.models.copy());
-        }
-        return;
-    }
-
-    collection.add(records, { merge: true, purge: true });
-
-    // add() appends new models rather than placing them, so re-impose the query's ordering — but
-    // only when it actually differs, since sorting notifies and re-renders on its own.
+    // The models that went away are removed here rather than by add()'s purge, which removes
+    // nothing unless a record it keeps counts as kept (Collection.add tests `purge && keep.length`).
+    // An empty result left the previous list in place - tapping a server with no channels showed
+    // the channels of the server tapped before - and so did a result made only of records that
+    // were in the list once before: add() finds those in enyo's store, and a model found there
+    // does not count as kept. Opening the archived chats showed every chat.
     var order = {}, i;
     for (i = 0; i < records.length; i++) {
         order[records[i]._id] = i;
     }
+    var gone = [];
+    for (i = 0; i < collection.length; i++) {
+        if (!Object.prototype.hasOwnProperty.call(order, collection.at(i).attributes._id)) {
+            gone.push(collection.at(i));
+        }
+    }
+    if (gone.length) {
+        collection.remove(gone);
+    }
+
+    collection.add(records, { merge: true });
+
+    // add() appends new models rather than placing them, so re-impose the query's ordering — but
+    // only when it actually differs, since sorting notifies and re-renders on its own.
 
     var inOrder = true;
     for (i = 0; i < collection.length; i++) {

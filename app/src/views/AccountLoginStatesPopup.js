@@ -22,6 +22,9 @@ var MIN_LIST_HEIGHT = 120;
 module.exports = kind({
     name: "AccountLoginStatesPopup",
     kind: Popup,
+    // A light menu, as the other popup menus (css/palm-chrome.less): the Palm row lines in
+    // css/palm-app.less were drawn for this sheet.
+    classes: "light-menu",
     floating: true,
     autoDismiss: true,
     style: "width: 330px;",

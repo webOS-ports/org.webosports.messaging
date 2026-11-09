@@ -79,8 +79,10 @@ Toolbars
   justify-content: center;
 }
 
-/* The composer carries its hairline on top instead, and grows with the field. */
-.onyx-toolbar.conversation-bottom {
+/* The composer carries its hairline on top instead, and grows with the field. The bar that
+   takes its place while messages are selected is the same light bar, not Onyx's dark one. */
+.onyx-toolbar.conversation-bottom,
+.onyx-toolbar.conversation-selection {
   min-height: 53px;
   padding: 6px 8px;
   background: #e2e2e2;
@@ -183,11 +185,82 @@ Buttons on the light bars
   text-shadow: none;
 }
 
-/* The block/delete bar sits on the conversation background rather than a toolbar. */
-.block-delete-box .onyx-button {
-  color: #333333;
-  background-color: #f3f3f3;
-  background-image: none;
-  border: 1px solid #cfcfcf;
-  text-shadow: none;
+
+/*----------------------
+Popups
+----------------------*/
+/* Every popup light, as webOS 3.0 drew them, unless it says otherwise. Onyx's default is a dark
+   #4C4C4C sheet with white text, so any Popup or Menu added without its own styling came out dark;
+   Enyo 1.0, which the legacy app was written for, had light ones throughout. Dialogs after its
+   ModalDialog and Popup (themes/Onyx: images/dialog.png, popup.png; DialogPrompt.css): a sheet
+   that lightens from #cccccc to #e3e3e3 at the top, rounded, with a soft shadow, and dark text
+   (#222, the message #4c4c4c). The app menu keeps Onyx's dark look, as Enyo 1.0's AppMenu was. */
+.onyx-popup:not(.app-menu) {
+  color: #222222;
+  background: #cccccc;
+  background: -webkit-linear-gradient(top, #e3e3e3, #cccccc 48px);
+  background: linear-gradient(to bottom, #e3e3e3, #cccccc 48px);
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+  -webkit-box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+}
+
+/*----------------------
+Menus
+----------------------*/
+/* Popup menus as webOS 3.0 drew them (Enyo 1.0, themes/Onyx: Menu.css, MenuItem.css, Item.css,
+   images/menu-background.png): a light #d9d9d9 sheet in a rounded frame with a soft shadow, rows
+   split by a white hairline over a dark one, dark 16px text, and a held row in the pale blue of
+   .enyo-held. Onyx draws them as dark sheets with no row lines. The app menu stays dark (#2f2f2f),
+   as Enyo 1.0's AppMenu was, and keeps Onyx's look. */
+.onyx-menu.onyx-popup:not(.app-menu),
+.onyx-popup.light-menu {
+  background: #d9d9d9;
+  color: #222222;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+  -webkit-box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+  padding: 4px 0;
+}
+.onyx-menu:not(.app-menu) .onyx-menu-item,
+.light-menu .onyx-menu-item {
+  color: #222222;
+  font-size: 16px;
+  line-height: 22px;
+  padding: 10px 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-top: 1px solid rgba(255, 255, 255, 0.5);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+}
+.onyx-menu:not(.app-menu) .onyx-menu-item:first-child,
+.onyx-menu:not(.app-menu) .enyo-scroller-client > .onyx-menu-item:first-child {
+  border-top: 0;
+}
+.onyx-menu:not(.app-menu) .onyx-menu-item:last-child {
+  border-bottom: 0;
+}
+/* Touch leaves :hover on the last row tapped; the held look is only for a finger on the row. */
+.onyx-menu:not(.app-menu) .onyx-menu-item:hover,
+.light-menu .onyx-menu-item:hover {
+  background: none;
+}
+.onyx-menu:not(.app-menu) .onyx-menu-item:active,
+.light-menu .onyx-menu-item:active {
+  background: -webkit-linear-gradient(top, rgba(218, 235, 251, 0.7), rgba(197, 224, 249, 0.7));
+  background: linear-gradient(to bottom, rgba(218, 235, 251, 0.7), rgba(197, 224, 249, 0.7));
+}
+/* A divider sets Delete apart: a darker line under the row lines. Onyx makes the divider a
+   MenuItem, so it loses the item's padding and does not take taps. */
+.onyx-menu:not(.app-menu) .onyx-menu-item.onyx-menu-divider,
+.onyx-menu:not(.app-menu) .onyx-menu-divider {
+  margin: 0;
+  padding: 0;
+  height: 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.25);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+  pointer-events: none;
 }

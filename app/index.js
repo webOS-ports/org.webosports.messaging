@@ -16,6 +16,9 @@
 // now, and no longer gates the back gesture on platform detection at all.
 require('webos-lib');
 
+// A click inside a message's link never loads it in this card; the tap opens it (util/linkGuard).
+require('./src/util/linkGuard').install();
+
 var
 	ready = require('enyo/ready'),
     db8Source = require('./src/data/db8Source'),

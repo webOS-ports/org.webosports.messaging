@@ -7,10 +7,13 @@
  * onSelectThread, the same contract ThreadList uses, so the conversation view opens it with no
  * extra wiring. Going back up is driven by the app's bottom toolbar, so this kind fires
  * onServerDrill and exposes showServers()/isDrilledIn() for the shell to hook a footer button.
+ *
+ * Holding a Discord server mutes or unmutes it and chooses whether all of its channels deliver
+ * while closed (see util/channelOptions).
  */
 
 var kind = require('enyo/kind'),
-    FittableRows = require('layout/FittableRows'),
+    FittableRows = require('./widgets/FitRows'),
     Panels = require('layout/Panels'),
     CardArranger = require('layout/CardArranger'),
     DataRepeater = require('enyo/DataRepeater'),
@@ -22,7 +25,10 @@ var kind = require('enyo/kind'),
     ChannelList = require('./ChannelList'),
     SearchInput = require('./widgets/SearchInput'),
     ServerServices = require('../data/ServerService'),
+    channelOptions = require('../util/channelOptions'),
+    ChannelOptionsPopup = require('./ChannelOptionsPopup'),
     messagingUtils = require('../util/messagingUtils'),
+    appState = require('../util/appState'),
     $L = require('enyo/i18n').$L;
 
 module.exports = kind({
@@ -54,7 +60,7 @@ module.exports = kind({
                             name: "scroller", kind: Scroller, fit: true,
                             horizontal: "hidden", touch: true,
                             classes: "threads-list messaging-listsDivider",
-                            ontap: "selectServer",
+                            ontap: "selectServer", onhold: "holdServer",
                             components: [
                                 {
                                     name: "list", kind: DataRepeater,
@@ -66,7 +72,8 @@ module.exports = kind({
                 },
                 { name: "channelsView", kind: ChannelList, onSelectThread: "relaySelectThread" }
             ]
-        }
+        },
+        { name: "optionsPopup", kind: ChannelOptionsPopup }
     ],
 
     create: function () {
@@ -96,9 +103,18 @@ module.exports = kind({
         this.$.drill.setIndex(0);
         this.runQuery();
         this.callUnread();
+
+        // A row's service logo comes from the account templates, which may answer after the servers
+        // have: until then the rows show the generic glyph, so draw them again once they are in.
+        if (appState.accountService) {
+            appState.accountService.register(this, this.refreshRows.bind(this));
+        }
     },
 
     destroy: function () {
+        if (appState.accountService) {
+            appState.accountService.unregister(this);
+        }
         if (this.serverService) { this.serverService.cancel(); }
         if (this.unreadService) { this.unreadService.cancel(); }
         if (this.collection) {
@@ -147,6 +163,16 @@ module.exports = kind({
 
     gotServers: function (inSender, inEvent) {
         this.allServers = (inEvent && inEvent.results) || [];
+        // The channels shown take a server's mute from it, so hand them the server as it is now.
+        if (this.selectedServer) {
+            for (var i = 0; i < this.allServers.length; i++) {
+                if (this.allServers[i]._id === this.selectedServer._id) {
+                    this.selectedServer = this.allServers[i];
+                    this.$.channelsView.serverUpdated(this.selectedServer);
+                    break;
+                }
+            }
+        }
         this.applyFilter();
         return true;
     },
@@ -240,7 +266,17 @@ module.exports = kind({
             model.set('availability', list.accountAvail[model.attributes.serviceName]);
             model.set('outgoing', latest ? latest.outgoing : false);
             model.set('selected', !!(list.selectedServer && list.selectedServer._id === id));
+            model.set('optionsSummary', channelOptions.summary(model.attributes, true));
+            // Not drawn from here, but a change of it redraws the row (rowModelWatch), and with it
+            // ServerItem's logo, which it looks up itself.
+            model.set('serviceIcon', list.serviceIcon(model.attributes.serviceName));
         });
+    },
+
+    /** The account template's logo for a service, or null while there is none (ServerItem). */
+    serviceIcon: function (serviceName) {
+        var accounts = appState.accountService;
+        return (serviceName && accounts && accounts.getIconPath && accounts.getIconPath(serviceName)) || null;
     },
 
     // --- interaction ---------------------------------------------------------------------
@@ -261,6 +297,18 @@ module.exports = kind({
         this.$.channelsView.setServer(record);
         this.$.drill.setIndex(1);
         this.setDrilled(true);
+        return true;
+    },
+
+    holdServer: function (inSender, inEvent) {
+        var record = this.recordFor(inEvent);
+        if (!this.$.optionsPopup.showFor(record, true, null, inEvent)) {
+            return false;
+        }
+        // The finger lifting after a hold is a tap too; that one should not drill in.
+        if (inEvent.preventTap) {
+            inEvent.preventTap();
+        }
         return true;
     },
 

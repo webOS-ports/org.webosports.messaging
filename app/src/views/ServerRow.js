@@ -19,6 +19,7 @@ module.exports = kind({
         model: null,
         selectedRow: false,
         unread: 0,
+        optionsSummary: "",
         availability: null,
         outgoing: false
     },
@@ -26,6 +27,7 @@ module.exports = kind({
     bindings: [
         { from: ".model.selected", to: ".selectedRow" },
         { from: ".model.unread", to: ".unread" },
+        { from: ".model.optionsSummary", to: ".optionsSummary" },
         { from: ".model.availability", to: ".availability" },
         { from: ".model.outgoing", to: ".outgoing" }
     ],
@@ -63,9 +65,14 @@ module.exports = kind({
         // the same reference every time and a plain set() would see no change and not redraw.
         this.$.serverItem.set("record", record, { force: true });
         this.unreadChanged();
+        this.optionsSummaryChanged();
         this.availabilityChanged();
         this.outgoingChanged();
         this.selectedRowChanged();
+    },
+
+    optionsSummaryChanged: function () {
+        this.$.serverItem.setOptionsSummary(this.optionsSummary || "");
     },
 
     unreadChanged: function () {

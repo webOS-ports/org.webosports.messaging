@@ -320,6 +320,8 @@ var messages = [
     {
         _id: "msg-a2", _kind: "com.palm.message:1", conversations: ["thread-anna"],
         folder: "outbox", messageText: "Yes — 14:30 at the north entrance",
+        // The network's id for it, which a reply quoting it names (quotedMessageId).
+        serviceMessageId: "tg-4471",
         localTimestamp: ago(0, 3), timestamp: ago(0, 3), status: "successful",
         serviceName: "type_telegram", deliveryStatus: "read",
         to: [{ addr: "anna.k" }], flags: { visible: true }
@@ -332,9 +334,19 @@ var messages = [
         // The field names the transports actually stamp on a reply (see ConversationItem.buildQuote).
         quotedFrom: "You",
         quotedText: "Yes — 14:30 at the north entrance",
-        quotedMessageId: "msg-a2",
+        quotedMessageId: "tg-4471",
         reactions: [{ emoji: "&#128077;", count: 2, mine: true }],
         flags: { visible: true, read: false }
+    },
+    {
+        // A file the transport saved on the device, drawn as a chip; forwarding it takes the file.
+        _id: "msg-a3f", _kind: "com.palm.message:1", conversations: ["thread-anna"],
+        folder: "inbox", messageText: "",
+        filePath: "/media/internal/downloads/exhibition-tickets.pdf",
+        localTimestamp: ago(0, 1.5), timestamp: ago(0, 1.5), status: "successful",
+        serviceName: "type_telegram", from: { addr: "anna.k", name: "Anna Kowalski" },
+        serviceMessageId: "tg-4475",
+        flags: { visible: true, read: true }
     },
     {
         _id: "msg-a4", _kind: "com.palm.message:1", conversations: ["thread-anna"],
@@ -468,6 +480,15 @@ var messages = [
 
     // thread-family: a WhatsApp group with three senders.
     {
+        // The group's own line, as purple-combined writes one (sender "system").
+        _id: "msg-f0", _kind: "com.palm.message:1", conversations: ["thread-family"],
+        folder: "inbox", messageText: "Mum added Marta Lindqvist",
+        localTimestamp: ago(0, 5), timestamp: ago(0, 5), status: "successful",
+        serviceName: "type_whatsapp", chatType: "groupchat", channelName: "Family",
+        from: { addr: "system", name: "Family" },
+        flags: { visible: true, read: true, noNotification: true }
+    },
+    {
         _id: "msg-f1", _kind: "com.palm.message:1", conversations: ["thread-family"],
         folder: "inbox", messageText: "Dinner at ours on Sunday?",
         localTimestamp: ago(0, 4.5), timestamp: ago(0, 4.5), status: "successful",
@@ -476,10 +497,20 @@ var messages = [
         flags: { visible: true, read: false }
     },
     {
+        // Deleted for everyone, as imlibpurpleservice's DeleteHandler leaves it.
+        _id: "msg-f1d", _kind: "com.palm.message:1", conversations: ["thread-family"],
+        folder: "inbox", messageText: "This message was deleted.", deleted: true,
+        localTimestamp: ago(0, 4.2), timestamp: ago(0, 4.2), status: "successful",
+        serviceName: "type_whatsapp", chatType: "groupchat", channelName: "Family",
+        from: { addr: "+46701234567", name: "Marta Lindqvist" },
+        flags: { visible: true, read: false }
+    },
+    {
         _id: "msg-f2", _kind: "com.palm.message:1", conversations: ["thread-family"],
         folder: "inbox", messageText: "Yes please! I'll bring dessert &#127856;",
         localTimestamp: ago(0, 4), timestamp: ago(0, 4), status: "successful",
         serviceName: "type_whatsapp", chatType: "groupchat", channelName: "Family",
+        serviceMessageId: "3EB0C4F1A2",
         from: { addr: "+46701234567", name: "Marta Lindqvist" },
         flags: { visible: true, read: false }
     },
@@ -489,7 +520,9 @@ var messages = [
         localTimestamp: ago(0, 3.5), timestamp: ago(0, 3.5), status: "successful",
         serviceName: "type_whatsapp", chatType: "groupchat", channelName: "Family",
         from: { addr: "+15015550142", name: "Mum" },
-        quotedFrom: "Marta Lindqvist", quotedText: "Yes please! I'll bring dessert", quotedMessageId: "msg-f2",
+        quotedFrom: "Marta Lindqvist", quotedText: "Yes please! I'll bring dessert", quotedMessageId: "3EB0C4F1A2",
+        // Edited after it was sent (EditHandler).
+        edited: true,
         flags: { visible: true, read: false }
     },
 
@@ -630,8 +663,8 @@ var servers = [
     },
     {
         _id: "server-discord", _kind: "com.palm.imserver:1",
-        accountId: "acct-discord", serviceName: "type_discord",
-        displayName: "LuneOS Discord", unreadCount: 3
+        accountId: "acct-discord", serviceName: "type_discord", remoteId: "LuneOS Discord",
+        displayName: "LuneOS Discord", unreadCount: 3, muted: false, background: false
     },
     {
         _id: "server-irc", _kind: "com.palm.imserver:1",
@@ -648,18 +681,48 @@ var channels = [
     },
     {
         _id: "channel-general", _kind: "com.palm.imchannel:1",
-        serverId: "server-discord", serviceName: "type_discord",
-        displayName: "#general", threadId: "thread-old", unreadCount: 3
+        serverId: "server-discord", serviceName: "type_discord", remoteId: "1100000000000000001",
+        displayName: "#general", threadId: "thread-old", unreadCount: 3, muted: false, background: true
     },
     {
         _id: "channel-dev", _kind: "com.palm.imchannel:1",
-        serverId: "server-discord", serviceName: "type_discord",
-        displayName: "#development", threadId: "thread-old", unreadCount: 0
+        serverId: "server-discord", serviceName: "type_discord", remoteId: "1100000000000000002",
+        displayName: "#development", threadId: "thread-old", unreadCount: 0, muted: true, background: false
     },
     {
         _id: "channel-irc-webos", _kind: "com.palm.imchannel:1",
         serverId: "server-irc", serviceName: "type_irc", remoteId: "#webos@irc.libera.chat",
         displayName: "#webos", name: "#webos", position: 0, unreadCount: 0
+    }
+];
+
+// --- media index ---------------------------------------------------------------------------
+
+// What mediaindexer has of the device's pictures (com.palm.media.image.file:1): two stickers in
+// app/mock, newest first by mtime (seconds), one gone since it was indexed, a photo, and a synced
+// cloud picture that is no local file. The stickers need a file:// page to be drawn.
+var MOCK_PATH = /^file:\/\//i.test(MOCK_URL) ? decodeURI(MOCK_URL.replace(/^file:\/\//i, "")) : "/mock/";
+var nowSec = Math.floor(now / 1000);
+var images = [
+    {
+        _id: "image-star", _kind: "com.palm.media.image.file:1", type: "local", mimeType: "image/webp",
+        path: MOCK_PATH + "stickers/star.webp", modifiedTime: nowSec - 3600
+    },
+    {
+        _id: "image-heart", _kind: "com.palm.media.image.file:1", type: "local", mimeType: "image/webp",
+        path: MOCK_PATH + "stickers/heart.webp", modifiedTime: nowSec - 7200
+    },
+    {
+        _id: "image-gone", _kind: "com.palm.media.image.file:1", type: "local", mimeType: "image/webp",
+        path: MOCK_PATH + "stickers/gone.webp", modifiedTime: nowSec - 600
+    },
+    {
+        _id: "image-pier", _kind: "com.palm.media.image.file:1", type: "local", mimeType: "image/jpeg",
+        path: MOCK_PATH + "photos/pier.jpg", modifiedTime: nowSec - 60
+    },
+    {
+        _id: "image-cloud", _kind: "com.palm.media.image.file:1", type: "com.palm.pigallery2",
+        path: "/media/internal/.photosApp/cloud/thumb.webp"
     }
 ];
 
@@ -674,7 +737,8 @@ var store = {
     "com.palm.smsmessage:1": messages,
     "com.palm.imloginstate:1": loginstates,
     "com.palm.imserver:1": servers,
-    "com.palm.imchannel:1": channels
+    "com.palm.imchannel:1": channels,
+    "com.palm.media.image.file:1": images
 };
 
 /**
@@ -740,12 +804,84 @@ function matchesClause(record, clause) {
     }
 }
 
+/**
+ * As db8's merge: an object in the merge is merged into the object it meets, anything else
+ * (arrays too) replaces what was there. A flags merge keeps the flags it does not name.
+ */
+function mergeInto(target, source) {
+    for (var k in source) {
+        if (Object.prototype.hasOwnProperty.call(source, k)) {
+            var v = source[k], old = target[k];
+            if (v && typeof v === "object" && !Array.isArray(v) &&
+                    old && typeof old === "object" && !Array.isArray(old)) {
+                mergeInto(old, v);
+            } else {
+                target[k] = v;
+            }
+        }
+    }
+}
+
 module.exports = {
     /** True when the app is running outside a device and should use these fixtures. */
     enabled: !('PalmSystem' in window),
 
     store: store,
     accounts: accounts,
+
+    /** The imcommands the app wrote (reactions, edits, groups, ...), for the tests to read. */
+    imCommands: [],
+
+    /** The downloads the app asked for, for the tests to read. */
+    downloads: [],
+
+    /**
+     * A download, as com.webos.service.downloadmanager's last reply for it would be: finished,
+     * at targetDir/targetFilename. A test may set downloadFails to see a failed one.
+     */
+    download: function (params) {
+        this.downloads.push(params);
+        if (this.downloadFails) {
+            return { completed: true, completionStatusCode: -5, httpStatus: 404, target: "" };
+        }
+        return { completed: true, completionStatusCode: 200, httpStatus: 200,
+            target: params.targetDir + "/" + params.targetFilename };
+    },
+
+    /**
+     * What the messaging service's savePicture answers: the picture copied into Messaging, or,
+     * saved before, left there. savePictureFails: it is refused.
+     */
+    savedPictures: [],
+    savePicture: function (params) {
+        if (this.savePictureFails) {
+            return { returnValue: false, errorCode: "BAD_ARGS", errorText: "not a picture" };
+        }
+        var name = String(params.path).replace(/.*\//, "");
+        var saved = this.savedPictures.indexOf(params.path) === -1;
+        if (saved) {
+            this.savedPictures.push(params.path);
+        }
+        return { returnValue: true, path: "/media/internal/Messaging/" + name, saved: saved };
+    },
+
+    /** Where the device is, for sending a location without a location service. */
+    location: { latitude: 52.3731, longitude: 4.8925 },
+
+    /**
+     * What the transport's getChatMembers answers for a chat, by its address (util/groupInfo).
+     * The Family group: the two who wrote, Ben who has not, and us, whom the app leaves out.
+     */
+    chatMembers: {
+        "120363041234567890@g.us": {
+            returnValue: true, inChat: true, members: [
+                { address: "+15015550142", name: "Mum" },
+                { address: "+46701234567", name: "Marta Lindqvist" },
+                { address: "+447700900123", name: "Ben Carter" },
+                { address: "+15555550100", name: "+15555550100" }
+            ]
+        }
+    },
 
     /** Evaluate a db8-style query against the fixtures. */
     find: function (query) {
@@ -785,7 +921,25 @@ module.exports = {
         }
 
         // Hand back copies so a view mutating a row cannot corrupt the fixtures.
-        return { returnValue: true, results: JSON.parse(JSON.stringify(results)) };
+        results = JSON.parse(JSON.stringify(results));
+        // As db8 does: with a select, a row holds only the properties asked for.
+        if (query.select && query.select.length) {
+            results = results.map(function (r) {
+                var picked = {};
+                for (var k = 0; k < query.select.length; k++) {
+                    var v = valueAt(r, query.select[k]);
+                    if (v !== undefined) {
+                        var parts = String(query.select[k]).split("."), at = picked;
+                        for (var p = 0; p < parts.length - 1; p++) {
+                            at = at[parts[p]] = (at[parts[p]] && typeof at[parts[p]] === "object") ? at[parts[p]] : {};
+                        }
+                        at[parts[parts.length - 1]] = v;
+                    }
+                }
+                return picked;
+            });
+        }
+        return { returnValue: true, results: results };
     },
 
     /** db8 `get` by id. */
@@ -813,13 +967,16 @@ module.exports = {
         var results = [];
         for (var i = 0; i < objects.length; i++) {
             var obj = objects[i];
+            // A transport's own message kind (com.palm.immessage.telegram:1) extends
+            // com.palm.message:1 in the real db, so a send in a mock IM chat is kept with the rest.
+            if (obj._kind && !store[obj._kind] && /^com\.palm\.immessage\./.test(obj._kind)) {
+                store[obj._kind] = messages;
+            }
             var records = store[obj._kind] || [];
             var found = false;
             for (var j = 0; j < records.length; j++) {
                 if (records[j]._id === obj._id) {
-                    for (var k in obj) {
-                        if (obj.hasOwnProperty(k)) { records[j][k] = obj[k]; }
-                    }
+                    mergeInto(records[j], obj);
                     found = true;
                     break;
                 }

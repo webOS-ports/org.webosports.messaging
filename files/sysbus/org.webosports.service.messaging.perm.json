@@ -10,5 +10,8 @@
         "notification.management",
         "notification.operation",
         "tempdatabase.operation"
+    ],
+    "com.palm.app.backup.service": [
+        "messaging-service.backup"
     ]
 }

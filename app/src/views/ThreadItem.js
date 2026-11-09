@@ -9,6 +9,8 @@ var kind = require('enyo/kind'),
     SwipeableItem = require('./widgets/SwipeableItem'),
     messagingUtils = require('../util/messagingUtils'),
     appState = require('../util/appState'),
+    chatFlags = require('../util/chatFlags'),
+    mentionMarkup = require('../util/mentionMarkup'),
     $L = require('enyo/i18n').$L;
 
 module.exports = kind({
@@ -44,6 +46,7 @@ module.exports = kind({
                 {
                     classes: "contact-name-box", components: [
                         { name: "displayName", classes: "contact-name", allowHtml: true },
+                        { name: "mutedIcon", classes: "thread-muted", showing: false },
                         { name: "unreadCount", classes: "unread-count", showing: false }
                     ]
                 },
@@ -66,7 +69,10 @@ module.exports = kind({
         this.updateOutgoing(inThread.flags);
 
         var displayName;
-        if (inThread.person) {
+        if (inThread.channelLabel) {
+            // A followed server channel among the chats (util/chatsThreads).
+            displayName = inThread.channelLabel;
+        } else if (inThread.person) {
             displayName = messagingUtils.person.getDisplayName(inThread.person);
         } else {
             displayName = inThread.displayName ? inThread.displayName : inThread.replyAddress;
@@ -87,10 +93,13 @@ module.exports = kind({
     },
 
     updateUnreadCount: function (inThread) {
-        var inUnreadCount = inThread.unreadCount;
-        var hasUnread = !this.isThreadSelected(inThread) && Number(inUnreadCount) > 0;
-        this.$.unreadCount.setContent(inUnreadCount || 0);
+        var inUnreadCount = Number(inThread.unreadCount) || 0;
+        // Marked unread with nothing unread in it: a badge with no number.
+        var hasUnread = !this.isThreadSelected(inThread) && chatFlags.isUnread(inThread);
+        this.$.unreadCount.setContent(inUnreadCount > 0 ? inUnreadCount : "");
+        this.$.unreadCount.addRemoveClass("unread-mark", inUnreadCount === 0);
         this.$.unreadCount.setShowing(hasUnread);
+        this.$.mutedIcon.setShowing(chatFlags.isMuted(inThread));
         this.$.displayName.setClasses("contact-name" + (hasUnread ? " contact-name-unread" : ""));
     },
 
@@ -143,7 +152,9 @@ module.exports = kind({
         } else if (inThread.summary) {
             if (inThread.flags && inThread.flags.outgoing) {
                 // Only outgoing messages need escaping; incoming ones are sanitized on the way in.
-                summary = messagingUtils.message.escapeHtml(inThread.summary);
+                // One we sent from another device has a mention as "<b>@Name</b>": bold, as in the
+                // chat, not tags.
+                summary = mentionMarkup.keepBold(messagingUtils.message.escapeHtml(inThread.summary));
             } else {
                 summary = inThread.summary;
             }

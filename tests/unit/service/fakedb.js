@@ -10,7 +10,8 @@
  *     the forChatThreading index, which declares the default
  *   - array properties: conversations = id and ims.normalizedValue = x match any element
  *   - = (with an array value: any of them), != < <= > >=, and % (string prefix)
- *   - revSets: readRevSet takes the record's new _rev whenever flags.read changes
+ *   - revSets: readRevSet takes the record's new _rev whenever flags.read changes, and a buddy's
+ *     availabilityRevSet whenever its availability does
  *   - del marks _del and keeps the record; plain queries skip it, a query on _del finds it;
  *     del with purge removes it
  *   - merge is a deep merge (objects merged, arrays and scalars replaced); a merge that carries a
@@ -54,7 +55,8 @@ const FOREIGN_INDEXES = {
         ["chatthreadRevSet"], ["displayNameRevSet"], ["_del", "_rev"]],
     "com.palm.imloginstate:1": [["state"], ["_rev"]],
     "com.palm.imbuddystatus:1": [["accountId", "username"], ["username", "serviceName"], ["availabilityRevSet"], ["personId"],
-        ["displayName"]]
+        ["displayName"], ["primary", "offline", "groupAvailability", "displayName"]],
+    "com.palm.imbuddystatus.libpurple:1": [["accountId", "username"], ["serviceName", "username"]]
 };
 
 const OWN_PERMISSIONS = path.resolve(OWN_KINDS, "..", "permissions");
@@ -97,6 +99,8 @@ const FOREIGN_PERMISSIONS = [
     grant("com.palm.imloginstate.libpurple:1", "org.webosports.*", ["read", "update"]),
     grant("com.palm.imbuddystatus:1", "*", ["extend"]),
     grant("com.palm.imbuddystatus:1", "org.webosports.*", ["extend", "read"]),
+    grant("com.palm.imbuddystatus.libpurple:1", "com.palm.*", ["read", "update"]),
+    grant("com.palm.imbuddystatus.libpurple:1", "org.webosports.*", ["read", "update"]),
     grant("com.palm.person:1", "org.webosports.*", ["read"]),
     grant("com.palm.contact:1", "*", ["extend"]),
     grant("com.palm.contact:1", "org.webosports.*", ["read"]),
@@ -146,7 +150,14 @@ const KINDS = {
     "com.palm.imserver:1": { indexes: [] },
     "com.palm.imloginstate:1": { indexes: FOREIGN_INDEXES["com.palm.imloginstate:1"] },
     "com.palm.imloginstate.libpurple:1": { extends: "com.palm.imloginstate:1" },
-    "com.palm.imbuddystatus:1": { indexes: FOREIGN_INDEXES["com.palm.imbuddystatus:1"] },
+    // The index defaults of imlibpurpleservice's kind file: a buddy as the transport writes it has
+    // none of these fields, and matches displayName = "" and primary = false.
+    "com.palm.imbuddystatus:1": {
+        indexes: FOREIGN_INDEXES["com.palm.imbuddystatus:1"],
+        defaults: { "displayName": "", "personId": null, "primary": false, "offline": false, "groupAvailability": null },
+        revSets: [{ name: "availabilityRevSet", props: ["availability"] }]
+    },
+    "com.palm.imbuddystatus.libpurple:1": { extends: "com.palm.imbuddystatus:1", indexes: FOREIGN_INDEXES["com.palm.imbuddystatus.libpurple:1"] },
     "com.palm.app.messagingprefs:1": { indexes: ownIndexes("com.palm.app.messagingprefs") }
 };
 

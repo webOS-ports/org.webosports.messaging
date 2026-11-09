@@ -5,7 +5,7 @@
  */
 
 var kind = require('enyo/kind'),
-    FittableRows = require('layout/FittableRows'),
+    FittableRows = require('./widgets/FitRows'),
     Panels = require('layout/Panels'),
     CollapsingArranger = require('layout/CollapsingArranger'),
     CardArranger = require('layout/CardArranger'),
@@ -20,12 +20,16 @@ var kind = require('enyo/kind'),
     PreferencesView = require('./PreferencesView'),
     FirstLaunch = require('./FirstLaunch'),
     AddBuddyDialog = require('./AddBuddyDialog'),
+    GroupDialog = require('./GroupDialog'),
     messagingUtils = require('../util/messagingUtils'),
     appState = require('../util/appState'),
     urlTarget = require('../util/urlTarget'),
+    imageViewer = require('../util/imageViewer'),
     formFactor = require('../util/formFactor'),
     firstUse = require('../util/firstUse'),
     mockDb = require('../data/mockDb'),
+    chatPresence = require('../util/chatPresence'),
+    ServiceFollower = require('../util/serviceFollower').ServiceFollower,
     $L = require('enyo/i18n').$L;
 
 var DB_SERVICE = 'luna://com.webos.service.db';
@@ -78,11 +82,13 @@ module.exports = kind({
                             onSelectThread: "threadSelected",
                             onDeleteThread: "deleteThread",
                             onThreadLocked: "threadLocked",
+                            onThreadLinked: "threadLinked",
                             onOpenComposeView: "openComposeView",
                             onNewBuddy: "addBuddy",
                             onNewFavorite: "showAddFavoriteList",
                             onLoginStatesChange: "loginStatesChange",
-                            onAddAccount: "showAddAccountDialog"
+                            onAddAccount: "showAddAccountDialog",
+                            onClearUnreadCount: "clearUnreadCount"
                         },
                         {
                             name: "chatView", kind: ChatView, fit: true,
@@ -113,9 +119,12 @@ module.exports = kind({
         },
 
         { name: "buddyDialog", kind: AddBuddyDialog },
+        { name: "groupDialog", kind: GroupDialog },
         {
-            name: "appMenu", kind: Menu, floating: true, components: [
+            name: "appMenu", kind: Menu, floating: true, scrolling: false, classes: "app-menu", components: [
                 { name: "addBuddyMenuItem", kind: MenuItem, content: $L("Add Buddy"), ontap: "addBuddy" },
+                // Only with an account whose service makes groups (util/chatActions).
+                { name: "newGroupMenuItem", kind: MenuItem, content: $L("New Group"), ontap: "newGroup" },
                 {
                     name: "showOfflineMenuItem", kind: MenuItem,
                     content: $L("Show Offline Buddies"), ontap: "updateOfflinePrefs"
@@ -166,6 +175,19 @@ module.exports = kind({
         {
             name: 'openApp', kind: LunaService,
             service: 'luna://com.palm.applicationManager', method: 'open', onError: 'serviceErr'
+        },
+        // Who is typing to us: the transport's typers, then each change (util/chatPresence).
+        // Made again each time the transport comes up (util/serviceFollower): a restart of
+        // imlibpurpleservice ended it without a word.
+        {
+            name: 'typingWatch', kind: LunaService, service: 'luna://com.palm.imlibpurple',
+            method: 'watchTyping', subscribe: true,
+            onResponse: 'gotTyping', onError: 'typingWatchFailed'
+        },
+        {
+            name: 'transportStatus', kind: LunaService, service: 'luna://com.webos.service.bus',
+            method: 'signal/registerServerStatus', subscribe: true,
+            onResponse: 'gotTransportStatus', onError: 'typingWatchFailed'
         }
     ],
 
@@ -190,6 +212,39 @@ module.exports = kind({
         this.checkFirstUse();
 
         formFactor.apply(this);
+
+        appState.typers = new chatPresence.Typers();
+        var self = this;
+        this.typingFollower = new ServiceFollower(function () {
+            return self.$.typingWatch.send({ subscribe: true });
+        }, function () {
+            // The transport went: whoever was typing through it is not any more.
+            self.gotTyping(null, { typing: [] });
+        }, function (request) {
+            self.$.typingWatch.cancel(request);
+        });
+        if (!mockDb.enabled) {
+            this.$.transportStatus.send({ serviceName: "com.palm.imlibpurple", subscribe: true });
+        }
+    },
+
+    /** A watchTyping reply: keep it, and tell the open chat when it changed what it shows. */
+    gotTyping: function (inSender, inResponse) {
+        if (appState.typers && appState.typers.apply(inResponse, Date.now())) {
+            Signals.send("onTypingChanged", {});
+        }
+        return true;
+    },
+
+    /** The transport came or went (registerServerStatus). */
+    gotTransportStatus: function (inSender, inResponse) {
+        this.typingFollower.status(inResponse);
+        return true;
+    },
+
+    /** No typing from a transport that cannot be reached; nothing else depends on it. */
+    typingWatchFailed: function () {
+        return true;
     },
 
     /**
@@ -211,8 +266,11 @@ module.exports = kind({
             this.$.slidingGroup.reflow();
         }
         // Coming back to one pane with the conversation showing would otherwise leave the list
-        // unreachable, since there is no Back affordance until a thread is open.
-        if (!wide && this.$.slidingGroup && !appState.selectedThread) {
+        // unreachable, since there is no Back affordance until a thread is open. Not while the
+        // pane shows New Conversation, which has no thread either: the keyboard its "To" field
+        // brings up resizes the window, and that took the phone back to the list, hiding it.
+        if (!wide && this.$.slidingGroup && !appState.selectedThread &&
+                !(this.$.chatView && this.$.chatView.hasContent())) {
             this.$.slidingGroup.setIndex(0);
         }
     },
@@ -362,6 +420,11 @@ module.exports = kind({
         return true;
     },
 
+    threadLinked: function (inSender, inEvent) {
+        this.$.chatView.threadLinked(inEvent && inEvent.thread);
+        return true;
+    },
+
     openComposeView: function () {
         if (appState.selectedThread) {
             this.selectThread(null, null);
@@ -391,7 +454,11 @@ module.exports = kind({
     },
 
     clearUnreadCountForThread: function (threadId) {
-        var record = { _id: threadId, _kind: messagingUtils.thread.dbKind, unreadCount: 0 };
+        // Opening a chat also takes off a "Mark as Unread" (util/chatFlags).
+        var record = {
+            _id: threadId, _kind: messagingUtils.thread.dbKind, unreadCount: 0,
+            flags: { markedUnread: false }
+        };
         if (mockDb.enabled) {
             mockDb.merge([record]);
             return;
@@ -430,6 +497,11 @@ module.exports = kind({
         return true;
     },
 
+    newGroup: function () {
+        this.$.groupDialog.openCreate();
+        return true;
+    },
+
     showAddFavoriteList: function () {
         // Favorites are a Contacts concept, so adding one hands off to that app.
         this.$.launchApp.send({
@@ -458,6 +530,7 @@ module.exports = kind({
     // none: it threw while hidden for sizing, and stayed invisible.
     showAppMenu: function (activator) {
         this.setOfflineMenuItem();
+        this.$.newGroupMenuItem.setShowing(!!this.$.groupDialog.creatingAccount());
         this.$.appMenu.requestMenuShow(this, { activator: activator });
     },
 
@@ -529,7 +602,10 @@ module.exports = kind({
         }
 
         try {
-            if (params.threadId !== undefined) {
+            if (params.cameraCapture) {
+                // The Camera app, back with the photo Take Photo asked for (util/cameraCapture).
+                Signals.send("onCameraCapture", params.cameraCapture);
+            } else if (params.threadId !== undefined) {
                 this.findThread(params.threadId);
             } else if (params.message && params.message.conversations) {
                 // Tapped a notification: open the thread the message belongs to.
@@ -610,8 +686,22 @@ module.exports = kind({
     },
 
     goBack: function () {
+        // A picture full screen sits over everything: back closes it first.
+        if (imageViewer.close()) {
+            return true;
+        }
+        // Group Info and its menus sit over the chat: back closes them one at a time first.
+        if (this.$.chatView.closeGroupInfo()) {
+            return true;
+        }
         // The file picker sits over the chat: back closes it, not the chat underneath.
         if (this.$.chatView.closeAttachmentPicker()) {
+            return true;
+        }
+        if (this.$.chatView.closeSearch()) {
+            return true;
+        }
+        if (this.$.chatView.endSelection()) {
             return true;
         }
         if (this.$.views.getIndex() !== 0) {
@@ -623,8 +713,8 @@ module.exports = kind({
             this.leaveThread();
             return true;
         }
-        // Then out of a server's channels, as the Servers button does.
-        if (this.$.messaging.backToServers()) {
+        // Then out of a server's channels, as the Servers button does, or out of the archive.
+        if (this.$.messaging.backToServers() || this.$.messaging.closeArchive()) {
             return true;
         }
         if (Panels.isScreenNarrow()) {

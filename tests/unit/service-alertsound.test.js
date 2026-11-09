@@ -103,6 +103,21 @@ describe('the app\'s alerts for a batch', function () {
         return s;
     }
 
+    it('keeps the toast\'s id on its message, so that the service can close it if the message is deleted', function () {
+        var requests = [], send = dm.$.createToast.send;
+        dm.$.createToast.send = function (p) { send.call(this, p); var r = {}; requests.push(r); return r; };
+        deliver([msg('m1', 't1')]);
+        assert.equal(requests.length, 1);
+        assert.equal(requests[0].toastMessageId, 'm1');
+        dm.toastCreated(null, { returnValue: true, toastId: 'org.webosports.app.messaging-1794132000123', originator: requests[0] });
+        assert.deepEqual(dm.$.toastIdMerge.sent, [{ objects: [{ _id: 'm1', toastId: 'org.webosports.app.messaging-1794132000123' }] }]);
+        // No id in the answer, or a toast that is not for a message (a failed send): nothing kept.
+        dm.toastCreated(null, { returnValue: true, originator: requests[0] });
+        dm.toastCreated(null, { returnValue: true, toastId: 'x-1', originator: {} });
+        dm.toastCreated(null, undefined);
+        assert.equal(dm.$.toastIdMerge.sent.length, 1);
+    });
+
     it('puts the chosen sound on the toast', function () {
         var out = deliver([msg('m1', 't1')]);
         assert.equal(out.toasts.length, 1);
@@ -184,6 +199,26 @@ describe('the app\'s alerts for a batch', function () {
         appState.setSelectedThread({ _id: 't1' });
         var out = deliver([msg('m1', 't1', { flags: { read: false, noNotification: true } })]);
         assert.equal(out.feedback.length, 0);
+    });
+
+    it('stays silent for a chat muted from the Chats list, and only that one', function () {
+        appState.mutedThreads = { t1: true };
+        try {
+            var out = deliver([msg('m1', 't1'), msg('m2', 't2')]);
+            assert.deepEqual(out.toasts.map(function (x) { return x.onclick.params.threadId; }), ['t2']);
+            // The other chat's toast carries the batch's sound, as when it was alone.
+            assert.deepEqual(soundOf(out.toasts[0]), SYSTEM);
+            dm.lastToastAt = {};
+            appState.setSelectedThread({ _id: 't1' });
+            assert.equal(deliver([msg('m3', 't1')]).feedback.length, 0);
+        } finally {
+            appState.mutedThreads = {};
+        }
+    });
+
+    it('takes no chat for muted from what an object holds on its prototype', function () {
+        appState.mutedThreads = {};
+        assert.equal(deliver([msg('m1', 'constructor')]).toasts.length, 1);
     });
 
     it('stays silent for back-filled history, unless the window is unlimited', function () {

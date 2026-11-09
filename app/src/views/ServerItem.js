@@ -54,8 +54,20 @@ module.exports = kind({
     setServer: function (inServer) {
         var name = inServer.displayName || inServer.name || inServer.remoteId || $L("Server");
         this.$.displayName.setContent(messagingUtils.message.emojifyEscaped(name));
-        this.$.serviceName.setContent(messagingUtils.message.escapeHtml(this.getServiceLabel(inServer)));
+        this.serviceLabel = this.getServiceLabel(inServer);
+        this.showSubtitle();
         this.updateServerImage(inServer);
+    },
+
+    /** What is set on the server (muted, all channels delivered), after its account type. */
+    setOptionsSummary: function (inSummary) {
+        this.optionsSummary = inSummary || "";
+        this.showSubtitle();
+    },
+
+    showSubtitle: function () {
+        var text = [this.serviceLabel, this.optionsSummary].filter(Boolean).join(" \u00b7 ");
+        this.$.serviceName.setContent(messagingUtils.message.escapeHtml(text));
     },
 
     /**

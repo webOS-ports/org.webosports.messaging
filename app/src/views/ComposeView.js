@@ -7,7 +7,7 @@
  */
 
 var kind = require('enyo/kind'),
-    FittableRows = require('layout/FittableRows'),
+    FittableRows = require('./widgets/FitRows'),
     Toolbar = require('onyx/Toolbar'),
     Button = require('onyx/Button'),
     IconButton = require('onyx/IconButton'),
@@ -20,6 +20,9 @@ var kind = require('enyo/kind'),
     appState = require('../util/appState'),
     mockDb = require('../data/mockDb'),
     composerEcho = require('../util/composerEcho'),
+    attachments = require('../util/attachments'),
+    fileCarrier = require('../util/fileCarrier'),
+    enyoUtils = require('enyo/utils'),
     $L = require('enyo/i18n').$L;
 
 var DB_SERVICE = 'luna://com.webos.service.db';
@@ -56,6 +59,10 @@ module.exports = kind({
             classes: "threads-contactslist", onSelected: "recipientSelected"
         },
         { classes: "footer-shadow" },
+        {
+            // Forwarded messages' files: a chip each, sent one message per file (util/attachments).
+            name: "fileChips", showing: false, classes: "attachment-chips"
+        },
         {
             name: "chosenBar", showing: false, classes: "attachment-chip", components: [
                 { name: "chosenLabel", classes: "attachment-chip-label" },
@@ -108,12 +115,15 @@ module.exports = kind({
         this.inherited(arguments);
         this.recipient = null;
         this.pendingMessageText = "";
+        this.files = [];
+        this.pendingFiles = [];
     },
 
     /** Called when the view is shown, so a stale recipient from last time is not carried over. */
     reset: function () {
         this.recipient = null;
         this.$.chosenBar.setShowing(false);
+        this.clearFiles();
         this.$.richText.set('value', "");
         this.$.recipientList.reload();
     },
@@ -129,6 +139,10 @@ module.exports = kind({
         }
         if (params.messageText) {
             this.$.richText.set('value', params.messageText);
+        }
+        var paths = params.filePaths || (params.filePath ? [params.filePath] : []);
+        if (paths.length) {
+            this.setFiles(paths);
         }
 
         var addr = null;
@@ -154,6 +168,48 @@ module.exports = kind({
         }
     },
 
+    // --- forwarded files ---------------------------------------------------------------------
+
+    setFiles: function (paths) {
+        this.files = attachments.add([], paths.map(function (path) {
+            return { path: path, name: String(path).replace(/^.*\//, "") };
+        })).list;
+        this.renderFiles();
+    },
+
+    renderFiles: function () {
+        var box = this.$.fileChips;
+        box.destroyClientControls();
+        for (var i = 0; i < this.files.length; i++) {
+            box.createComponent({
+                classes: "attachment-chip", components: [
+                    { classes: "attachment-chip-label", content: this.files[i].name },
+                    {
+                        kind: IconButton, src: "assets/icon-decline.svg", fileIndex: i,
+                        ontap: "removeFile"
+                    }
+                ]
+            }, { owner: this });
+        }
+        box.setShowing(this.files.length > 0);
+        if (box.hasNode()) {
+            box.render();
+        }
+        this.resize();
+    },
+
+    removeFile: function (inSender) {
+        this.files = attachments.remove(this.files, inSender.fileIndex);
+        this.renderFiles();
+        return true;
+    },
+
+    clearFiles: function () {
+        this.files = [];
+        this.renderFiles();
+        return true;
+    },
+
     // --- recipient -------------------------------------------------------------------------
 
     recipientSelected: function (inSender, inEvent) {
@@ -177,11 +233,14 @@ module.exports = kind({
             messagingUtils.utils.formatAddress(recipient.value, recipient.type) +
             (recipient.displayName ? " — " + recipient.displayName : ""));
         this.$.chosenBar.setShowing(true);
+        // The bar takes room from the list; refit, or the composer is pushed off the bottom.
+        this.resize();
     },
 
     clearRecipient: function () {
         this.recipient = null;
         this.$.chosenBar.setShowing(false);
+        this.resize();
         return true;
     },
 
@@ -216,11 +275,18 @@ module.exports = kind({
                 $L("Choose who this message should go to."));
             return true;
         }
-        if (!text) {
+        if (!text && !this.files.length) {
             return true;
         }
 
         var serviceName = this.serviceNameForRecipient();
+        // No MMS sender yet (util/fileCarrier): an SMS cannot carry the file, so say so rather
+        // than drop it.
+        if (fileCarrier.wouldDrop(this.files, serviceName)) {
+            this.showNotice($L("Attachments"),
+                $L("Attachments can't be sent by SMS. Pick an IM service to send a file."));
+            return true;
+        }
         var accountService = appState.accountService;
         if (accountService && !accountService.getAccount(serviceName)) {
             this.showNotice($L("Unable to send"),
@@ -230,7 +296,8 @@ module.exports = kind({
             return true;
         }
 
-        this.pendingMessageText = text;
+        this.pendingMessageText = text || "";
+        this.pendingFiles = this.files;
         this.findOrCreateThread();
         return true;
     },
@@ -312,7 +379,7 @@ module.exports = kind({
         var accountService = appState.accountService;
         var account = accountService && accountService.getAccount(serviceName);
 
-        var message = {
+        var base = {
             _kind: messagingUtils.utils.isTextMessage(serviceName) ?
                 messagingUtils.message.SMS.dbKind :
                 ((account && account.dbkinds && account.dbkinds.immessage) ||
@@ -328,19 +395,33 @@ module.exports = kind({
         };
 
         if (account && account.capabilitySubtype === "IM") {
-            message.from = { name: account.alias, addr: account.username };
-            message.username = account.username;
+            base.from = { name: account.alias, addr: account.username };
+            base.username = account.username;
         }
+        // One message per forwarded file, the text on the first, a millisecond apart to keep the
+        // order (util/attachments). An SMS carries none: sendTapped refuses that before here.
+        var objects = attachments.messages(this.pendingMessageText, this.pendingFiles,
+            fileCarrier.canCarry(serviceName)).map(function (part, i) {
+            var m = enyoUtils.clone(base);
+            m.messageText = part.text;
+            m.localTimestamp = base.localTimestamp + i;
+            if (part.file) {
+                m.filePath = part.file.path;
+            }
+            return m;
+        });
 
-        if (mockDb.enabled) {
-            mockDb.merge([message]);
-        } else {
-            this.$.messagePut.send({ objects: [message] });
+        if (objects.length && mockDb.enabled) {
+            mockDb.merge(objects);
+        } else if (objects.length) {
+            this.$.messagePut.send({ objects: objects });
         }
 
         this.pendingMessageText = "";
+        this.pendingFiles = [];
+        this.clearFiles();
         this.$.richText.set('value', "");
-        composerEcho.sent(this.$.richText, message.messageText);
+        composerEcho.sent(this.$.richText, base.messageText);
         this.doOpenConversation({ threadId: thread._id, thread: thread });
     },
 

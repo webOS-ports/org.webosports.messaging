@@ -238,8 +238,22 @@ function createRun({ db, tempdb, log = console, now = () => Date.now() }) {
 		if (message.isUnread(msg) && !message.isReplacement(msg)) {
 			fields.unreadCount = (thread.unreadCount || 0) + 1;
 		}
+		// A chat muted or archived from the app's Chats list (app/src/util/chatFlags.js): a muted
+		// one raises no notification, and a new message brings an archived one back to the list
+		// unless it is muted too.
+		const muted = !!(thread.flags && thread.flags.muted === true);
+		const fresh = message.isUnread(msg) && !message.isReplacement(msg);   // unread is incoming
+		if (fresh && !muted && thread.flags && thread.flags.archived === true) {
+			fields.flags.archived = false;
+		}
+		// A group we left (flags.left) is ours again once someone in it writes to it, as when they
+		// add us back. A line the transport writes itself (flags.noNotification: "you left", a
+		// failed add) is nobody's message and leaves it as it is.
+		if (fresh && thread.flags && thread.flags.left === true && !(msg.flags && msg.flags.noNotification)) {
+			fields.flags.left = false;
+		}
 		change(thread, fields);
-		if (incoming && message.isUnread(msg) && !message.isReplacement(msg) && !(msg.flags && msg.flags.noNotification)) {
+		if (fresh && !muted && !(msg.flags && msg.flags.noNotification)) {
 			const prev = notify.get(thread._id);
 			if (!prev || (prev.localTimestamp || 0) <= at) { notify.set(thread._id, msg); }
 		}

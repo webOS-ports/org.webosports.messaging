@@ -5,7 +5,8 @@
  *
  * Records shaped as LuneOS writes them, for the service tests: an IM message as
  * imlibpurpleservice stores it (an incoming one with "to" set to the account itself), a person as
- * the contacts linker builds it, an imchannel as syncServersChannels keeps it.
+ * the contacts linker builds it, an imchannel as syncServersChannels keeps it, a buddy as the
+ * transport puts it into tempdb.
  */
 
 "use strict";
@@ -77,10 +78,19 @@ function person(fields) {
     return p;
 }
 
+// A buddy as imlibpurpleservice writes it into tempdb (BuddyStatusConsolidationHelper::formatForDB):
+// these fields and no others - no displayName, personId, primary, offline or groupAvailability.
+function buddy(username, serviceName, availability, opts) {
+    opts = opts || {};
+    return { _kind: "com.palm.imbuddystatus.libpurple:1", accountId: opts.accountId || "acct-" + serviceName,
+        username: username, serviceName: serviceName, availability: availability,
+        group: opts.group !== undefined ? opts.group : "", status: opts.status || "" };
+}
+
 async function putAll(db, objects) {
     var r = await db.put(objects);
     objects.forEach(function (o, i) { o._id = r[i].id; o._rev = r[i].rev; });
     return objects;
 }
 
-module.exports = { IM, SMS, imIn, imOut, smsIn, smsOut, person, putAll, tick };
+module.exports = { IM, SMS, imIn, imOut, smsIn, smsOut, person, buddy, putAll, tick };

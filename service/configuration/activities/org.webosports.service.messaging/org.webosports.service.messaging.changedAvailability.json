@@ -1,0 +1,38 @@
+{
+	"activity": {
+		"name": "chatthreader-availability-watch",
+		"description": "Sorts the buddy list again when a buddy's availability changes",
+		"type": {
+			"immediate": true,
+			"priority": "normal",
+			"persist": false,
+			"explicit": true,
+			"power": true,
+			"powerDebounce": true
+		},
+		"trigger": {
+			"key": "fired",
+			"method": "luna://com.palm.tempdb/watch",
+			"params": {
+				"query": {
+					"from": "com.palm.imbuddystatus:1",
+					"where": [
+						{
+							"prop": "availabilityRevSet",
+							"op": ">",
+							"val": 0
+						}
+					]
+				}
+			}
+		},
+		"callback": {
+			"method": "luna://org.webosports.service.messaging/changedAvailability",
+			"params": {
+				"lastAvailabilityRev": 0
+			}
+		}
+	},
+	"start": true,
+	"replace": true
+}

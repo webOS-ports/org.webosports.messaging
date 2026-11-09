@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 """Make the pictures the in-browser mock data (app/src/data/mockDb.js) points at.
 
-  tools/make-mock-media.py            writes app/mock/avatars/*.svg and app/mock/photos/*.jpg
+  tools/make-mock-media.py            writes app/mock/avatars/*.svg, app/mock/photos/*.jpg and
+                                      app/mock/stickers/*.webp
 
 The avatars are initials on a colour, so no made-up person borrows a real face. The photos are
 drawn shapes (a sunset pier, a mountain lake), so they carry no one's pictures either. Everything
 lands in app/mock, which `enyo pack` copies only into development builds (devAssets).
 
-Needs Python 3 with Pillow for the photos.
+The stickers are drawn shapes on a transparent 512x512 canvas, as WhatsApp's are.
+
+Needs Python 3 with Pillow (built with WebP) for the photos and stickers.
 """
 import math
 import os
@@ -163,6 +166,30 @@ def write_photos():
     lake(Image, ImageDraw, ImageFilter).save(os.path.join(out, "lake.jpg"), quality=82, optimize=True)
 
 
+def write_stickers():
+    from PIL import Image, ImageDraw
+    out = os.path.join(ROOT, "stickers")
+    os.makedirs(out, exist_ok=True)
+    # a yellow star
+    img = Image.new("RGBA", (512, 512), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    pts = []
+    for i in range(10):
+        r = 230 if i % 2 == 0 else 100
+        a = math.pi / 2 + i * math.pi / 5
+        pts.append((256 + r * math.cos(a), 266 - r * math.sin(a)))
+    d.polygon(pts, fill=(247, 196, 48, 255), outline=(150, 100, 20, 255))
+    img.save(os.path.join(out, "star.webp"), quality=80)
+    # a red heart
+    img = Image.new("RGBA", (512, 512), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.ellipse([70, 90, 270, 290], fill=(214, 48, 64, 255))
+    d.ellipse([242, 90, 442, 290], fill=(214, 48, 64, 255))
+    d.polygon([(82, 230), (430, 230), (256, 440)], fill=(214, 48, 64, 255))
+    img.save(os.path.join(out, "heart.webp"), quality=80)
+
+
 if __name__ == "__main__":
     write_avatars()
     write_photos()
+    write_stickers()

@@ -6,7 +6,10 @@
  * service/service.js started on a stand-in bus, with db8, tempdb, activitymanager, the
  * notification service and the application manager behind it.
  *
- *   boot({ running, completeFails, now, templateDirs }) -> { db, tempdb, am, toasts, handle, service }
+ *   boot({ running, completeFails, closeFails, now, templateDirs })
+ *       -> { db, tempdb, am, toasts, closed, handle, service }
+ *   Each toast is answered with a toastId as notificationmgr gives one (sourceId-timestamp);
+ *   closed lists the closeToast calls.
  *
  * running: the app is running. completeFails: activitymanager refuses complete. templateDirs:
  * where the account templates are read from, by default the ones in ./accounts.
@@ -43,7 +46,7 @@ function boot(opts) {
     // Every call the service makes is checked against db8's permissions for its name.
     var db = createFakeDb({ caller: "org.webosports.service.messaging" });
     var tempdb = createFakeDb({ name: "tmp", caller: "org.webosports.service.messaging" });
-    var am = [], toasts = [];
+    var am = [], toasts = [], closed = [];
     var pb = fakePalmbus(async function (uri, args) {
         var m = /^luna:\/\/([^/]+)\/(.+)$/.exec(uri);
         var svc = m[1], method = m[2];
@@ -54,15 +57,24 @@ function boot(opts) {
             if (method === "complete" && opts.completeFails) { return { returnValue: false, errorCode: -1, errorText: "not the adopter" }; }
             return { returnValue: true };
         }
-        if (svc === "com.webos.notification") { toasts.push(args); return { returnValue: true }; }
+        if (svc === "com.webos.notification" && method === "createToast") {
+            toasts.push(args);
+            return { returnValue: true, toastId: args.sourceId + "-" + (1794132000000 + toasts.length) };
+        }
+        if (svc === "com.webos.notification" && method === "closeToast") {
+            closed.push(args);
+            if (opts.closeFails) { return { returnValue: false, errorCode: -1, errorText: "no such toast" }; }
+            return { returnValue: true };
+        }
         if (svc === "com.webos.service.applicationmanager" && method === "running") {
             return { returnValue: true, running: opts.running ? [{ id: "org.webosports.app.messaging" }] : [{ id: "com.palm.app.email" }] };
         }
         return { returnValue: false, errorCode: -1, errorText: "unexpected call " + uri };
     });
     var s = service.start({ palmbus: pb, idleMs: 0, exit: function () {}, log: opts.log || quiet,
-        stateFile: stateFile(), now: opts.now, templateDirs: opts.templateDirs || [TEMPLATES] });
-    return { db: db, tempdb: tempdb, am: am, toasts: toasts, handle: pb.handles[0], service: s };
+        stateFile: stateFile(), now: opts.now, templateDirs: opts.templateDirs || [TEMPLATES],
+        pictures: opts.pictures });
+    return { db: db, tempdb: tempdb, am: am, toasts: toasts, closed: closed, handle: pb.handles[0], service: s };
 }
 
 module.exports = { boot, SERVICE, TEMPLATES };

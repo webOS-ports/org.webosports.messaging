@@ -9,7 +9,7 @@
  */
 
 var kind = require('enyo/kind'),
-    FittableRows = require('layout/FittableRows'),
+    FittableRows = require('./widgets/FitRows'),
     Spinner = require('onyx/Spinner'),
     PrependingRepeater = require('./widgets/PrependingRepeater'),
     Scroller = require('enyo/Scroller'),
@@ -18,10 +18,13 @@ var kind = require('enyo/kind'),
     RecordModel = require('../data/RecordModel'),
     syncCollection = require('../util/syncCollection'),
     isNearBottom = require('../util/isNearBottom'),
+    bubbleHit = require('../util/bubbleHit'),
+    SwipeableItem = require('./widgets/SwipeableItem'),
     prependedCount = require('../util/prependedCount'),
     senderImages = require('../util/senderImages'),
     sendAccount = require('../util/sendAccount'),
     showInFiles = require('../util/showInFiles').showInFiles,
+    cameraCapture = require('../util/cameraCapture'),
     Toolbar = require('onyx/Toolbar'),
     Button = require('onyx/Button'),
     IconButton = require('onyx/IconButton'),
@@ -38,8 +41,35 @@ var kind = require('enyo/kind'),
     ConversationRow = require('./ConversationRow'),
     ConversationService = require('../data/ConversationService'),
     transportPicker = require('../util/transportPicker'),
+    quoteJump = require('../util/quoteJump'),
+    chatSearch = require('../util/chatSearch'),
+    SearchInput = require('./widgets/SearchInput'),
+    forward = require('../util/forward'),
+    attachments = require('../util/attachments'),
+    fileCarrier = require('../util/fileCarrier'),
+    stickers = require('../util/stickers'),
+    pictureSave = require('../util/pictureSave'),
+    fileOffer = require('../util/fileOffer'),
+    enyoUtils = require('enyo/utils'),
+    messageState = require('../util/messageState'),
+    selection = require('../util/selection'),
     composerEcho = require('../util/composerEcho'),
     callRequest = require('../util/callRequest'),
+    chatPresence = require('../util/chatPresence'),
+    chatFlags = require('../util/chatFlags'),
+    unreadMarker = require('../util/unreadMarker'),
+    chatActions = require('../util/chatActions'),
+    imageViewer = require('../util/imageViewer'),
+    threadPictures = require('../util/threadPictures'),
+    deviceLocation = require('../util/deviceLocation'),
+    launchTargets = require('../util/launchTargets'),
+    sentExtras = require('../util/sentExtras'),
+    remoteCard = require('../util/remoteCard'),
+    GroupDialog = require('./GroupDialog'),
+    GroupInfo = require('./GroupInfo'),
+    groupInfo = require('../util/groupInfo'),
+    MsgAddrSearchList = require('./MsgAddrSearchList'),
+    Signals = require('enyo/Signals'),
     messagingUtils = require('../util/messagingUtils'),
     appState = require('../util/appState'),
     mockDb = require('../data/mockDb'),
@@ -47,6 +77,9 @@ var kind = require('enyo/kind'),
     $L = require('enyo/i18n').$L;
 
 var DB_SERVICE = 'luna://com.webos.service.db';
+
+/** How long a press on a message is before it is a hold (handleMessageHold). */
+var HOLD_MS = 500;
 var FOLDERS = messagingUtils.message.FOLDERS;
 
 /**
@@ -55,6 +88,8 @@ var FOLDERS = messagingUtils.message.FOLDERS;
  * between, up to MAX_MESSAGES. Drawing all 200 at once took about two seconds on a phone.
  */
 var FIRST_PAGE = 20, BACKFILL_STEP = 30, MAX_MESSAGES = 200, BACKFILL_GAP_MS = 120;
+// How long the message a quote was tapped for stays lit after it is scrolled to.
+var QUOTE_FLASH_MS = 1500;
 // Senders asked about per person query; well under what one db8 find hands back.
 var SENDER_BATCH = 50;
 // How long a send waits for a re-read account list before it reports the account missing.
@@ -92,6 +127,12 @@ module.exports = kind({
                     allowHtml: true, ontap: "handleHeaderTap"
                 },
                 {
+                    // Find in Chat, next to the name and before the call buttons: opens the search bar
+                    // under the header, or closes it.
+                    name: "searchButton", kind: IconButton, src: "assets/find-in-chat-icon.svg",
+                    ontap: "toggleSearch", classes: "conversation-call-btn"
+                },
+                {
                     name: "videoCallButton", kind: IconButton, src: "assets/video-call-icon.svg",
                     showing: false, ontap: "videocall", classes: "conversation-call-btn"
                 },
@@ -116,16 +157,40 @@ module.exports = kind({
         },
         { classes: "header-shadow" },
 
-        // --- messages -------------------------------------------------------------------
+        // --- Find in Chat (openSearch) --------------------------------------------------
         {
-            name: "listButtons", classes: "block-delete-box", showing: false, components: [
+            name: "searchBar", showing: false, classes: "conversation-search flex-row", components: [
                 {
-                    name: "blockButton", kind: Button, content: $L("Block Sender"),
-                    classes: "blocksender-bt flex-one", ontap: "promptBlock"
+                    name: "searchInput", kind: SearchInput, classes: "flex-one",
+                    placeholder: $L("Find in Chat"), onSearchChange: "searchChanged",
+                    onSearchCancel: "searchChanged"
+                },
+                { name: "searchCount", classes: "conversation-search-count" },
+                {
+                    name: "searchOlder", kind: IconButton, src: "assets/menu-arrow.svg",
+                    classes: "conversation-search-older", ontap: "searchOlder"
                 },
                 {
-                    name: "deleteButton", kind: Button, content: $L("Delete Conversation"),
-                    classes: "deleteconversation-bt flex-one", ontap: "promptDelete"
+                    name: "searchNewer", kind: IconButton, src: "assets/menu-arrow.svg",
+                    classes: "conversation-search-newer", ontap: "searchNewer"
+                },
+                { kind: Button, content: $L("Done"), classes: "conversation-search-done", ontap: "closeSearch" }
+            ]
+        },
+
+        // --- messages -------------------------------------------------------------------
+        {
+            // A group's Add People and Leave Group. Blocking a sender and deleting a chat are in the
+            // chat list: Block Sender on a long tap, Delete by swiping the row.
+            name: "listButtons", classes: "block-delete-box", showing: false, components: [
+                // A group on a service that manages them (util/chatActions).
+                {
+                    name: "groupAddButton", kind: Button, content: $L("Add People"), showing: false,
+                    classes: "group-bt", ontap: "openGroupInvite"
+                },
+                {
+                    name: "groupLeaveButton", kind: Button, content: $L("Leave Group"), showing: false,
+                    classes: "group-bt danger-bt", ontap: "promptLeaveGroup"
                 }
             ]
         },
@@ -140,8 +205,11 @@ module.exports = kind({
             // the end of every flick. TouchScrollStrategy moves scrollTop throughout: no swap.
             strategyKind: TouchScrollStrategy,
             // Handlers sit on the scroller; row events arrive decorated with model and index.
-            ontap: "handleMessageTap", onConfirm: "swipeDelete", onReact: "handleReactSwipe",
-            onScrollStart: "dismissPopups", onScrollStop: "noteScrollPosition",
+            // A tap reacts; a hold selects (startSelection), as press & hold enters a list's edit
+            // mode in HP's TouchPad guidelines.
+            ondown: "messageDown", onhold: "handleMessageHold",
+            ontap: "handleMessageTap", onConfirm: "swipeDelete", onReply: "handleReplySwipe",
+            onScrollStart: "dismissPopups", onScrollStop: "noteScrollPosition", onScroll: "listScrolled",
             onError: "showErrorDialog", onSelectSender: "senderRowSelected",
             onOpenAttachment: "openAttachment", onInviteResponse: "respondToInvite",
             components: [
@@ -150,22 +218,45 @@ module.exports = kind({
                 {
                     name: "list", kind: PrependingRepeater, classes: "conversation-messages",
                     components: [ { kind: ConversationRow } ]
+                },
+                // The buddy is typing to us: three dots under the last message, as WhatsApp draws
+                // it (showTypingBubble), in a received message's row - their picture, then the
+                // bubble with its tail - built as ConversationItem builds one.
+                {
+                    name: "typingBubble", classes: "chat-balloon conversation-typing-row", showing: false, components: [
+                        {
+                            classes: "conversationContactImage", components: [
+                                { classes: "contact-image-border" },
+                                {
+                                    name: "typingImage", kind: Image, classes: "contact-image",
+                                    attributes: { onerror: "window.__messagingAvatarFailed(this)" }
+                                }
+                            ]
+                        },
+                        {
+                            classes: "flex-one", components: [
+                                {
+                                    classes: "chat-balloon-received conversation-typing-bubble", allowHtml: true,
+                                    content: "<span></span><span></span><span></span>"
+                                }
+                            ]
+                        }
+                    ]
                 }
+            ]
+        },
+        // Back to the newest message, while the reader is further up; with how many came in
+        // since (updateJumpButton). Out of the rows' flow: it sits over the list's bottom right.
+        {
+            name: "jumpButton", classes: "conversation-jump", showing: false, ontap: "jumpToBottom", components: [
+                { classes: "conversation-jump-arrow" },
+                { name: "jumpCount", classes: "conversation-jump-count", showing: false }
             ]
         },
         { classes: "footer-shadow" },
 
-        // --- staged attachment ----------------------------------------------------------
-        {
-            name: "attachmentChip", showing: false, classes: "attachment-chip", components: [
-                { name: "attachmentChipThumb", kind: Image, classes: "attachment-chip-thumb", showing: false },
-                { name: "attachmentChipLabel", classes: "attachment-chip-label" },
-                {
-                    name: "attachmentChipRemove", kind: IconButton, src: "assets/icon-decline.svg",
-                    ontap: "clearAttachment"
-                }
-            ]
-        },
+        // --- staged attachments: one chip per file (renderAttachmentChips) ----------------
+        { name: "attachmentChips", showing: false, classes: "attachment-chips" },
 
         // --- reply bar ------------------------------------------------------------------
         {
@@ -184,7 +275,7 @@ module.exports = kind({
             name: "footer", kind: Toolbar, classes: "conversation-bottom flex-row", components: [
                 {
                     name: "attachButton", kind: IconButton, src: "assets/menu-icon-attach.svg",
-                    classes: "conversation-attach-btn", ontap: "openAttachmentPicker"
+                    classes: "conversation-attach-btn", ontap: "openAttachMenu"
                 },
                 {
                     name: "micButton", kind: IconButton, src: "assets/menu-icon-mic.svg",
@@ -211,9 +302,71 @@ module.exports = kind({
             ]
         },
 
+        // --- selecting messages (startSelection): takes the composer's place --------------
+        {
+            name: "selectionBar", kind: Toolbar, showing: false,
+            classes: "conversation-selection flex-row", components: [
+                { name: "selectionCount", classes: "conversation-selection-count flex-one" },
+                { name: "selectionCopy", kind: Button, content: $L("Copy"), ontap: "copySelected" },
+                { name: "selectionForward", kind: Button, content: $L("Forward"), ontap: "forwardSelected" },
+                {
+                    name: "selectionDelete", kind: Button, content: $L("Delete"),
+                    classes: "onyx-negative", ontap: "promptDeleteSelected"
+                },
+                { kind: Button, content: $L("Cancel"), ontap: "endSelection" }
+            ]
+        },
+
         // --- popups ---------------------------------------------------------------------
         {
-            name: "transportMenu", kind: Menu, floating: true, onSelect: "transportChosen"
+            name: "transportMenu", kind: Menu, floating: true, scrolling: false, onSelect: "transportChosen"
+        },
+        {
+            // What the paperclip sends: a file, a photo taken now, a sticker where the service has
+            // them, where we are, or a contact's card.
+            name: "attachMenu", kind: Menu, floating: true, scrolling: false, components: [
+                { kind: MenuItem, content: $L("File"), ontap: "openAttachmentPicker" },
+                { name: "takePhotoItem", kind: MenuItem, content: $L("Take Photo"), ontap: "takePhoto" },
+                { name: "stickerMenuItem", kind: MenuItem, content: $L("Sticker"), ontap: "openStickerPicker" },
+                { kind: MenuItem, content: $L("My Location"), ontap: "promptShareLocation" },
+                { kind: MenuItem, content: $L("Contact"), ontap: "openContactPicker" }
+            ]
+        },
+        // Who an "@" being typed in a group may be (updateMentionMenu).
+        { name: "mentionMenu", kind: Menu, floating: true, scrolling: false, onSelect: "mentionPicked" },
+        {
+            name: "contactPicker", kind: Popup, centered: true, floating: true, modal: true, scrim: true,
+            classes: "contact-picker-popup", components: [
+                {
+                    name: "contactList", kind: MsgAddrSearchList, label: $L("Share"),
+                    classes: "contact-picker-list", onSelected: "contactPicked"
+                },
+                { kind: Button, content: $L("Cancel"), classes: "contact-picker-cancel", ontap: "closeContactPicker" }
+            ]
+        },
+        {
+            // The stickers on this device (util/stickers), newest first, a tap sends one.
+            name: "stickerPicker", kind: Popup, centered: true, floating: true, modal: true, scrim: true,
+            classes: "sticker-picker-popup", components: [
+                { classes: "sticker-picker-title", content: $L("Stickers") },
+                {
+                    name: "stickerScroller", kind: Scroller, classes: "sticker-picker-scroller",
+                    horizontal: "hidden", touch: true, components: [
+                        { name: "stickerGrid", classes: "sticker-picker-grid" },
+                        {
+                            name: "stickerEmpty", classes: "sticker-picker-empty", showing: false,
+                            content: $L("No stickers on this device yet. A sticker is a .webp file: one you sent or received, or one copied to the device.")
+                        }
+                    ]
+                },
+                { kind: Button, content: $L("Cancel"), classes: "sticker-picker-cancel", ontap: "closeStickerPicker" }
+            ]
+        },
+        { name: "groupDialog", kind: GroupDialog },
+        {
+            name: "groupInfo", kind: GroupInfo, onMemberChat: "groupMemberChat",
+            onMemberContact: "groupMemberContact", onAddPeople: "openGroupInvite", onLeaveGroup: "promptLeaveGroup",
+            onRemoveMember: "groupRemoveMember", onRenameGroup: "groupRename"
         },
         {
             name: "reactRow", kind: Popup, floating: true, autoDismiss: true,
@@ -222,45 +375,58 @@ module.exports = kind({
             ]
         },
         {
-            name: "messageMenu", kind: Menu, floating: true, components: [
+            name: "messageMenu", kind: Menu, floating: true, scrolling: false, components: [
                 { kind: MenuItem, content: $L("Reply"), ontap: "menuReply" },
+                { kind: MenuItem, content: $L("Forward"), ontap: "menuForward" },
+                { kind: MenuItem, content: $L("Forward Via Email"), ontap: "menuForwardEmail" },
                 { kind: MenuItem, content: $L("Copy Text"), ontap: "menuCopy" },
+                { name: "menuEditItem", kind: MenuItem, content: $L("Edit"), ontap: "menuEdit" },
                 { classes: "onyx-menu-divider" },
                 { kind: MenuItem, content: $L("Delete"), ontap: "menuDelete" }
             ]
         },
+        // The dialogs here are webOS's alert dialogs: a title, a line, and the choices stacked
+        // full width, the one asked for first and Cancel or OK last, over a scrim.
         {
-            name: "errorDialog", kind: Popup, centered: true, floating: true, modal: true,
-            components: [
-                { name: "errorDialogTitle", style: "font-weight: bold; margin-bottom: 0.5rem;" },
-                { name: "errorDialogMessage", style: "margin: 0.5rem 0 1rem;" },
+            name: "errorDialog", kind: Popup, centered: true, floating: true, modal: true, scrim: true,
+            classes: "alert-dialog", components: [
+                { name: "errorDialogTitle", classes: "alert-dialog-title" },
+                { name: "errorDialogMessage", classes: "alert-dialog-message" },
                 {
-                    classes: "flex-row", components: [
-                        { kind: Button, content: $L("OK"), ontap: "closeErrorDialog" },
-                        { classes: "flex-auto" },
-                        {
-                            name: "errorRetryButton", kind: Button, content: $L("Retry"),
-                            ontap: "retryMessage"
-                        }
-                    ]
-                }
+                    name: "errorRetryButton", kind: Button, content: $L("Retry"),
+                    classes: "onyx-affirmative", ontap: "retryMessage"
+                },
+                { kind: Button, content: $L("OK"), ontap: "closeErrorDialog" }
             ]
         },
         {
-            name: "confirmDialog", kind: Popup, centered: true, floating: true, modal: true,
-            components: [
-                { name: "confirmDialogTitle", style: "font-weight: bold; margin-bottom: 0.5rem;" },
-                { name: "confirmDialogMessage", style: "margin: 0.5rem 0 1rem;" },
+            // Delete, from the message menu or the selection bar: for everyone when the service
+            // can, for this device, or not at all.
+            name: "deleteDialog", kind: Popup, centered: true, floating: true, modal: true, scrim: true,
+            classes: "alert-dialog", components: [
+                { name: "deleteDialogTitle", classes: "alert-dialog-title" },
+                { name: "deleteDialogMessage", classes: "alert-dialog-message" },
                 {
-                    classes: "flex-row", components: [
-                        { kind: Button, content: $L("Cancel"), ontap: "closeConfirmDialog" },
-                        { classes: "flex-auto" },
-                        {
-                            name: "confirmAcceptButton", kind: Button, classes: "onyx-negative",
-                            ontap: "confirmAccepted"
-                        }
-                    ]
-                }
+                    name: "deleteEveryoneButton", kind: Button, content: $L("Delete for Everyone"),
+                    classes: "onyx-negative", ontap: "deleteChosenForEveryone"
+                },
+                {
+                    name: "deleteMeButton", kind: Button, content: $L("Delete for Me"),
+                    classes: "onyx-negative", ontap: "deleteChosenForMe"
+                },
+                { kind: Button, content: $L("Cancel"), ontap: "closeDeleteDialog" }
+            ]
+        },
+        {
+            name: "confirmDialog", kind: Popup, centered: true, floating: true, modal: true, scrim: true,
+            classes: "alert-dialog", components: [
+                { name: "confirmDialogTitle", classes: "alert-dialog-title" },
+                { name: "confirmDialogMessage", classes: "alert-dialog-message" },
+                {
+                    name: "confirmAcceptButton", kind: Button, classes: "onyx-negative",
+                    ontap: "confirmAccepted"
+                },
+                { kind: Button, content: $L("Cancel"), ontap: "closeConfirmDialog" }
             ]
         },
 
@@ -287,19 +453,37 @@ module.exports = kind({
             name: 'threadPersonFind', kind: LunaService, service: DB_SERVICE, method: 'find',
             onResponse: 'gotThreadPerson', onError: 'serviceErr'
         },
+        {
+            // The newest pictures in the media index, for the .webp files among them (util/stickers).
+            name: 'stickerFind', kind: LunaService, service: DB_SERVICE, method: 'find',
+            onResponse: 'gotStickerIndex', onError: 'stickerIndexFailed'
+        },
         { name: 'dbDelete', kind: LunaService, service: DB_SERVICE, method: 'del', onError: 'serviceErr' },
+        // The server of a channel's chat, whose name tells a group (chatActions.isChannelGroup).
+        { name: 'serverGet', kind: LunaService, service: DB_SERVICE, method: 'get', onResponse: 'gotChatServer', onError: 'serviceErr' },
         { name: 'dbMerge', kind: LunaService, service: DB_SERVICE, method: 'merge', onError: 'serviceErr' },
         {
             name: 'reactionCommand', kind: LunaService, service: DB_SERVICE, method: 'put',
             onError: 'serviceErr'
         },
+        // Typing and reading (util/chatPresence). A transport that cannot be reached loses only
+        // these, so their errors are not shown.
         {
-            name: 'threadMerge', kind: LunaService, service: DB_SERVICE, method: 'merge',
-            onError: 'serviceErr'
+            name: 'typingSender', kind: LunaService, service: 'luna://com.palm.imlibpurple',
+            method: 'sendTyping', onError: 'presenceFailed'
         },
         {
-            name: 'deleteThreadService', kind: LunaService,
-            service: 'luna://org.webosports.service.messaging', method: 'deleteChatthread',
+            name: 'readMarker', kind: LunaService, service: 'luna://com.palm.imlibpurple',
+            method: 'markRead', onError: 'presenceFailed'
+        },
+        // onactivate: back in front, as from the Camera app after Take Photo; onCameraCapture: the
+        // Camera app relaunched Messaging with the photo.
+        {
+            kind: Signals, onTypingChanged: "showTyping", onactivate: "cameraReturned",
+            onCameraCapture: "cameraHandedBack"
+        },
+        {
+            name: 'threadMerge', kind: LunaService, service: DB_SERVICE, method: 'merge',
             onError: 'serviceErr'
         },
         {
@@ -307,14 +491,30 @@ module.exports = kind({
             service: 'luna://com.webos.applicationManager', method: 'launch', onError: 'serviceErr'
         },
         {
+            // A contact card that came as a link is fetched before Contacts opens it (util/remoteCard).
+            name: 'cardDownload', kind: LunaService, service: 'luna://com.webos.service.downloadmanager',
+            method: 'download', subscribe: true, onResponse: 'cardDownloadReply', onError: 'cardDownloadFailed'
+        },
+        {
             name: 'openApp', kind: LunaService,
             service: 'luna://com.palm.applicationManager', method: 'open', onError: 'serviceErr'
+        },
+        {
+            // The picture viewer's Save (util/pictureSave): one on the device, copied by the
+            // messaging service; one on the web, fetched by the download manager.
+            name: 'pictureCopy', kind: LunaService, service: 'luna://org.webosports.service.messaging',
+            method: 'savePicture', onResponse: 'pictureCopied', onError: 'pictureNotSaved'
+        },
+        {
+            name: 'pictureDownload', kind: LunaService, service: 'luna://com.webos.service.downloadmanager',
+            method: 'download', subscribe: true, onResponse: 'pictureDownloadReply', onError: 'pictureNotSaved'
         },
         {
             // The system picker, shown in a popup over the app. There is no com.palm.filepicker app
             // to open on LuneOS.
             // border-box: at 100% wide the popup's own border pushed it past the right edge.
             name: "attachmentPicker", kind: FilePicker, fileType: ["image", "video", "audio", "document"],
+            allowMultiSelect: true,
             style: "width: 100%; height: 80%; box-sizing: border-box;", onPickFile: "attachmentChosen"
         }
     ],
@@ -323,7 +523,7 @@ module.exports = kind({
         this.inherited(arguments);
         this.selectedMessage = null;
         this.replyToMessage = null;
-        this.outboundAttachment = null;
+        this.outboundAttachments = [];
         this.recording = false;
         this.messages = [];
         this._followToEnd = false;
@@ -346,6 +546,8 @@ module.exports = kind({
     },
 
     destroy: function () {
+        this.stopTyping();
+        this.cancelLocating();
         if (appState.activeConversationList === this) {
             appState.activeConversationList = null;
             messagingUtils.activeConversationList = null;
@@ -356,7 +558,9 @@ module.exports = kind({
         }
         this.cancelRevealTimers();
         this.cancelBackfill();
+        this.cancelQuoteJump();
         this.cancelVoiceNote();
+        this.cancelTakePhoto();
         if (this.conversationService) {
             this.conversationService.cancel();
         }
@@ -398,6 +602,9 @@ module.exports = kind({
 
     chatThreadChanged: function (inOldChatThread) {
         this.dismissPopups();
+        this.cancelQuoteJump();
+        this.closeSearch();
+        this.endSelection();
         if (!inOldChatThread && this.chatThread && this.chatThread._id) {
             this.setupNewChatThread();
         } else if (inOldChatThread && inOldChatThread._id && !this.chatThread) {
@@ -430,7 +637,42 @@ module.exports = kind({
         this.buildTransports();
         this.updateTransportButton();
         this.updateCallButtons();
+        this.lookUpChatServer(this.chatThread);
         this.runQuery();
+    },
+
+    /** The server of a channel's chat, for its name (updateListButtons). */
+    lookUpChatServer: function (thread) {
+        if (!thread.serverId) {
+            // No server: not the name of the last chat's.
+            this._serverId = undefined;
+            this._serverName = undefined;
+            return;
+        }
+        if (thread.serverId === this._serverId) {
+            return;
+        }
+        this._serverId = thread.serverId;
+        this._serverName = undefined;
+        if (mockDb.enabled) {
+            setTimeout(this.gotChatServer.bind(this, null, mockDb.get([thread.serverId])), 0);
+        } else {
+            this.$.serverGet.send({ ids: [thread.serverId] });
+        }
+    },
+
+    gotChatServer: function (inSender, inResponse) {
+        var server = inResponse && inResponse.results && inResponse.results[0];
+        if (!server || server._id !== this._serverId) {
+            return true;
+        }
+        this._serverName = server.name || server.displayName;
+        if (this.chatThread && this.chatThread.serverId === server._id) {
+            this.updateListButtons(this.chatThread);
+            this.showListButtons(this.collection && this.collection.length > 0);
+            this.relayout();
+        }
+        return true;
     },
 
     /**
@@ -473,6 +715,14 @@ module.exports = kind({
         return true;
     },
 
+    /** The typing row's picture: the one a received message in this 1:1 chat has. */
+    showTypingImage: function () {
+        var image = (this.chatThread && this.chatThread.personImage) || messagingUtils.person.DEFAULT_IMAGE;
+        if (this.$.typingImage.getAttribute("src") !== image) {
+            this.$.typingImage.setAttribute("src", image);
+        }
+    },
+
     /** Give the bubbles already drawn the thread's avatar (group senders keep their own). */
     applyThreadImage: function () {
         if (!this.collection) {
@@ -487,6 +737,7 @@ module.exports = kind({
                 model.set('personImage', image);
             }
         });
+        this.showTypingImage();
     },
 
     buildTransports: function () {
@@ -528,8 +779,17 @@ module.exports = kind({
         this._followToEnd = true;
         this._newestIncomingId = undefined;
 
-        // Clear the thread's unread count now that it is on screen.
+        // What was unread as it opened, for the "N unread messages" line (util/unreadMarker);
+        // clearing the count below does not change it.
+        this._unreadAtOpen = Number(this.chatThread.unreadCount) || 0;
+        this._unreadLine = null;
+        this._seenIncomingId = null;
+        this._jumpNew = 0;
+        this.$.jumpButton.hide();
+
+        // Clear the thread's unread count now that it is on screen, and say it was read.
         this.doClearUnreadCount({ threadId: this.chatThread._id });
+        this.markChatRead(true);
 
         this.$.richText.set('value', "");
         this.getDraftMessage(this.chatThread._id);
@@ -542,6 +802,7 @@ module.exports = kind({
     },
 
     closeConversation: function (chatThreadId, skipSaveDraft) {
+        this.stopTyping();
         this.conversationService.cancel();
         this.cancelVoiceNote();
         this.clearMessages();
@@ -549,10 +810,13 @@ module.exports = kind({
         if (!chatThreadId) {
             return;
         }
-        if (!skipSaveDraft) {
+        // An edit's text is the old message's, not a draft.
+        if (!skipSaveDraft && !this.editingMessage) {
             this.saveMessageToDraft(this.$.richText.get('value'), chatThreadId);
         }
         this.$.richText.set('value', "");
+        this.pickedMentions = [];
+        this.cancelLocating();
 
         // Clear the unread count only when the app is foregrounded: if it is carded, an unread
         // thread should keep its badge.
@@ -591,6 +855,22 @@ module.exports = kind({
         this.lockConversationList(inThread.flags && inThread.flags.locked);
     },
 
+    /**
+     * The transport tied the open chat to a channel or server after it was opened (ThreadList):
+     * take the new ids, so a group shows its Add People and Leave Group.
+     */
+    threadLinked: function (inThread) {
+        if (!inThread || !this.chatThread || inThread._id !== this.chatThread._id) {
+            return;
+        }
+        this.chatThread.channelId = inThread.channelId;
+        this.chatThread.serverId = inThread.serverId;
+        this.lookUpChatServer(this.chatThread);
+        this.updateListButtons(this.chatThread);
+        this.showListButtons(this.collection && this.collection.length > 0);
+        this.relayout();
+    },
+
     setDeletedChatThread: function (inThread) {
         if (this.chatThread && inThread && this.chatThread._id === inThread._id) {
             this.chatThread = null;
@@ -600,7 +880,143 @@ module.exports = kind({
     },
 
     setHeaderName: function (inName) {
-        this.$.header.setContent(messagingUtils.message.emojifyEscaped(inName || ""));
+        this._headerName = inName || "";
+        this.renderHeader();
+    },
+
+    /** The chat's name; whether the buddy is typing shows under the last message (showTypingBubble). */
+    renderHeader: function () {
+        this.$.header.setContent(messagingUtils.message.emojifyEscaped(this._headerName || ""));
+        this.showTypingBubble();
+    },
+
+    /**
+     * The dots under the last message while the buddy types ("typing"; "paused" hides them, as
+     * WhatsApp does). Shown with the newest message in view, it is scrolled to as a new message
+     * would be; further up the chat it is left for when the reader comes down.
+     */
+    showTypingBubble: function () {
+        var typing = this.typingState() === "typing";
+        if (typing) {
+            this.showTypingImage();
+        }
+        if (typing === this.$.typingBubble.showing) {
+            return;
+        }
+        var follow = typing && isNearBottom(this.$.scroller.getScrollBounds());
+        this.$.typingBubble.setShowing(typing);
+        if (follow) {
+            this.revealListBottom();
+        }
+    },
+
+    // --- typing and reading (util/chatPresence) -------------------------------------------
+
+    /**
+     * The chat as the transport knows it: the service and address replies go to. ownAddress: the
+     * thread's own, for when the chat has only just opened and the picker still holds the last
+     * chat's transport.
+     */
+    presenceTarget: function (ownAddress) {
+        var thread = this.chatThread;
+        if (!thread || !thread._id) {
+            return null;
+        }
+        var transport = ownAddress ? null : transportPicker.getSelectedTransport();
+        var useTransport = !!(transport && transport.serviceName && transport.replyAddress);
+        return {
+            replyService: useTransport ? transport.serviceName : thread.replyService,
+            replyAddress: useTransport ? transport.replyAddress : thread.replyAddress,
+            channelId: thread.channelId, groupChatId: thread.groupChatId
+        };
+    },
+
+    presenceAccount: function (target) {
+        return target && appState.accountService ? appState.accountService.getAccount(target.replyService) : null;
+    },
+
+    /** The buddy's typing state in this chat: "typing", "paused" or null. */
+    typingState: function () {
+        var target = this.presenceTarget();
+        return appState.typers ? appState.typers.stateFor(target, this.presenceAccount(target), Date.now()) : null;
+    },
+
+    /** watchTyping brought a change: draw it, and again when it lapses. */
+    showTyping: function () {
+        this.renderHeader();
+        if (this._typingLapseTimer) {
+            clearTimeout(this._typingLapseTimer);
+            this._typingLapseTimer = null;
+        }
+        var next = appState.typers && appState.typers.nextLapse();
+        if (next !== null && next !== undefined) {
+            var self = this;
+            this._typingLapseTimer = setTimeout(function () {
+                self._typingLapseTimer = null;
+                self.showTyping();
+            }, Math.max(0, next - Date.now()) + 50);
+        }
+        return true;
+    },
+
+    /** Send one call to the transport; with the mock db, keep it for the tests instead. */
+    sendPresence: function (service, payload) {
+        if (!payload) {
+            return;
+        }
+        if (mockDb.enabled) {
+            mockDb.presenceCalls = mockDb.presenceCalls || [];
+            mockDb.presenceCalls.push({ method: service.method, payload: payload });
+            return;
+        }
+        service.send(payload);
+    },
+
+    /** Tell the transport the chat was read, so it sends the service's read receipts. */
+    markChatRead: function (ownAddress) {
+        var target = this.presenceTarget(ownAddress);
+        this.sendPresence(this.$.readMarker, chatPresence.markReadPayload(target, this.presenceAccount(target)));
+    },
+
+    /** Tell the transport our typing state in this chat, as the composer reports it. */
+    sendTypingState: function (state) {
+        if (!state) {
+            return;
+        }
+        var target = this.presenceTarget();
+        this.sendPresence(this.$.typingSender,
+            chatPresence.sendTypingPayload(target, this.presenceAccount(target), state));
+    },
+
+    /** The keys went quiet for a while: paused. Checked once a second while typing. */
+    typingTick: function () {
+        if (!this._composer) {
+            return;
+        }
+        this.sendTypingState(this._composer.tick(Date.now()));
+        if (this._composer.sent !== "typing") {
+            this.cancelTypingTimer();
+        }
+    },
+
+    cancelTypingTimer: function () {
+        if (this._typingTimer) {
+            clearInterval(this._typingTimer);
+            this._typingTimer = null;
+        }
+    },
+
+    /** Sent, emptied or left: not typing any more. */
+    stopTyping: function () {
+        this.cancelTypingTimer();
+        if (this._composer) {
+            this.sendTypingState(this._composer.stop());
+            this._composer = null;
+        }
+    },
+
+    presenceFailed: function () {
+        return true;
     },
 
     // --- messages ------------------------------------------------------------------------
@@ -657,10 +1073,13 @@ module.exports = kind({
         this.lookUpSenders(results);
 
         // Measure before the merge: the new rows are what push the bottom out of reach.
-        var follow = this._followToEnd || isNearBottom(this.$.scroller.getScrollBounds());
+        // While searching, the list stays on the match rather than following new messages down.
+        var follow = this._followToEnd ||
+            (!(this._search && this._search.query) && isNearBottom(this.$.scroller.getScrollBounds()));
         this._followToEnd = false;
 
         this.messages = results;
+        this.findUnreadLine(results);
 
         // Older messages backfilled in front: add them at the top, where PrependingRepeater draws
         // only them, and move the scroll position down by what was added, so the same messages
@@ -676,14 +1095,361 @@ module.exports = kind({
         syncCollection(this.collection, results);
         this.followIncomingTransport(results);
         this.updateListButtons(this.chatThread);
-        this.$.listButtons.setShowing(
-            results.length > 0 && !!(this.chatThread && !(this.chatThread.flags || {}).locked));
+        this.showListButtons(results.length > 0);
         this.relayout();
         if (follow) {
             this.revealListBottomSoon();
+        } else if (this._unreadLine && this._unreadLine.moved) {
+            this.placeUnreadLine();
         }
+        this.countNewBelow(results, follow);
         this.scheduleBackfill(results.length);
+        if (this._wantedQuote) {
+            this.stepQuoteJump();
+        }
+        if (this._search) {
+            this.refreshSearch(false);
+        }
+        if (this._selected) {
+            this.showSelection();
+        }
         return true;
+    },
+
+    // --- selecting messages ---------------------------------------------------------------
+
+    /** Select messages, starting with message: taps then pick, and the bar acts on them all. */
+    startSelection: function (message) {
+        if (!this.chatThread || !selection.selectable(message)) {
+            return;
+        }
+        this.dismissPopups();
+        this.cancelReply();
+        this._selected = selection.start(message);
+        this.$.list.selecting = true;
+        this.$.footer.hide();
+        this.$.attachmentChips.hide();
+        this.$.selectionBar.show();
+        this.showSelection();
+        this.relayout();
+    },
+
+    /** Leave selecting; whether it was on, so back leaves it first. */
+    endSelection: function () {
+        var on = !!this._selected;
+        this._selected = null;
+        this.$.list.selecting = false;
+        this.markSelectedRows();
+        if (this.$.selectionBar.showing) {
+            this.$.selectionBar.hide();
+            this.$.footer.show();
+            this.$.attachmentChips.setShowing(this.outboundAttachments.length > 0);
+            this.relayout();
+        }
+        return on;
+    },
+
+    selectedMessages: function () {
+        return selection.picked(this.collection.map(function (m) { return m.attributes; }),
+            this._selected);
+    },
+
+    /** The bar and the rows as the selection now is. */
+    showSelection: function () {
+        var picked = this.selectedMessages();
+        this.$.selectionCount.setContent(picked.length === 1 ? $L("1 selected") :
+            $L("{n} selected").replace("{n}", picked.length));
+        var forwardable = forward.composeParamsFor(picked);
+        this.$.selectionCopy.setDisabled(!(forwardable && forwardable.messageText));
+        this.$.selectionForward.setDisabled(!forwardable);
+        this.$.selectionDelete.setDisabled(!picked.length);
+        this.markSelectedRows();
+    },
+
+    markSelectedRows: function () {
+        var rows = this.$.list.getClientControls ? this.$.list.getClientControls() : [];
+        for (var i = 0; i < rows.length; i++) {
+            var m = rows[i].model && rows[i].model.attributes;
+            rows[i].addRemoveClass("msg-selected", !!(this._selected && selection.has(this._selected, m)));
+        }
+    },
+
+    copySelected: function () {
+        var params = forward.composeParamsFor(this.selectedMessages());
+        this.endSelection();
+        if (params && params.messageText) {
+            var now = this.$.richText.get('value') || "";
+            this.$.richText.set('value', now + (now ? "\n" : "") + params.messageText);
+            this.growInput();
+        }
+        return true;
+    },
+
+    forwardSelected: function () {
+        var params = forward.composeParamsFor(this.selectedMessages());
+        if (params) {
+            this.endSelection();
+            this.doOpenComposeView({ params: params });
+        }
+        return true;
+    },
+
+    promptDeleteSelected: function () {
+        return this.promptDelete(this.selectedMessages(), true);
+    },
+
+    /**
+     * Ask how to delete these messages: for everyone (all ours, and the service takes it), for
+     * this device, or not. fromSelection: they were picked in the selection bar, which ends then.
+     */
+    promptDelete: function (messages, fromSelection) {
+        messages = (messages || []).filter(function (m) { return m && m._id; });
+        if (!messages.length) {
+            return true;
+        }
+        var n = messages.length, now = Date.now(), accountService = appState.accountService;
+        var everyone = chatActions.canDeleteAllForEveryone(messages, function (m) {
+            return chatActions.actionsFor(m.serviceName, accountService);
+        }, now);
+        this.pendingDelete = { messages: messages, fromSelection: !!fromSelection };
+        this.$.deleteDialogTitle.setContent(n === 1 ? $L("Delete Message") : $L("Delete Messages"));
+        this.$.deleteDialogMessage.setContent(n === 1 ? $L("Delete this message?") :
+            $L("Delete these {n} messages?").replace("{n}", n));
+        this.$.deleteEveryoneButton.setShowing(everyone);
+        this.$.deleteDialog.show();
+        return true;
+    },
+
+    closeDeleteDialog: function () {
+        this.$.deleteDialog.hide();
+        this.pendingDelete = null;
+        return true;
+    },
+
+    /** Take the pending delete, closing the prompt and the selection it came from. */
+    takePendingDelete: function () {
+        var pending = this.pendingDelete;
+        this.pendingDelete = null;
+        this.$.deleteDialog.hide();
+        if (pending && pending.fromSelection) {
+            this.endSelection();
+        }
+        return pending ? pending.messages : [];
+    },
+
+    deleteChosenForMe: function () {
+        var ids = this.takePendingDelete().map(function (m) { return m._id; });
+        if (ids.length) {
+            this.deleteRecords(ids);
+            if (mockDb.enabled) {
+                this.runQuery();
+            }
+        }
+        return true;
+    },
+
+    /** Delete our messages on the service, and draw them deleted at once, as the transport will. */
+    deleteChosenForEveryone: function () {
+        var messages = this.takePendingDelete(), thread = this.chatThread, failed = 0;
+        messages.forEach(function (message) {
+            var sent = this.sendImCommand(message.serviceName, function (kind, account) {
+                return chatActions.deleteCommand(kind, account, chatActions.chatOf(message, thread), message);
+            });
+            if (!sent) {
+                failed++;
+                return;
+            }
+            // The words DeleteHandler leaves, for the thread's summary.
+            this.mergeRecord({ _id: message._id, _kind: message._kind, deleted: true, messageText: "This message was deleted." });
+        }, this);
+        if (failed) {
+            this.showError($L("Unable to delete"), failed === 1 ?
+                $L("This message cannot be deleted for everyone.") :
+                $L("{n} messages cannot be deleted for everyone.").replace("{n}", failed));
+        }
+        return true;
+    },
+
+    // --- Find in Chat ---------------------------------------------------------------------
+
+    /** Open the search bar, and load all the messages the chat keeps so it searches them all. */
+    openSearch: function () {
+        if (!this.chatThread || !this.chatThread._id) {
+            return;
+        }
+        this.dismissPopups();
+        this._search = this._search || { query: "", hits: [], current: -1, id: null };
+        this.$.searchBar.show();
+        this.relayout();
+        this.$.searchInput.$.input.focus();
+        if ((this._limit || FIRST_PAGE) < MAX_MESSAGES) {
+            this.cancelBackfill();
+            this._limit = MAX_MESSAGES;
+            this.conversationService.cancel();
+            this.runQuery();
+        }
+        this.refreshSearch(false);
+    },
+
+    /** The header's magnifier: open Find in Chat, or close it when it is open. */
+    toggleSearch: function () {
+        if (this._search) {
+            this.closeSearch();
+        } else {
+            this.openSearch();
+        }
+        return true;
+    },
+
+    /** Whether the search bar is open; back closes it first. */
+    closeSearch: function () {
+        var open = !!this._search;
+        this._search = null;
+        this.markSearchHit(null);
+        if (this.$.searchBar.showing) {
+            this.$.searchInput.set('value', "");
+            this.$.searchBar.hide();
+            this.relayout();
+        }
+        return open;
+    },
+
+    searchChanged: function (inSender, inEvent) {
+        if (this._search) {
+            this._search.query = (inEvent && inEvent.value) || "";
+            this._search.id = null;
+            this.refreshSearch(true);
+        }
+        return true;
+    },
+
+    searchOlder: function () {
+        this.stepSearch(-1);
+        return true;
+    },
+
+    searchNewer: function () {
+        this.stepSearch(1);
+        return true;
+    },
+
+    /** Recount the matches; go to the match shown before, or the newest. show: scroll to it. */
+    refreshSearch: function (show) {
+        var s = this._search, messages = this.messages || [];
+        s.hits = chatSearch.find(messages, s.query);
+        var current = chatSearch.keep(messages, s.hits, s.id);
+        var moved = current >= 0 && messages[s.hits[current]]._id !== s.id;
+        s.current = current;
+        s.id = current >= 0 ? messages[s.hits[current]]._id : null;
+        this.updateSearchCount();
+        this.markSearchHit(current >= 0 ? s.hits[current] : null, show || moved);
+    },
+
+    stepSearch: function (dir) {
+        var s = this._search;
+        if (!s || !s.hits.length) {
+            return;
+        }
+        s.current = chatSearch.step(s.current, s.hits.length, dir);
+        s.id = this.messages[s.hits[s.current]]._id;
+        this.updateSearchCount();
+        this.markSearchHit(s.hits[s.current], true);
+    },
+
+    updateSearchCount: function () {
+        var s = this._search;
+        var text = !s.query.trim() ? "" : !s.hits.length ? $L("No matches") :
+            $L("{n} of {total}").replace("{n}", s.current + 1).replace("{total}", s.hits.length);
+        this.$.searchCount.setContent(text);
+        this.$.searchOlder.setDisabled(!s.hits.length || s.current <= 0);
+        this.$.searchNewer.setDisabled(!s.hits.length || s.current >= s.hits.length - 1);
+    },
+
+    /** Light the row at index as the current match (null: none), scrolling to it when asked. */
+    markSearchHit: function (index, scroll) {
+        if (this._searchRow && !this._searchRow.destroyed) {
+            this._searchRow.removeClass("search-hit");
+        }
+        this._searchRow = null;
+        if (index === null || index === undefined) {
+            return;
+        }
+        var row = this.$.list.getChildForIndex(index);
+        if (!row) {
+            return;
+        }
+        row.addClass("search-hit");
+        this._searchRow = row;
+        if (scroll) {
+            this.scrollRowToMiddle(row);
+        }
+    },
+
+    // --- quote taps -----------------------------------------------------------------------
+
+    /** Bring up the message a tapped quote card is for (util/quoteJump). */
+    jumpToQuoted: function (id) {
+        this.cancelQuoteJump();
+        this._wantedQuote = id;
+        this.stepQuoteJump();
+    },
+
+    /** Show the wanted original if it is loaded; else let the backfill go on, or give up. */
+    stepQuoteJump: function () {
+        var messages = this.messages || [];
+        var step = quoteJump.next(messages, this._wantedQuote, messages.length,
+            this._limit || FIRST_PAGE, MAX_MESSAGES);
+        if (step.action === "wait") {
+            return;
+        }
+        this._wantedQuote = null;
+        if (step.action === "show") {
+            this.showQuoted(step.index);
+        }
+    },
+
+    /** Scroll the row at index to the middle of the list and light it up for a moment. */
+    showQuoted: function (index) {
+        var row = this.$.list.getChildForIndex(index);
+        if (!this.scrollRowToMiddle(row)) {
+            return;
+        }
+
+        this.clearQuoteFlash();
+        row.addClass("quote-target");
+        this._quoteFlash = { row: row };
+        var self = this;
+        this._quoteFlash.timer = setTimeout(function () { self.clearQuoteFlash(); }, QUOTE_FLASH_MS);
+    },
+
+    /** Scroll so row sits in the middle of the list. False when it is not drawn. */
+    scrollRowToMiddle: function (row) {
+        var node = row && row.hasNode();
+        var scroller = this.$.scroller.hasNode();
+        if (!node || !scroller) {
+            return false;
+        }
+        var bounds = this.$.scroller.getScrollBounds();
+        var top = bounds.top + node.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
+        this.$.scroller.setScrollTop(Math.max(0, top - Math.max(0, (bounds.clientHeight - node.offsetHeight) / 2)));
+        this._atEnd = isNearBottom(this.$.scroller.getScrollBounds());
+        return true;
+    },
+
+    clearQuoteFlash: function () {
+        var flash = this._quoteFlash;
+        this._quoteFlash = null;
+        if (flash) {
+            clearTimeout(flash.timer);
+            if (!flash.row.destroyed) {
+                flash.row.removeClass("quote-target");
+            }
+        }
+    },
+
+    cancelQuoteJump: function () {
+        this._wantedQuote = null;
+        this.clearQuoteFlash();
     },
 
     // --- sender avatars ---------------------------------------------------------------------
@@ -770,6 +1536,11 @@ module.exports = kind({
             this.updateTransportButton();
             this.updateCallButtons();
         }
+        // Read as it arrives while the chat is on screen.
+        if (appState.getAppDeactivated() === false) {
+            this.markChatRead();
+        }
+        this.renderHeader();
     },
 
     /** Ask for the next older batch once this one is on screen, while there may be more. */
@@ -805,11 +1576,117 @@ module.exports = kind({
     revealListBottom: function () {
         this.$.scroller.scrollToBottom();
         this._atEnd = true;
+        this.updateJumpButton();
     },
 
     /** Whether the newest message was in view when scrolling stopped; see handleResize. */
     noteScrollPosition: function () {
         this._atEnd = isNearBottom(this.$.scroller.getScrollBounds());
+        this.updateJumpButton();
+    },
+
+    listScrolled: function () {
+        this.updateJumpButton();
+    },
+
+    // --- unread line and jump to the newest message (util/unreadMarker) -------------------
+
+    /** The line's caption for the row of record, or "". */
+    unreadLineCaption: function (record) {
+        var line = this._unreadLine;
+        return line && record && record._id === line.id ? unreadMarker.caption(this._unreadAtOpen) : "";
+    },
+
+    /**
+     * Where the line goes, from the messages loaded. More unread than loaded: above the oldest
+     * loaded one, until the backfill brings in the rest (moved: it is to be placed again).
+     */
+    findUnreadLine: function (results) {
+        if (!this._unreadAtOpen || (this._unreadLine && this._unreadLine.exact)) {
+            return;
+        }
+        var found = unreadMarker.lineFor(results, this._unreadAtOpen);
+        var was = this._unreadLine;
+        if (!found || (was && was.id === found.id)) {
+            return;
+        }
+        this._unreadLine = { id: found.id, exact: found.exact, moved: !!was };
+        if (was) {
+            this.redrawRowOf(was.id);
+            this.redrawRowOf(found.id);
+        }
+    },
+
+    redrawRowOf: function (id) {
+        var index = -1;
+        this.collection.forEach(function (m, i) {
+            if (m.attributes._id === id) {
+                index = i;
+            }
+        });
+        var row = index >= 0 && this.$.list.childForIndex(index);
+        if (row && row.populateRow) {
+            row.populateRow();
+        }
+    },
+
+    /**
+     * On opening, the newest messages are scrolled to; if that takes the line off the top, the
+     * chat shows the line at its top instead, so the first unread message is read first. Only
+     * while the chat opens (settle: its last pass), or when the backfill moved the line: a new
+     * message later, at the bottom, does not take the reader back up.
+     */
+    placeUnreadLine: function (settle) {
+        var line = this._unreadLine;
+        if (!line || (line.settled && !line.moved)) {
+            return;
+        }
+        line.moved = false;
+        if (settle) {
+            line.settled = true;
+        }
+        // The line drawn now: a row it moved off keeps its hidden one.
+        var nodes = this.$.list.hasNode() ? this.$.list.hasNode().querySelectorAll(".conversation-unread-line") : [];
+        var node = Array.prototype.filter.call(nodes, function (n) { return !!n.offsetParent; })[0];
+        var scroller = this.$.scroller.hasNode();
+        if (!node || !scroller) {
+            return;
+        }
+        var top = node.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
+        if (top < 0) {
+            this.$.scroller.setScrollTop(Math.max(0, this.$.scroller.getScrollTop() + top - 4));
+            this._atEnd = false;
+            this.updateJumpButton();
+        }
+    },
+
+    /**
+     * Count what came in below while the reader was further up. Not when following: the list is
+     * scrolled down a moment later, and counting would flash the button meanwhile.
+     */
+    countNewBelow: function (results, follow) {
+        var newest = unreadMarker.newestIncoming(results);
+        if (!follow && this._seenIncomingId && newest !== this._seenIncomingId) {
+            this._jumpNew += unreadMarker.newSince(results, this._seenIncomingId);
+        }
+        this._seenIncomingId = newest;
+        this.updateJumpButton();
+    },
+
+    updateJumpButton: function () {
+        var away = !!this.collection && this.collection.length > 0 &&
+            !isNearBottom(this.$.scroller.getScrollBounds());
+        if (!away) {
+            this._jumpNew = 0;
+        }
+        this.$.jumpCount.setContent(this._jumpNew > 99 ? "99+" : String(this._jumpNew));
+        this.$.jumpCount.setShowing(away && this._jumpNew > 0);
+        this.$.jumpButton.setShowing(away);
+    },
+
+    jumpToBottom: function () {
+        this.revealListBottom();
+        return true;
     },
 
     /**
@@ -824,6 +1701,7 @@ module.exports = kind({
             self._revealTimers.push(setTimeout(function () {
                 if (self.$ && self.$.scroller) {
                     self.revealListBottom();
+                    self.placeUnreadLine(delay === 400);
                 }
             }, delay));
         });
@@ -834,23 +1712,20 @@ module.exports = kind({
         this._revealTimers = [];
     },
 
-    updateListButtons: function (thread) {
-        this.$.blockButton.setShowing(!this.shouldHideBlockButton(thread));
+    /** The group row, when the chat has messages, is not locked, and has a button to show. */
+    showListButtons: function (hasMessages) {
+        this.$.listButtons.setShowing(!!hasMessages &&
+            !!(this.chatThread && !(this.chatThread.flags || {}).locked) &&
+            (this.$.groupAddButton.showing || this.$.groupLeaveButton.showing));
     },
 
-    /**
-     * Blocking only makes sense for an IM sender who is not already a buddy, and never for a group
-     * chat or when the user has no IM account at all.
-     */
-    shouldHideBlockButton: function (thread) {
-        var list = transportPicker.getTransports();
-        var haveIMAccount = false;
-        for (var i = 0; i < list.length; i++) {
-            if (list[i].account && list[i].account.capabilitySubtype === "IM") {
-                haveIMAccount = true;
-            }
-        }
-        return !!(thread && ((thread.personId && this.isIMBuddy) || thread.groupChatId || !haveIMAccount));
+    updateListButtons: function (thread) {
+        var actions = thread ? chatActions.actionsFor(thread.replyService, appState.accountService) : {};
+        // A group we left takes nothing from us any more (chatFlags.isLeft).
+        var server = thread && thread.serverId === this._serverId ? this._serverName : undefined;
+        var group = chatActions.isManagedGroup(thread, server) && !chatFlags.isLeft(thread);
+        this.$.groupAddButton.setShowing(group && !!actions.groupInvite);
+        this.$.groupLeaveButton.setShowing(group && !!actions.groupLeave);
     },
 
     // --- rendering -----------------------------------------------------------------------
@@ -890,6 +1765,11 @@ module.exports = kind({
     // --- header interaction --------------------------------------------------------------
 
     handleHeaderTap: function () {
+        // A group's header opens Group Info: who is in it, and its Add People and Leave Group.
+        if (groupInfo.isGroupChat(this.chatThread)) {
+            this.openGroupInfo();
+            return true;
+        }
         // Open the linked contact where there is one; otherwise there is nothing to show.
         if (this.chatThread && this.chatThread.personId) {
             this.$.launchApp.send({
@@ -902,6 +1782,8 @@ module.exports = kind({
 
     updateTransportButton: function () {
         var selected = transportPicker.getSelectedTransport();
+        // Whose typing the header shows follows the service picked.
+        this.renderHeader();
         this.setTransportButton(selected ? transportPicker.serviceNameFor(selected) : $L("."),
             transportPicker.iconFor(selected));
         var count = transportPicker.getTransports().length;
@@ -1008,6 +1890,23 @@ module.exports = kind({
     composerInput: function () {
         composerEcho.check(this.$.richText);
         this.growInput();
+        this.composerTyped();
+        this.updateMentionMenu();
+    },
+
+    /** The text changed: tell the transport we are typing, and watch for the keys to stop. */
+    composerTyped: function () {
+        if (!this.chatThread || !this.chatThread._id) {
+            return;
+        }
+        this._composer = this._composer || new chatPresence.Composer();
+        this.sendTypingState(this._composer.input(this.$.richText.get('value'), Date.now()));
+        if (this._composer.sent === "typing" && !this._typingTimer) {
+            var self = this;
+            this._typingTimer = setInterval(function () { self.typingTick(); }, 1000);
+        } else if (this._composer.sent === "none") {
+            this.cancelTypingTimer();
+        }
     },
 
     /** Grow the field with its content, up to the cap the stylesheet sets. */
@@ -1040,7 +1939,7 @@ module.exports = kind({
         if (inEvent.keyCode === 13 && !inEvent.shiftKey) {
             inEvent.preventDefault();
             var messageText = this.$.richText.get('value');
-            if (messageText || (this.outboundAttachment && this.outboundAttachment.path)) {
+            if (messageText || this.outboundAttachments.length) {
                 this.sendMessage();
             }
             return true;
@@ -1049,28 +1948,43 @@ module.exports = kind({
 
     sendButtonTapped: function () {
         var messageText = this.$.richText.get('value');
-        if (messageText || (this.outboundAttachment && this.outboundAttachment.path)) {
+        if (messageText || this.outboundAttachments.length) {
             this.sendMessage();
         }
         return true;
     },
 
-    sendMessage: function () {
+    /**
+     * Send what is in the composer, or extra: { text, fields } for a message made for it (a
+     * location, a contact card: util/chatActions), which leaves the composer as it is.
+     */
+    sendMessage: function (extra) {
         if (!this.chatThread || !this.chatThread._id) {
             return;
         }
         // Safety net in case the app is killed before the thread is re-read.
         this.doClearUnreadCount({ threadId: this.chatThread._id });
+        this.stopTyping();
+        if (this.editingMessage && !extra) {
+            this.sendEdit();
+            return;
+        }
 
         var selectedTransport = transportPicker.getSelectedTransport();
         if (!selectedTransport) {
             this.showError($L("Unable to send"), $L("No account can send to this recipient."));
             return;
         }
+        // Files staged on an IM transport and then the chat switched to SMS: the send would go
+        // out as text and the files would be cleared with the composer. Keep them and say so.
+        if (!extra && fileCarrier.wouldDrop(this.outboundAttachments, selectedTransport.serviceName)) {
+            this.showSmsAttachmentsError();
+            return;
+        }
 
         var resolved = sendAccount(selectedTransport, appState.accountService);
         if (resolved.state === "missing") {
-            this.sendOnceAccountsReload(selectedTransport);
+            this.sendOnceAccountsReload(selectedTransport, extra);
             return;
         }
         selectedTransport.account = resolved.account;
@@ -1100,14 +2014,14 @@ module.exports = kind({
             conversations: [this.chatThread._id],
             flags: { read: true, visible: true, deliveryReport: false },
             to: [recipient],
-            messageText: this.$.richText.get('value'),
+            messageText: extra ? extra.text : this.$.richText.get('value'),
             serviceName: selectedTransport.serviceName
         };
 
         // Native reply: stamp the quote metadata from the message being replied to. quotedMessageId
         // is the original's serviceMessageId, which the transport hands to the network so OTHER
         // clients thread the reply too; the fields also render the local echo's quote card.
-        if (this.replyToMessage) {
+        if (this.replyToMessage && !extra) {
             var qsrc = messagingUtils.message.unescapeText(this.replyToMessage.messageText || "")
                 .replace(/[\r\n]+/g, " ").replace(/\s+/g, " ");
             params.quotedText = qsrc;
@@ -1130,25 +2044,54 @@ module.exports = kind({
         if (resolved.state === "im") {
             dbKind = (selectedTransport.account.dbkinds || {}).immessage ||
                 messagingUtils.message.dbKind;
+            // What a plugin may send natively; the text is its plain form for any other.
+            var fields = (extra && extra.fields) || {};
+            for (var f in fields) {
+                if (fields.hasOwnProperty(f)) {
+                    params[f] = fields[f];
+                }
+            }
+            var mentions = extra ? [] : chatActions.mentionsInText(params.messageText, this.pickedMentions);
+            if (mentions.length) {
+                params.mentions = mentions;
+            }
         } else {
             dbKind = messagingUtils.message.SMS.dbKind;
             params.serviceName = "sms";
         }
 
-        // Only IM transports can carry an attachment path; SMS/MMS ignores it, so never stamp it on
-        // a text-message record.
-        if (this.outboundAttachment && this.outboundAttachment.path &&
-                !messagingUtils.utils.isTextMessage(params.serviceName)) {
-            params.filePath = this.outboundAttachment.path;
+        // One message per staged file, the text on the first (util/attachments). Only a service
+        // that can carry a file gets the path (util/fileCarrier); SMS has no MMS sender yet. A
+        // sticker comes as extra.file, alone.
+        var parts = extra ? [{ text: params.messageText,
+            file: (extra.file && fileCarrier.canCarry(params.serviceName)) ? extra.file : null }] :
+            attachments.messages(params.messageText, this.outboundAttachments,
+                fileCarrier.canCarry(params.serviceName));
+        if (!parts.length) {
+            return;
         }
+        var list = parts.map(function (part, i) {
+            var p = enyoUtils.clone(params);
+            p.messageText = part.text;
+            if (part.file) {
+                p.filePath = part.file.path;
+            }
+            if (i > 0) {
+                // The reply's quote goes with its first message only.
+                delete p.quotedText;
+                delete p.quotedFrom;
+                delete p.quotedMessageId;
+            }
+            return p;
+        });
 
         // Update the thread record directly rather than waiting on the chatthreader, which is too
         // slow to keep the list in step with a just-sent message.
         var updated = messagingUtils.thread.updateFromNewMessage(
-            { _id: this.chatThread._id, _kind: messagingUtils.thread.dbKind }, params, recipient);
+            { _id: this.chatThread._id, _kind: messagingUtils.thread.dbKind }, list[list.length - 1], recipient);
         this.mergeThread(updated);
 
-        this.sendMessageHelper(params, dbKind);
+        this.sendMessageHelper(list, dbKind, params.messageText, !!extra);
     },
 
     /**
@@ -1156,7 +2099,7 @@ module.exports = kind({
      * since the app started. Re-read the accounts and send once they are in; if the account is
      * still not there, say so and keep the text in the composer rather than send it some other way.
      */
-    sendOnceAccountsReload: function (transport) {
+    sendOnceAccountsReload: function (transport, extra) {
         var accounts = appState.accountService;
         var self = this;
         var notSent = function () {
@@ -1179,31 +2122,39 @@ module.exports = kind({
                 notSent();
                 return;
             }
-            self.sendMessage();
+            self.sendMessage(extra);
         };
         accounts.register(waiter, finish);
         waiter.timer = setTimeout(finish, ACCOUNT_RELOAD_MS);
         accounts.getAccounts();
     },
 
-    sendMessageHelper: function (params, dbKind) {
+    /** Write the messages of one send (one per file) to the outbox, in order, and reset the composer. */
+    sendMessageHelper: function (list, dbKind, typed, keepComposer) {
         this._followToEnd = true;
-        params._kind = dbKind;
-        params.localTimestamp = Date.now();
-
-        if (mockDb.enabled) {
-            mockDb.merge([params]);
-            this.runQuery();
-        } else {
-            this.$.messagePut.send({ objects: [params] });
+        var now = Date.now();
+        for (var i = 0; i < list.length; i++) {
+            list[i]._kind = dbKind;
+            // Apart by a millisecond, so the list and the transport keep them in the order picked.
+            list[i].localTimestamp = now + i;
         }
 
-        this.$.richText.set('value', "");
-        composerEcho.sent(this.$.richText, params.messageText);
-        this.growInput();
-        this.cancelReply();
-        if (this.outboundAttachment) {
-            this.clearAttachment();
+        if (mockDb.enabled) {
+            mockDb.merge(list);
+            this.runQuery();
+        } else {
+            this.$.messagePut.send({ objects: list });
+        }
+
+        if (!keepComposer) {
+            this.$.richText.set('value', "");
+            composerEcho.sent(this.$.richText, typed);
+            this.growInput();
+            this.cancelReply();
+            this.pickedMentions = [];
+            if (this.outboundAttachments.length) {
+                this.clearAttachment();
+            }
         }
         this.playSoundNotification({ isSent: true });
     },
@@ -1318,9 +2269,19 @@ module.exports = kind({
             return true;
         }
         this.selectedMessage = message;
+        if (this._selected) {
+            this._selected = selection.toggle(this._selected, message);
+            this.showSelection();
+            return true;
+        }
 
         // A tap on a poll option votes; a tap on one of my reaction badges removes it.
         var node = inEvent && (inEvent.target || (inEvent.domEvent && inEvent.domEvent.target));
+        // Only the bubble opens the reactions: not the avatar, nor the row beside the bubble.
+        if (!bubbleHit(node)) {
+            this.dismissPopups();
+            return true;
+        }
         var option = this.pollOptionAt(node);
         if (option) {
             this.togglePollOption(message, option.name, option.max, option.node);
@@ -1331,6 +2292,15 @@ module.exports = kind({
             this.toggleMyReaction(message, reaction);
             return true;
         }
+        // Nothing to react to, reply to, forward or copy on a message deleted for everyone.
+        if (messageState.isDeleted(message)) {
+            return true;
+        }
+        var quoted = quoteJump.quotedIdAt(node, this.hasNode());
+        if (quoted) {
+            this.jumpToQuoted(quoted);
+            return true;
+        }
 
         this.openReactRow(inEvent);
         return true;
@@ -1338,7 +2308,7 @@ module.exports = kind({
 
     swipeDelete: function (inSender, inEvent) {
         var message = this.messageFor(inEvent);
-        if (message && message._id) {
+        if (message && message._id && !this._selected) {
             this.deleteRecords([message._id]);
             if (mockDb.enabled) {
                 this.runQuery();
@@ -1386,18 +2356,33 @@ module.exports = kind({
 
     /** Open an attachment, location or event in whichever app handles it. */
     openAttachment: function (inSender, inEvent) {
+        // While selecting, a tap on a file picks its message (handleMessageTap) instead.
+        if (this._selected) {
+            return true;
+        }
         var target = inEvent && inEvent.target;
         var attachmentKind = inEvent && inEvent.kind;
+        if (attachmentKind === "file-offer") {
+            this.downloadOffered(inEvent.message);
+            return true;
+        }
+        // A card we sent: its person in Contacts, found from the message (util/sentExtras).
+        if (attachmentKind === "sent-contact") {
+            var shown = launchTargets.sentContactLaunch(sentExtras.sentContact(inEvent.message));
+            if (shown) {
+                this.launch(shown);
+            }
+            return true;
+        }
         if (!target) {
             return true;
         }
 
         if (attachmentKind === "location") {
-            var parts = String(target).split(",");
-            this.$.launchApp.send({
-                id: "com.palm.app.maps",
-                params: { latitude: parts[0], longitude: parts[1] }
-            });
+            var maps = launchTargets.mapsLaunch(target);
+            if (maps) {
+                this.$.launchApp.send(maps);
+            }
             return true;
         }
 
@@ -1416,14 +2401,17 @@ module.exports = kind({
         }
 
         if (attachmentKind === "contact") {
-            this.$.launchApp.send({
-                id: "com.palm.app.contacts", params: { vcard: target, launchType: "importVCard" }
-            });
+            var contacts = launchTargets.contactLaunch(target);
+            if (contacts) {
+                this.$.launchApp.send(contacts);
+            } else if (remoteCard.isRemote(target)) {
+                this.fetchCard(target);
+            }
             return true;
         }
 
         if (attachmentKind === "image") {
-            this.$.launchApp.send({ id: "com.palm.app.photos", params: { target: target } });
+            this.showPicture(target, inEvent.node);
             return true;
         }
 
@@ -1438,6 +2426,162 @@ module.exports = kind({
             });
         }
         return true;
+    },
+
+    /**
+     * A picture tapped in the chat, full screen (util/imageViewer), with the conversation's other
+     * pictures a swipe or the strip away.
+     */
+    showPicture: function (url, node) {
+        var pictures = threadPictures.list(this.messages), self = this;
+        var index = threadPictures.indexOf(pictures, url);
+        if (index < 0) {
+            pictures = [{ url: url }];
+            index = 0;
+        }
+        imageViewer.open(pictures, index, node, function (shown) {
+            self.savePicture(shown);
+        }, function (picture) {
+            return self.pictureNode(picture.url);
+        });
+    },
+
+    /**
+     * The picture viewer's Save: the picture into the folder Photos shows (util/pictureSave), and
+     * a word in the viewer on how it went. One Save at a time.
+     */
+    savePicture: function (url) {
+        var how = pictureSave.how(url);
+        if (!how) {
+            this.pictureNotSaved();
+            return;
+        }
+        if (this._pictureSaving) {
+            return;
+        }
+        this._pictureSaving = true;
+        if (how === "copy") {
+            var copy = pictureSave.copyRequest(url);
+            if (mockDb.enabled) {
+                this.pictureCopied(null, mockDb.savePicture(copy));
+            } else {
+                this.$.pictureCopy.send(copy);
+            }
+            return;
+        }
+        var params = pictureSave.downloadRequest(url);
+        if (mockDb.enabled) {
+            this.pictureDownloadReply(null, mockDb.download(params));
+            return;
+        }
+        // Ended through the request send returns, as a card's download is.
+        this._pictureRequest = this.$.pictureDownload.send(params);
+    },
+
+    pictureCopied: function (inSender, inResponse) {
+        if (!inResponse || inResponse.returnValue === false) {
+            return this.pictureNotSaved();
+        }
+        this._pictureSaving = false;
+        imageViewer.say(inResponse.saved === false ? $L("Already in Photos") : $L("Saved to Photos"));
+        return true;
+    },
+
+    pictureDownloadReply: function (inSender, inResponse) {
+        var result = pictureSave.outcome(inResponse);
+        if (result.state === "pending") {
+            return true;
+        }
+        var request = this._pictureRequest;
+        this._pictureRequest = null;
+        if (request && typeof request.cancel === "function") {
+            request.cancel();
+        }
+        if (result.state !== "done") {
+            return this.pictureNotSaved();
+        }
+        this._pictureSaving = false;
+        imageViewer.say($L("Saved to Photos"));
+        return true;
+    },
+
+    pictureNotSaved: function (inSender, inError) {
+        if (inError) {
+            this.warn("savePicture:", inError.errorText || inError);
+        }
+        var request = this._pictureRequest;
+        this._pictureRequest = null;
+        if (request && typeof request.cancel === "function") {
+            request.cancel();
+        }
+        this._pictureSaving = false;
+        imageViewer.say($L("Couldn't save the picture"));
+        return true;
+    },
+
+    /** The picture of url in the chat as drawn now, or null (scrolled out of the list). */
+    pictureNode: function (url) {
+        var root = this.hasNode(), escaped = String(url).replace(/"/g, "%22");
+        var imgs = root ? root.querySelectorAll("img.message-image") : [];
+        for (var i = 0; i < imgs.length; i++) {
+            var src = imgs[i].getAttribute("src");
+            if (src === url || src === escaped) {
+                return imgs[i];
+            }
+        }
+        return null;
+    },
+
+    /** Fetch a card that came as a link, then open it in Contacts; once fetched, it is not again. */
+    fetchCard: function (url) {
+        var params = remoteCard.request(url);
+        this._cards = this._cards || {};
+        if (this._cards[params.target]) {
+            this.openFetchedCard(this._cards[params.target]);
+            return;
+        }
+        this._cardUrl = params.target;
+        if (mockDb.enabled) {
+            this.cardDownloadReply(null, mockDb.download(params));
+            return;
+        }
+        // The subscription is ended through the request send returns; LunaService.cancel()
+        // without it throws, which left the card unopened and fetched it again on every tap.
+        this._cardRequest = this.$.cardDownload.send(params);
+    },
+
+    cardDownloadReply: function (inSender, inResponse) {
+        var result = remoteCard.outcome(inResponse);
+        if (result.state === "pending" || !this._cardUrl) {
+            return true;
+        }
+        var url = this._cardUrl, request = this._cardRequest;
+        this._cardUrl = null;
+        this._cardRequest = null;
+        if (request && typeof request.cancel === "function") {
+            request.cancel();
+        }
+        if (result.state === "done") {
+            this._cards[url] = result.path;
+            this.openFetchedCard(result.path);
+        } else {
+            this.cardDownloadFailed();
+        }
+        return true;
+    },
+
+    cardDownloadFailed: function () {
+        this._cardUrl = null;
+        this._cardRequest = null;
+        this.showError($L("Unable to open contact card"), $L("The contact card could not be downloaded."));
+        return true;
+    },
+
+    openFetchedCard: function (path) {
+        var contacts = launchTargets.contactLaunch("file://" + path);
+        if (contacts) {
+            this.$.launchApp.send(contacts);
+        }
     },
 
     // --- polls -----------------------------------------------------------------------------
@@ -1468,6 +2612,13 @@ module.exports = kind({
      * the merge lands, does not revert the tick.
      */
     togglePollOption: function (message, option, max, optionNode) {
+        // A poll stored without its id (before the plug-in kept one for a poll sent from the
+        // phone) can take no vote: say so rather than tick an option nothing is sent for.
+        if (!message.serviceMessageId) {
+            this.showError($L("Can't vote on this poll"),
+                $L("This poll came in without what is needed to send a vote. Vote on it on another device."));
+            return;
+        }
         var current = (message.myPollVote || []).slice();
         var idx = current.indexOf(option);
 
@@ -1492,21 +2643,55 @@ module.exports = kind({
         this.$.list.refresh();
     },
 
-    sendPollVoteCommand: function (message, selected) {
-        var accountService = appState.accountService;
-        if (!accountService || mockDb.enabled) {
+    /**
+     * A tap on an offered file (util/fileOffer): ask the transport for it, once while it comes,
+     * and say so on the card until the plugin's own word arrives.
+     */
+    downloadOffered: function (message) {
+        var offer = message && fileOffer.find(message.messageText);
+        if (!fileOffer.canStart(offer, message.downloadAsked === true)) {
             return;
         }
-        this.$.reactionCommand.send({
-            objects: [{
-                _kind: accountService.getImCommandKind(message.serviceName),
-                command: "sendPollVote",
-                handler: "transport",
-                serviceName: message.serviceName,
-                messageId: message.serviceMessageId,
-                options: selected
-            }]
+        var thread = this.chatThread;
+        var sent = this.sendImCommand(message.serviceName, function (kind, account) {
+            return chatActions.downloadFileCommand(kind, account, chatActions.chatOf(message, thread), message);
         });
+        if (!sent) {
+            return;
+        }
+        var model = this.collection && this.collection.find(function (m) { return m.get("_id") === message._id; });
+        if (model) {
+            model.set("downloadAsked", true);
+        } else {
+            message.downloadAsked = true;
+        }
+    },
+
+    sendPollVoteCommand: function (message, selected) {
+        var thread = this.chatThread;
+        this.sendImCommand(message.serviceName, function (kind, account) {
+            return chatActions.pollVoteCommand(kind, account, chatActions.chatOf(message, thread), message, selected);
+        });
+    },
+
+    /**
+     * Write one imcommand for the transport (util/chatActions). build(kind, account) makes it for
+     * our account on serviceName. With the mock db it is kept for the tests. False when there is
+     * no account or nothing to send.
+     */
+    sendImCommand: function (serviceName, build) {
+        var accountService = appState.accountService;
+        var account = accountService && accountService.getAccount(serviceName);
+        var cmd = account && build(accountService.getImCommandKind(serviceName), account);
+        if (!cmd) {
+            return false;
+        }
+        if (mockDb.enabled) {
+            mockDb.imCommands.push(cmd);
+        } else {
+            this.$.reactionCommand.send({ objects: [cmd] });
+        }
+        return true;
     },
 
     // --- reactions ---------------------------------------------------------------------------
@@ -1541,15 +2726,6 @@ module.exports = kind({
         return null;
     },
 
-    handleReactSwipe: function (inSender, inEvent) {
-        var message = this.messageFor(inEvent);
-        if (message) {
-            this.selectedMessage = message;
-            this.openReactRow(inEvent);
-        }
-        return true;
-    },
-
     openReactRow: function (inEvent) {
         this.$.reactRow.showAtEvent(inEvent);
     },
@@ -1560,7 +2736,10 @@ module.exports = kind({
      * a scroll, another chat, leaving the view - not only on a tap outside them.
      */
     dismissPopups: function () {
-        var popups = ["reactRow", "messageMenu", "transportMenu"];
+        // A delete prompt left open on a row goes too: the row it sits on is moving away.
+        SwipeableItem.cancelPending();
+        var popups = ["reactRow", "messageMenu", "transportMenu", "attachMenu", "mentionMenu", "stickerPicker",
+            "groupInfo"];
         for (var i = 0; i < popups.length; i++) {
             var popup = this.$[popups[i]];
             if (popup && popup.showing) {
@@ -1570,8 +2749,20 @@ module.exports = kind({
         this.closeAttachmentPicker();
     },
 
-    /** Closes the file picker if it is open; true when it was. The back key uses this first. */
+    /** The back gesture over Group Info: closes its top layer; true when it was open. */
+    closeGroupInfo: function () {
+        return this.$.groupInfo.back();
+    },
+
+    /**
+     * Closes the file picker, or the sticker picker, if it is open; true when it was. The back
+     * key uses this first.
+     */
     closeAttachmentPicker: function () {
+        if (this.$.stickerPicker.showing) {
+            this.$.stickerPicker.hide();
+            return true;
+        }
         var picker = this.$.attachmentPicker;
         if (!picker || !picker.showing) {
             return false;
@@ -1592,11 +2783,37 @@ module.exports = kind({
 
     reactMore: function (inSender, inEvent) {
         this.$.reactRow.hide();
-        // The button that opened it is in the popup just hidden, so anchor to the tap point
-        // instead; without an activatorOffset the open menu throws on every resize.
-        this.$.messageMenu.activatorOffset = { top: inEvent.pageY || 0, left: inEvent.pageX || 0, width: 0, height: 0 };
-        this.$.messageMenu.showAtEvent(inEvent);
+        this.updateMessageMenu(this.selectedMessage);
+        this.showMenuCentered(this.$.messageMenu);
         return true;
+    },
+
+    /** Edit only for our own sent message, where the service does it. */
+    updateMessageMenu: function (message) {
+        var actions = message ? chatActions.actionsFor(message.serviceName, appState.accountService) : {};
+        var now = Date.now();
+        this.$.menuEditItem.setShowing(chatActions.canEdit(message, actions, now));
+    },
+
+    /**
+     * Open a menu in the middle of the screen, as the legacy app opened its message menu
+     * (PopupSelect.openAtCenter). At the finger it ran off the bottom for a message low down.
+     */
+    showMenuCentered: function (menu) {
+        // Onyx's .onyx-menu carries a 2px top margin, for a menu under its button.
+        menu.applyPosition({ top: 0, left: 0, bottom: 'auto', right: 'auto', 'margin-top': 0 });
+        menu.activatorOffset = { top: 0, left: 0, width: 0, height: 0 };
+        menu.show();
+        var n = menu.hasNode();
+        if (!n) {
+            return;
+        }
+        var b = n.getBoundingClientRect();
+        var top = Math.max(0, Math.round((window.innerHeight - b.height) / 2));
+        var left = Math.max(0, Math.round((window.innerWidth - b.width) / 2));
+        // adjustPosition (on a resize) moves a floating menu to its activatorOffset: keep it here.
+        menu.activatorOffset = { top: top, left: left, width: 0, height: 0 };
+        menu.applyPosition({ top: top, left: left });
     },
 
     /** Add or remove my reaction optimistically, then tell the transport. */
@@ -1622,20 +2839,11 @@ module.exports = kind({
     },
 
     sendReactionCommand: function (message, emoji, remove) {
-        var accountService = appState.accountService;
-        if (!accountService || mockDb.enabled) {
-            return;
-        }
-        this.$.reactionCommand.send({
-            objects: [{
-                _kind: accountService.getImCommandKind(message.serviceName),
-                command: "sendReaction",
-                handler: "transport",
-                serviceName: message.serviceName,
-                messageId: message.serviceMessageId,
-                emoji: this.mapReactionForNetwork(emoji, message.serviceName),
-                remove: !!remove
-            }]
+        var thread = this.chatThread;
+        var networkEmoji = this.mapReactionForNetwork(emoji, message.serviceName);
+        this.sendImCommand(message.serviceName, function (kind, account) {
+            return chatActions.reactionCommand(kind, account, chatActions.chatOf(message, thread), message,
+                networkEmoji, remove);
         });
     },
 
@@ -1654,9 +2862,38 @@ module.exports = kind({
 
     // --- message menu --------------------------------------------------------------------
 
+    /** A short right swipe on a message replies to it; a tap is what opens the reactions. */
+    handleReplySwipe: function (inSender, inEvent) {
+        var message = this.messageFor(inEvent);
+        // Not to a deleted message, which has nothing to quote, nor while selecting.
+        if (message && !messageState.isDeleted(message) && !this._selected) {
+            this.dismissPopups();
+            this.selectedMessage = message;
+            this.enterReply(message);
+        }
+        return true;
+    },
+
     menuReply: function () {
         if (this.selectedMessage) {
             this.enterReply(this.selectedMessage);
+        }
+        return true;
+    },
+
+    /** New Conversation with this message's text and file, for picking who it goes to. */
+    menuForward: function () {
+        var params = forward.composeParams(this.selectedMessage);
+        if (params) {
+            this.doOpenComposeView({ params: params });
+        }
+        return true;
+    },
+
+    menuForwardEmail: function () {
+        var launch = forward.emailLaunch(this.selectedMessage);
+        if (launch) {
+            this.$.launchApp.send(launch);
         }
         return true;
     },
@@ -1669,17 +2906,42 @@ module.exports = kind({
         return true;
     },
 
-    menuDelete: function () {
-        if (this.selectedMessage && this.selectedMessage._id) {
-            this.deleteRecords([this.selectedMessage._id]);
-            if (mockDb.enabled) {
-                this.runQuery();
-            }
+    /**
+     * A hold on a message is half a second, as a long press is elsewhere: Enyo's 200ms default
+     * came before a finger resting at the start of a scroll had moved, and started selecting.
+     * Moving the finger still ends the hold (Enyo's moveTolerance), so a scroll never selects.
+     * preventTap here is what stops the finger lifting after a hold from being a tap as well,
+     * which picked the held message straight off again: the hold event's own preventTap() only
+     * marks that event (enyo/gesture: makeEvent), not the down the tap comes from.
+     */
+    messageDown: function (inSender, inEvent) {
+        if (inEvent && inEvent.configureHoldPulse) {
+            inEvent.configureHoldPulse({ events: [{ name: "hold", time: HOLD_MS }], preventTap: true });
+        }
+    },
+
+    /** Hold a message to start selecting with it; while selecting, a hold picks as a tap does. */
+    handleMessageHold: function (inSender, inEvent) {
+        var message = this.messageFor(inEvent);
+        if (!message) {
+            return false;
+        }
+        this.selectedMessage = message;
+        if (this._selected) {
+            this._selected = selection.toggle(this._selected, message);
+            this.showSelection();
+        } else {
+            this.startSelection(message);
         }
         return true;
     },
 
+    menuDelete: function () {
+        return this.promptDelete([this.selectedMessage], false);
+    },
+
     enterReply: function (message) {
+        this.endEdit();
         this.replyToMessage = message;
         var from = (message.from && message.from.name) ? message.from.name : $L("You");
         var text = messagingUtils.message.removeHtml(message.messageText || "")
@@ -1692,9 +2954,571 @@ module.exports = kind({
     },
 
     cancelReply: function () {
+        this.endEdit();
         this.replyToMessage = null;
         this.$.replyBar.setShowing(false);
         this.relayout();
+        return true;
+    },
+
+    // --- editing and deleting our own messages (util/chatActions) -----------------------------
+
+    menuEdit: function () {
+        if (this.selectedMessage) {
+            this.enterEdit(this.selectedMessage);
+        }
+        return true;
+    },
+
+    /** Edit a message we sent: its text goes into the composer, and the bar above says so. */
+    enterEdit: function (message) {
+        this.cancelReply();
+        this.editingMessage = message;
+        var text = String(message.messageText || "");
+        this.$.replyBarText.setContent("<b>" + $L("Edit Message") + "</b><br>" +
+            messagingUtils.message.emojifyEscaped(messagingUtils.message.removeHtml(text).replace(/[\r\n]+/g, " ")));
+        this.$.replyBar.setShowing(true);
+        this.$.richText.set('value', text);
+        this.growInput();
+        this.$.richText.focus();
+        this.relayout();
+    },
+
+    /** Stop editing; the old text the composer was given goes with it. */
+    endEdit: function () {
+        if (!this.editingMessage) {
+            return;
+        }
+        this.editingMessage = null;
+        this.$.richText.set('value', "");
+        this.growInput();
+    },
+
+    /** Send the composer's text as the edit, and show it at once. */
+    sendEdit: function () {
+        var message = this.editingMessage;
+        var text = this.$.richText.get('value') || "";
+        if (!String(text).trim()) {
+            return;   // an edit cannot empty a message; Delete does that
+        }
+        if (text !== message.messageText) {
+            var thread = this.chatThread;
+            var sent = this.sendImCommand(message.serviceName, function (kind, account) {
+                return chatActions.editCommand(kind, account, chatActions.chatOf(message, thread), message, text);
+            });
+            if (!sent) {
+                this.showError($L("Unable to edit"), $L("This message cannot be edited."));
+                return;
+            }
+            this.mergeRecord({ _id: message._id, _kind: message._kind, messageText: text, edited: true });
+        }
+        this.cancelReply();
+    },
+
+    // --- groups ----------------------------------------------------------------------------
+
+    openGroupInvite: function () {
+        this.$.groupDialog.openInvite(this.chatThread);
+        return true;
+    },
+
+    promptLeaveGroup: function () {
+        if (!this.chatThread) {
+            return true;
+        }
+        this.confirmAction = "leaveGroup";
+        this.$.confirmDialogTitle.setContent($L("Leave Group"));
+        this.$.confirmDialogMessage.setContent(
+            $L("Leave {group}? Its new messages will no longer reach you.")
+                .replace("{group}", this.chatThread.displayName || $L("this group")));
+        this.$.confirmAcceptButton.setContent($L("Leave"));
+        this.$.confirmDialog.show();
+        return true;
+    },
+
+    leaveGroup: function () {
+        var thread = this.chatThread;
+        if (!thread) {
+            return;
+        }
+        var sent = this.sendImCommand(thread.replyService, function (kind, account) {
+            return chatActions.leaveCommand(kind, thread.replyService, account, thread.replyAddress);
+        });
+        if (!sent) {
+            this.showError($L("Unable to leave"), $L("No account can leave this group."));
+            return;
+        }
+        // We are no member now: nothing to add anyone to, nothing to leave (chatFlags.left).
+        var m = chatFlags.merge(thread, { left: true });
+        thread.flags = thread.flags || {};
+        thread.flags.left = true;
+        this.mergeThread(m);
+        this.updateListButtons(thread);
+        this.showListButtons(true);
+        this.relayout();
+    },
+
+    // --- location and contact cards --------------------------------------------------------
+
+    openAttachMenu: function () {
+        this.$.stickerMenuItem.setShowing(!!this.sendActions().sticker);
+        this.$.attachMenu.requestMenuShow(this, { activator: this.$.attachButton });
+        return true;
+    },
+
+    /** What the service a message would go out on now can send besides text. */
+    sendActions: function () {
+        var transport = transportPicker.getSelectedTransport();
+        var service = transport ? transport.serviceName : (this.chatThread && this.chatThread.replyService);
+        return service ? chatActions.actionsFor(service, appState.accountService) : {};
+    },
+
+    /** Where we are goes only to whom it is meant for: ask first. */
+    promptShareLocation: function () {
+        if (!this.chatThread) {
+            return true;
+        }
+        this.confirmAction = "sendLocation";
+        this.$.confirmDialogTitle.setContent($L("Send My Location"));
+        this.$.confirmDialogMessage.setContent($L("Send where you are now to this chat?"));
+        this.$.confirmAcceptButton.setContent($L("Send"));
+        this.$.confirmDialog.show();
+        return true;
+    },
+
+    shareLocation: function () {
+        if (this._locating) {
+            return;
+        }
+        var self = this, threadId = this.chatThread && this.chatThread._id;
+        var done = function (error, fix) {
+            self._locating = null;
+            if (!self.chatThread || self.chatThread._id !== threadId) {
+                return;   // another chat by now
+            }
+            var loc = fix && chatActions.location(fix.latitude, fix.longitude);
+            if (!loc) {
+                self.showError($L("Location"), error || $L("Location unavailable."));
+                return;
+            }
+            self.sendMessage({ text: chatActions.locationText(loc), fields: { location: loc } });
+        };
+        if (mockDb.enabled) {
+            done(null, mockDb.location);
+            return;
+        }
+        this._locating = deviceLocation.locate(this.bindSafely("locationCall"), {
+            set: function (fn, ms) { return setTimeout(fn, ms); },
+            clear: function (id) { clearTimeout(id); }
+        }, done);
+    },
+
+    /** One call to the location service, for deviceLocation. */
+    locationCall: function (method, params, onReply, onError) {
+        var request = new ServiceRequest({
+            service: "luna://com.webos.service.location", method: method, subscribe: !!params.subscribe
+        });
+        request.response(function (inSender, inResponse) { onReply(inResponse); });
+        request.error(function (inSender, inError) { onError(inError); });
+        request.go(params);
+        return request;
+    },
+
+    cancelLocating: function () {
+        if (this._locating) {
+            this._locating();
+            this._locating = null;
+        }
+    },
+
+    openContactPicker: function () {
+        this.$.contactPicker.show();
+        this.$.contactList.reload();
+        return true;
+    },
+
+    closeContactPicker: function () {
+        this.$.contactPicker.hide();
+        return true;
+    },
+
+    /** Send a contact as a card: all their numbers and addresses, not only the one tapped. */
+    contactPicked: function (inSender, inEvent) {
+        var entry = inEvent && inEvent.msgAddr;
+        var attrs = (entry && (entry.attributes || entry)) || {};
+        var person = this.$.contactList.personFor(entry);
+        var contact = {
+            name: attrs.displayName,
+            phoneNumbers: person ? person.get('phoneNumbers') : (attrs.isPhone ? [{ value: attrs.value }] : []),
+            emails: person ? person.get('emails') : []
+        };
+        this.$.contactPicker.hide();
+        var card = chatActions.contactCard(contact);
+        if (!card) {
+            this.showError($L("Contact"), $L("This contact has no number or address to send."));
+            return true;
+        }
+        // Kept with the card, so a tap on it shows this person in Contacts (sentExtras).
+        var personId = person && person.get('_id');
+        if (typeof personId === "string" && personId) {
+            card.personId = personId;
+        }
+        this.sendMessage({ text: chatActions.contactText(contact), fields: { contactCard: card } });
+        return true;
+    },
+
+    // --- stickers --------------------------------------------------------------------------
+
+    /**
+     * The stickers this chat has, at once, and those in the media index as soon as db8 answers.
+     * Off the device the mock store stands in for the index.
+     */
+    openStickerPicker: function () {
+        if (!this.chatThread) {
+            return true;
+        }
+        this._stickersFromIndex = null;   // not answered yet: "no stickers" would be early
+        this.renderStickers();
+        this.$.stickerPicker.show();
+        var query = stickers.indexQuery();
+        if (mockDb.enabled) {
+            setTimeout(this.gotStickerIndex.bind(this, null, mockDb.find(query)), 0);
+        } else {
+            this.$.stickerFind.send({ query: query });
+        }
+        return true;
+    },
+
+    gotStickerIndex: function (inSender, inResponse) {
+        if (!this.$.stickerPicker.showing) {
+            return true;
+        }
+        this._stickersFromIndex = stickers.fromIndex(inResponse && inResponse.results);
+        this.renderStickers();
+        return true;
+    },
+
+    /** No index to read (no mediaindexer, no grant): the chat's own stickers are still there. */
+    stickerIndexFailed: function (inSender, inError) {
+        this.warn("sticker index:", inError && (inError.errorText || inError));
+        this._stickersFromIndex = [];
+        if (this.$.stickerPicker.showing) {
+            this.renderStickers();
+        }
+        return true;
+    },
+
+    renderStickers: function () {
+        var messages = this.collection.map(function (m) { return m.attributes; });
+        var list = stickers.withDefaults(stickers.merge([stickers.fromMessages(messages), this._stickersFromIndex || []]),
+            stickers.defaults(window.location.href));
+        var grid = this.$.stickerGrid;
+        grid.destroyClientControls();
+        for (var i = 0; i < list.length; i++) {
+            grid.createComponent({
+                classes: "sticker-picker-cell", stickerPath: list[i].path, ontap: "stickerPicked",
+                components: [{
+                    kind: Image, classes: "sticker-picker-image", src: stickers.src(list[i].path),
+                    onerror: "stickerImageFailed"
+                }]
+            }, { owner: this });
+        }
+        this.$.stickerEmpty.setShowing(!list.length && !!this._stickersFromIndex);
+        if (grid.hasNode()) {
+            grid.render();
+        }
+    },
+
+    /** A file gone since it was sent or indexed is not offered. */
+    stickerImageFailed: function (inSender) {
+        if (inSender.parent) {
+            inSender.parent.hide();
+        }
+        return true;
+    },
+
+    /** Goes at once, alone: whatever is typed stays in the composer. */
+    stickerPicked: function (inSender) {
+        var cell = inSender && inSender.stickerPath ? inSender : inSender && inSender.parent;
+        var path = cell && cell.stickerPath;
+        this.$.stickerPicker.hide();
+        if (!path) {
+            return true;
+        }
+        this.sendMessage({ text: "", file: stickers.asAttachment(path) });
+        return true;
+    },
+
+    closeStickerPicker: function () {
+        this.$.stickerPicker.hide();
+        return true;
+    },
+
+    // --- mentions --------------------------------------------------------------------------
+
+    /**
+     * The people of this chat, to show in Group Info and to mention: the transport's member list
+     * once it has given one for this chat, else who has written in it (util/groupInfo).
+     */
+    chatMembersPick: function () {
+        var writers = chatActions.groupMembers(this.collection.map(function (m) { return m.attributes; }));
+        var known = this._chatMembers;
+        var thread = this.chatThread;
+        var ours = known && thread && known.threadId === thread._id;
+        var pick = groupInfo.pick(ours ? known.members : null, writers);
+        pick.nobody = !!(ours && known.nobody);
+        return pick;
+    },
+
+    chatMembers: function () {
+        return this.chatMembersPick().members;
+    },
+
+    /**
+     * Ask the transport who is in this chat (getChatMembers); done() once it answered, also when
+     * it could not. False, and done() never called, when there is no one to ask (no account). An
+     * answer for a chat no longer open is dropped.
+     */
+    loadChatMembers: function (done) {
+        var thread = this.chatThread;
+        var accountService = appState.accountService;
+        var account = thread && accountService ? accountService.getAccount(thread.replyService) : null;
+        var payload = groupInfo.request(thread, account);
+        if (!payload) {
+            return false;   // nothing to ask: who has written is all there is
+        }
+        var self = this, threadId = thread._id, serviceName = thread.replyService;
+        var asked = 0;
+        this._membersLoading = threadId;
+        var ask;
+        var finish = function (reply) {
+            if (!self.chatThread || self.chatThread._id !== threadId) {
+                if (self._membersLoading === threadId) {
+                    self._membersLoading = null;
+                }
+                return;
+            }
+            // A chat libpurple has not opened since the transport started: it opens it now
+            // (joining) and has its members a moment later, so ask again.
+            if (groupInfo.askAgain(reply, asked)) {
+                setTimeout(ask, groupInfo.ASK_AGAIN_MS);
+                return;
+            }
+            if (self._membersLoading === threadId) {
+                self._membersLoading = null;
+            }
+            self._chatMembers = {
+                threadId: threadId, members: groupInfo.fromReply(reply, account, serviceName),
+                nobody: groupInfo.nobodyThere(reply)
+            };
+            if (done) {
+                done();
+            }
+        };
+        ask = function () {
+            asked++;
+            if (mockDb.enabled) {
+                mockDb.presenceCalls = mockDb.presenceCalls || [];
+                mockDb.presenceCalls.push({ method: "getChatMembers", payload: payload });
+                var replies = mockDb.chatMembers && mockDb.chatMembers[payload.usernameTo];
+                // A list of replies is answered one per ask, the last one from then on.
+                var reply = Array.isArray(replies) ? replies[Math.min(asked, replies.length) - 1] : replies;
+                setTimeout(function () { finish(reply || null); }, 0);
+                return;
+            }
+            // An older transport has no getChatMembers: its error leaves who has written.
+            var request = new ServiceRequest({ service: "luna://com.palm.imlibpurple", method: "getChatMembers" });
+            request.response(function (inSender, inResponse) { finish(inResponse); });
+            request.error(function () { finish(null); });
+            request.go(payload);
+        };
+        ask();
+        return true;
+    },
+
+    // --- Group Info ------------------------------------------------------------------------
+
+    openGroupInfo: function () {
+        var thread = this.chatThread;
+        if (!thread) {
+            return;
+        }
+        var pick = this.chatMembersPick();
+        this.$.groupInfo.open({
+            title: thread.displayName || thread.replyAddress,
+            serviceHtml: this.withServiceIcon(thread.replyService,
+                transportPicker.serviceNameFor({ serviceName: thread.replyService })),
+            members: pick.members, fromService: pick.fromService, loading: true,
+            canAdd: !!this.$.groupAddButton.showing, canLeave: !!this.$.groupLeaveButton.showing,
+            canRemove: this.canRemoveMembers(thread),
+            canRename: this.canRenameGroup(thread)
+        });
+        var self = this, threadId = thread._id;
+        var asked = this.loadChatMembers(function () {
+            if (self.$.groupInfo.showing && self.chatThread && self.chatThread._id === threadId) {
+                var now = self.chatMembersPick();
+                self.$.groupInfo.setMembers(now.members, now.fromService, false, now.nobody);
+            }
+        });
+        if (!asked) {
+            this.$.groupInfo.setMembers(pick.members, pick.fromService, false, pick.nobody);
+        }
+    },
+
+    /** Whether Group Info offers to take members out: a group we are in, on a service that can. */
+    canRemoveMembers: function (thread) {
+        var actions = thread ? chatActions.actionsFor(thread.replyService, appState.accountService) : {};
+        return !!(this.$.groupLeaveButton.showing && actions.groupRemove);
+    },
+
+    /** Whether Group Info offers Rename: a group we are in, on a service that can. */
+    canRenameGroup: function (thread) {
+        var actions = thread ? chatActions.actionsFor(thread.replyService, appState.accountService) : {};
+        return !!(this.$.groupLeaveButton.showing && actions.groupRename);
+    },
+
+    /**
+     * A new name given in Group Info: the transport renames the group (renameGroup). The header
+     * says it at once; the chat's own record follows when the service tells the transport.
+     */
+    groupRename: function (inSender, inEvent) {
+        var name = inEvent && inEvent.name, thread = this.chatThread;
+        if (!name || !thread) {
+            return true;
+        }
+        var sent = this.sendImCommand(thread.replyService, function (kind, account) {
+            return chatActions.renameCommand(kind, thread.replyService, account, thread.replyAddress, name);
+        });
+        if (!sent) {
+            this.showError($L("Unable to rename"), $L("No account can rename this group."));
+            return true;
+        }
+        this.setHeaderName(name);
+        return true;
+    },
+
+    /**
+     * A member swiped and confirmed in Group Info: the transport takes them out (removeFromGroup).
+     * They leave the list at once; the transport is asked again shortly, so one the service kept
+     * (we are no admin, and the plugin says so in the chat) comes back.
+     */
+    groupRemoveMember: function (inSender, inEvent) {
+        var member = inEvent && inEvent.member, thread = this.chatThread;
+        if (!member || !thread) {
+            return true;
+        }
+        var sent = this.sendImCommand(thread.replyService, function (kind, account) {
+            return chatActions.removeCommand(kind, thread.replyService, account, thread.replyAddress, [member.id]);
+        });
+        if (!sent) {
+            this.showError($L("Unable to remove"), $L("No account can remove members from this group."));
+            return true;
+        }
+        var known = this._chatMembers;
+        if (known && known.threadId === thread._id) {
+            known.members = known.members.filter(function (m) { return m.id !== member.id; });
+        }
+        var pick = this.chatMembersPick();
+        this.$.groupInfo.setMembers(pick.members, pick.fromService, false, pick.nobody);
+        var self = this, threadId = thread._id;
+        clearTimeout(this._membersRecheck);
+        this._membersRecheck = setTimeout(function () {
+            if (self.$.groupInfo.showing && self.chatThread && self.chatThread._id === threadId) {
+                self.loadChatMembers(function () {
+                    var now = self.chatMembersPick();
+                    self.$.groupInfo.setMembers(now.members, now.fromService, false, now.nobody);
+                });
+            }
+        }, mockDb.enabled ? 50 : 4000);
+        return true;
+    },
+
+    /** A member tapped in Group Info: a 1:1 with them, as a tapped group sender opens one. */
+    groupMemberChat: function (inSender, inEvent) {
+        var member = inEvent && inEvent.member;
+        if (member && this.chatThread) {
+            this.doSelectSender({ person: groupInfo.chatPerson(member, this.chatThread.replyService) });
+        }
+        return true;
+    },
+
+    /** Launch an app (launchApp), or in the mock note what would have been launched. */
+    launch: function (params) {
+        if (mockDb.enabled) {
+            mockDb.launches = mockDb.launches || [];
+            mockDb.launches.push(params);
+            return;
+        }
+        this.$.launchApp.send(params);
+    },
+
+    /** Contacts offers a new contact for them, or to add them to one there is. */
+    groupMemberContact: function (inSender, inEvent) {
+        var launch = inEvent && inEvent.member && this.chatThread &&
+            groupInfo.contactLaunch(inEvent.member, this.chatThread.replyService);
+        if (!launch) {
+            return true;
+        }
+        if (mockDb.enabled) {
+            mockDb.launches = mockDb.launches || [];
+            mockDb.launches.push(launch);
+            return true;
+        }
+        this.$.launchApp.send(launch);
+        return true;
+    },
+
+    /** An "@" typed in a group or channel whose service mentions: offer who it may be. */
+    updateMentionMenu: function () {
+        var thread = this.chatThread;
+        var node = this.$.richText.hasNode();
+        var actions = thread ? chatActions.actionsFor(thread.replyService, appState.accountService) : {};
+        var inGroup = chatActions.isGroupThread(thread) || !!(thread && thread.channelId);
+        var query = (actions.mentions && inGroup && node) ? chatActions.mentionQuery(node.value, node.selectionStart) : null;
+        // The transport's member list for this chat, asked for once, at the first "@".
+        if (query && thread && (!this._chatMembers || this._chatMembers.threadId !== thread._id) &&
+                this._membersLoading !== thread._id) {
+            if (!this.loadChatMembers(this.bindSafely("updateMentionMenu"))) {
+                this._chatMembers = { threadId: thread._id, members: [] };
+            }
+        }
+        var members = query ? chatActions.mentionCandidates(this.chatMembers(), query.query) : [];
+        this._mentionQuery = query;
+        var menu = this.$.mentionMenu;
+        if (!members.length) {
+            if (menu.showing) {
+                menu.hide();
+            }
+            return;
+        }
+        menu.destroyClientControls();
+        for (var i = 0; i < members.length; i++) {
+            menu.createComponent({
+                kind: MenuItem, allowHtml: true, member: members[i],
+                content: messagingUtils.message.emojifyEscaped(members[i].name)
+            }, { owner: this });
+        }
+        menu.render();
+        if (!menu.showing) {
+            menu.requestMenuShow(this, { activator: this.$.richText });
+        }
+    },
+
+    mentionPicked: function (inSender, inEvent) {
+        var member = inEvent && inEvent.originator && inEvent.originator.member;
+        var node = this.$.richText.hasNode();
+        var query = this._mentionQuery;
+        this._mentionQuery = null;
+        if (!member || !query || !node) {
+            return true;
+        }
+        var result = chatActions.insertMention(node.value, node.selectionStart, query, member);
+        this.$.richText.set('value', result.text);
+        node.value = result.text;
+        node.setSelectionRange(result.caret, result.caret);
+        this.$.richText.focus();
+        this.pickedMentions = (this.pickedMentions || []).concat([member]);
+        this.growInput();
         return true;
     },
 
@@ -1713,49 +3537,174 @@ module.exports = kind({
         return true;
     },
 
-    /** SMS cannot carry a file (no MMS sending yet); say so instead of dropping it at send. */
+    /** SMS cannot carry a file (no MMS sender, util/fileCarrier); say so before one is picked. */
     attachmentsUnsupported: function () {
         var transport = transportPicker.getSelectedTransport();
-        if (transport && messagingUtils.utils.isTextMessage(transport.serviceName)) {
-            this.showError($L("Attachments"), $L("Attachments can't be sent by SMS. Pick an IM service to send a file."));
+        if (transport && !fileCarrier.canCarry(transport.serviceName)) {
+            this.showSmsAttachmentsError();
             return true;
         }
         return false;
     },
 
-    // The picker sends an array of {fullPath, attachmentType, size, ...}.
+    showSmsAttachmentsError: function () {
+        this.showError($L("Attachments"), $L("Attachments can't be sent by SMS. Pick an IM service to send a file."));
+    },
+
+    // The picker sends an array of {fullPath, attachmentType, size, ...}, several when more
+    // than one was picked.
     attachmentChosen: function (inSender, inEvent) {
         var files = Array.isArray(inEvent) ? inEvent : (inEvent && inEvent.files);
-        var file = files && files[0];
-        if (!file || !file.fullPath) {
-            return true;
-        }
-        this.stageAttachment({
-            path: file.fullPath,
-            name: file.name || file.fullPath.slice(file.fullPath.lastIndexOf("/") + 1),
-            type: file.attachmentType
-        });
+        this.stageAttachments(attachments.fromPicked(files));
         return true;
     },
 
     stageAttachment: function (attachment) {
-        this.outboundAttachment = attachment;
-        this.$.attachmentChipLabel.setContent(attachment.name);
-        var isImage = attachment.type === "image";
-        if (isImage) {
-            this.$.attachmentChipThumb.setSrc("file://" + attachment.path);
+        this.stageAttachments([attachment]);
+    },
+
+    stageAttachments: function (more) {
+        if (!more.length) {
+            return;
         }
-        this.$.attachmentChipThumb.setShowing(isImage);
-        this.$.attachmentChip.setShowing(true);
+        var r = attachments.add(this.outboundAttachments, more);
+        this.outboundAttachments = r.list;
+        this.renderAttachmentChips();
+        if (r.dropped) {
+            this.showError($L("Attachments"),
+                $L("Up to {max} files can go at once.").replace("{max}", attachments.MAX));
+        }
+    },
+
+    /** A chip per staged file: a thumbnail for a picture, its name, and an X to take it off. */
+    renderAttachmentChips: function () {
+        var box = this.$.attachmentChips;
+        box.destroyClientControls();
+        for (var i = 0; i < this.outboundAttachments.length; i++) {
+            var a = this.outboundAttachments[i];
+            var parts = [];
+            if (a.type === "image") {
+                parts.push({ kind: Image, classes: "attachment-chip-thumb", src: "file://" + a.path });
+            }
+            parts.push({ classes: "attachment-chip-label", content: a.name });
+            parts.push({
+                kind: IconButton, src: "assets/icon-decline.svg", attachmentIndex: i,
+                ontap: "removeAttachment"
+            });
+            box.createComponent({ classes: "attachment-chip", components: parts }, { owner: this });
+        }
+        box.setShowing(this.outboundAttachments.length > 0);
+        if (box.hasNode()) {
+            box.render();
+        }
         this.relayout();
     },
 
-    clearAttachment: function () {
-        this.outboundAttachment = null;
-        this.$.attachmentChip.setShowing(false);
-        this.$.attachmentChipThumb.setShowing(false);
-        this.relayout();
+    removeAttachment: function (inSender) {
+        this.outboundAttachments = attachments.remove(this.outboundAttachments, inSender.attachmentIndex);
+        this.renderAttachmentChips();
         return true;
+    },
+
+    clearAttachment: function () {
+        this.outboundAttachments = [];
+        this.renderAttachmentChips();
+        return true;
+    },
+
+    // --- take photo ------------------------------------------------------------------------
+
+    /**
+     * The Camera app takes the photo and hands it back, and it is staged like a picked file; from
+     * a Camera app that does not, the photos taken since are (util/cameraCapture).
+     */
+    takePhoto: function () {
+        if (!this.chatThread || this.attachmentsUnsupported()) {
+            return true;
+        }
+        this.cancelTakePhoto();
+        this.photoRequest = cameraCapture.request(this.chatThread._id, Date.now());
+        var launch = cameraCapture.launch();
+        if (mockDb.enabled) {
+            mockDb.launches = mockDb.launches || [];
+            mockDb.launches.push(launch);
+            return true;
+        }
+        this.$.launchApp.send(launch);
+        return true;
+    },
+
+    /** The Camera app's answer: the photo to stage, or Back. */
+    cameraHandedBack: function (inSender, inEvent) {
+        var req = this.photoRequest;
+        var got = cameraCapture.handedBack(inEvent, req, Date.now());
+        if (!got) {
+            return true;
+        }
+        this.cancelTakePhoto();
+        if (got.photos && this.chatThread && this.chatThread._id === req.threadId) {
+            this.stageAttachments(got.photos);
+        }
+        return true;
+    },
+
+    /**
+     * Back in front with no word from the Camera app: look for the photos. The indexer files a new
+     * one a moment after the Camera app writes it, so look again a few times before leaving the
+     * request for the next return.
+     */
+    cameraReturned: function () {
+        var req = this.photoRequest;
+        if (!req) {
+            return;
+        }
+        if (cameraCapture.expired(req, Date.now()) || !this.chatThread || this.chatThread._id !== req.threadId) {
+            this.cancelTakePhoto();
+            return;
+        }
+        var self = this, tries = 0;
+        this.cancelPhotoLookup();
+        var look = function () {
+            self._photoTimer = null;
+            self.photoFind(cameraCapture.query(req), function (error, results) {
+                if (self.destroyed || self.photoRequest !== req) {
+                    return;
+                }
+                var found = error ? [] : cameraCapture.photos(results, req);
+                if (found.length) {
+                    self.photoRequest = null;
+                    self.stageAttachments(found);
+                } else if (++tries < 4) {
+                    self._photoTimer = setTimeout(look, 1000);
+                }
+            });
+        };
+        this._photoTimer = setTimeout(look, cameraCapture.HANDBACK_WAIT_MS);
+    },
+
+    /** One find on the media index: done(error, results). */
+    photoFind: function (query, done) {
+        if (mockDb.enabled) {
+            var found = mockDb.find(query);
+            setTimeout(function () { done(null, found.results); }, 0);
+            return;
+        }
+        var request = new ServiceRequest({ service: DB_SERVICE, method: "find" });
+        request.response(function (inSender, inResponse) { done(null, inResponse && inResponse.results); });
+        request.error(function (inSender, inError) { done(inError || "service error"); });
+        request.go({ query: query });
+    },
+
+    cancelPhotoLookup: function () {
+        if (this._photoTimer) {
+            clearTimeout(this._photoTimer);
+            this._photoTimer = null;
+        }
+    },
+
+    cancelTakePhoto: function () {
+        this.cancelPhotoLookup();
+        this.photoRequest = null;
     },
 
     // --- voice notes -----------------------------------------------------------------------
@@ -1904,26 +3853,6 @@ module.exports = kind({
         return true;
     },
 
-    promptDelete: function () {
-        this.confirmAction = "delete";
-        this.$.confirmDialogTitle.setContent($L("Delete Conversation"));
-        this.$.confirmDialogMessage.setContent(
-            $L("Are you sure you want to delete this conversation?"));
-        this.$.confirmAcceptButton.setContent($L("Delete"));
-        this.$.confirmDialog.show();
-        return true;
-    },
-
-    promptBlock: function () {
-        this.confirmAction = "block";
-        this.$.confirmDialogTitle.setContent($L("Block Sender"));
-        this.$.confirmDialogMessage.setContent(
-            $L("Are you sure you want to block this sender?"));
-        this.$.confirmAcceptButton.setContent($L("Block"));
-        this.$.confirmDialog.show();
-        return true;
-    },
-
     closeConfirmDialog: function () {
         this.$.confirmDialog.hide();
         this.confirmAction = null;
@@ -1932,47 +3861,13 @@ module.exports = kind({
 
     confirmAccepted: function () {
         this.$.confirmDialog.hide();
-        if (this.confirmAction === "delete") {
-            this.deleteConversation();
-        } else if (this.confirmAction === "block") {
-            this.blockSender();
+        if (this.confirmAction === "leaveGroup") {
+            this.leaveGroup();
+        } else if (this.confirmAction === "sendLocation") {
+            this.shareLocation();
         }
         this.confirmAction = null;
         return true;
-    },
-
-    deleteConversation: function () {
-        if (!this.chatThread || !this.chatThread._id) {
-            return;
-        }
-        var threadId = this.chatThread._id;
-        if (mockDb.enabled) {
-            mockDb.del([threadId]);
-        } else {
-            this.$.deleteThreadService.send({ threadId: threadId });
-        }
-        this.closeConversation(threadId, true);
-        this.chatThread = null;
-        this.collection.empty([]);
-        this.doCloseConversationList();
-    },
-
-    blockSender: function () {
-        var selected = transportPicker.getSelectedTransport();
-        var accountService = appState.accountService;
-        if (!selected || !accountService || mockDb.enabled) {
-            return;
-        }
-        this.$.reactionCommand.send({
-            objects: [{
-                _kind: accountService.getImCommandKind(selected.serviceName),
-                command: "blockBuddy",
-                handler: "transport",
-                serviceName: selected.serviceName,
-                targetUsername: selected.replyAddress,
-                fromUsername: selected.account && selected.account.username
-            }]
-        });
     },
 
     serviceErr: function (inSender, inError) {

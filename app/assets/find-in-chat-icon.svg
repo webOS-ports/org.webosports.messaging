@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="64" viewBox="0 0 32 64">
+<!-- Find in Chat, for the conversation header beside the call buttons, drawn as they are: the
+     search field's magnifier (search-input.svg: a ring and a 45 degree handle with a round end)
+     scaled to the 32x32 glyph box. The resting state is black ramping 0.710 to 0.275 down the
+     glyph over a white engraving line along its lower edge, and the lit state below it is white
+     behind a 1.50 blur of itself in #5cbbff, as in phone-icon.svg. The glyph is strokes, so it is
+     drawn through masks: where the ring and the handle overlap is not drawn twice. -->
+  <defs>
+    <g id="g" fill="none" stroke-linecap="round">
+      <circle cx="13.4" cy="13" r="7.6" stroke-width="4.2"/>
+      <path d="M19.3,18.9 L26.6,26.2" stroke-width="4.6"/>
+    </g>
+    <linearGradient id="fdn" gradientUnits="userSpaceOnUse" x1="0" y1="3.3" x2="0" y2="28.5">
+      <stop offset="0" stop-color="#000000" stop-opacity="0.710"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.275"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="1.50"/>
+    </filter>
+    <mask id="glyph" maskUnits="userSpaceOnUse" x="-8" y="-8" width="48" height="48">
+      <use href="#g" stroke="#ffffff"/>
+    </mask>
+    <mask id="under" maskUnits="userSpaceOnUse" x="-8" y="-8" width="48" height="48">
+      <use href="#g" stroke="#ffffff" transform="translate(0,0.97)"/>
+      <use href="#g" stroke="#000000"/>
+    </mask>
+  </defs>
+  <rect x="0" y="0" width="32" height="32" fill="#ffffff" fill-opacity="0.330" mask="url(#under)"/>
+  <rect x="0" y="0" width="32" height="32" fill="url(#fdn)" mask="url(#glyph)"/>
+  <g transform="translate(0,32)">
+    <use href="#g" stroke="#5cbbff" stroke-opacity="0.99" filter="url(#glow)"/>
+    <use href="#g" stroke="#ffffff"/>
+  </g>
+</svg>

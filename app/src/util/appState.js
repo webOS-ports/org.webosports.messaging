@@ -21,6 +21,12 @@ module.exports = {
     /** The PrefsHandler instance, set once at startup by MessagingApp. */
     prefsHandler: null,
 
+    /** The muted chats' ids as a lookup, from the Chats list, for the alerts (util/chatFlags). */
+    mutedThreads: {},
+
+    /** Who is typing to us (util/chatPresence Typers), kept from the transport's watchTyping. */
+    typers: null,
+
     /** The conversation view currently rendering messages, used by the inline-image relayout. */
     activeConversationList: null,
 
