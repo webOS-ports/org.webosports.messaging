@@ -1880,6 +1880,65 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.ok(/<i>x<\/i>/.test(r.preview.text) && r.preview.text.indexOf('<b>') === -1, r.preview.text);
     });
 
+    // The app menu's "Load Older Messages", in a WhatsApp chat: shown once the chat has a message
+    // WhatsApp knows by its id, and it asks the transport for the messages before the oldest such
+    // one. Not in a Telegram chat, whose plugin cannot.
+    it('asks for the older messages of a WhatsApp chat from the app menu', async function () {
+        /* global require */
+        var page = async function () {
+            var $ = require('enyo/dispatcher').$, mockDb = require('src/data/mockDb');
+            var main = $.app_mainView, chat = $.app_mainView_chatView_conversationList;
+            var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+            var open = async function (id) {
+                var thread = null;
+                $.app_mainView_messaging_threadList.collection.forEach(function (m) {
+                    if (m.attributes._id === id) { thread = m.attributes; }
+                });
+                main.selectThread(null, thread);
+                for (var i = 0; i < 20 && !(chat.chatThread && chat.chatThread._id === id && chat.messages.length); i++) { await wait(100); }
+            };
+            var menu = function () {
+                main.showAppMenu(main.$.appMenuAnchor);
+                var showing = main.$.loadOlderMenuItem.getShowing();
+                main.$.appMenu.hide();
+                return showing;
+            };
+            var put = function (id, sid, at, folder) {
+                var m = { _id: id, _kind: 'com.palm.message:1', conversations: ['thread-ben'], folder: folder,
+                    status: 'successful', serviceName: 'type_whatsapp', serviceMessageId: sid,
+                    messageText: 'old ' + id, localTimestamp: at, timestamp: at, flags: { visible: true, read: true } };
+                if (folder === 'inbox') { m.from = { addr: '44207183875@s.whatsapp.net', name: 'Ben Okafor' }; }
+                else { m.to = [{ addr: '44207183875@s.whatsapp.net' }]; }
+                mockDb.merge([m]);
+            };
+            var out = {};
+            mockDb.imCommands = [];
+            await open('thread-ben');
+            out.withoutIds = menu();
+            var now = Date.now();
+            put('msg-old-a', '3EB0OLDA', now - 3 * 86400000, 'outbox');
+            put('msg-old-b', '3EB0OLDB', now - 2 * 86400000, 'inbox');
+            chat.runQuery(); await wait(400);
+            out.withIds = menu();
+            main.$.loadOlderMenuItem.bubble('ontap', {});   // the menu item, as a finger taps it
+            await wait(200);
+            out.sent = mockDb.imCommands.map(function (c) {
+                return { command: c.command, service: c.serviceName, to: c.targetUsername, id: c.params.messageId,
+                    at: c.params.timestamp === now - 3 * 86400000, outgoing: c.params.outgoing };
+            });
+            await open('thread-anna');
+            out.telegram = menu();
+            mockDb.del(['msg-old-a', 'msg-old-b']);
+            return JSON.stringify(out);
+        };
+        var r = JSON.parse(await session.evaluate('(' + page.toString() + ')()'));
+        assert.equal(r.withoutIds, false, 'nothing WhatsApp knows by its id to ask before');
+        assert.equal(r.withIds, true);
+        assert.deepEqual(r.sent, [{ command: 'loadHistory', service: 'type_whatsapp', to: '44207183875@s.whatsapp.net',
+            id: '3EB0OLDA', at: true, outgoing: true }], 'before the oldest, ours');
+        assert.equal(r.telegram, false, 'not for a Telegram chat');
+    });
+
     // A video, a music file or a document over 1 MB comes as a card to tap rather than as its file
     // (util/fileOffer): the tap asks the transport for it once, the card says how it goes as the
     // plugin rewrites it, and once the file is there it is drawn as any received file.

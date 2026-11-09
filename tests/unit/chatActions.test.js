@@ -203,6 +203,39 @@ describe('chatActions: the commands, as the transport reads them', function () {
         assert.equal(ca.downloadFileCommand(KIND, me, GROUP, { serviceName: 'type_telegram' }), null, 'no id');
         assert.equal(ca.downloadFileCommand(KIND, me, GROUP, null), null);
     });
+    it('older messages are asked for before the oldest the chat has that the service knows by its id', function () {
+        var msgs = [
+            sent({ _id: 'new', serviceMessageId: 'NEW', timestamp: NOW }),
+            sent({ _id: 'noid', serviceMessageId: undefined, timestamp: NOW - 900000 }),
+            { _id: 'old', folder: 'inbox', serviceName: 'type_whatsapp', serviceMessageId: 'OLD', timestamp: NOW - 600000 },
+            { _id: 'local', folder: 'inbox', serviceName: 'type_whatsapp', serviceMessageId: 'LOC', localTimestamp: NOW - 300000 },
+            { _id: 'other', folder: 'inbox', serviceName: 'type_signal', serviceMessageId: 'SIG', timestamp: NOW - 990000 },
+            { _id: 'notime', folder: 'inbox', serviceName: 'type_whatsapp', serviceMessageId: 'T0' },
+            null
+        ];
+        assert.equal(ca.oldestKnown(msgs, 'type_whatsapp')._id, 'old', 'the oldest with an id, on the service');
+        assert.equal(ca.oldestKnown(msgs, 'type_signal')._id, 'other');
+        assert.equal(ca.oldestKnown([], 'type_whatsapp'), null);
+        assert.equal(ca.oldestKnown(undefined, 'type_whatsapp'), null);
+        assert.equal(ca.oldestKnown([msgs[1]], 'type_whatsapp'), null, 'none known by its id');
+        assert.equal(ca.canLoadHistory('type_whatsapp'), true);
+        assert.equal(ca.canLoadHistory('type_telegram'), false);
+        assert.equal(ca.canLoadHistory(undefined), false);
+    });
+    it('a request for older messages names the oldest message by its id, time and direction', function () {
+        var theirs = { folder: 'inbox', serviceName: 'type_whatsapp', serviceMessageId: 'OLD', timestamp: NOW - 600000 };
+        assert.deepEqual(ca.loadHistoryCommand(KIND, me, GROUP, theirs), { _kind: KIND, command: 'loadHistory',
+            handler: 'transport', serviceName: 'type_whatsapp', fromUsername: '+15555550100', targetUsername: GROUP,
+            params: { messageId: 'OLD', timestamp: NOW - 600000, outgoing: false } });
+        var ours = ca.loadHistoryCommand(KIND, me, GROUP, sent({ timestamp: undefined, localTimestamp: NOW - 5 }));
+        assert.deepEqual(ours.params, { messageId: '3EB0AA', timestamp: NOW - 5, outgoing: true }, 'ours, by its local time');
+        assert.equal(ca.loadHistoryCommand(KIND, me, '', theirs), null, 'no chat');
+        assert.equal(ca.loadHistoryCommand(KIND, me, GROUP, { folder: 'inbox', serviceName: 'type_whatsapp', timestamp: NOW }), null, 'no id');
+        assert.equal(ca.loadHistoryCommand(KIND, me, GROUP, { folder: 'inbox', serviceName: 'type_whatsapp', serviceMessageId: 'X' }), null, 'no time');
+        assert.equal(ca.loadHistoryCommand(KIND, me, GROUP, { folder: 'inbox', serviceName: 'type_telegram', serviceMessageId: 'X', timestamp: NOW }),
+            null, 'a service that cannot');
+        assert.equal(ca.loadHistoryCommand(KIND, me, GROUP, null), null);
+    });
     it('a vote on our own poll (made on the phone) names us as who made it', function () {
         var ours = { serviceName: 'type_whatsapp', folder: 'outbox', serviceMessageId: 'P2' };
         assert.equal(ca.pollVoteCommand(KIND, me, GROUP, ours, ['Sat']).params.senderJid, '+15555550100');

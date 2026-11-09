@@ -210,6 +210,50 @@ function downloadFileCommand(kind, account, chat, message) {
     });
 }
 
+/** The services whose plugin can ask for a chat's older messages (imcommand loadHistory). */
+var HISTORY_SERVICES = { type_whatsapp: true };
+
+function canLoadHistory(serviceName) {
+    return HISTORY_SERVICES[serviceName] === true;
+}
+
+/** A message's time as db8 keeps it (milliseconds), or 0. */
+function messageTime(message) {
+    var at = Number(message && (message.timestamp || message.localTimestamp));
+    return at > 0 ? at : 0;
+}
+
+/**
+ * The oldest of messages (as the chat has them) that serviceName knows by its own id: what older
+ * messages are asked for before. null when there is none.
+ */
+function oldestKnown(messages, serviceName) {
+    var oldest = null;
+    (messages || []).forEach(function (m) {
+        if (m && m.serviceName === serviceName && m.serviceMessageId && messageTime(m) > 0 &&
+                (!oldest || messageTime(m) < messageTime(oldest))) {
+            oldest = m;
+        }
+    });
+    return oldest;
+}
+
+/**
+ * Ask the service for the messages of chat before message, the oldest the chat has that it knows
+ * by its id (oldestKnown): by that id, its time and whether we sent it. They come as old messages,
+ * read and without a banner; those the chat has already are not stored again.
+ */
+function loadHistoryCommand(kind, account, chat, message) {
+    if (!chat || !message || !message.serviceMessageId || !canLoadHistory(message.serviceName) || !messageTime(message)) {
+        return null;
+    }
+    return command(kind, "loadHistory", message.serviceName, account, chat, {
+        messageId: message.serviceMessageId,
+        timestamp: messageTime(message),
+        outgoing: message.folder === "outbox"
+    });
+}
+
 function pollVoteCommand(kind, account, chat, message, selected) {
     if (!chat || !message || !message.serviceMessageId) {
         return null;
@@ -582,6 +626,9 @@ module.exports = {
     reactionCommand: reactionCommand,
     pollVoteCommand: pollVoteCommand,
     downloadFileCommand: downloadFileCommand,
+    canLoadHistory: canLoadHistory,
+    oldestKnown: oldestKnown,
+    loadHistoryCommand: loadHistoryCommand,
     editCommand: editCommand,
     deleteCommand: deleteCommand,
     memberAddress: memberAddress,

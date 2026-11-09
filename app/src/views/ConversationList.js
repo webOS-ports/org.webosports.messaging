@@ -2667,6 +2667,32 @@ module.exports = kind({
         }
     },
 
+    /**
+     * The message older messages of this chat are asked for before (util/chatActions oldestKnown):
+     * the oldest the chat shows that a service which can give older messages knows by its id. null
+     * when the chat has none, or is on no such service.
+     */
+    olderAnchor: function () {
+        var thread = this.chatThread;
+        var service = thread && thread.replyService;
+        if (!service || !chatActions.canLoadHistory(service) || !this.collection) {
+            return null;
+        }
+        return chatActions.oldestKnown(this.collection.map(function (m) { return m.attributes; }), service);
+    },
+
+    /** The app menu's "Load Older Messages": ask the service for the messages before olderAnchor. */
+    loadOlder: function () {
+        var oldest = this.olderAnchor();
+        if (!oldest) {
+            return false;
+        }
+        var thread = this.chatThread;
+        return this.sendImCommand(oldest.serviceName, function (kind, account) {
+            return chatActions.loadHistoryCommand(kind, account, chatActions.chatOf(oldest, thread), oldest);
+        });
+    },
+
     sendPollVoteCommand: function (message, selected) {
         var thread = this.chatThread;
         this.sendImCommand(message.serviceName, function (kind, account) {

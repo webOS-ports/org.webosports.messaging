@@ -110,6 +110,16 @@ module.exports = kind({
         }
     },
 
+    /** Whether the chat shown can have its older messages asked for (the app menu's item). */
+    canLoadOlder: function () {
+        return this.getViewName() === "conversationList" && !!this.$.conversationList.olderAnchor();
+    },
+
+    /** Ask for the older messages of the chat shown; false when there is none to ask for. */
+    loadOlder: function () {
+        return this.getViewName() === "conversationList" && this.$.conversationList.loadOlder();
+    },
+
     /** Whether the pane shows something of its own: a chat, or New Conversation being written. */
     hasContent: function () {
         return this.getIndex() !== 0;

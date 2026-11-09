@@ -126,6 +126,12 @@ module.exports = kind({
                 // Only with an account whose service makes groups (util/chatActions).
                 { name: "newGroupMenuItem", kind: MenuItem, content: $L("New Group"), ontap: "newGroup" },
                 {
+                    // The chat shown, on a service that can give its older messages (WhatsApp): ask
+                    // for those before the oldest it has. They come in as old messages, read.
+                    name: "loadOlderMenuItem", kind: MenuItem, content: $L("Load Older Messages"),
+                    ontap: "loadOlderMessages", showing: false
+                },
+                {
                     name: "showOfflineMenuItem", kind: MenuItem,
                     content: $L("Show Offline Buddies"), ontap: "updateOfflinePrefs"
                 },
@@ -502,6 +508,11 @@ module.exports = kind({
         return true;
     },
 
+    loadOlderMessages: function () {
+        this.$.chatView.loadOlder();
+        return true;
+    },
+
     showAddFavoriteList: function () {
         // Favorites are a Contacts concept, so adding one hands off to that app.
         this.$.launchApp.send({
@@ -531,6 +542,7 @@ module.exports = kind({
     showAppMenu: function (activator) {
         this.setOfflineMenuItem();
         this.$.newGroupMenuItem.setShowing(!!this.$.groupDialog.creatingAccount());
+        this.$.loadOlderMenuItem.setShowing(this.$.chatView.canLoadOlder());
         this.$.appMenu.requestMenuShow(this, { activator: activator });
     },
 
