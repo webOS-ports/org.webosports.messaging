@@ -143,6 +143,23 @@ describe('chatsThreads: Telegram groups and channels', function () {
     });
 });
 
+describe('chatsThreads: Facebook groups', function () {
+    var servers = [
+        { _id: 's-fb', name: 'Facebook', serviceName: 'type_gometa' },
+        { _id: 's-dc', name: 'Facebook', serviceName: 'type_discord' }
+    ];
+    var channels = [
+        { _id: 'c-fb', serverId: 's-fb', name: '900000000000009', displayName: 'Friends', background: false },
+        { _id: 'c-fb2', serverId: 's-fb', name: '900000000000010' },
+        { _id: 'c-dc', serverId: 's-dc', name: 'general', background: false }
+    ];
+
+    it('every Facebook group is among the chats, named as itself; a Discord server of that name is not', function () {
+        assert.deepEqual(ct.deliveredChannels(channels, servers), { 'c-fb': 'Friends', 'c-fb2': '900000000000010' });
+        assert.deepEqual(ct.chatChannels(channels, servers), { 'c-fb': true, 'c-fb2': true });
+    });
+});
+
 describe('chatsThreads: a renamed group', function () {
     var servers = [
         { _id: 's-tg', name: 'Telegram (tdlib)', serviceName: 'type_telegram' },

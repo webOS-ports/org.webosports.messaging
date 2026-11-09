@@ -45,9 +45,18 @@ describe('chatActions: what a service does', function () {
         assert.equal(dc.edit && dc.deleteForEveryone && dc.groupCreate && dc.groupInvite && dc.groupLeave && dc.mentions, true);
         assert.equal(!!(dc.location || dc.contact || dc.editWindowMs), false);
     });
+    it('Facebook edits for 15 minutes, deletes, does groups and mentions, and sends no location or card itself', function () {
+        var fb = ca.actionsFor('type_gometa');
+        assert.equal(fb.editWindowMs, 15 * 60 * 1000);
+        assert.equal(fb.edit && fb.deleteForEveryone && fb.groupCreate && fb.groupInvite && fb.groupLeave &&
+            fb.groupRemove && fb.groupRename && fb.mentions, true);
+        assert.equal(!!(fb.location || fb.contact || fb.sticker), false, 'they go as text');
+        assert.equal(ca.canEdit(sent({ serviceName: 'type_gometa', timestamp: NOW - 15 * 60 * 1000 }), fb, NOW), true);
+        assert.equal(ca.canEdit(sent({ serviceName: 'type_gometa', timestamp: NOW - 15 * 60 * 1000 - 1 }), fb, NOW), false);
+    });
     it('only WhatsApp sends a .webp as a sticker', function () {
         assert.equal(ca.actionsFor('type_whatsapp').sticker, true);
-        ['type_signal', 'type_telegram', 'type_discord', 'type_irc', 'sms'].forEach(function (s) {
+        ['type_signal', 'type_telegram', 'type_discord', 'type_gometa', 'type_irc', 'sms'].forEach(function (s) {
             assert.equal(!!ca.actionsFor(s).sticker, false, s);
         });
     });
@@ -453,6 +462,13 @@ describe('chatActions.isChannelGroup: a channel that is a group', function () {
         assert.equal(ca.isChannelGroup(dc, 'Discord'), true);
         assert.equal(ca.isChannelGroup(dc, 'LuneOS Discord'), false);
         assert.equal(ca.isChannelGroup(dc, undefined), false, 'not before the server is known');
+    });
+    it('any Facebook chat with a channel: only its groups are', function () {
+        var fb = { channelId: 'c4', replyService: 'type_gometa', replyAddress: '900000000000009' };
+        assert.equal(ca.isChannelGroup(fb, 'Facebook'), true);
+        assert.equal(ca.isManagedGroup(fb), true);
+        assert.equal(ca.isManagedGroup({ replyService: 'type_gometa', replyAddress: '100000000000002' }), false,
+            'a one-to-one chat, or an encrypted group that comes as one');
     });
     it('no chat without a channel, and no other service', function () {
         assert.equal(ca.isChannelGroup({ replyService: 'type_telegram', replyAddress: 'anna' }), false);

@@ -29,7 +29,7 @@ var UNIT = "\x1f";
  *                             the service takes an edit (whatsmeow EditWindow), when it has one
  *   groupCreate/Invite/Leave  making a group, adding people to one, leaving it
  *   groupRemove               taking someone out of a group (purple-combined: whatsmeow
- *                             UpdateGroupParticipants remove; tdlib-purple 0035: setChatMemberStatus
+ *                             UpdateGroupParticipants remove, for Facebook RemoveParticipantTask; tdlib-purple 0035: setChatMemberStatus
  *                             Left; purple-discord 0031: DELETE a group DM's recipient; the
  *                             service refuses it to a non-admin)
  *   groupRename               giving a group a new name (renameGroup, the transport's
@@ -55,6 +55,14 @@ var ACTIONS = {
         edit: true, deleteForEveryone: true,
         groupCreate: true, groupInvite: true, groupLeave: true, groupRemove: true, groupRename: true,
         mentions: true, location: true, contact: true
+    },
+    // Facebook (purple-combined's prpl-gometa): Messenger takes an edit for 15 minutes. Its group
+    // actions and mentions are for a plain group, which is a channel (isChannelGroup); an
+    // encrypted group still comes as a one-to-one chat, so none is offered there.
+    type_gometa: {
+        edit: true, editWindowMs: 15 * 60 * 1000, deleteForEveryone: true,
+        groupCreate: true, groupInvite: true, groupLeave: true, groupRemove: true, groupRename: true,
+        mentions: true
     },
     // Groups are group DMs; a server's channels are not.
     type_discord: {
@@ -343,7 +351,8 @@ function isOwnAddress(address, account, serviceName) {
  * A channel's chat that is a group one can add people to and leave, as a WhatsApp group is. The
  * transport keeps these as channels, as it does a server's channels, so the server tells them
  * apart: every Telegram chat with a channel is a group (imlibpurpleservice files them all under
- * one "Telegram" server), and on Discord a group DM is, which purple-discord keeps in its own
+ * one "Telegram" server), so is every Facebook one (purple-combined puts only its group threads
+ * in the buddy list, under "Facebook"), and on Discord a group DM is, which purple-discord keeps in its own
  * buddy-list group "Discord" - its server's name - where a server's channels sit under
  * "<server>: <category>". serverName: the name of the thread's imserver, when known.
  */
@@ -351,7 +360,7 @@ function isChannelGroup(thread, serverName) {
     if (!thread || !thread.channelId) {
         return false;
     }
-    if (thread.replyService === "type_telegram") {
+    if (thread.replyService === "type_telegram" || thread.replyService === "type_gometa") {
         return true;
     }
     return thread.replyService === "type_discord" && serverName === "Discord";
