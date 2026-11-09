@@ -20,6 +20,7 @@ var kind = require('enyo/kind'),
     fileOffer = require('../util/fileOffer'),
     forwarded = require('../util/forwarded'),
     sentExtras = require('../util/sentExtras'),
+    mms = require('../util/mms'),
     receivedLocation = require('../util/receivedLocation'),
     moment = require('moment'),
     $L = require('enyo/i18n').$L;
@@ -230,7 +231,9 @@ module.exports = kind({
         this.$.messageText.addRemoveClass("system-line", messageState.isSystemLine(inMessage));
         var inText = raw;
 
-        if (messagingUtils.message.isMMSMessage(inMessage)) {
+        // An MMS LuneOS received or sent holds its text and files (util/mms); one without them is
+        // the TouchPad's note that the phone got an MMS.
+        if (messagingUtils.message.isMMSMessage(inMessage) && !mms.hasContent(inMessage)) {
             this.$.messageText.setContent(messagingUtils.message.getMMSDisplayMessage());
             return;
         }
@@ -249,7 +252,11 @@ module.exports = kind({
             inText = raw;
         }
 
-        if (inMessage.folder === FOLDERS.INBOX) {
+        if (inMessage.folder === FOLDERS.INBOX && mms.isPlainTextKind(inMessage)) {
+            // An SMS or MMS is stored as the network sent it, plain text: escape it whole, or a
+            // text with "<img onerror=...>" in it would be drawn as HTML.
+            inText = launchTargets.outgoingHtml(inText, messagingUtils.message.escapeHtml);
+        } else if (inMessage.folder === FOLDERS.INBOX) {
             // purple's strdup_withhtml stores each newline as "<br />\n" — the tag AND the literal
             // newline. Drop the newline that directly follows a break tag first, or the pass below
             // turns it into a SECOND <br> and doubles every line break.
@@ -313,16 +320,15 @@ module.exports = kind({
 
         // An outgoing message can carry a local file path (the file just sent). Images preview
         // inline, mirroring received images; other files show as a chip.
+        // An MMS has its further files in attachments, drawn after the first one the same way.
         var localAttachmentHtml = "";
         if (inMessage.filePath) {
-            if (this.isImagePath(inMessage.filePath)) {
-                localAttachmentHtml = this.buildLocalImageHtml(inMessage.filePath);
-            } else {
-                localAttachmentHtml = this.buildAttachmentChip({
-                    url: inMessage.filePath,
-                    kind: this.mediaKind(inMessage.filePath),
-                    name: this.mediaName(inMessage.filePath)
-                });
+            localAttachmentHtml = this.buildLocalFileHtml(inMessage.filePath);
+        }
+        if (messagingUtils.message.isMMSMessage(inMessage)) {
+            var more = mms.moreFiles(inMessage);
+            for (var mi = 0; mi < more.length; mi++) {
+                localAttachmentHtml += this.buildLocalFileHtml(more[mi].path);
             }
         }
 
@@ -369,6 +375,18 @@ module.exports = kind({
         return '<div class="msg-forwarded">' +
             messagingUtils.message.emojify(forwarded.labelHtml(forward, $L, messagingUtils.message.escapeHtml)) +
             '</div>';
+    },
+
+    /** A local file: an image inline, anything else as a chip. */
+    buildLocalFileHtml: function (path) {
+        if (this.isImagePath(path)) {
+            return this.buildLocalImageHtml(path);
+        }
+        return this.buildAttachmentChip({
+            url: path,
+            kind: this.mediaKind(path),
+            name: this.mediaName(path)
+        });
     },
 
     /**

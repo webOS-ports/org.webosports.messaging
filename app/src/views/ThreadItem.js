@@ -147,10 +147,14 @@ module.exports = kind({
 
     getThreadSummary: function (inThread) {
         var summary;
-        if (messagingUtils.message.isMMSThread(inThread)) {
+        if (messagingUtils.message.isMMSThread(inThread) && !inThread.summary) {
+            // The TouchPad's note of an MMS on the phone, or an MMS of files alone.
             summary = messagingUtils.message.getMMSThreadSummary();
         } else if (inThread.summary) {
-            if (inThread.flags && inThread.flags.outgoing) {
+            if (inThread.replyService && messagingUtils.utils.isTextMessage(inThread.replyService)) {
+                // An SMS or MMS is plain text as the network sent it, either way: escape it.
+                summary = messagingUtils.message.escapeHtml(inThread.summary);
+            } else if (inThread.flags && inThread.flags.outgoing) {
                 // Only outgoing messages need escaping; incoming ones are sanitized on the way in.
                 // One we sent from another device has a mention as "<b>@Name</b>": bold, as in the
                 // chat, not tags.

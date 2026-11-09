@@ -81,8 +81,12 @@ function summarizeMedia(input) {
 // "" when nothing is left to show: notificationmgr refuses a toast with an empty message, so the
 // caller decides what to say instead.
 function notificationText(msg) {
-	if (msg && msg._kind === MMS_KIND) { return MMS_TEXT; }
 	let text = message.messageText(msg).replace(FORWARDED, "");
+	if (msg && msg._kind === MMS_KIND) {
+		// As the app: an MMS LuneOS received says its text, or the kind of its first file.
+		if (!text && msg.serviceName === "mms" && msg.filePath) { text = "file://" + msg.filePath; }
+		if (!text || msg.serviceName !== "mms") { return MMS_TEXT; }
+	}
 	if (msg && HTML_KINDS.includes(msg._kind)) {
 		text = removeHtml(text.replace(/<img\b[^>]*?\bsrc=["']([^"']+)["'][^>]*>/gi, " $1 "));
 	}

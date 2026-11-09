@@ -30,6 +30,8 @@ var kind = require('enyo/kind'),
     mockDb = require('../data/mockDb'),
     chatPresence = require('../util/chatPresence'),
     ServiceFollower = require('../util/serviceFollower').ServiceFollower,
+    fileCarrier = require('../util/fileCarrier'),
+    mms = require('../util/mms'),
     $L = require('enyo/i18n').$L;
 
 var DB_SERVICE = 'luna://com.webos.service.db';
@@ -194,6 +196,19 @@ module.exports = kind({
             name: 'transportStatus', kind: LunaService, service: 'luna://com.webos.service.bus',
             method: 'signal/registerServerStatus', subscribe: true,
             onResponse: 'gotTransportStatus', onError: 'typingWatchFailed'
+        },
+        // Whether an SMS chat can send files, as an MMS: telephonyd answers whether mmsd has a
+        // service (a SIM with an MMS context) and posts each change. Made again whenever
+        // telephonyd comes up; until it has answered, files are not offered for SMS.
+        {
+            name: 'mmsWatch', kind: LunaService, service: 'luna://com.palm.telephony',
+            method: 'mmsStatusQuery', subscribe: true,
+            onResponse: 'gotMmsStatus', onError: 'mmsWatchFailed'
+        },
+        {
+            name: 'telephonyStatus', kind: LunaService, service: 'luna://com.webos.service.bus',
+            method: 'signal/registerServerStatus', subscribe: true,
+            onResponse: 'gotTelephonyStatus', onError: 'mmsWatchFailed'
         }
     ],
 
@@ -229,9 +244,34 @@ module.exports = kind({
         }, function (request) {
             self.$.typingWatch.cancel(request);
         });
+        this.mmsFollower = new ServiceFollower(function () {
+            return self.$.mmsWatch.send({ subscribe: true });
+        }, function () {
+            fileCarrier.setMmsAvailable(false);
+        }, function (request) {
+            self.$.mmsWatch.cancel(request);
+        });
         if (!mockDb.enabled) {
             this.$.transportStatus.send({ serviceName: "com.palm.imlibpurple", subscribe: true });
+            this.$.telephonyStatus.send({ serviceName: "com.palm.telephony", subscribe: true });
         }
+    },
+
+    /** An mmsStatusQuery reply: whether files for an SMS chat can go out as an MMS now. */
+    gotMmsStatus: function (inSender, inResponse) {
+        fileCarrier.setMmsAvailable(mms.availableFrom(inResponse));
+        return true;
+    },
+
+    gotTelephonyStatus: function (inSender, inResponse) {
+        this.mmsFollower.status(inResponse);
+        return true;
+    },
+
+    /** A telephonyd without MMS (an older one) or none at all: SMS stays text only. */
+    mmsWatchFailed: function () {
+        fileCarrier.setMmsAvailable(false);
+        return true;
     },
 
     /** A watchTyping reply: keep it, and tell the open chat when it changed what it shows. */

@@ -56,6 +56,11 @@ var CASES = [
     ['a forward from nobody named', { _kind: IM, messageText: '<b>Forwarded:</b><br />\nfile:///m/a.jpg<br />\nlook' }, 'look'],
     ['a forward line not at the start', { _kind: IM, messageText: 'so <b>Forwarded from Ann:</b> it' }, 'so Forwarded from Ann: it'],
     ['an MMS', { _kind: 'com.palm.mmsmessage:1', messageText: 'x' }, 'New MMS on your phone'],
+    ['an MMS with nothing in it', { _kind: 'com.palm.mmsmessage:1', serviceName: 'mms' }, 'New MMS on your phone'],
+    ['an MMS received here', { _kind: 'com.palm.mmsmessage:1', serviceName: 'mms', messageText: 'hi',
+        attachments: [{ mimeType: 'text/plain', partText: 'hi' }] }, 'hi'],
+    ['an MMS of a photo alone', { _kind: 'com.palm.mmsmessage:1', serviceName: 'mms', filePath: '/m/a.jpg',
+        attachments: [{ mimeType: 'image/jpeg', path: '/m/a.jpg' }] }, 'Photo'],
     ['a subject', { subject: 'Subj', messageText: 'body' }, 'Subj'],
     ['nothing', { messageText: '' }, ''],
     ['no body at all', {}, '']

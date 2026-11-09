@@ -489,9 +489,16 @@ var messaging = module.exports = {
          */
         getNotificationText: function (rawMessage) {
             var m = messaging.message;
-            if (m.isMMSMessage(rawMessage)) { return m.getMMSDisplayMessage(); }
             // A forward's "Forwarded from" line (util/forwarded) is the chat's label, not the message.
             var text = forwarded.strip(m.getMessageText(rawMessage));
+            if (m.isMMSMessage(rawMessage)) {
+                // An MMS LuneOS received has its text and files; files alone read as their kind.
+                // Anything else is the TouchPad's note of an MMS on the phone.
+                if (!text && rawMessage.serviceName === "mms" && rawMessage.filePath) {
+                    text = "file://" + rawMessage.filePath;
+                }
+                if (!text || rawMessage.serviceName !== "mms") { return m.getMMSDisplayMessage(); }
+            }
             if (rawMessage && m.HTML_MESSAGE_KINDS.indexOf(rawMessage._kind) !== -1) {
                 text = m.removeHtml(text.replace(/<img\b[^>]*?\bsrc=["']([^"']+)["'][^>]*>/gi, " $1 "));
             }

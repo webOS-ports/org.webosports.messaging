@@ -47,6 +47,7 @@ var kind = require('enyo/kind'),
     forward = require('../util/forward'),
     attachments = require('../util/attachments'),
     fileCarrier = require('../util/fileCarrier'),
+    mms = require('../util/mms'),
     stickers = require('../util/stickers'),
     pictureSave = require('../util/pictureSave'),
     fileOffer = require('../util/fileOffer'),
@@ -2061,13 +2062,24 @@ module.exports = kind({
             params.serviceName = "sms";
         }
 
-        // One message per staged file, the text on the first (util/attachments). Only a service
-        // that can carry a file gets the path (util/fileCarrier); SMS has no MMS sender yet. A
+        // Text and staged files for a phone number go out together as one MMS (util/mms), when
+        // telephonyd says it can send one (util/fileCarrier); wouldDrop above stopped it otherwise.
+        if (!extra && resolved.state !== "im" &&
+                fileCarrier.sendsAsMms(this.outboundAttachments, params.serviceName)) {
+            var mmsRecord = mms.record(params, params.messageText, this.outboundAttachments);
+            this.mergeThread(messagingUtils.thread.updateFromNewMessage(
+                { _id: this.chatThread._id, _kind: messagingUtils.thread.dbKind }, mmsRecord, recipient));
+            this.sendMessageHelper([mmsRecord], mms.KIND, params.messageText, false);
+            return;
+        }
+
+        // One message per staged file, the text on the first (util/attachments). Only an IM
+        // message gets the path; an SMS record is sent as its text alone (files go as MMS above). A
         // sticker comes as extra.file, alone.
+        var carries = resolved.state === "im" && fileCarrier.canCarry(params.serviceName);
         var parts = extra ? [{ text: params.messageText,
-            file: (extra.file && fileCarrier.canCarry(params.serviceName)) ? extra.file : null }] :
-            attachments.messages(params.messageText, this.outboundAttachments,
-                fileCarrier.canCarry(params.serviceName));
+            file: (extra.file && carries) ? extra.file : null }] :
+            attachments.messages(params.messageText, this.outboundAttachments, carries);
         if (!parts.length) {
             return;
         }
@@ -3564,7 +3576,10 @@ module.exports = kind({
         return true;
     },
 
-    /** SMS cannot carry a file (no MMS sender, util/fileCarrier); say so before one is picked. */
+    /**
+     * SMS carries a file only as an MMS, while telephonyd can send one (util/fileCarrier); say so
+     * before one is picked.
+     */
     attachmentsUnsupported: function () {
         var transport = transportPicker.getSelectedTransport();
         if (transport && !fileCarrier.canCarry(transport.serviceName)) {
@@ -3575,7 +3590,7 @@ module.exports = kind({
     },
 
     showSmsAttachmentsError: function () {
-        this.showError($L("Attachments"), $L("Attachments can't be sent by SMS. Pick an IM service to send a file."));
+        this.showError($L("Attachments"), $L("Attachments can't be sent by SMS now: MMS is not available. Pick an IM service to send a file."));
     },
 
     // The picker sends an array of {fullPath, attachmentType, size, ...}, several when more
