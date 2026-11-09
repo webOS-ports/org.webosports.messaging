@@ -383,30 +383,27 @@ module.exports = kind({
                 { kind: MenuItem, content: $L("Delete"), ontap: "menuDelete" }
             ]
         },
+        // The dialogs here are webOS's alert dialogs: a title, a line, and the choices stacked
+        // full width, the one asked for first and Cancel or OK last, over a scrim.
         {
-            name: "errorDialog", kind: Popup, centered: true, floating: true, modal: true,
-            components: [
-                { name: "errorDialogTitle", style: "font-weight: bold; margin-bottom: 0.5rem;" },
-                { name: "errorDialogMessage", style: "margin: 0.5rem 0 1rem;" },
+            name: "errorDialog", kind: Popup, centered: true, floating: true, modal: true, scrim: true,
+            classes: "alert-dialog", components: [
+                { name: "errorDialogTitle", classes: "alert-dialog-title" },
+                { name: "errorDialogMessage", classes: "alert-dialog-message" },
                 {
-                    classes: "flex-row", components: [
-                        { kind: Button, content: $L("OK"), ontap: "closeErrorDialog" },
-                        { classes: "flex-auto" },
-                        {
-                            name: "errorRetryButton", kind: Button, content: $L("Retry"),
-                            ontap: "retryMessage"
-                        }
-                    ]
-                }
+                    name: "errorRetryButton", kind: Button, content: $L("Retry"),
+                    classes: "onyx-affirmative", ontap: "retryMessage"
+                },
+                { kind: Button, content: $L("OK"), ontap: "closeErrorDialog" }
             ]
         },
         {
             // Delete, from the message menu or the selection bar: for everyone when the service
-            // can, for this device, or not at all. Stacked full width, as webOS's alert dialogs.
-            name: "deleteDialog", kind: Popup, centered: true, floating: true, modal: true,
-            classes: "delete-dialog", components: [
-                { name: "deleteDialogTitle", classes: "delete-dialog-title" },
-                { name: "deleteDialogMessage", classes: "delete-dialog-message" },
+            // can, for this device, or not at all.
+            name: "deleteDialog", kind: Popup, centered: true, floating: true, modal: true, scrim: true,
+            classes: "alert-dialog", components: [
+                { name: "deleteDialogTitle", classes: "alert-dialog-title" },
+                { name: "deleteDialogMessage", classes: "alert-dialog-message" },
                 {
                     name: "deleteEveryoneButton", kind: Button, content: $L("Delete for Everyone"),
                     classes: "onyx-negative", ontap: "deleteChosenForEveryone"
@@ -419,20 +416,15 @@ module.exports = kind({
             ]
         },
         {
-            name: "confirmDialog", kind: Popup, centered: true, floating: true, modal: true,
-            components: [
-                { name: "confirmDialogTitle", style: "font-weight: bold; margin-bottom: 0.5rem;" },
-                { name: "confirmDialogMessage", style: "margin: 0.5rem 0 1rem;" },
+            name: "confirmDialog", kind: Popup, centered: true, floating: true, modal: true, scrim: true,
+            classes: "alert-dialog", components: [
+                { name: "confirmDialogTitle", classes: "alert-dialog-title" },
+                { name: "confirmDialogMessage", classes: "alert-dialog-message" },
                 {
-                    classes: "flex-row", components: [
-                        { kind: Button, content: $L("Cancel"), ontap: "closeConfirmDialog" },
-                        { classes: "flex-auto" },
-                        {
-                            name: "confirmAcceptButton", kind: Button, classes: "onyx-negative",
-                            ontap: "confirmAccepted"
-                        }
-                    ]
-                }
+                    name: "confirmAcceptButton", kind: Button, classes: "onyx-negative",
+                    ontap: "confirmAccepted"
+                },
+                { kind: Button, content: $L("Cancel"), ontap: "closeConfirmDialog" }
             ]
         },
 

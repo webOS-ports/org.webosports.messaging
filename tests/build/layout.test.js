@@ -1763,6 +1763,17 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             var poll = chat.messages.filter(function (m) { return m._id === 'msg-d2'; })[0];
             chat.togglePollOption(poll, 'Friday', 1);
             out.poll = { dialog: chat.$.errorDialog.getShowing(), title: chat.$.errorDialogTitle.getContent(), vote: poll.myPollVote || null };
+            // As webOS's alert dialogs: a box with room around it, over a scrim that dims the chat
+            // (a modal popup's own scrim is a transparent one), OK full width.
+            var box = chat.$.errorDialog.hasNode().getBoundingClientRect();
+            var ok = Array.prototype.filter.call(chat.$.errorDialog.hasNode().querySelectorAll('.onyx-button'), function (n) {
+                return n.offsetWidth; });
+            var pad = parseFloat(getComputedStyle(chat.$.errorDialog.hasNode()).paddingLeft) || 0;
+            var scrim = Array.prototype.some.call(document.querySelectorAll('.enyo-scrim-translucent'), function (n) {
+                var r = n.getBoundingClientRect(); return getComputedStyle(n).display !== 'none' && r.width >= window.innerWidth; });
+            out.pollLook = { roomAround: box.left >= 16 && window.innerWidth - box.right >= 16, scrim: scrim,
+                buttons: ok.map(function (n) { return n.textContent; }),
+                fullWidth: ok.every(function (n) { return Math.abs(n.getBoundingClientRect().width - (box.width - 2 * pad)) <= 4; }) };
             chat.closeErrorDialog && chat.closeErrorDialog();
             return JSON.stringify(out);
         };
@@ -1784,6 +1795,7 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.deepEqual(r.dragDown, { open: false });
         assert.deepEqual(r.openElsewhere, { sent: ['pier.jpg'], open: false });
         assert.deepEqual(r.poll, { dialog: true, title: "Can't vote on this poll", vote: null });
+        assert.deepEqual(r.pollLook, { roomAround: true, scrim: true, buttons: ['OK'], fullWidth: true });
     });
 
     // A message we sent from the phone's WhatsApp comes back as HTML with a mention as
