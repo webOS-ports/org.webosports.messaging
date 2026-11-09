@@ -28,6 +28,7 @@ var kind = require('enyo/kind'),
     channelOptions = require('../util/channelOptions'),
     ChannelOptionsPopup = require('./ChannelOptionsPopup'),
     messagingUtils = require('../util/messagingUtils'),
+    appState = require('../util/appState'),
     $L = require('enyo/i18n').$L;
 
 module.exports = kind({
@@ -102,9 +103,18 @@ module.exports = kind({
         this.$.drill.setIndex(0);
         this.runQuery();
         this.callUnread();
+
+        // A row's service logo comes from the account templates, which may answer after the servers
+        // have: until then the rows show the generic glyph, so draw them again once they are in.
+        if (appState.accountService) {
+            appState.accountService.register(this, this.refreshRows.bind(this));
+        }
     },
 
     destroy: function () {
+        if (appState.accountService) {
+            appState.accountService.unregister(this);
+        }
         if (this.serverService) { this.serverService.cancel(); }
         if (this.unreadService) { this.unreadService.cancel(); }
         if (this.collection) {
@@ -257,7 +267,16 @@ module.exports = kind({
             model.set('outgoing', latest ? latest.outgoing : false);
             model.set('selected', !!(list.selectedServer && list.selectedServer._id === id));
             model.set('optionsSummary', channelOptions.summary(model.attributes, true));
+            // Not drawn from here, but a change of it redraws the row (rowModelWatch), and with it
+            // ServerItem's logo, which it looks up itself.
+            model.set('serviceIcon', list.serviceIcon(model.attributes.serviceName));
         });
+    },
+
+    /** The account template's logo for a service, or null while there is none (ServerItem). */
+    serviceIcon: function (serviceName) {
+        var accounts = appState.accountService;
+        return (serviceName && accounts && accounts.getIconPath && accounts.getIconPath(serviceName)) || null;
     },
 
     // --- interaction ---------------------------------------------------------------------

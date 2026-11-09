@@ -142,6 +142,45 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.deepEqual(r, { drilled: 1, after: 0, still: false, backBtn: false, tab: 3 });
     });
 
+    it('draws each server\'s service logo once the account templates come in after the servers', async function () {
+        /* global require */
+        var page = async function () {
+            var $ = require('enyo/dispatcher').$, appState = require('src/util/appState');
+            var messaging = $.app_mainView_messaging, servers = $.app_mainView_messaging_serverList;
+            var accounts = appState.accountService;
+            var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+            var images = function () {
+                return Array.prototype.map.call(servers.$.list.hasNode().querySelectorAll('img'), function (n) {
+                    var src = n.getAttribute('src') || '';
+                    return src.indexOf('menu-icon-servers') >= 0 ? 'generic' : src.replace(/^.*\//, '');
+                }).filter(function (src) { return src; });
+            };
+            // The templates have not answered yet.
+            var real = accounts.getIconPath;
+            accounts.getIconPath = function () { return null; };
+            servers.resetList();
+            messaging.menuToggle(null, 3);
+            for (var i = 0; i < 20 && !servers.collection.length; i++) { await wait(100); }
+            await wait(300);
+            var out = { before: images() };
+            // Now they have.
+            accounts.getIconPath = real;
+            accounts.notifyListeners();
+            await wait(300);
+            out.after = images();
+            out.logos = servers.collection.map(function (m) { return accounts.getIconPath(m.attributes.serviceName) ? 'logo' : 'none'; });
+            messaging.menuToggle(null, 0);
+            await wait(300);
+            return out;
+        };
+        var r = await session.evaluate('(' + page.toString() + ')()');
+        assert.ok(r.before.length > 0, 'servers drawn');
+        assert.ok(r.before.every(function (s) { return s === 'generic'; }), 'no logo before the templates: ' + r.before);
+        assert.ok(r.logos.indexOf('logo') >= 0, 'a mock server has a service with a logo');
+        assert.equal(r.after.filter(function (s) { return s === 'generic'; }).length,
+            r.logos.filter(function (l) { return l === 'none'; }).length, 'each server with a logo shows it: ' + r.after);
+    });
+
     // The app menu opens from the app's name in the status bar (`menubutton`), so the footer
     // carries no menu button of its own.
     it('opens the app menu from the status bar, with no menu button in the footer', async function () {
