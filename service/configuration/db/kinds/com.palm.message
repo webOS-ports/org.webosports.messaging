@@ -47,6 +47,12 @@
 			"name":"readFlagChanges",
 			"props": [{"name":"readRevSet"}]
 		}, {
+			"name":"retracted",
+			"props": [
+				{"name":"deleted"},
+				{"name":"_rev"}
+			]
+		}, {
 			"incDel":true,
 			"name":"deleted",
 			"props":[{"name":"_del"},{"name":"_rev"}]

@@ -52,7 +52,12 @@ module.exports = kind({
     components: [
         {
             name: 'createToast', kind: LunaService, service: NOTIFICATION_SERVICE,
-            method: 'createToast', onError: 'serviceErr'
+            method: 'createToast', onResponse: 'toastCreated', onError: 'serviceErr'
+        },
+        {
+            // The toast's id, kept on its message (see toastCreated).
+            name: 'toastIdMerge', kind: LunaService, service: DB_SERVICE, method: 'merge',
+            onError: 'serviceErr'
         },
         {
             name: 'playFeedback', kind: LunaService, service: AUDIO_SERVICE,
@@ -291,7 +296,7 @@ module.exports = kind({
         // Title and message apart, as the layers of the Mojo dashboard were: the banner joins them
         // itself, and a toast sent without a title shows its message on both of the notification's
         // lines.
-        this.$.createToast.send(withSound({
+        var request = this.$.createToast.send(withSound({
             sourceId: APP_ID,
             title: messagingUtils.message.stripEmojiForPlainText(sender),
             message: messagingUtils.message.getNotificationText(message) || $L("New message"),
@@ -301,6 +306,24 @@ module.exports = kind({
                 params: { threadId: threadId }
             }
         }, sound || {}));
+        if (request) {
+            request.toastMessageId = message._id;
+        }
+    },
+
+    /**
+     * Keep the toast's id on the message it is for: if the sender deletes the message, the
+     * messaging service closes the toast by it (its messagesRetracted), so that the notification
+     * no longer shows what was taken back. The service does the same for the toasts it raises.
+     * A failed-send toast has no message id on its request, so nothing is kept for it.
+     */
+    toastCreated: function (inSender, inResponse) {
+        var messageId = inResponse && inResponse.originator && inResponse.originator.toastMessageId;
+        var toastId = inResponse && inResponse.toastId;
+        if (messageId && typeof toastId === "string" && toastId) {
+            this.$.toastIdMerge.send({ objects: [{ _id: messageId, toastId: toastId }] });
+        }
+        return true;
     },
 
     // --- buddy invitations -----------------------------------------------------------------------

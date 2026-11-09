@@ -3,6 +3,9 @@
  *   assignMessages   {lastCheckedRev}   thread new messages (the message watch)
  *   readChanges      {lastReadRev}      recount threads whose messages were read (read watch)
  *   messagesDeleted  {lastDeletedRev}   update threads that lost messages (delete watch)
+ *   messagesRetracted {lastRetractedRev}
+ *                                       close the notification of a message its sender deleted
+ *                                       for everyone (retract watch)
  *   loginsChanged    {lastLoginRev}     delete the login chat of an account that has signed in
  *                                       (login watch, see authchat.js)
  *   putMessage       {message}          thread a message and store it -> {threadids}
@@ -117,6 +120,33 @@ function createCommands({ db, tempdb, call, notifier, state, serial, log = conso
 		return r;
 	}
 
+	// Whoever raised a message's notification kept its id on the message as toastId (notify.js,
+	// the app's DashboardManager). Close it, so the notification no longer shows what was taken
+	// back, and clear the id, so it is closed once.
+	async function messagesRetracted(params) {
+		const from = startRev(params, "lastRetractedRev");
+		const found = await db.find({ from: MESSAGE_KIND, select: ["_id", "_rev", "toastId"],
+			where: [{ prop: "deleted", op: "=", val: true }, { prop: "_rev", op: ">", val: from }] });
+		let rev = from, closed = 0;
+		const cleared = [];
+		for (const m of found) {
+			rev = Math.max(rev, Number(m._rev) || 0);
+			if (typeof m.toastId !== "string" || !m.toastId) { continue; }
+			try {
+				await call("luna://com.webos.notification/closeToast", { toastId: m.toastId });
+				closed++;
+			} catch (e) {
+				// Gone already (dismissed, or notificationmgr restarted): nothing more to do for it.
+				log.error("commands: closing the notification of deleted message " + m._id + " failed: " +
+					((e && e.message) || e));
+			}
+			cleared.push({ _id: m._id, toastId: null });
+		}
+		if (cleared.length) { await db.merge(cleared); }
+		await finish("messagesRetracted", "lastRetractedRev", rev, params);
+		return { rev, closed };
+	}
+
 	async function putMessage(params) {
 		const msg = params.message;
 		if (!msg || typeof msg !== "object") { throw missingArgs("message is required"); }
@@ -224,6 +254,7 @@ function createCommands({ db, tempdb, call, notifier, state, serial, log = conso
 		assignMessages: { handler: assignMessages, timeoutMs },
 		readChanges: { handler: readChanges, timeoutMs },
 		messagesDeleted: { handler: messagesDeleted, timeoutMs },
+		messagesRetracted: { handler: messagesRetracted, timeoutMs },
 		putMessage: { handler: putMessage },
 		deleteChatthread: { handler: deleteChatthread, timeoutMs },
 		loginsChanged: { handler: loginsChanged, timeoutMs },

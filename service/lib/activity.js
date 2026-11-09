@@ -1,11 +1,12 @@
 /* activity.js - the db8 watches that wake the service, as activitymanager activities.
  *
- * Six watches, each an activity whose callback is one of our methods and whose trigger is a
+ * Seven watches, each an activity whose callback is one of our methods and whose trigger is a
  * db8 watch, most of them on the revision that callback handled last:
  *
  *   chatthreader-message-watch  messages with no conversation yet   -> assignMessages
  *   chatthreader-read-watch     messages whose flags.read changed    -> readChanges
  *   chatthreader-delete-watch   messages deleted                     -> messagesDeleted
+ *   chatthreader-retract-watch  messages their sender deleted        -> messagesRetracted
  *   chatthreader-login-watch    an IM account's login state changed  -> loginsChanged
  *   chatthreader-buddy-watch    buddies with no displayName yet      -> newBuddies       (tempdb)
  *   chatthreader-availability-watch
@@ -61,6 +62,15 @@ const WATCHES = {
 		revParam: "lastDeletedRev",
 		query: (rev) => ({ from: MESSAGE_KIND, where: [
 			{ prop: "_del", op: "=", val: true }, { prop: "_rev", op: ">", val: rev }] }),
+	},
+	// A message the sender deleted for everyone: the transport writes deleted: true over it, and
+	// its notification, if it raised one, still shows the words (notify.js, DashboardManager).
+	messagesRetracted: {
+		name: "chatthreader-retract-watch",
+		description: "Closes the notification of a message its sender deleted",
+		revParam: "lastRetractedRev",
+		query: (rev) => ({ from: MESSAGE_KIND, where: [
+			{ prop: "deleted", op: "=", val: true }, { prop: "_rev", op: ">", val: rev }] }),
 	},
 	// imloginstate's byrevision index; it has none on state and _rev together, so every change
 	// wakes the service, which reads the few records there are and looks for itself.

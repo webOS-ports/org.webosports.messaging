@@ -29,7 +29,7 @@ describe('the messaging service on the bus', function () {
         var env = boot();
         assert.equal(env.handle.name, "org.webosports.service.messaging");
         assert.deepEqual(env.handle.methods.sort(), ["/assignMessages", "/changedAvailability", "/deleteChatthread", "/info",
-            "/loginsChanged", "/messagesDeleted", "/newBuddies", "/putMessage", "/quit", "/readChanges", "/restoreFinished",
+            "/loginsChanged", "/messagesDeleted", "/messagesRetracted", "/newBuddies", "/putMessage", "/quit", "/readChanges", "/restoreFinished",
             "/updateThreadValues"]);
         env.service.bus.stop();
     });
@@ -207,6 +207,61 @@ describe('toasts for new messages', function () {
         env.service.bus.stop();
         assert.equal(env.toasts.length, 2);
         assert.deepEqual(env.toasts.map(function (t) { return t.soundClass; }), ["none", undefined]);
+    });
+});
+
+describe('a notification of a message its sender deleted', function () {
+    // A message in, its toast raised by the service; then the transport's delete for everyone.
+    async function toastedThenDeleted(opts) {
+        var env = boot(opts || {});
+        await seed.putAll(env.db, [seed.imIn("a", "something regretted", { at: Date.now() - 1000 })]);
+        await ask(env.handle, "assignMessages", { lastCheckedRev: 0 });
+        var msg = env.db.all(MESSAGE)[0];
+        var kept = msg.toastId;
+        await env.db.merge([{ _id: msg._id, deleted: true, messageText: "This message was deleted." }]);
+        return { env: env, id: msg._id, kept: kept };
+    }
+
+    it('is closed by the id the service kept on the message, and closed once', async function () {
+        var t = await toastedThenDeleted();
+        assert.equal(t.env.toasts.length, 1);
+        assert.equal(t.kept, "org.webosports.app.messaging-1794132000001", 'the toast id kept on the message');
+        var r = await ask(t.env.handle, "messagesRetracted", { lastRetractedRev: 0, $activity: { activityId: 9 } });
+        assert.equal(r.closed, 1);
+        assert.deepEqual(t.env.closed, [{ toastId: t.kept }]);
+        assert.equal(t.env.db.all(MESSAGE)[0].toastId, null, 'and cleared');
+        var complete = t.env.am.find(function (c) { return c.method === "complete"; });
+        assert.equal(complete.args.callback.params.lastRetractedRev, r.rev);
+        // The clearing is a write the watch sees again: nothing more to close.
+        var again = await ask(t.env.handle, "messagesRetracted", { lastRetractedRev: 0 });
+        assert.equal(again.closed, 0);
+        assert.equal(t.env.closed.length, 1);
+        t.env.service.bus.stop();
+    });
+
+    it('is not looked for on a message that raised none, nor on one not deleted', async function () {
+        var env = boot({ running: true });   // the app raises them then, and keeps their ids itself
+        await seed.putAll(env.db, [seed.imIn("a", "kept", { at: Date.now() - 1000 }), seed.imIn("b", "gone", { at: Date.now() - 1000 })]);
+        await ask(env.handle, "assignMessages", { lastCheckedRev: 0 });
+        var msgs = env.db.all(MESSAGE);
+        assert.equal(env.toasts.length, 0);
+        await env.db.merge([{ _id: msgs[0]._id, toastId: "org.webosports.app.messaging-1" },
+            { _id: msgs[1]._id, deleted: true }]);
+        var r = await ask(env.handle, "messagesRetracted", { lastRetractedRev: 0 });
+        assert.equal(r.closed, 0);
+        assert.deepEqual(env.closed, []);
+        assert.equal(env.db.all(MESSAGE).filter(function (m) { return m._id === msgs[0]._id; })[0].toastId,
+            "org.webosports.app.messaging-1", 'the toast of the message not deleted stays');
+        env.service.bus.stop();
+    });
+
+    it('lets the id go when the toast is gone already', async function () {
+        var t = await toastedThenDeleted({ closeFails: true });
+        var r = await ask(t.env.handle, "messagesRetracted", { lastRetractedRev: 0 });
+        assert.equal(r.closed, 0);
+        assert.equal(t.env.closed.length, 1, 'it was asked to close');
+        assert.equal(t.env.db.all(MESSAGE)[0].toastId, null);
+        t.env.service.bus.stop();
     });
 });
 

@@ -187,7 +187,9 @@ describe('a mailbox of 800 messages and 300 contacts', function () {
             var calls = env.db.calls.find + env.db.calls.get + env.db.calls.put + env.db.calls.merge + env.tempdb.calls.find;
             var budget = 4 * mailbox.messages.length;
             assert.ok(calls <= budget, calls + ' db8 calls for ' + mailbox.messages.length + ' messages in ' + bursts + ' bursts (budget ' + budget + ')');
-            assert.ok(env.db.calls.merge <= 2 * bursts + 15, env.db.calls.merge + ' merges for ' + bursts + ' bursts');
+            // Two a burst for the threads, and one more for the ids of the toasts it raised, kept on
+            // their messages (notify.js), so that a toast can be closed if its message is deleted.
+            assert.ok(env.db.calls.merge <= 3 * bursts + 15, env.db.calls.merge + ' merges for ' + bursts + ' bursts');
 
             // Toasts: never for the muted channel, and only for the newest unread message.
             var muted = env.db.all(MESSAGE).filter(function (m) { return m.flags && m.flags.noNotification && m.conversations; })

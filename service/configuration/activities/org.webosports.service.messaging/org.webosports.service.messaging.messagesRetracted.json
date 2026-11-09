@@ -1,0 +1,43 @@
+{
+	"activity": {
+		"name": "chatthreader-retract-watch",
+		"description": "Closes the notification of a message its sender deleted",
+		"type": {
+			"immediate": true,
+			"priority": "normal",
+			"persist": true,
+			"explicit": true,
+			"power": true,
+			"powerDebounce": true
+		},
+		"trigger": {
+			"key": "fired",
+			"method": "luna://com.palm.db/watch",
+			"params": {
+				"query": {
+					"from": "com.palm.message:1",
+					"where": [
+						{
+							"prop": "deleted",
+							"op": "=",
+							"val": true
+						},
+						{
+							"prop": "_rev",
+							"op": ">",
+							"val": 0
+						}
+					]
+				}
+			}
+		},
+		"callback": {
+			"method": "luna://org.webosports.service.messaging/messagesRetracted",
+			"params": {
+				"lastRetractedRev": 0
+			}
+		}
+	},
+	"start": true,
+	"replace": true
+}

@@ -20,6 +20,15 @@ const APP_ID = "org.webosports.app.messaging";
 const PREFS_KIND = "com.palm.app.messagingprefs:1";
 const DEFAULT_MAX_AGE_MINUTES = 60;
 
+// The toasts' ids, kept on their messages in one merge for the batch, so that a notification can
+// be closed if its sender deletes the message (commands.js, messagesRetracted). Not keeping them
+// costs only that.
+async function keepToastIds(db, log, kept) {
+	if (!kept.length) { return; }
+	try { await db.merge(kept); }
+	catch (e) { log.error("notify: could not keep " + kept.length + " toast ids: " + ((e && e.message) || e)); }
+}
+
 function createNotifier({ db, call, log = console, now = () => Date.now() }) {
 	async function appRunning() {
 		try {
@@ -48,13 +57,14 @@ function createNotifier({ db, call, log = console, now = () => Date.now() }) {
 		if (!due.length || await appRunning()) { return 0; }
 		let sent = 0;
 		let sound = alertsound.toastSound(p);
+		const kept = [];
 		for (const [threadId, msg] of due) {
 			const thread = threads.get(threadId) || {};
 			const sender = (msg.from && (msg.from.name || msg.from.addr)) || thread.displayName || "";
 			const title = toasttext.plain(thread.displayName || sender);
 			const body = toasttext.notificationText(msg) || "New message";
 			try {
-				await call("luna://com.webos.notification/createToast", Object.assign({
+				const reply = await call("luna://com.webos.notification/createToast", Object.assign({
 					sourceId: APP_ID,
 					title,
 					message: body,
@@ -62,12 +72,16 @@ function createNotifier({ db, call, log = console, now = () => Date.now() }) {
 					onclick: { appId: APP_ID, params: { threadId } },
 				}, sound));
 				sent++;
+				if (msg._id && reply && typeof reply.toastId === "string" && reply.toastId) {
+					kept.push({ _id: msg._id, toastId: reply.toastId });
+				}
 				// Only once it is out: a toast notificationmgr refused leaves the sound to the next.
 				sound = {};
 			} catch (e) {
 				log.error("notify: createToast failed: " + ((e && e.message) || e));
 			}
 		}
+		await keepToastIds(db, log, kept);
 		return sent;
 	}
 
