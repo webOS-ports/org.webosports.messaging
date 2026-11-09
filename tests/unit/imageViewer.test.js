@@ -46,6 +46,16 @@ describe('imageViewer geometry', function () {
         assert.equal(iv.turnsOnRelease(60, 0, 400), false);
         assert.equal(iv.turnsOnRelease(60, 1, 400), true);
     });
+
+    it('turns the page on the arrow keys and leaves Escape to back, one step at a time', function () {
+        assert.equal(iv.keyStep({ key: 'ArrowLeft' }), -1);
+        assert.equal(iv.keyStep({ key: 'ArrowRight' }), 1);
+        // The back swipe is Escape down and up; the key-up is the back gesture, which closes the
+        // viewer. Closing on the key-down too took the chat away with it.
+        assert.equal(iv.keyStep({ key: 'Escape', keyCode: 27 }), 0);
+        assert.equal(iv.keyStep({ keyCode: 27 }), 0);
+        assert.equal(iv.keyStep({ key: 'Enter' }), 0);
+    });
 });
 
 describe('threadPictures', function () {
