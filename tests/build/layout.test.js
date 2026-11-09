@@ -1819,6 +1819,77 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.deepEqual(r.pollLook, { roomAround: true, scrim: true, buttons: ['OK'], fullWidth: true });
     });
 
+    // A forward (util/forwarded): the transport's "Forwarded from" line is a label at the top of
+    // the bubble, above the picture, the card of a file that waits for a tap, or the text, and is
+    // not drawn as text as well.
+    it('labels a forwarded message above what it holds', async function () {
+        /* global require */
+        var page = async function () {
+            var $ = require('enyo/dispatcher').$, mockDb = require('src/data/mockDb');
+            var main = $.app_mainView, chat = $.app_mainView_chatView_conversationList;
+            var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+            var thread = null;
+            $.app_mainView_messaging_threadList.collection.forEach(function (m) {
+                if (m.attributes._id === 'thread-yuki') { thread = m.attributes; } });
+            main.selectThread(null, thread);
+            for (var i = 0; i < 20 && !(chat.chatThread && chat.chatThread._id === 'thread-yuki' && chat.messages.length); i++) { await wait(100); }
+            var at = function (k) { return Date.now() - 60000 + k; };
+            mockDb.merge([{
+                _id: 'msg-fwd-offer', _kind: 'com.palm.message:1', conversations: ['thread-yuki'], folder: 'inbox',
+                status: 'successful', serviceName: 'type_telegram', serviceMessageId: '-100:7',
+                messageText: '<b>Forwarded from Ann &amp; Bob:</b><br />\nluneos-file:?name=clip.mp4&amp;size=2000000&amp;type=video&amp;state=ask<br />\ncap',
+                localTimestamp: at(1), timestamp: at(1), from: { addr: 'yuki.t' }, flags: { visible: true, read: true }
+            }, {
+                _id: 'msg-fwd-anon', _kind: 'com.palm.message:1', conversations: ['thread-yuki'], folder: 'inbox',
+                status: 'successful', serviceName: 'type_telegram',
+                messageText: '<b>Forwarded:</b><br />\nfrom someone', localTimestamp: at(2), timestamp: at(2),
+                from: { addr: 'yuki.t' }, flags: { visible: true, read: true }
+            }, {
+                // A picture and nothing else
+                _id: 'msg-fwd-pic', _kind: 'com.palm.message:1', conversations: ['thread-yuki'], folder: 'inbox',
+                status: 'successful', serviceName: 'type_telegram',
+                messageText: '<b>Forwarded from Ann:</b><br />\nfile:///media/internal/a.jpg', localTimestamp: at(3), timestamp: at(3),
+                from: { addr: 'yuki.t' }, flags: { visible: true, read: true }
+            }]);
+            chat.runQuery(); await wait(800);
+            var shown = function (id) {
+                var node = null;
+                chat.$.list.getClientControls().forEach(function (c) {
+                    (function walk(k) {
+                        if (node || !k) { return; }
+                        if (k.message && k.message._id === id && k.$ && k.$.messageText) { node = k.$.messageText.hasNode(); return; }
+                        (k.children || []).forEach(walk);
+                    })(c.$ && (c.$.item || c));
+                });
+                if (!node) { return null; }
+                var kids = Array.prototype.filter.call(node.childNodes, function (n) { return n.nodeType === 1 || n.textContent.trim(); });
+                return { first: kids[0] && kids[0].className, label: kids[0] && kids[0].textContent,
+                    next: kids[1] && (kids[1].className || kids[1].nodeName),
+                    labels: node.querySelectorAll('.msg-forwarded').length,
+                    bold: node.querySelectorAll('b').length, text: node.textContent };
+            };
+            var out = { photo: shown('msg-y0'), offer: shown('msg-fwd-offer'), anon: shown('msg-fwd-anon'),
+                pic: shown('msg-fwd-pic') };
+            mockDb.del(['msg-fwd-offer', 'msg-fwd-anon', 'msg-fwd-pic']);
+            chat.runQuery(); await wait(200);
+            return JSON.stringify(out);
+        };
+        var r = JSON.parse(await session.evaluate('(' + page.toString() + ')()'));
+        assert.ok(r.photo && r.offer && r.anon && r.pic, 'the messages are drawn: ' + JSON.stringify(r));
+        assert.deepEqual([r.photo.first, r.photo.label, r.photo.next, r.photo.labels, r.photo.bold],
+            ['msg-forwarded', 'Forwarded from City Museum (Press office)', 'message-image', 1, 0]);
+        assert.ok(r.photo.text.indexOf('The north entrance opens') !== -1 && r.photo.text.indexOf(':') === r.photo.text.indexOf('14:00') + 2,
+            'the caption, and no line as text: ' + r.photo.text);
+        assert.deepEqual([r.offer.first, r.offer.label, r.offer.labels, r.offer.bold],
+            ['msg-forwarded', 'Forwarded from Ann & Bob', 1, 0]);
+        assert.ok(/msg-file-offer/.test(r.offer.next), 'the card under the label: ' + r.offer.next);
+        assert.ok(/clip\.mp4/.test(r.offer.text) && /cap$/.test(r.offer.text) && !/luneos-file/.test(r.offer.text), r.offer.text);
+        assert.deepEqual([r.anon.first, r.anon.label, r.anon.labels, r.anon.bold], ['msg-forwarded', 'Forwarded', 1, 0]);
+        assert.deepEqual([r.pic.first, r.pic.label, r.pic.next, r.pic.labels, r.pic.text],
+            ['msg-forwarded', 'Forwarded from Ann', 'message-image', 1, 'Forwarded from Ann'], 'a picture alone');
+        assert.ok(/from someone$/.test(r.anon.text) && r.anon.text.indexOf('Forwarded:') === -1, r.anon.text);
+    });
+
     // A message we sent from the phone's WhatsApp comes back as HTML with a mention as
     // "<b>@Name</b>", in the outbox, whose text is drawn as plain: the mention is bold, not tags,
     // and any other tag stays text. So in the chat list's preview of it.

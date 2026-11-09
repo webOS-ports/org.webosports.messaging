@@ -544,6 +544,18 @@ var messages = [
 
     // thread-yuki and thread-tomas: short 1:1 chats.
     {
+        // Forwarded from a channel, its photo with a caption: the transport's line in front of it
+        // (util/forwarded) is drawn as a "Forwarded from" label.
+        _id: "msg-y0", _kind: "com.palm.message:1", conversations: ["thread-yuki"],
+        folder: "inbox",
+        messageText: "<b>Forwarded from City Museum (Press office):</b><br />\n" + MOCK_URL +
+            "photos/pier.jpg\nThe north entrance opens at 14:00 on Sundays.",
+        localTimestamp: ago(3, 3), timestamp: ago(3, 3), status: "successful",
+        serviceName: "type_telegram", from: { addr: "yuki.t", name: "Yuki Tanaka" },
+        serviceMessageId: "tg-5120",
+        flags: { visible: true, read: true }
+    },
+    {
         _id: "msg-y1", _kind: "com.palm.message:1", conversations: ["thread-yuki"],
         folder: "outbox", messageText: "Left your book at the front desk",
         localTimestamp: ago(3, 2), timestamp: ago(3, 2), status: "successful",

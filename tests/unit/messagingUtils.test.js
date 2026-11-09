@@ -792,6 +792,16 @@ describe('message.summarizeMedia', function () {
         assert.equal(message.summarizeMedia('meet here geo:52.37,4.89'), 'meet here');
     });
 
+    it('shows a forward as what it is, without its "Forwarded from" line', function () {
+        assert.equal(message.summarizeMedia('<b>Forwarded from Ann &amp; Bob:</b><br />\nfile:///m/a.jpg'), '📷 Photo');
+        assert.equal(message.summarizeMedia('<b>Forwarded from Ann:</b><br />\nfile:///m/a.jpg<br />\nnice'),
+            message.summarizeMedia('file:///m/a.jpg<br />\nnice'));
+        assert.equal(message.summarizeMedia('<b>Forwarded:</b><br />\npoll:abc123'), '📊 Poll');
+        assert.equal(message.summarizeMedia('<b>Forwarded from Ann:</b><br />\nhello'), 'hello');
+        assert.equal(message.summarizeMedia('see <b>Forwarded from Ann:</b> later'), 'see <b>Forwarded from Ann:</b> later',
+            'only at the start');
+    });
+
     it('leaves an ordinary message untouched', function () {
         assert.equal(message.summarizeMedia('just a message'), 'just a message');
         assert.equal(message.summarizeMedia(''), '');

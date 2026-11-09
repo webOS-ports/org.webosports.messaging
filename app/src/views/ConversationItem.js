@@ -18,6 +18,7 @@ var kind = require('enyo/kind'),
     launchTargets = require('../util/launchTargets'),
     mentionMarkup = require('../util/mentionMarkup'),
     fileOffer = require('../util/fileOffer'),
+    forwarded = require('../util/forwarded'),
     sentExtras = require('../util/sentExtras'),
     receivedLocation = require('../util/receivedLocation'),
     moment = require('moment'),
@@ -239,6 +240,15 @@ module.exports = kind({
             return;
         }
 
+        // Forwarded: the transport's line saying from whom (util/forwarded) becomes a label at the
+        // top, and the rest is drawn as the message would be without it.
+        var forward = forwarded.find(raw);
+        var forwardHtml = forward ? this.buildForwarded(forward) : "";
+        if (forward) {
+            raw = forwarded.strip(raw);
+            inText = raw;
+        }
+
         if (inMessage.folder === FOLDERS.INBOX) {
             // purple's strdup_withhtml stores each newline as "<br />\n" — the tag AND the literal
             // newline. Drop the newline that directly follows a break tag first, or the pass below
@@ -318,8 +328,13 @@ module.exports = kind({
 
         // Pure-media message (the body was only media URLs): show just the media, no text line.
         if (media.length > 0 && this.isOnlyMedia(raw)) {
-            this.$.messageText.setContent(this.buildQuote(inMessage) + imagesHtml + chipsHtml +
-                localAttachmentHtml + this.buildReactions(inMessage));
+            var onlyMedia = imagesHtml + chipsHtml + localAttachmentHtml;
+            // Right under the label, as a caption sits right under its picture: no break first.
+            if (forwardHtml) {
+                onlyMedia = onlyMedia.replace(/^(?:<br\s*\/?>)+/i, "");
+            }
+            this.$.messageText.setContent(forwardHtml + this.buildQuote(inMessage) + onlyMedia +
+                this.buildReactions(inMessage));
             return;
         }
 
@@ -345,8 +360,15 @@ module.exports = kind({
         }
 
         // Emoji last, so it operates on the final HTML after linkification.
-        this.$.messageText.setContent(this.buildQuote(inMessage) +
+        this.$.messageText.setContent(forwardHtml + this.buildQuote(inMessage) +
             messagingUtils.message.emojify(inText) + this.buildReactions(inMessage));
+    },
+
+    /** The label of a forwarded message (util/forwarded): "Forwarded from <name>", above it all. */
+    buildForwarded: function (forward) {
+        return '<div class="msg-forwarded">' +
+            messagingUtils.message.emojify(forwarded.labelHtml(forward, $L, messagingUtils.message.escapeHtml)) +
+            '</div>';
     },
 
     /**

@@ -11,6 +11,7 @@
  */
 
 var $L = require('enyo/i18n').$L;
+var forwarded = require('./forwarded');
 
 var messaging = module.exports = {
     MAX_BOTTOM_HEIGHT_FOR_SNAP: 300,
@@ -489,7 +490,8 @@ var messaging = module.exports = {
         getNotificationText: function (rawMessage) {
             var m = messaging.message;
             if (m.isMMSMessage(rawMessage)) { return m.getMMSDisplayMessage(); }
-            var text = m.getMessageText(rawMessage);
+            // A forward's "Forwarded from" line (util/forwarded) is the chat's label, not the message.
+            var text = forwarded.strip(m.getMessageText(rawMessage));
             if (rawMessage && m.HTML_MESSAGE_KINDS.indexOf(rawMessage._kind) !== -1) {
                 text = m.removeHtml(text.replace(/<img\b[^>]*?\bsrc=["']([^"']+)["'][^>]*>/gi, " $1 "));
             }
@@ -612,7 +614,8 @@ var messaging = module.exports = {
          */
         summarizeMedia: function (text) {
             if (!text) { return text; }
-            text = messaging.message.summarizeTokens(text);
+            // The chat list shows a forward as the message it is, without its "Forwarded from" line.
+            text = messaging.message.summarizeTokens(forwarded.strip(text));
             var re = /(?:https?|file):\/\/[^\s<>"']+?\.(jpg|jpeg|png|gif|webp|bmp|mp3|m4a|aac|ogg|oga|opus|flac|wav|amr|mp4|m4v|mov|webm|mkv|3gp|data|pdf|doc|docx|xls|xlsx|ppt|pptx)(?:\?[^\s<>"']*)?/gi;
             var fileRe = /file:\/\/[^\s<>"']+/gi;
             var m = re.exec(text);

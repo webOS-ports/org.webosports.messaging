@@ -21,6 +21,10 @@ const LOCAL_FILE = /file:\/\/[^\s<>"']+/gi;
 
 const tidy = (text) => text.replace(/\s+/g, " ").trim();
 
+// The line a forwarded message starts with (app/src/util/forwarded.js has the format): the chat
+// draws it as a label, and a toast says what the message is instead.
+const FORWARDED = /^\s*<b>Forwarded(?: from ([^<]*?))?:<\/b>[ \t]*(?:<br\s*\/?>|\\n|\r?\n)?[\r\n]*/i;
+
 // What the transports store emoji as: no JS runtime on the old devices kept them as UTF-8.
 function decodeNumericEntities(text) {
 	return text.replace(/&#(?:x([0-9a-fA-F]+)|(\d+));/g, (ent, hex, dec) => {
@@ -78,7 +82,7 @@ function summarizeMedia(input) {
 // caller decides what to say instead.
 function notificationText(msg) {
 	if (msg && msg._kind === MMS_KIND) { return MMS_TEXT; }
-	let text = message.messageText(msg);
+	let text = message.messageText(msg).replace(FORWARDED, "");
 	if (msg && HTML_KINDS.includes(msg._kind)) {
 		text = removeHtml(text.replace(/<img\b[^>]*?\bsrc=["']([^"']+)["'][^>]*>/gi, " $1 "));
 	}
