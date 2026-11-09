@@ -479,16 +479,24 @@ function onClick(e) {
     }
 }
 
-function onKey(e) {
-    if (!view) {
-        return;
+/**
+ * What a key does to the open viewer: -1 or 1 turns the page, 0 nothing. Escape is not one of
+ * them: on LuneOS the back swipe is Escape (the compositor sends it down and up), and its key-up
+ * is the back gesture (webos-lib), which closes the viewer (MainView.goBack). Closing it here on
+ * the key-down as well made one swipe two steps back: the viewer, then the chat.
+ */
+function keyStep(e) {
+    if (e.key === "ArrowLeft") {
+        return -1;
     }
-    if (e.key === "Escape" || e.keyCode === 27) {
+    return e.key === "ArrowRight" ? 1 : 0;
+}
+
+function onKey(e) {
+    var step = view ? keyStep(e) : 0;
+    if (step) {
         e.preventDefault();
-        close();
-    } else if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
-        e.preventDefault();
-        go(view, view.index + (e.key === "ArrowRight" ? 1 : -1));
+        go(view, view.index + step);
     }
 }
 
@@ -557,5 +565,6 @@ module.exports = {
     zoomAt: zoomAt,
     closesOnRelease: closesOnRelease,
     turnsOnRelease: turnsOnRelease,
+    keyStep: keyStep,
     current: function () { return view ? { index: view.index, url: view.url, count: view.pictures.length, fromBubble: !!view.thumb } : null; }
 };

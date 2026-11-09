@@ -160,6 +160,24 @@ describe('chatsThreads: Facebook groups', function () {
     });
 });
 
+describe('chatsThreads: Teams group chats', function () {
+    var servers = [{ _id: 's-teams', name: 'Teams', serviceName: 'type_teams' }];
+    var channels = [
+        { _id: 'c-gc', serverId: 's-teams', remoteId: '19:abc-def@thread.v2', name: 'Ann +1', displayName: 'Ann +1' },
+        { _id: 'c-old', serverId: 's-teams', remoteId: '19:abc@thread.skype', name: 'Old group' },
+        { _id: 'c-team', serverId: 's-teams', remoteId: '19:xyz@thread.tacv2', name: 'General' },
+        { _id: 'c-nokey', serverId: 's-teams', name: 'No address' }
+    ];
+
+    it('a group chat is among the chats, named as itself; a team channel stays in Servers', function () {
+        assert.deepEqual(ct.deliveredChannels(channels, servers), { 'c-gc': 'Ann +1', 'c-old': 'Old group' });
+        assert.deepEqual(ct.chatChannels(channels, servers), { 'c-gc': true, 'c-old': true });
+        var threads = [{ _id: 't1', channelId: 'c-gc' }, { _id: 't2', channelId: 'c-team' }];
+        assert.deepEqual(ct.chatsThreads(threads, ct.deliveredChannels(channels, servers),
+            ct.chatChannels(channels, servers)).map(function (t) { return t._id; }), ['t1']);
+    });
+});
+
 describe('chatsThreads: a renamed group', function () {
     var servers = [
         { _id: 's-tg', name: 'Telegram (tdlib)', serviceName: 'type_telegram' },
