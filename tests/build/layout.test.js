@@ -1876,6 +1876,103 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.ok(/<i>x<\/i>/.test(r.preview.text) && r.preview.text.indexOf('<b>') === -1, r.preview.text);
     });
 
+    // A video, a music file or a document over 1 MB comes as a card to tap rather than as its file
+    // (util/fileOffer): the tap asks the transport for it once, the card says how it goes as the
+    // plugin rewrites it, and once the file is there it is drawn as any received file.
+    it('downloads an offered file on a tap, and shows it once it is there', async function () {
+        /* global require */
+        var page = async function () {
+            var $ = require('enyo/dispatcher').$, mockDb = require('src/data/mockDb');
+            var main = $.app_mainView, chat = $.app_mainView_chatView_conversationList;
+            var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+            var thread = null;
+            $.app_mainView_messaging_threadList.collection.forEach(function (m) {
+                if (m.attributes._id === 'thread-anna') { thread = m.attributes; }
+            });
+            main.selectThread(null, thread);
+            for (var i = 0; i < 20 && !(chat.chatThread && chat.chatThread._id === 'thread-anna' && chat.messages.length); i++) { await wait(100); }
+            var line = function (state, got) {
+                return 'luneos-file:?name=Holiday%20film%20%3Cb%3E.mp4&size=125829120&type=video&state=' + state + (got ? '&got=' + got : '');
+            };
+            var put = async function (text) {
+                mockDb.merge([{
+                    _id: 'msg-offer', _kind: 'com.palm.message:1', conversations: ['thread-anna'], folder: 'inbox',
+                    status: 'successful', serviceName: 'type_telegram', serviceMessageId: 'anna.k:7001',
+                    messageText: text, localTimestamp: Date.now(), timestamp: Date.now(),
+                    from: { addr: 'anna.k', name: 'Anna Kowalski' }, flags: { visible: true, read: true }
+                }]);
+                chat.runQuery(); await wait(400);
+            };
+            var item = function () {
+                var found = null;
+                chat.$.list.getClientControls().forEach(function (c) {
+                    (function walk(k) {
+                        if (found || !k) { return; }
+                        if (k.message && k.message._id === 'msg-offer' && k.$ && k.$.messageText) { found = k; return; }
+                        (k.children || []).forEach(walk);
+                    })(c.$ && (c.$.item || c));
+                });
+                return found;
+            };
+            var look = function () {
+                var it = item(), node = it && it.$.messageText.hasNode();
+                if (!node) { return null; }
+                var card = node.querySelector('.msg-file-offer');
+                return {
+                    card: !!card, state: card && card.getAttribute('data-state'),
+                    name: card && card.querySelector('.msg-attachment-name').textContent,
+                    status: card && card.querySelector('.msg-file-offer-status').textContent,
+                    video: !!(card && card.querySelector('.msg-attachment-video')),
+                    caption: node.textContent.indexOf('From the trip') !== -1,
+                    raw: node.textContent.indexOf('luneos-file') !== -1,
+                    player: !!node.querySelector('.msg-video-player')
+                };
+            };
+            var tap = async function () {
+                var it = item(), card = it.$.messageText.hasNode().querySelector('.msg-file-offer');
+                it.messageTapped(it.$.messageText, { target: card, preventDefault: function () {} });
+                await wait(300);
+            };
+            var out = {};
+            mockDb.imCommands = [];
+            await put(line('ask') + '<br />From the trip');
+            out.offered = look();
+            await tap();
+            out.asked = look();
+            out.sent = mockDb.imCommands.map(function (c) {
+                return { command: c.command, service: c.serviceName, to: c.targetUsername, params: c.params };
+            });
+            await tap();
+            out.sentOnce = mockDb.imCommands.length;
+            await put(line('downloading', 62914560) + '<br />From the trip');
+            out.going = look();
+            await put(line('failed') + '<br />From the trip');
+            out.failed = look();
+            await tap();
+            out.retried = mockDb.imCommands.length;
+            await put('file:///media/internal/.im-attachments/telegram/Holiday%20film.mp4<br />From the trip');
+            out.done = look();
+            mockDb.del(['msg-offer']);
+            chat.runQuery(); await wait(200);
+            return JSON.stringify(out);
+        };
+        var r = JSON.parse(await session.evaluate('(' + page.toString() + ')()'));
+        var card = function (state, status) {
+            return { card: true, state: state, name: 'Holiday film <b>.mp4', status: '120 MB · ' + status, video: true,
+                caption: true, raw: false, player: false };
+        };
+        assert.deepEqual(r.offered, card('ask', 'Tap to download'));
+        assert.deepEqual(r.asked, card('ask', 'Downloading…'), 'says so at once');
+        assert.deepEqual(r.sent, [{ command: 'downloadFile', service: 'type_telegram', to: 'anna.k',
+            params: { messageId: 'anna.k:7001' } }]);
+        assert.equal(r.sentOnce, 1, 'a second tap while it comes asks nothing more');
+        assert.deepEqual(r.going, card('downloading', 'Downloading… 50%'));
+        assert.deepEqual(r.failed, card('failed', "Couldn't download. Tap to try again."));
+        assert.equal(r.retried, 2, 'a tap after a failure asks again');
+        assert.deepEqual(r.done, { card: false, state: null, name: null, status: null, video: false, caption: true,
+            raw: false, player: true });
+    });
+
     // The keyboard New Conversation's "To" field brings up resizes the window; a resize on a phone
     // with no chat open went back to the chat list, so New Conversation vanished behind it and no
     // group could be made. With nothing in the pane, a resize still shows the list.

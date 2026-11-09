@@ -193,6 +193,16 @@ describe('chatActions: the commands, as the transport reads them', function () {
             { pollMessageId: 'P1', optionNames: 'Sat\x1fSun', senderJid: '+1501' });
         assert.equal(ca.pollVoteCommand(KIND, me, GROUP, poll, []).params.optionNames, '');
     });
+    it('a tap on an offered file asks for it by the message\'s id, in its chat', function () {
+        var offered = { serviceName: 'type_telegram', folder: 'inbox', serviceMessageId: '-100123:456' };
+        var cmd = ca.downloadFileCommand('com.palm.imcommand.telegram:1', { username: '+31600000000' }, '-100123', offered);
+        assert.deepEqual(cmd, { _kind: 'com.palm.imcommand.telegram:1', command: 'downloadFile', handler: 'transport',
+            serviceName: 'type_telegram', fromUsername: '+31600000000', targetUsername: '-100123',
+            params: { messageId: '-100123:456' } });
+        assert.equal(ca.downloadFileCommand(KIND, me, '', offered), null, 'no chat');
+        assert.equal(ca.downloadFileCommand(KIND, me, GROUP, { serviceName: 'type_telegram' }), null, 'no id');
+        assert.equal(ca.downloadFileCommand(KIND, me, GROUP, null), null);
+    });
     it('a vote on our own poll (made on the phone) names us as who made it', function () {
         var ours = { serviceName: 'type_whatsapp', folder: 'outbox', serviceMessageId: 'P2' };
         assert.equal(ca.pollVoteCommand(KIND, me, GROUP, ours, ['Sat']).params.senderJid, '+15555550100');

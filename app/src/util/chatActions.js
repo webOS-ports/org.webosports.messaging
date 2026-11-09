@@ -197,6 +197,19 @@ function reactionCommand(kind, account, chat, message, emoji, remove) {
 }
 
 /** selected: every option now ticked (none clears the vote). */
+/**
+ * Download a file the transport offered rather than fetched (util/fileOffer): by the message's
+ * id on the service, in its chat. The plugin rewrites the message as the download goes.
+ */
+function downloadFileCommand(kind, account, chat, message) {
+    if (!chat || !message || !message.serviceMessageId) {
+        return null;
+    }
+    return command(kind, "downloadFile", message.serviceName, account, chat, {
+        messageId: message.serviceMessageId
+    });
+}
+
 function pollVoteCommand(kind, account, chat, message, selected) {
     if (!chat || !message || !message.serviceMessageId) {
         return null;
@@ -568,6 +581,7 @@ module.exports = {
     canDeleteAllForEveryone: canDeleteAllForEveryone,
     reactionCommand: reactionCommand,
     pollVoteCommand: pollVoteCommand,
+    downloadFileCommand: downloadFileCommand,
     editCommand: editCommand,
     deleteCommand: deleteCommand,
     memberAddress: memberAddress,

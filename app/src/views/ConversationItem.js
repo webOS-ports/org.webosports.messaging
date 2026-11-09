@@ -17,6 +17,7 @@ var kind = require('enyo/kind'),
     poll = require('../util/poll'),
     launchTargets = require('../util/launchTargets'),
     mentionMarkup = require('../util/mentionMarkup'),
+    fileOffer = require('../util/fileOffer'),
     sentExtras = require('../util/sentExtras'),
     receivedLocation = require('../util/receivedLocation'),
     moment = require('moment'),
@@ -269,6 +270,15 @@ module.exports = kind({
             }
         }
 
+        // A file the transport offers rather than fetched (a video, a large document): a card
+        // that downloads it on a tap (util/fileOffer); the caption stays below it.
+        var offerHtml = "";
+        var offer = inMessage.folder === FOLDERS.INBOX ? fileOffer.find(raw) : null;
+        if (offer) {
+            offerHtml = this.buildFileOffer(offer, inMessage.downloadAsked === true);
+            inText = fileOffer.strip(inText);
+        }
+
         // A shared location arrives as text: WhatsApp's with a geo: URI, Telegram's as a
         // "Location: lat, lng" line (util/receivedLocation). Each becomes a tappable pin chip.
         var locationsHtml = "";
@@ -326,7 +336,7 @@ module.exports = kind({
         // Media on top, caption below it. .message-image is display:block, so the caption flows onto
         // the next line with no separator. The caption often keeps a LEADING <br> where the stripped
         // media URL sat, so strip that to avoid a blank line between image and caption.
-        var mediaHtml = imagesHtml + chipsHtml + locationsHtml + eventsHtml + pollsHtml +
+        var mediaHtml = offerHtml + imagesHtml + chipsHtml + locationsHtml + eventsHtml + pollsHtml +
             localAttachmentHtml;
         if (mediaHtml) {
             // The break can be <br>, <br/> or <br /> — match all spellings.
@@ -497,6 +507,17 @@ module.exports = kind({
                 '<div class="msg-attachment-name">' + messagingUtils.message.emojify(escape(card.name)) + '</div></div>';
         }
         return "";
+    },
+
+    /** The card of an offered file (util/fileOffer): its kind, name, size and what a tap does. */
+    buildFileOffer: function (offer, asked) {
+        var escape = messagingUtils.message.escapeHtml;
+        var kind = offer.type === "video" ? "video" : offer.type === "audio" ? "audio" : "file";
+        var name = offer.name || (kind === "video" ? $L("Video") : kind === "audio" ? $L("Audio") : $L("Attachment"));
+        return '<div class="msg-attachment msg-file-offer" data-kind="file-offer" data-state="' + offer.state + '">' +
+            '<div class="msg-attachment-icon msg-attachment-' + kind + '"></div>' +
+            '<div class="msg-file-offer-text"><div class="msg-attachment-name">' + escape(name) + '</div>' +
+            '<div class="msg-file-offer-status">' + escape(fileOffer.status(offer, asked, $L)) + '</div></div></div>';
     },
 
     /** A tappable location pin chip; data-open carries "lat,lng" for the Maps app. */
@@ -782,6 +803,13 @@ module.exports = kind({
 
                 if (node.getAttribute("data-audio-toggle")) {
                     this.toggleAudio(node);
+                    return true;
+                }
+
+                // An offered file: a tap downloads it (ConversationList.downloadOffered).
+                if (node.getAttribute("data-kind") === "file-offer") {
+                    this.cancelNativeNavigation(inEvent);
+                    this.doOpenAttachment({ target: "", kind: "file-offer", message: this.message });
                     return true;
                 }
 

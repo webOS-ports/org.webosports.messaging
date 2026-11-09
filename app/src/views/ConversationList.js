@@ -49,6 +49,7 @@ var kind = require('enyo/kind'),
     fileCarrier = require('../util/fileCarrier'),
     stickers = require('../util/stickers'),
     pictureSave = require('../util/pictureSave'),
+    fileOffer = require('../util/fileOffer'),
     enyoUtils = require('enyo/utils'),
     messageState = require('../util/messageState'),
     selection = require('../util/selection'),
@@ -2361,6 +2362,10 @@ module.exports = kind({
         }
         var target = inEvent && inEvent.target;
         var attachmentKind = inEvent && inEvent.kind;
+        if (attachmentKind === "file-offer") {
+            this.downloadOffered(inEvent.message);
+            return true;
+        }
         // A card we sent: its person in Contacts, found from the message (util/sentExtras).
         if (attachmentKind === "sent-contact") {
             var shown = launchTargets.sentContactLaunch(sentExtras.sentContact(inEvent.message));
@@ -2636,6 +2641,30 @@ module.exports = kind({
         this.mergeRecord({ _id: message._id, _kind: message._kind, myPollVote: current });
         this.sendPollVoteCommand(message, current);
         this.$.list.refresh();
+    },
+
+    /**
+     * A tap on an offered file (util/fileOffer): ask the transport for it, once while it comes,
+     * and say so on the card until the plugin's own word arrives.
+     */
+    downloadOffered: function (message) {
+        var offer = message && fileOffer.find(message.messageText);
+        if (!fileOffer.canStart(offer, message.downloadAsked === true)) {
+            return;
+        }
+        var thread = this.chatThread;
+        var sent = this.sendImCommand(message.serviceName, function (kind, account) {
+            return chatActions.downloadFileCommand(kind, account, chatActions.chatOf(message, thread), message);
+        });
+        if (!sent) {
+            return;
+        }
+        var model = this.collection && this.collection.find(function (m) { return m.get("_id") === message._id; });
+        if (model) {
+            model.set("downloadAsked", true);
+        } else {
+            message.downloadAsked = true;
+        }
     },
 
     sendPollVoteCommand: function (message, selected) {

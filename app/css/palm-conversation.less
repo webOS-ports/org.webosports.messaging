@@ -735,6 +735,27 @@ Inline media attachment chip (tap to open in the associated app)
   font-size: 15px;
   color: #234766;
 }
+/* A file offered rather than fetched (util/fileOffer): its name, and under it the size and what
+   a tap does. */
+.msg-file-offer-text {
+  -webkit-flex: 1;
+  flex: 1;
+  min-width: 0;
+}
+.msg-file-offer-text > .msg-attachment-name {
+  display: block;
+}
+.msg-file-offer-status {
+  margin-top: 2px;
+  font-size: 13px;
+  color: #666666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.msg-file-offer[data-state="failed"] .msg-file-offer-status {
+  color: #b42318;
+}
 
 /*----------------------
 Polls
