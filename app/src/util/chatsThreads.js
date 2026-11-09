@@ -15,7 +15,10 @@
  * channel is one, filed under the account's single Telegram server (whatever the plug-in calls
  * it); Telegram's own app lists them with the rest of the chats. So is every Facebook group:
  * purple-combined's prpl-gometa puts only its group threads in the buddy list, in its group
- * "Facebook", so the transport files them under a server of that name. All are chats with people,
+ * "Facebook", so the transport files them under a server of that name. And a Teams group chat:
+ * purple-teams keeps every Teams chat in one buddy-list group, which the transport files under a
+ * server "Teams"; a group chat there is addressed "19:...@thread.v2" (or "@thread.skype"), where a
+ * team's channel is "19:...@thread.tacv2" and stays in the Servers tab. All are chats with people,
  * as a WhatsApp group is, so they are always among the chats, under their own names.
  */
 
@@ -36,18 +39,42 @@ function isChatServer(server) {
         server.serviceName === "type_telegram" || server.serviceName === "type_gometa");
 }
 
-/** The channels of a chat server (isChatServer), as a lookup from their _id. */
-function chatChannels(channels, servers) {
-    var chatServers = {};
+/** A Teams group chat's address, as against a team channel's ("@thread.tacv2"). */
+function isTeamsGroupChat(channel) {
+    return /^19:.+@thread\.(v2|skype)$/i.test(String((channel && channel.remoteId) || ""));
+}
+
+/** The _ids of servers whose channels are chats: all of a chat server's, or Teams' group chats. */
+function chatServerKinds(servers) {
+    var kinds = {};
     for (var s = 0; servers && s < servers.length; s++) {
-        if (servers[s] && servers[s]._id && isChatServer(servers[s])) {
-            chatServers[servers[s]._id] = true;
+        var server = servers[s];
+        if (server && server._id) {
+            if (isChatServer(server)) {
+                kinds[server._id] = "all";
+            } else if (server.serviceName === "type_teams") {
+                kinds[server._id] = "teams";
+            }
         }
     }
+    return kinds;
+}
+
+/** Whether channel is a chat (see the top of this file), by chatServerKinds. */
+function isChatChannel(channel, kinds) {
+    if (!channel || !channel._id || !Object.prototype.hasOwnProperty.call(kinds, channel.serverId)) {
+        return false;
+    }
+    return kinds[channel.serverId] === "all" || isTeamsGroupChat(channel);
+}
+
+/** The channels that are chats (isChatChannel), as a lookup from their _id. */
+function chatChannels(channels, servers) {
+    var kinds = chatServerKinds(servers);
     var ids = {};
     for (var i = 0; channels && i < channels.length; i++) {
         var c = channels[i];
-        if (c && c._id && Object.prototype.hasOwnProperty.call(chatServers, c.serverId)) {
+        if (isChatChannel(c, kinds)) {
             ids[c._id] = true;
         }
     }
@@ -56,24 +83,21 @@ function chatChannels(channels, servers) {
 
 /**
  * The channels (imchannel records) the Chats list shows, as a lookup from their _id to how it
- * names them: those that deliver while closed, and every Discord group DM, Telegram chat and
- * Facebook group. servers: the imserver
+ * names them: those that deliver while closed, and every Discord group DM, Telegram chat,
+ * Facebook group and Teams group chat. servers: the imserver
  * records, for the server's name.
  */
 function deliveredChannels(channels, servers) {
-    var names = {}, groupDms = {};
+    var names = {}, kinds = chatServerKinds(servers);
     for (var s = 0; servers && s < servers.length; s++) {
         if (servers[s] && servers[s]._id) {
             names[servers[s]._id] = servers[s].displayName || servers[s].name || "";
-            if (isChatServer(servers[s])) {
-                groupDms[servers[s]._id] = true;
-            }
         }
     }
     var ids = {};
     for (var i = 0; channels && i < channels.length; i++) {
         var c = channels[i];
-        if (c && c._id && Object.prototype.hasOwnProperty.call(groupDms, c.serverId)) {
+        if (isChatChannel(c, kinds)) {
             ids[c._id] = c.displayName || c.name || $L("Group");
         } else if (c && c.background === true && c._id) {
             var server = Object.prototype.hasOwnProperty.call(names, c.serverId) ? names[c.serverId] : "";
