@@ -482,8 +482,12 @@ module.exports = kind({
             name: 'readMarker', kind: LunaService, service: 'luna://com.palm.imlibpurple',
             method: 'markRead', onError: 'presenceFailed'
         },
-        // onactivate: back in front, as from the Camera app after Take Photo.
-        { kind: Signals, onTypingChanged: "showTyping", onactivate: "cameraReturned" },
+        // onactivate: back in front, as from the Camera app after Take Photo; onCameraCapture: the
+        // Camera app relaunched Messaging with the photo.
+        {
+            kind: Signals, onTypingChanged: "showTyping", onactivate: "cameraReturned",
+            onCameraCapture: "cameraHandedBack"
+        },
         {
             name: 'threadMerge', kind: LunaService, service: DB_SERVICE, method: 'merge',
             onError: 'serviceErr'
@@ -3514,8 +3518,8 @@ module.exports = kind({
     // --- take photo ------------------------------------------------------------------------
 
     /**
-     * The Camera app takes the photo; when Messaging is back in front, the photos it took since are
-     * staged like picked files (cameraCapture says why it goes this way round).
+     * The Camera app takes the photo and hands it back, and it is staged like a picked file; from
+     * a Camera app that does not, the photos taken since are (util/cameraCapture).
      */
     takePhoto: function () {
         if (!this.chatThread || this.attachmentsUnsupported()) {
@@ -3533,9 +3537,24 @@ module.exports = kind({
         return true;
     },
 
+    /** The Camera app's answer: the photo to stage, or Back. */
+    cameraHandedBack: function (inSender, inEvent) {
+        var req = this.photoRequest;
+        var got = cameraCapture.handedBack(inEvent, req, Date.now());
+        if (!got) {
+            return true;
+        }
+        this.cancelTakePhoto();
+        if (got.photos && this.chatThread && this.chatThread._id === req.threadId) {
+            this.stageAttachments(got.photos);
+        }
+        return true;
+    },
+
     /**
-     * Back in front: look for the photos. The indexer files a new one a moment after the Camera
-     * app writes it, so look again a few times before leaving the request for the next return.
+     * Back in front with no word from the Camera app: look for the photos. The indexer files a new
+     * one a moment after the Camera app writes it, so look again a few times before leaving the
+     * request for the next return.
      */
     cameraReturned: function () {
         var req = this.photoRequest;
@@ -3563,7 +3582,7 @@ module.exports = kind({
                 }
             });
         };
-        look();
+        this._photoTimer = setTimeout(look, cameraCapture.HANDBACK_WAIT_MS);
     },
 
     /** One find on the media index: done(error, results). */

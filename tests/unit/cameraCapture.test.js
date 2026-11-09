@@ -20,8 +20,38 @@ function image(path, modifiedTime) {
 }
 
 describe('cameraCapture', function () {
-    it('opens the Camera app', function () {
-        assert.deepEqual(cameraCapture.launch(), { id: 'org.webosports.app.camera', params: {} });
+    it('opens the Camera app, to take a photo for Messaging', function () {
+        assert.deepEqual(cameraCapture.launch(), { id: 'org.webosports.app.camera',
+            params: { capture: { returnTo: 'org.webosports.app.messaging' } } });
+    });
+
+    it('takes the photo the Camera app hands back, or its Back', function () {
+        var req = cameraCapture.request('t', NOW);
+        assert.deepEqual(cameraCapture.handedBack({ path: '/media/internal/DCIM/2026-11-08-10-00-05.jpg' }, req, NOW + 5000),
+            { photos: [{ path: '/media/internal/DCIM/2026-11-08-10-00-05.jpg', name: '2026-11-08-10-00-05.jpg', type: 'image' }] });
+        assert.deepEqual(cameraCapture.handedBack({ path: '/media/internal/DCIM/a.JPEG' }, req, NOW).photos.length, 1);
+        assert.deepEqual(cameraCapture.handedBack({ cancelled: true }, req, NOW), { cancelled: true });
+    });
+
+    it('takes nothing with no Take Photo waiting, or one too old', function () {
+        var path = { path: '/media/internal/DCIM/a.jpg' };
+        assert.equal(cameraCapture.handedBack(path, null, NOW), null);
+        var req = cameraCapture.request('t', NOW);
+        assert.equal(cameraCapture.handedBack(path, req, NOW + (cameraCapture.MAX_WAIT_SECONDS + 1) * 1000), null);
+        assert.equal(cameraCapture.handedBack({ cancelled: true }, null, NOW), null);
+    });
+
+    it('takes no file from outside the Camera app\'s folder, nor one that is not a photo', function () {
+        var req = cameraCapture.request('t', NOW);
+        ['/etc/passwd', '/media/internal/DCIM/../.palm/x.jpg', '/media/internal/DCIM/./a.jpg',
+            '/media/internal/DCIMx/a.jpg', 'media/internal/DCIM/a.jpg', '/media/internal/DCIM/.jpg',
+            '/media/internal/DCIM/a.mp4', '/media/internal/DCIM/', 42, null, undefined
+        ].forEach(function (p) {
+            assert.equal(cameraCapture.handedBack({ path: p }, req, NOW), null, String(p));
+        });
+        assert.equal(cameraCapture.handedBack('/media/internal/DCIM/a.jpg', req, NOW), null);
+        assert.equal(cameraCapture.handedBack(null, req, NOW), null);
+        assert.equal(cameraCapture.handedBack({ cancelled: 'yes' }, req, NOW), null);
     });
 
     it('remembers the chat and the second Take Photo was tapped', function () {

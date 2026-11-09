@@ -2056,6 +2056,76 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             cmd: { command: 'blockBuddy', to: true, service: true }, closed: true, cancelled: 0 });
     });
 
+    it('takes the photo the Camera app hands back; nothing for Back, nor a file another app names', async function () {
+        /* global require */
+        var page = async function () {
+            var $ = require('enyo/dispatcher').$, Signals = require('enyo/Signals'), mockDb = require('src/data/mockDb');
+            var main = $.app_mainView, chat = $.app_mainView_chatView_conversationList;
+            var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+            var family = null;
+            $.app_mainView_messaging_threadList.collection.forEach(function (m) {
+                if (m.attributes._id === 'thread-family') { family = m.attributes; } });
+            main.selectThread(null, JSON.parse(JSON.stringify(family)));
+            for (var i = 0; i < 30 && !(chat.chatThread && chat.chatThread._id === 'thread-family'); i++) { await wait(100); }
+            await wait(300);
+            chat.clearAttachment();
+            var kind = 'com.palm.media.image.file:1';
+            mockDb.store[kind] = [];
+            mockDb.launches = [];
+            // The relaunch the Camera app makes, as WAM hands it over.
+            var relaunch = async function (params) {
+                window.PalmSystem = { launchParams: JSON.stringify(params), addBannerMessage: function () {} };
+                Signals.send('onactivate', {});
+                main.handleRelaunch();
+                await wait(100);
+                delete window.PalmSystem;
+            };
+            var paths = function () { return chat.outboundAttachments.map(function (a) { return a.path; }); };
+            var out = {};
+
+            // Use Photo. The one taken first and deleted for Retake is still in the media index.
+            chat.takePhoto();
+            out.launched = mockDb.launches.slice();
+            var since = chat.photoRequest.since;
+            mockDb.store[kind].push({ _id: 'img-retake', _kind: kind, path: '/media/internal/DCIM/retake.jpg', modifiedTime: since + 1 });
+            await relaunch({ cameraCapture: { path: '/media/internal/DCIM/kept.jpg' } });
+            out.kept = { staged: paths(), done: !chat.photoRequest };
+            await wait(2200);
+            out.keptLater = paths();
+            chat.clearAttachment();
+
+            // Back: nothing, now or once the wait for it is over.
+            chat.takePhoto();
+            await relaunch({ cameraCapture: { cancelled: true } });
+            out.back = { staged: paths(), done: !chat.photoRequest };
+            await wait(2200);
+            out.backLater = paths();
+
+            // A file named by something other than the Camera app, or with no Take Photo waiting.
+            chat.takePhoto();
+            await relaunch({ cameraCapture: { path: '/media/internal/DCIM/../.palm/secret.jpg' } });
+            await relaunch({ cameraCapture: { path: '/etc/passwd' } });
+            out.stranger = { staged: paths(), waiting: !!chat.photoRequest };
+            chat.cancelTakePhoto();
+            await relaunch({ cameraCapture: { path: '/media/internal/DCIM/kept.jpg' } });
+            out.unasked = paths();
+
+            chat.clearAttachment();
+            delete mockDb.store[kind];
+            mockDb.launches = [];
+            return out;
+        };
+        var r = await session.evaluate('(' + page.toString() + ')()');
+        assert.deepEqual(r.launched, [{ id: 'org.webosports.app.camera',
+            params: { capture: { returnTo: 'org.webosports.app.messaging' } } }]);
+        assert.deepEqual(r.kept, { staged: ['/media/internal/DCIM/kept.jpg'], done: true }, 'the photo kept, at once');
+        assert.deepEqual(r.keptLater, ['/media/internal/DCIM/kept.jpg'], 'and not the one taken again');
+        assert.deepEqual(r.back, { staged: [], done: true });
+        assert.deepEqual(r.backLater, [], 'Back means none, not the photos in the index');
+        assert.deepEqual(r.stranger, { staged: [], waiting: true });
+        assert.deepEqual(r.unasked, []);
+    });
+
     it('takes a photo from the paperclip: opens the Camera app and stages what it took', async function () {
         /* global require */
         var page = async function () {
@@ -2084,13 +2154,16 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             Signals.send('onactivate', {}); await wait(200);
             out.early = { staged: chat.outboundAttachments.length, waiting: !!chat.photoRequest };
 
-            // The Camera app took one; a screenshot and an older photo are filed beside it.
+            // A Camera app that does not hand the photo back took one; a screenshot and an older
+            // photo are filed beside it. Messaging waits for a hand-back first, then looks.
             var since = chat.photoRequest.since;
             mockDb.store[kind].push(
                 { _id: 'img-new', _kind: kind, path: '/media/internal/DCIM/2026-11-08-10-00-05.jpg', modifiedTime: since + 2 },
                 { _id: 'img-shot', _kind: kind, path: '/media/internal/screencaptures/shot.png', modifiedTime: since + 3 },
                 { _id: 'img-old', _kind: kind, path: '/media/internal/DCIM/older.jpg', modifiedTime: since - 60 });
-            Signals.send('onactivate', {}); await wait(300);
+            Signals.send('onactivate', {}); await wait(500);
+            out.waited = chat.outboundAttachments.length;
+            await wait(1500);
             out.staged = chat.outboundAttachments.slice();
             out.done = !chat.photoRequest;
             var chip = chat.$.attachmentChips;
@@ -2115,8 +2188,10 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         };
         var r = await session.evaluate('(' + page.toString() + ')()');
         assert.deepEqual(r.menu, ['File', 'Take Photo', 'Sticker', 'My Location', 'Contact'], 'on WhatsApp, which has stickers');
-        assert.deepEqual(r.launched, [{ id: 'org.webosports.app.camera', params: {} }]);
+        assert.deepEqual(r.launched, [{ id: 'org.webosports.app.camera',
+            params: { capture: { returnTo: 'org.webosports.app.messaging' } } }]);
         assert.deepEqual(r.early, { staged: 0, waiting: true });
+        assert.equal(r.waited, 0, 'not looked for until the Camera app has had its say');
         assert.deepEqual(r.staged, [{ path: '/media/internal/DCIM/2026-11-08-10-00-05.jpg',
             name: '2026-11-08-10-00-05.jpg', type: 'image' }], 'only the photo taken since, not the screenshot');
         assert.equal(r.done, true);

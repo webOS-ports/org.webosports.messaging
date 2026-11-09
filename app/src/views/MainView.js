@@ -602,7 +602,10 @@ module.exports = kind({
         }
 
         try {
-            if (params.threadId !== undefined) {
+            if (params.cameraCapture) {
+                // The Camera app, back with the photo Take Photo asked for (util/cameraCapture).
+                Signals.send("onCameraCapture", params.cameraCapture);
+            } else if (params.threadId !== undefined) {
                 this.findThread(params.threadId);
             } else if (params.message && params.message.conversations) {
                 // Tapped a notification: open the thread the message belongs to.
