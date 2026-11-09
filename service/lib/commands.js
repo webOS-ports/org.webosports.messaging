@@ -20,6 +20,8 @@
  *   restoreFinished  {}                 called by the backup service after a restore: unlink
  *                                       every thread from its person, as the persons it named
  *                                       are gone; the next message adopts the thread again
+ *   savePicture      {path}             copy a chat's picture where Photos finds it
+ *                                       -> {path, saved} (pictures.js)
  *
  * Everything that writes threads runs through one serial queue (serial.js). Whichever watch
  * fires first after an update first puts right what the old threader left (migrate.js): on a
@@ -39,6 +41,7 @@ const { migrate, VERSION: MIGRATION } = require("./migrate.js");
 const authchat = require("./authchat.js");
 const buddies = require("./buddies.js");
 const { createSerial } = require("./serial.js");
+const { createPictures } = require("./pictures.js");
 
 const MESSAGE_KIND = "com.palm.message:1";
 const CHANNEL_KIND = "com.palm.imchannel:1";
@@ -46,7 +49,7 @@ const THREAD_KIND = "com.palm.chatthread:1";
 const PAGE = 500;
 
 function createCommands({ db, tempdb, call, notifier, state, serial, log = console, now,
-	templateDirs = authchat.TEMPLATE_DIRS }) {
+	templateDirs = authchat.TEMPLATE_DIRS, pictures = createPictures() }) {
 	const assigner = createAssigner({ db, tempdb, notifier, log, now });
 	const buddySerial = createSerial();
 
@@ -262,6 +265,7 @@ function createCommands({ db, tempdb, call, notifier, state, serial, log = conso
 		newBuddies: { handler: newBuddies, timeoutMs },
 		changedAvailability: { handler: changedAvailability, timeoutMs },
 		restoreFinished: { handler: restoreFinished, timeoutMs },
+		savePicture: { handler: pictures.savePicture, timeoutMs },
 	};
 }
 

@@ -1750,15 +1750,27 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             fire('pointerdown', W / 2, H / 2); fire('pointermove', W / 2 + 2, H / 2 + 60); fire('pointermove', W / 2 + 4, H / 2 + 220); fire('pointerup', W / 2 + 4, H / 2 + 220);
             await wait(300);
             out.dragDown = { open: iv.isOpen() };
-            // The open button: the picture to Photos, or a link to the browser.
-            var sent = [];
-            var keep = chat.openPictureElsewhere;
-            chat.openPictureElsewhere = function (u) { sent.push(u.replace(/.*\//, '')); };
+            // Save: the picture into the folder Photos shows, and a word on how it went; the
+            // picture stays up. A web one is downloaded there; one refused says so.
+            var mockDb = require('src/data/mockDb');
+            mockDb.savedPictures = []; mockDb.downloads = [];
             item.messageTapped(item.$.messageText, { target: img, preventDefault: function () {} });
             await wait(260);
-            root.querySelector('.image-viewer-open').click(); await wait(50);
-            chat.openPictureElsewhere = keep;
-            out.openElsewhere = { sent: sent, open: iv.isOpen() };
+            var save = root.querySelector('.image-viewer-save'), status = root.querySelector('.image-viewer-status');
+            var said = function () { return status.classList.contains('shown') ? status.textContent : null; };
+            save.click(); await wait(50);
+            out.save = { label: save.getAttribute('aria-label'), open: iv.isOpen(), said: said(),
+                copied: mockDb.savedPictures.map(function (p) { return p.replace(/.*\//, ''); }) };
+            save.click(); await wait(50);
+            out.save.again = said();
+            chat.savePicture('https://cdn.example.org/a/cat.png?sig=1'); await wait(50);
+            out.save.web = { said: said(), got: mockDb.downloads.map(function (d) { return d.targetDir + '/' + d.targetFilename; }) };
+            mockDb.savePictureFails = true;
+            save.click(); await wait(50);
+            mockDb.savePictureFails = false;
+            out.save.refused = said();
+            iv.close(true);
+            out.save.closedQuiet = !status.classList.contains('shown');
 
             // A poll with no id.
             await open('thread-dora');
@@ -1795,7 +1807,10 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.deepEqual(r.back, { open: false, shown: 'none', chat: 'thread-ben' });
         assert.deepEqual(r.closeButton, { open: false, shown: 'none' });
         assert.deepEqual(r.dragDown, { open: false });
-        assert.deepEqual(r.openElsewhere, { sent: ['pier.jpg'], open: false });
+        assert.deepEqual(r.save, { label: 'Save to Photos', open: true, said: 'Saved to Photos', copied: ['pier.jpg'],
+            again: 'Already in Photos',
+            web: { said: 'Saved to Photos', got: ['/media/internal/Messaging/cat.png'] },
+            refused: "Couldn't save the picture", closedQuiet: true });
         assert.deepEqual(r.poll, { dialog: true, title: "Can't vote on this poll", vote: null });
         assert.deepEqual(r.pollLook, { roomAround: true, scrim: true, buttons: ['OK'], fullWidth: true });
     });

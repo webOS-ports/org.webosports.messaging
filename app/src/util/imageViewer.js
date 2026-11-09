@@ -67,7 +67,10 @@ function closesOnRelease(dy, vy) {
 }
 
 var ICON_CLOSE = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="#fff" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg>';
-var ICON_OPEN = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>';
+// Save: the Music app's download glyph (org.webosports.app.music qml/images/download.svg).
+var ICON_SAVE = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><g stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></g></svg>';
+/** How long a word from Save stays up. */
+var STATUS_MS = 2500;
 
 var view = null;   // the one viewer's state while open
 
@@ -85,12 +88,13 @@ function build() {
     root.className = "image-viewer";
     root.setAttribute("role", "dialog");
     root.innerHTML = '<div class="image-viewer-backdrop"></div><img class="image-viewer-image" alt="" draggable="false"/>' +
-        '<button type="button" class="image-viewer-button image-viewer-open"></button>' +
+        '<button type="button" class="image-viewer-button image-viewer-save"></button>' +
         '<button type="button" class="image-viewer-button image-viewer-close"></button>' +
-        '<div class="image-viewer-strip"></div>';
-    var open = root.querySelector(".image-viewer-open"), close = root.querySelector(".image-viewer-close");
-    open.innerHTML = ICON_OPEN;
-    open.setAttribute("aria-label", $L("Open in Photos"));
+        '<div class="image-viewer-strip"></div>' +
+        '<div class="image-viewer-status" role="status" aria-live="polite"></div>';
+    var save = root.querySelector(".image-viewer-save"), close = root.querySelector(".image-viewer-close");
+    save.innerHTML = ICON_SAVE;
+    save.setAttribute("aria-label", $L("Save to Photos"));
     close.innerHTML = ICON_CLOSE;
     close.setAttribute("aria-label", $L("Close"));
     document.body.appendChild(root);
@@ -208,16 +212,17 @@ function go(v, i) {
 /**
  * Show a picture over everything. pictures: [{ url }] of the conversation (util/threadPictures),
  * index: the one tapped. thumb: the picture tapped in the chat, to grow out of. thumbFor(picture):
- * its picture in the chat, if drawn, to shrink back into. onOpenElsewhere(url): the open button.
+ * its picture in the chat, if drawn, to shrink back into. onSave(url): the Save button, which
+ * leaves the picture up; say() tells how it went.
  */
-function open(pictures, index, thumb, onOpenElsewhere, thumbFor) {
+function open(pictures, index, thumb, onSave, thumbFor) {
     if (view) {
         close(true);
     }
     var root = document.querySelector(".image-viewer") || build();
     var url = pictures[index].url;
     var v = view = {
-        root: root, url: url, thumb: thumb, onOpenElsewhere: onOpenElsewhere,
+        root: root, url: url, thumb: thumb, onSave: onSave,
         pictures: pictures, index: index, thumbFor: thumbFor,
         img: root.querySelector(".image-viewer-image"),
         backdrop: root.querySelector(".image-viewer-backdrop"),
@@ -264,6 +269,7 @@ function close(now) {
     }
     view = null;
     detach(v);
+    hideStatus(v.root);
     var done = function () {
         if (!view) {
             v.root.style.display = "none";
@@ -468,10 +474,8 @@ function onClick(e) {
     e.stopPropagation();
     if (button.classList.contains("image-viewer-close")) {
         close();
-    } else if (v.onOpenElsewhere) {
-        var url = v.url, cb = v.onOpenElsewhere;
-        close(true);
-        cb(url);
+    } else if (v.onSave) {
+        v.onSave(v.url);
     }
 }
 
@@ -519,8 +523,33 @@ function detach(v) {
     window.removeEventListener("resize", onResize);
 }
 
+var statusTimer = null;
+
+function hideStatus(root) {
+    clearTimeout(statusTimer);
+    statusTimer = null;
+    var node = root && root.querySelector(".image-viewer-status");
+    if (node) {
+        node.classList.remove("shown");
+    }
+}
+
+/** A word over the picture, for a while: how a Save went. Nothing when no picture is up. */
+function say(text) {
+    if (!view) {
+        return false;
+    }
+    var root = view.root, node = root.querySelector(".image-viewer-status");
+    clearTimeout(statusTimer);
+    node.textContent = text;
+    node.classList.add("shown");
+    statusTimer = setTimeout(function () { hideStatus(root); }, STATUS_MS);
+    return true;
+}
+
 module.exports = {
     open: open,
+    say: say,
     close: close,
     isOpen: isOpen,
     fit: fit,

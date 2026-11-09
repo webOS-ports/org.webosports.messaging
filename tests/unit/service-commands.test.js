@@ -30,7 +30,7 @@ describe('the messaging service on the bus', function () {
         assert.equal(env.handle.name, "org.webosports.service.messaging");
         assert.deepEqual(env.handle.methods.sort(), ["/assignMessages", "/changedAvailability", "/deleteChatthread", "/info",
             "/loginsChanged", "/messagesDeleted", "/messagesRetracted", "/newBuddies", "/putMessage", "/quit", "/readChanges", "/restoreFinished",
-            "/updateThreadValues"]);
+            "/savePicture", "/updateThreadValues"]);
         env.service.bus.stop();
     });
 
@@ -262,6 +262,30 @@ describe('a notification of a message its sender deleted', function () {
         assert.equal(t.env.closed.length, 1, 'it was asked to close');
         assert.equal(t.env.db.all(MESSAGE)[0].toastId, null);
         t.env.service.bus.stop();
+    });
+});
+
+describe('savePicture on the bus', function () {
+    it('copies a chat\'s picture into the folder Photos sees, and says why it will not', async function () {
+        var os = require('node:os');
+        var { createPictures } = require(path.join(SERVICE, 'lib', 'pictures.js'));
+        var root = fs.mkdtempSync(path.join(os.tmpdir(), 'messaging-save-'));
+        try {
+            var media = path.join(root, 'media'), saveDir = path.join(media, 'Messaging');
+            fs.mkdirSync(path.join(media, '.im-attachments', 'signal'), { recursive: true });
+            fs.writeFileSync(path.join(media, '.im-attachments', 'signal', 'p.jpg'), 'jpeg');
+            var env = boot({ pictures: createPictures({ media: media, saveDir: saveDir }) });
+            var r = await ask(env.handle, "savePicture", { path: 'file://' + path.join(media, '.im-attachments', 'signal', 'p.jpg') });
+            assert.equal(r.returnValue, true);
+            assert.deepEqual({ path: r.path, saved: r.saved }, { path: path.join(saveDir, 'p.jpg'), saved: true });
+            assert.equal(fs.readFileSync(path.join(saveDir, 'p.jpg'), 'utf8'), 'jpeg');
+            var bad = await ask(env.handle, "savePicture", { path: '/etc/passwd' });
+            assert.equal(bad.returnValue, false);
+            assert.equal(bad.errorCode, 'BAD_ARGS');
+            env.service.bus.stop();
+        } finally {
+            fs.rmSync(root, { recursive: true, force: true });
+        }
     });
 });
 

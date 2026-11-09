@@ -72,7 +72,8 @@ function boot(opts) {
         return { returnValue: false, errorCode: -1, errorText: "unexpected call " + uri };
     });
     var s = service.start({ palmbus: pb, idleMs: 0, exit: function () {}, log: opts.log || quiet,
-        stateFile: stateFile(), now: opts.now, templateDirs: opts.templateDirs || [TEMPLATES] });
+        stateFile: stateFile(), now: opts.now, templateDirs: opts.templateDirs || [TEMPLATES],
+        pictures: opts.pictures });
     return { db: db, tempdb: tempdb, am: am, toasts: toasts, closed: closed, handle: pb.handles[0], service: s };
 }
 

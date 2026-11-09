@@ -48,6 +48,7 @@ var kind = require('enyo/kind'),
     attachments = require('../util/attachments'),
     fileCarrier = require('../util/fileCarrier'),
     stickers = require('../util/stickers'),
+    pictureSave = require('../util/pictureSave'),
     enyoUtils = require('enyo/utils'),
     messageState = require('../util/messageState'),
     selection = require('../util/selection'),
@@ -496,6 +497,16 @@ module.exports = kind({
         {
             name: 'openApp', kind: LunaService,
             service: 'luna://com.palm.applicationManager', method: 'open', onError: 'serviceErr'
+        },
+        {
+            // The picture viewer's Save (util/pictureSave): one on the device, copied by the
+            // messaging service; one on the web, fetched by the download manager.
+            name: 'pictureCopy', kind: LunaService, service: 'luna://org.webosports.service.messaging',
+            method: 'savePicture', onResponse: 'pictureCopied', onError: 'pictureNotSaved'
+        },
+        {
+            name: 'pictureDownload', kind: LunaService, service: 'luna://com.webos.service.downloadmanager',
+            method: 'download', subscribe: true, onResponse: 'pictureDownloadReply', onError: 'pictureNotSaved'
         },
         {
             // The system picker, shown in a popup over the app. There is no com.palm.filepicker app
@@ -2424,19 +2435,83 @@ module.exports = kind({
             index = 0;
         }
         imageViewer.open(pictures, index, node, function (shown) {
-            self.openPictureElsewhere(shown);
+            self.savePicture(shown);
         }, function (picture) {
             return self.pictureNode(picture.url);
         });
     },
 
-    /** A received picture in Photos; one that is only a link, in the browser. */
-    openPictureElsewhere: function (url) {
-        if (/^file:\/\//i.test(url)) {
-            this.$.launchApp.send({ id: "com.palm.app.photos", params: { target: url } });
-        } else {
-            this.$.openApp.send({ target: url });
+    /**
+     * The picture viewer's Save: the picture into the folder Photos shows (util/pictureSave), and
+     * a word in the viewer on how it went. One Save at a time.
+     */
+    savePicture: function (url) {
+        var how = pictureSave.how(url);
+        if (!how) {
+            this.pictureNotSaved();
+            return;
         }
+        if (this._pictureSaving) {
+            return;
+        }
+        this._pictureSaving = true;
+        if (how === "copy") {
+            var copy = pictureSave.copyRequest(url);
+            if (mockDb.enabled) {
+                this.pictureCopied(null, mockDb.savePicture(copy));
+            } else {
+                this.$.pictureCopy.send(copy);
+            }
+            return;
+        }
+        var params = pictureSave.downloadRequest(url);
+        if (mockDb.enabled) {
+            this.pictureDownloadReply(null, mockDb.download(params));
+            return;
+        }
+        // Ended through the request send returns, as a card's download is.
+        this._pictureRequest = this.$.pictureDownload.send(params);
+    },
+
+    pictureCopied: function (inSender, inResponse) {
+        if (!inResponse || inResponse.returnValue === false) {
+            return this.pictureNotSaved();
+        }
+        this._pictureSaving = false;
+        imageViewer.say(inResponse.saved === false ? $L("Already in Photos") : $L("Saved to Photos"));
+        return true;
+    },
+
+    pictureDownloadReply: function (inSender, inResponse) {
+        var result = pictureSave.outcome(inResponse);
+        if (result.state === "pending") {
+            return true;
+        }
+        var request = this._pictureRequest;
+        this._pictureRequest = null;
+        if (request && typeof request.cancel === "function") {
+            request.cancel();
+        }
+        if (result.state !== "done") {
+            return this.pictureNotSaved();
+        }
+        this._pictureSaving = false;
+        imageViewer.say($L("Saved to Photos"));
+        return true;
+    },
+
+    pictureNotSaved: function (inSender, inError) {
+        if (inError) {
+            this.warn("savePicture:", inError.errorText || inError);
+        }
+        var request = this._pictureRequest;
+        this._pictureRequest = null;
+        if (request && typeof request.cancel === "function") {
+            request.cancel();
+        }
+        this._pictureSaving = false;
+        imageViewer.say($L("Couldn't save the picture"));
+        return true;
     },
 
     /** The picture of url in the chat as drawn now, or null (scrolled out of the list). */

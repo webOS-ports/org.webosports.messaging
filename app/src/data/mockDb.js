@@ -848,6 +848,23 @@ module.exports = {
             target: params.targetDir + "/" + params.targetFilename };
     },
 
+    /**
+     * What the messaging service's savePicture answers: the picture copied into Messaging, or,
+     * saved before, left there. savePictureFails: it is refused.
+     */
+    savedPictures: [],
+    savePicture: function (params) {
+        if (this.savePictureFails) {
+            return { returnValue: false, errorCode: "BAD_ARGS", errorText: "not a picture" };
+        }
+        var name = String(params.path).replace(/.*\//, "");
+        var saved = this.savedPictures.indexOf(params.path) === -1;
+        if (saved) {
+            this.savedPictures.push(params.path);
+        }
+        return { returnValue: true, path: "/media/internal/Messaging/" + name, saved: saved };
+    },
+
     /** Where the device is, for sending a location without a location service. */
     location: { latitude: 52.3731, longitude: 4.8925 },
 
