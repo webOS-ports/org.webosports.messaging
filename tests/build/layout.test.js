@@ -437,7 +437,8 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             'var place = { below: bb.top >= last.bottom - 0.5, inView: bb.bottom <= sb.bottom + 0.5 && bb.top >= sb.top,' +
             '  small: dots.width > 20 && dots.width < 120, left: dots.left < sb.left + sb.width / 2 };' +
             // Drawn as a received message is: their picture where its picture is, the bubble where
-            // its bubble is and as tall, with the tail.
+            // its bubble is and as tall as the picture beside it (a one-line message with its time is),
+            // the picture as high beside it and inside the row, the tail where its tail is, the dots centred.
             'var recv = chat.$.list.hasNode().querySelectorAll(".chat-balloon-received");' +
             'var rb = recv[recv.length - 1].getBoundingClientRect();' +
             'var rimg = recv[recv.length - 1].closest(".chat-balloon").querySelector(".contact-image").getBoundingClientRect();' +
@@ -446,7 +447,9 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             'var tail = getComputedStyle(dotsNode, ":after");' +
             'var looks = { bubbleX: Math.abs(dots.left - rb.left) < 1, imageX: Math.abs(ib.left - rimg.left) < 1,' +
             '  imageSize: Math.round(ib.width) === Math.round(rimg.width), picture: img.getAttribute("src") === recv[recv.length - 1].closest(".chat-balloon").querySelector(".contact-image").getAttribute("src"),' +
-            '  minHeight: dots.height >= 35, tail: /received-shape/.test(tail.backgroundImage) && tail.left === "-8px" };' +
+            '  height: dots.height >= ib.height && dots.height <= ib.height + 3, top: Math.abs((dots.top - ib.top) - (rb.top - rimg.top)) < 1,' +
+            '  inRow: ib.bottom <= bb.bottom + 0.5, centred: Math.abs((dotsNode.firstChild.getBoundingClientRect().top + 4) - (dots.top + dots.height / 2)) < 1.5,' +
+            '  tail: /received-shape/.test(tail.backgroundImage) && tail.left === "-8px" && tail.top === getComputedStyle(recv[recv.length - 1], ":after").top };' +
             // Their picture comes in while the dots show: the dots' row takes it as the rows do.
             'var keptImage = chat.chatThread.personImage; chat.chatThread.personImage = "assets/typing-test-avatar.png";' +
             'chat.applyThreadImage();' +
@@ -467,8 +470,9 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.deepEqual(r.cleared, [{ method: 'sendTyping', payload: Object.assign({ state: 'none' }, who) }]);
         assert.equal(r.shown, true, 'typing shows as dots under the last message');
         assert.deepEqual(r.place, { below: true, inView: true, small: true, left: true });
-        assert.deepEqual(r.looks, { bubbleX: true, imageX: true, imageSize: true, picture: true, minHeight: true, tail: true, followsPicture: true },
-            'drawn as a received message, picture and tail');
+        assert.deepEqual(r.looks, { bubbleX: true, imageX: true, imageSize: true, picture: true, height: true, top: true, inRow: true,
+            centred: true, tail: true, followsPicture: true },
+            'drawn as a received message: as tall as the picture, picture and tail beside it as there, dots in the middle');
         assert.equal(r.header, 'Anna Kowalski', 'and not in the header');
         assert.equal(r.paused, false, 'paused is not typing');
         assert.equal(r.gone, true);
