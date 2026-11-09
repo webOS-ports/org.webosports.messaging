@@ -1491,8 +1491,8 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.equal(r.writersSwipe, false, 'who has written does not swipe');
     });
 
-    // Rename in Group Info: asks for the name with the present one chosen, Rename only once it is
-    // a new one, sends renameGroup with it, and the header says it at once. Back closes the
+    // Rename in Group Info: asks for the name with the caret after the present one, Rename only
+    // once it is    // a new one, sends renameGroup with it, and the header says it at once. Back closes the
     // question first.
     it('renames a group from Group Info', async function () {
         /* global require */
@@ -1522,7 +1522,9 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             var dlg = info.$.renameDialog.hasNode().getBoundingClientRect(), box = node.getBoundingClientRect();
             out.boxFits = box.left >= dlg.left && box.right <= dlg.right && box.width > dlg.width * 0.6;
             out.prefilled = info.$.renameInput.get('value');
-            out.chosen = node.selectionStart === 0 && node.selectionEnd === node.value.length;
+            // The caret after the name, nothing chosen: a tap on chosen text brings up Cut / Copy.
+            out.caretAtEnd = node.selectionStart === node.value.length && node.selectionEnd === node.value.length &&
+                document.activeElement === node;
             out.sameDisabled = !!info.$.renameConfirm.disabled;
             // Back closes the question, not Group Info.
             chat.closeGroupInfo();
@@ -1549,7 +1551,7 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.equal(r.asked, true);
         assert.equal(r.boxFits, true, 'the name box fills the question');
         assert.equal(r.prefilled, 'Family', 'the present name filled in');
-        assert.equal(r.chosen, true, 'and chosen, so typing replaces it');
+        assert.equal(r.caretAtEnd, true, 'with the caret after it and nothing chosen');
         assert.equal(r.sameDisabled, true, 'Rename waits for a new name');
         assert.equal(r.backClosed, true, 'back closes the question first');
         assert.equal(r.emptyDisabled, true, 'no empty name');

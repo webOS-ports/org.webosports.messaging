@@ -269,7 +269,11 @@ module.exports = kind({
         return true;
     },
 
-    /** Rename: ask for the new name, the present one filled in and chosen, so typing replaces it. */
+    /**
+     * Rename: ask for the new name, the present one filled in with the caret after it. Not chosen
+     * whole: on a touch screen a tap on chosen text brings up Cut / Copy / Paste instead of
+     * placing the caret, so the name could not be edited with a tap.
+     */
     renameTapped: function () {
         var name = this.info.title || "";
         this.$.renameInput.set('value', name);
@@ -278,8 +282,8 @@ module.exports = kind({
         var input = this.$.renameInput;
         input.focus();
         var node = input.hasNode();
-        if (node && node.select) {
-            node.select();
+        if (node && node.setSelectionRange) {
+            node.setSelectionRange(node.value.length, node.value.length);
         }
         return true;
     },
