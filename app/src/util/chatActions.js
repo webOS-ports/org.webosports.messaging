@@ -225,10 +225,17 @@ function canLoadHistory(serviceName) {
     return HISTORY_SERVICES[serviceName] === true;
 }
 
-/** A message's time as db8 keeps it (milliseconds), or 0. */
+/**
+ * A message's time in ms, or 0. The messages we sent keep theirs in seconds once the transport has
+ * them (as sentAt); compared as ms with the ones we got, our newest looked the oldest of the chat,
+ * and older messages were asked for before it, which the phone answered with none.
+ */
 function messageTime(message) {
     var at = Number(message && (message.timestamp || message.localTimestamp));
-    return at > 0 ? at : 0;
+    if (!(at > 0)) {
+        return 0;
+    }
+    return at < 1e11 ? at * 1000 : at;
 }
 
 /**

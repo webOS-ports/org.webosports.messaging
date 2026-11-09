@@ -227,6 +227,15 @@ describe('chatActions: the commands, as the transport reads them', function () {
         assert.equal(ca.oldestKnown([], 'type_whatsapp'), null);
         assert.equal(ca.oldestKnown(undefined, 'type_whatsapp'), null);
         assert.equal(ca.oldestKnown([msgs[1]], 'type_whatsapp'), null, 'none known by its id');
+        // Our sent messages keep their time in seconds once the transport has them; read as ms,
+        // our newest looked the oldest of the chat.
+        var mixed = [
+            sent({ _id: 'ours-new', serviceMessageId: 'S1', timestamp: Math.floor(NOW / 1000) }),
+            { _id: 'theirs-old', folder: 'inbox', serviceName: 'type_whatsapp', serviceMessageId: 'R1', timestamp: NOW - 600000 }
+        ];
+        assert.equal(ca.oldestKnown(mixed, 'type_whatsapp')._id, 'theirs-old', 'seconds are read as seconds');
+        assert.equal(ca.loadHistoryCommand(KIND, me, GROUP, mixed[0]).params.timestamp, Math.floor(NOW / 1000) * 1000,
+            'and asked for in ms');
         assert.equal(ca.canLoadHistory('type_whatsapp'), true);
         assert.equal(ca.canLoadHistory('type_telegram'), false);
         assert.equal(ca.canLoadHistory(undefined), false);
