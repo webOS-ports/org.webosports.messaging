@@ -400,7 +400,8 @@ module.exports = kind({
         }
         this.$.createToast.send({
             sourceId: APP_ID,
-            message: messagingUtils.message.getMessageErrorFromCode(message.errorCategory, message),
+            message: messagingUtils.message.getMessageErrorFromCode(
+                messagingUtils.message.failureCode(message), message),
             iconUrl: "/usr/palm/applications/" + APP_ID + "/assets/notification-large-failed.png",
             onclick: {
                 appId: APP_ID,

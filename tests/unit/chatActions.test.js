@@ -45,9 +45,18 @@ describe('chatActions: what a service does', function () {
         assert.equal(dc.edit && dc.deleteForEveryone && dc.groupCreate && dc.groupInvite && dc.groupLeave && dc.mentions, true);
         assert.equal(!!(dc.location || dc.contact || dc.editWindowMs), false);
     });
+    it('Facebook edits for 15 minutes, deletes, does groups and mentions, and sends no location or card itself', function () {
+        var fb = ca.actionsFor('type_gometa');
+        assert.equal(fb.editWindowMs, 15 * 60 * 1000);
+        assert.equal(fb.edit && fb.deleteForEveryone && fb.groupCreate && fb.groupInvite && fb.groupLeave &&
+            fb.groupRemove && fb.groupRename && fb.mentions, true);
+        assert.equal(!!(fb.location || fb.contact || fb.sticker), false, 'they go as text');
+        assert.equal(ca.canEdit(sent({ serviceName: 'type_gometa', timestamp: NOW - 15 * 60 * 1000 }), fb, NOW), true);
+        assert.equal(ca.canEdit(sent({ serviceName: 'type_gometa', timestamp: NOW - 15 * 60 * 1000 - 1 }), fb, NOW), false);
+    });
     it('only WhatsApp sends a .webp as a sticker', function () {
         assert.equal(ca.actionsFor('type_whatsapp').sticker, true);
-        ['type_signal', 'type_telegram', 'type_discord', 'type_irc', 'sms'].forEach(function (s) {
+        ['type_signal', 'type_telegram', 'type_discord', 'type_gometa', 'type_irc', 'sms'].forEach(function (s) {
             assert.equal(!!ca.actionsFor(s).sticker, false, s);
         });
     });
@@ -202,6 +211,39 @@ describe('chatActions: the commands, as the transport reads them', function () {
         assert.equal(ca.downloadFileCommand(KIND, me, '', offered), null, 'no chat');
         assert.equal(ca.downloadFileCommand(KIND, me, GROUP, { serviceName: 'type_telegram' }), null, 'no id');
         assert.equal(ca.downloadFileCommand(KIND, me, GROUP, null), null);
+    });
+    it('older messages are asked for before the oldest the chat has that the service knows by its id', function () {
+        var msgs = [
+            sent({ _id: 'new', serviceMessageId: 'NEW', timestamp: NOW }),
+            sent({ _id: 'noid', serviceMessageId: undefined, timestamp: NOW - 900000 }),
+            { _id: 'old', folder: 'inbox', serviceName: 'type_whatsapp', serviceMessageId: 'OLD', timestamp: NOW - 600000 },
+            { _id: 'local', folder: 'inbox', serviceName: 'type_whatsapp', serviceMessageId: 'LOC', localTimestamp: NOW - 300000 },
+            { _id: 'other', folder: 'inbox', serviceName: 'type_signal', serviceMessageId: 'SIG', timestamp: NOW - 990000 },
+            { _id: 'notime', folder: 'inbox', serviceName: 'type_whatsapp', serviceMessageId: 'T0' },
+            null
+        ];
+        assert.equal(ca.oldestKnown(msgs, 'type_whatsapp')._id, 'old', 'the oldest with an id, on the service');
+        assert.equal(ca.oldestKnown(msgs, 'type_signal')._id, 'other');
+        assert.equal(ca.oldestKnown([], 'type_whatsapp'), null);
+        assert.equal(ca.oldestKnown(undefined, 'type_whatsapp'), null);
+        assert.equal(ca.oldestKnown([msgs[1]], 'type_whatsapp'), null, 'none known by its id');
+        assert.equal(ca.canLoadHistory('type_whatsapp'), true);
+        assert.equal(ca.canLoadHistory('type_telegram'), false);
+        assert.equal(ca.canLoadHistory(undefined), false);
+    });
+    it('a request for older messages names the oldest message by its id, time and direction', function () {
+        var theirs = { folder: 'inbox', serviceName: 'type_whatsapp', serviceMessageId: 'OLD', timestamp: NOW - 600000 };
+        assert.deepEqual(ca.loadHistoryCommand(KIND, me, GROUP, theirs), { _kind: KIND, command: 'loadHistory',
+            handler: 'transport', serviceName: 'type_whatsapp', fromUsername: '+15555550100', targetUsername: GROUP,
+            params: { messageId: 'OLD', timestamp: NOW - 600000, outgoing: false } });
+        var ours = ca.loadHistoryCommand(KIND, me, GROUP, sent({ timestamp: undefined, localTimestamp: NOW - 5 }));
+        assert.deepEqual(ours.params, { messageId: '3EB0AA', timestamp: NOW - 5, outgoing: true }, 'ours, by its local time');
+        assert.equal(ca.loadHistoryCommand(KIND, me, '', theirs), null, 'no chat');
+        assert.equal(ca.loadHistoryCommand(KIND, me, GROUP, { folder: 'inbox', serviceName: 'type_whatsapp', timestamp: NOW }), null, 'no id');
+        assert.equal(ca.loadHistoryCommand(KIND, me, GROUP, { folder: 'inbox', serviceName: 'type_whatsapp', serviceMessageId: 'X' }), null, 'no time');
+        assert.equal(ca.loadHistoryCommand(KIND, me, GROUP, { folder: 'inbox', serviceName: 'type_telegram', serviceMessageId: 'X', timestamp: NOW }),
+            null, 'a service that cannot');
+        assert.equal(ca.loadHistoryCommand(KIND, me, GROUP, null), null);
     });
     it('a vote on our own poll (made on the phone) names us as who made it', function () {
         var ours = { serviceName: 'type_whatsapp', folder: 'outbox', serviceMessageId: 'P2' };
@@ -420,6 +462,13 @@ describe('chatActions.isChannelGroup: a channel that is a group', function () {
         assert.equal(ca.isChannelGroup(dc, 'Discord'), true);
         assert.equal(ca.isChannelGroup(dc, 'LuneOS Discord'), false);
         assert.equal(ca.isChannelGroup(dc, undefined), false, 'not before the server is known');
+    });
+    it('any Facebook chat with a channel: only its groups are', function () {
+        var fb = { channelId: 'c4', replyService: 'type_gometa', replyAddress: '900000000000009' };
+        assert.equal(ca.isChannelGroup(fb, 'Facebook'), true);
+        assert.equal(ca.isManagedGroup(fb), true);
+        assert.equal(ca.isManagedGroup({ replyService: 'type_gometa', replyAddress: '100000000000002' }), false,
+            'a one-to-one chat, or an encrypted group that comes as one');
     });
     it('no chat without a channel, and no other service', function () {
         assert.equal(ca.isChannelGroup({ replyService: 'type_telegram', replyAddress: 'anna' }), false);

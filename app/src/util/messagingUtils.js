@@ -11,6 +11,7 @@
  */
 
 var $L = require('enyo/i18n').$L;
+var forwarded = require('./forwarded');
 
 var messaging = module.exports = {
     MAX_BOTTOM_HEIGHT_FOR_SNAP: 300,
@@ -215,23 +216,24 @@ var messaging = module.exports = {
             "unknownscaddress": $L("Unknown service center address. Contact your carrier."),
             "smsnetworkerror": $L("Could not send your message due to a network error. Try again. {networkErrorCode}"),
             "fdnrestricted": $L("Number is FDN restricted"),
-            // MMS
-            "mmsErrorUnspecified": $L("Unknown error while downloading the message."),
+            // MMS. webos-telephonyd puts the code of a failed send in the record's errorCode
+            // (src/mmscore.h); the rest are the legacy download codes.
+            "mmsErrorUnspecified": $L("Something went wrong while sending the MMS. Try again."),
             "mmsErrorMessageTooLarge": $L("The attachment is too large."),
             "mmsErrorMessageNotFound": $L("Message not found on server."),
-            "mmsErrorNetwork": $L("A network error occurred."),
+            "mmsErrorNetwork": $L("The MMS did not get through the mobile network. Try again."),
             "mmsErrorExpired": $L("Message expired or not available."),
             "mmsErrorCorrupt": $L("Message is corrupt."),
             "mmsErrorBadUrl": $L("Unable to connect to MMS server."),
-            "mmsErrorDbError": $L("Database failure."),
-            "mmsErrorRejected": $L("Message content rejected."),
-            "mmsErrorServiceNotInitialized": $L("Message transport not initialized."),
-            "mmsErrorUnsupportedMessage": $L("Unknown error while sending the message."),
-            "mmsErrorContentCorrupt": $L("Message content is corrupt."),
+            "mmsErrorDbError": $L("The MMS could not be read from the message store."),
+            "mmsErrorRejected": $L("The carrier did not accept the content of this MMS."),
+            "mmsErrorServiceNotInitialized": $L("MMS is not ready yet. Try again in a moment."),
+            "mmsErrorUnsupportedMessage": $L("This message cannot be sent as MMS."),
+            "mmsErrorContentCorrupt": $L("The carrier could not read this MMS."),
             "mmsOutOfMediaMemory": $L("Device is full. Delete files to clear space."),
-            "mmsErrorServiceDenied": $L("Service not activated on network."),
-            "mmsErrorSendingAddressUnresolved": $L("Invalid destination address."),
-            "mmsErrorAttachmentTooLarge": $L("Attachment file size exceeds the maximum allowed."),
+            "mmsErrorServiceDenied": $L("MMS is not enabled for this SIM. Contact your carrier."),
+            "mmsErrorSendingAddressUnresolved": $L("The recipient's number cannot receive MMS."),
+            "mmsErrorAttachmentTooLarge": $L("The picture or file is too large to send as MMS."),
             // IM
             "error: unable to message a non-buddy": $L("Unable to send messages to screen names that are not in the buddy list.")
         },
@@ -249,6 +251,44 @@ var messaging = module.exports = {
             return template.replace(/\{(\w+)\}/g, function (match, key) {
                 return messageData[key] !== undefined ? messageData[key] : match;
             });
+        },
+
+        /**
+         * Why a message failed: an SMS (and the legacy services) says so in errorCategory,
+         * webos-telephonyd says it of an MMS in errorCode. "" when neither says anything;
+         * telephonyd writes an empty errorCode on every status that is not a failure.
+         */
+        failureCode: function (rawMessage) {
+            if (!rawMessage) {
+                return "";
+            }
+            return rawMessage.errorCategory ||
+                (this.isMMSMessage(rawMessage) && rawMessage.errorCode) || "";
+        },
+
+        /** Whether a message's balloon offers the "!" that opens "Message not sent" and Retry. */
+        showsFailure: function (rawMessage) {
+            var status = rawMessage && rawMessage.status;
+            var failed = status === this.MESSAGE_STATUS.FAILED ||
+                status === this.MESSAGE_STATUS.UNDELIVERABLE;
+            return failed && !!this.failureCode(rawMessage);
+        },
+
+        /**
+         * The merge that sends a failed message again: back to "pending" with its reason cleared,
+         * which is what the SMS and MMS senders wait for. telephonyd only picks an MMS up from the
+         * outbox, so that one also goes back there and loses its errorCode.
+         */
+        retryRecord: function (rawMessage) {
+            var r = {
+                _id: rawMessage._id, _kind: rawMessage._kind,
+                status: this.MESSAGE_STATUS.PENDING, errorCategory: null
+            };
+            if (this.isMMSMessage(rawMessage)) {
+                r.folder = "outbox";
+                r.errorCode = null;
+            }
+            return r;
         },
 
         isVisible: function (rawMessage) {
@@ -488,8 +528,16 @@ var messaging = module.exports = {
          */
         getNotificationText: function (rawMessage) {
             var m = messaging.message;
-            if (m.isMMSMessage(rawMessage)) { return m.getMMSDisplayMessage(); }
-            var text = m.getMessageText(rawMessage);
+            // A forward's "Forwarded from" line (util/forwarded) is the chat's label, not the message.
+            var text = forwarded.strip(m.getMessageText(rawMessage));
+            if (m.isMMSMessage(rawMessage)) {
+                // An MMS LuneOS received has its text and files; files alone read as their kind.
+                // Anything else is the TouchPad's note of an MMS on the phone.
+                if (!text && rawMessage.serviceName === "mms" && rawMessage.filePath) {
+                    text = "file://" + rawMessage.filePath;
+                }
+                if (!text || rawMessage.serviceName !== "mms") { return m.getMMSDisplayMessage(); }
+            }
             if (rawMessage && m.HTML_MESSAGE_KINDS.indexOf(rawMessage._kind) !== -1) {
                 text = m.removeHtml(text.replace(/<img\b[^>]*?\bsrc=["']([^"']+)["'][^>]*>/gi, " $1 "));
             }
@@ -612,7 +660,8 @@ var messaging = module.exports = {
          */
         summarizeMedia: function (text) {
             if (!text) { return text; }
-            text = messaging.message.summarizeTokens(text);
+            // The chat list shows a forward as the message it is, without its "Forwarded from" line.
+            text = messaging.message.summarizeTokens(forwarded.strip(text));
             var re = /(?:https?|file):\/\/[^\s<>"']+?\.(jpg|jpeg|png|gif|webp|bmp|mp3|m4a|aac|ogg|oga|opus|flac|wav|amr|mp4|m4v|mov|webm|mkv|3gp|data|pdf|doc|docx|xls|xlsx|ppt|pptx)(?:\?[^\s<>"']*)?/gi;
             var fileRe = /file:\/\/[^\s<>"']+/gi;
             var m = re.exec(text);

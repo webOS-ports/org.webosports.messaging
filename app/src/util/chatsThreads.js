@@ -13,8 +13,10 @@
  * A Discord group DM is a channel too: purple-discord keeps group DMs in its buddy-list group
  * "Discord", so the transport files them under a server of that name. And every Telegram group or
  * channel is one, filed under the account's single Telegram server (whatever the plug-in calls
- * it); Telegram's own app lists them with the rest of the chats. Both are chats with people, as a
- * WhatsApp group is, so they are always among the chats, under their own names.
+ * it); Telegram's own app lists them with the rest of the chats. So is every Facebook group:
+ * purple-combined's prpl-gometa puts only its group threads in the buddy list, in its group
+ * "Facebook", so the transport files them under a server of that name. All are chats with people,
+ * as a WhatsApp group is, so they are always among the chats, under their own names.
  */
 
 var $L = require('enyo/i18n').$L;
@@ -27,11 +29,11 @@ function channelLabel(channel) {
 
 /**
  * A server whose channels are chats (see the top of this file): Discord's group DMs' "Discord",
- * and Telegram's one server.
+ * Telegram's one server and Facebook's.
  */
 function isChatServer(server) {
     return !!server && ((server.serviceName === "type_discord" && server.name === "Discord") ||
-        server.serviceName === "type_telegram");
+        server.serviceName === "type_telegram" || server.serviceName === "type_gometa");
 }
 
 /** The channels of a chat server (isChatServer), as a lookup from their _id. */
@@ -54,7 +56,8 @@ function chatChannels(channels, servers) {
 
 /**
  * The channels (imchannel records) the Chats list shows, as a lookup from their _id to how it
- * names them: those that deliver while closed, and every Discord group DM and Telegram chat. servers: the imserver
+ * names them: those that deliver while closed, and every Discord group DM, Telegram chat and
+ * Facebook group. servers: the imserver
  * records, for the server's name.
  */
 function deliveredChannels(channels, servers) {

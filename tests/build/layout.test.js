@@ -212,6 +212,39 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
     // Find in Chat, from the magnifier in the chat's header between its name and the service it
     // goes out on, not from the app menu: the newest match first, older from there, and back
     // closes the bar before it leaves the chat; the magnifier closes it too.
+    it('shows every account in the service menu in full, inside the window', async function () {
+        var r = await session.evaluate('(async function () {' +
+            'var $ = require("enyo/dispatcher").$, picker = require("src/util/transportPicker");' +
+            'var main = $.app_mainView, chat = $.app_mainView_chatView_conversationList;' +
+            'var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };' +
+            'main.selectThread(null, (await new Promise(function (res) {' +
+            '  var t = null; $.app_mainView_messaging_threadList.collection.forEach(function (m) {' +
+            '    if (m.attributes._id === "thread-family") { t = m.attributes; } }); res(t); })));' +
+            'for (var i = 0; i < 20 && !(chat.messages && chat.messages.length); i++) { await wait(100); }' +
+            // Eight accounts as a person with numbers on SMS, WhatsApp and Signal, and long IM names.
+            'var list = [' +
+            '  { serviceName: "type_teams", replyAddress: "someone.with.a.long.name@example.onmicrosoft.com" },' +
+            '  { serviceName: "type_telegram", replyAddress: "id8864003412345" },' +
+            '  { serviceName: "type_signal", replyAddress: "+31612345678" },' +
+            '  { serviceName: "type_whatsapp", replyAddress: "+31612345678" },' +
+            '  { serviceName: "type_signal", replyAddress: "+31687654321" },' +
+            '  { serviceName: "type_whatsapp", replyAddress: "+31687654321" },' +
+            '  { serviceName: "sms", replyAddress: "+31687654321", isPhone: true },' +
+            '  { serviceName: "sms", replyAddress: "+31612345678", isPhone: true }];' +
+            'var real = picker.getTransports; picker.getTransports = function () { return list; };' +
+            'try { chat.openTransportMenu(); } finally { picker.getTransports = real; }' +
+            'await wait(300);' +
+            'var menu = chat.$.transportMenu.hasNode(), m = menu.getBoundingClientRect();' +
+            'var rows = Array.prototype.filter.call(menu.querySelectorAll(".onyx-menu-item"), function (n) { return n.offsetParent; });' +
+            'var cut = rows.filter(function (n) { return n.scrollWidth > n.clientWidth + 1; }).map(function (n) { return n.textContent; });' +
+            'var out = { rows: rows.length, cut: cut,' +
+            '  inside: m.left >= 0 && m.right <= window.innerWidth + 0.5 && m.width > 0,' +
+            '  narrowerThanWindow: m.width < window.innerWidth };' +
+            'chat.$.transportMenu.hide(); await wait(100);' +
+            'return out; })()');
+        assert.deepEqual(r, { rows: 8, cut: [], inside: true, narrowerThanWindow: true });
+    });
+
     it('finds in a chat, newest match first, and closes on back', async function () {
         var r = await session.evaluate('(async function () {' +
             'var $ = require("enyo/dispatcher").$, Signals = require("enyo/Signals");' +
@@ -1819,6 +1852,77 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.deepEqual(r.pollLook, { roomAround: true, scrim: true, buttons: ['OK'], fullWidth: true });
     });
 
+    // A forward (util/forwarded): the transport's "Forwarded from" line is a label at the top of
+    // the bubble, above the picture, the card of a file that waits for a tap, or the text, and is
+    // not drawn as text as well.
+    it('labels a forwarded message above what it holds', async function () {
+        /* global require */
+        var page = async function () {
+            var $ = require('enyo/dispatcher').$, mockDb = require('src/data/mockDb');
+            var main = $.app_mainView, chat = $.app_mainView_chatView_conversationList;
+            var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+            var thread = null;
+            $.app_mainView_messaging_threadList.collection.forEach(function (m) {
+                if (m.attributes._id === 'thread-yuki') { thread = m.attributes; } });
+            main.selectThread(null, thread);
+            for (var i = 0; i < 20 && !(chat.chatThread && chat.chatThread._id === 'thread-yuki' && chat.messages.length); i++) { await wait(100); }
+            var at = function (k) { return Date.now() - 60000 + k; };
+            mockDb.merge([{
+                _id: 'msg-fwd-offer', _kind: 'com.palm.message:1', conversations: ['thread-yuki'], folder: 'inbox',
+                status: 'successful', serviceName: 'type_telegram', serviceMessageId: '-100:7',
+                messageText: '<b>Forwarded from Ann &amp; Bob:</b><br />\nluneos-file:?name=clip.mp4&amp;size=2000000&amp;type=video&amp;state=ask<br />\ncap',
+                localTimestamp: at(1), timestamp: at(1), from: { addr: 'yuki.t' }, flags: { visible: true, read: true }
+            }, {
+                _id: 'msg-fwd-anon', _kind: 'com.palm.message:1', conversations: ['thread-yuki'], folder: 'inbox',
+                status: 'successful', serviceName: 'type_telegram',
+                messageText: '<b>Forwarded:</b><br />\nfrom someone', localTimestamp: at(2), timestamp: at(2),
+                from: { addr: 'yuki.t' }, flags: { visible: true, read: true }
+            }, {
+                // A picture and nothing else
+                _id: 'msg-fwd-pic', _kind: 'com.palm.message:1', conversations: ['thread-yuki'], folder: 'inbox',
+                status: 'successful', serviceName: 'type_telegram',
+                messageText: '<b>Forwarded from Ann:</b><br />\nfile:///media/internal/a.jpg', localTimestamp: at(3), timestamp: at(3),
+                from: { addr: 'yuki.t' }, flags: { visible: true, read: true }
+            }]);
+            chat.runQuery(); await wait(800);
+            var shown = function (id) {
+                var node = null;
+                chat.$.list.getClientControls().forEach(function (c) {
+                    (function walk(k) {
+                        if (node || !k) { return; }
+                        if (k.message && k.message._id === id && k.$ && k.$.messageText) { node = k.$.messageText.hasNode(); return; }
+                        (k.children || []).forEach(walk);
+                    })(c.$ && (c.$.item || c));
+                });
+                if (!node) { return null; }
+                var kids = Array.prototype.filter.call(node.childNodes, function (n) { return n.nodeType === 1 || n.textContent.trim(); });
+                return { first: kids[0] && kids[0].className, label: kids[0] && kids[0].textContent,
+                    next: kids[1] && (kids[1].className || kids[1].nodeName),
+                    labels: node.querySelectorAll('.msg-forwarded').length,
+                    bold: node.querySelectorAll('b').length, text: node.textContent };
+            };
+            var out = { photo: shown('msg-y0'), offer: shown('msg-fwd-offer'), anon: shown('msg-fwd-anon'),
+                pic: shown('msg-fwd-pic') };
+            mockDb.del(['msg-fwd-offer', 'msg-fwd-anon', 'msg-fwd-pic']);
+            chat.runQuery(); await wait(200);
+            return JSON.stringify(out);
+        };
+        var r = JSON.parse(await session.evaluate('(' + page.toString() + ')()'));
+        assert.ok(r.photo && r.offer && r.anon && r.pic, 'the messages are drawn: ' + JSON.stringify(r));
+        assert.deepEqual([r.photo.first, r.photo.label, r.photo.next, r.photo.labels, r.photo.bold],
+            ['msg-forwarded', 'Forwarded from City Museum (Press office)', 'message-image', 1, 0]);
+        assert.ok(r.photo.text.indexOf('The north entrance opens') !== -1 && r.photo.text.indexOf(':') === r.photo.text.indexOf('14:00') + 2,
+            'the caption, and no line as text: ' + r.photo.text);
+        assert.deepEqual([r.offer.first, r.offer.label, r.offer.labels, r.offer.bold],
+            ['msg-forwarded', 'Forwarded from Ann & Bob', 1, 0]);
+        assert.ok(/msg-file-offer/.test(r.offer.next), 'the card under the label: ' + r.offer.next);
+        assert.ok(/clip\.mp4/.test(r.offer.text) && /cap$/.test(r.offer.text) && !/luneos-file/.test(r.offer.text), r.offer.text);
+        assert.deepEqual([r.anon.first, r.anon.label, r.anon.labels, r.anon.bold], ['msg-forwarded', 'Forwarded', 1, 0]);
+        assert.deepEqual([r.pic.first, r.pic.label, r.pic.next, r.pic.labels, r.pic.text],
+            ['msg-forwarded', 'Forwarded from Ann', 'message-image', 1, 'Forwarded from Ann'], 'a picture alone');
+        assert.ok(/from someone$/.test(r.anon.text) && r.anon.text.indexOf('Forwarded:') === -1, r.anon.text);
+    });
+
     // A message we sent from the phone's WhatsApp comes back as HTML with a mention as
     // "<b>@Name</b>", in the outbox, whose text is drawn as plain: the mention is bold, not tags,
     // and any other tag stays text. So in the chat list's preview of it.
@@ -1878,6 +1982,65 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.deepEqual(r.preview.bold, ['@Anna K']);
         assert.equal(r.preview.italic, 0);
         assert.ok(/<i>x<\/i>/.test(r.preview.text) && r.preview.text.indexOf('<b>') === -1, r.preview.text);
+    });
+
+    // The app menu's "Load Older Messages", in a WhatsApp chat: shown once the chat has a message
+    // WhatsApp knows by its id, and it asks the transport for the messages before the oldest such
+    // one. Not in a Telegram chat, whose plugin cannot.
+    it('asks for the older messages of a WhatsApp chat from the app menu', async function () {
+        /* global require */
+        var page = async function () {
+            var $ = require('enyo/dispatcher').$, mockDb = require('src/data/mockDb');
+            var main = $.app_mainView, chat = $.app_mainView_chatView_conversationList;
+            var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+            var open = async function (id) {
+                var thread = null;
+                $.app_mainView_messaging_threadList.collection.forEach(function (m) {
+                    if (m.attributes._id === id) { thread = m.attributes; }
+                });
+                main.selectThread(null, thread);
+                for (var i = 0; i < 20 && !(chat.chatThread && chat.chatThread._id === id && chat.messages.length); i++) { await wait(100); }
+            };
+            var menu = function () {
+                main.showAppMenu(main.$.appMenuAnchor);
+                var showing = main.$.loadOlderMenuItem.getShowing();
+                main.$.appMenu.hide();
+                return showing;
+            };
+            var put = function (id, sid, at, folder) {
+                var m = { _id: id, _kind: 'com.palm.message:1', conversations: ['thread-ben'], folder: folder,
+                    status: 'successful', serviceName: 'type_whatsapp', serviceMessageId: sid,
+                    messageText: 'old ' + id, localTimestamp: at, timestamp: at, flags: { visible: true, read: true } };
+                if (folder === 'inbox') { m.from = { addr: '44207183875@s.whatsapp.net', name: 'Ben Okafor' }; }
+                else { m.to = [{ addr: '44207183875@s.whatsapp.net' }]; }
+                mockDb.merge([m]);
+            };
+            var out = {};
+            mockDb.imCommands = [];
+            await open('thread-ben');
+            out.withoutIds = menu();
+            var now = Date.now();
+            put('msg-old-a', '3EB0OLDA', now - 3 * 86400000, 'outbox');
+            put('msg-old-b', '3EB0OLDB', now - 2 * 86400000, 'inbox');
+            chat.runQuery(); await wait(400);
+            out.withIds = menu();
+            main.$.loadOlderMenuItem.bubble('ontap', {});   // the menu item, as a finger taps it
+            await wait(200);
+            out.sent = mockDb.imCommands.map(function (c) {
+                return { command: c.command, service: c.serviceName, to: c.targetUsername, id: c.params.messageId,
+                    at: c.params.timestamp === now - 3 * 86400000, outgoing: c.params.outgoing };
+            });
+            await open('thread-anna');
+            out.telegram = menu();
+            mockDb.del(['msg-old-a', 'msg-old-b']);
+            return JSON.stringify(out);
+        };
+        var r = JSON.parse(await session.evaluate('(' + page.toString() + ')()'));
+        assert.equal(r.withoutIds, false, 'nothing WhatsApp knows by its id to ask before');
+        assert.equal(r.withIds, true);
+        assert.deepEqual(r.sent, [{ command: 'loadHistory', service: 'type_whatsapp', to: '44207183875@s.whatsapp.net',
+            id: '3EB0OLDA', at: true, outgoing: true }], 'before the oldest, ours');
+        assert.equal(r.telegram, false, 'not for a Telegram chat');
     });
 
     // A video, a music file or a document over 1 MB comes as a card to tap rather than as its file

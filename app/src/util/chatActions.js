@@ -29,7 +29,7 @@ var UNIT = "\x1f";
  *                             the service takes an edit (whatsmeow EditWindow), when it has one
  *   groupCreate/Invite/Leave  making a group, adding people to one, leaving it
  *   groupRemove               taking someone out of a group (purple-combined: whatsmeow
- *                             UpdateGroupParticipants remove; tdlib-purple 0035: setChatMemberStatus
+ *                             UpdateGroupParticipants remove, for Facebook RemoveParticipantTask; tdlib-purple 0035: setChatMemberStatus
  *                             Left; purple-discord 0031: DELETE a group DM's recipient; the
  *                             service refuses it to a non-admin)
  *   groupRename               giving a group a new name (renameGroup, the transport's
@@ -55,6 +55,14 @@ var ACTIONS = {
         edit: true, deleteForEveryone: true,
         groupCreate: true, groupInvite: true, groupLeave: true, groupRemove: true, groupRename: true,
         mentions: true, location: true, contact: true
+    },
+    // Facebook (purple-combined's prpl-gometa): Messenger takes an edit for 15 minutes. Its group
+    // actions and mentions are for a plain group, which is a channel (isChannelGroup); an
+    // encrypted group still comes as a one-to-one chat, so none is offered there.
+    type_gometa: {
+        edit: true, editWindowMs: 15 * 60 * 1000, deleteForEveryone: true,
+        groupCreate: true, groupInvite: true, groupLeave: true, groupRemove: true, groupRename: true,
+        mentions: true
     },
     // Groups are group DMs; a server's channels are not.
     type_discord: {
@@ -210,6 +218,50 @@ function downloadFileCommand(kind, account, chat, message) {
     });
 }
 
+/** The services whose plugin can ask for a chat's older messages (imcommand loadHistory). */
+var HISTORY_SERVICES = { type_whatsapp: true };
+
+function canLoadHistory(serviceName) {
+    return HISTORY_SERVICES[serviceName] === true;
+}
+
+/** A message's time as db8 keeps it (milliseconds), or 0. */
+function messageTime(message) {
+    var at = Number(message && (message.timestamp || message.localTimestamp));
+    return at > 0 ? at : 0;
+}
+
+/**
+ * The oldest of messages (as the chat has them) that serviceName knows by its own id: what older
+ * messages are asked for before. null when there is none.
+ */
+function oldestKnown(messages, serviceName) {
+    var oldest = null;
+    (messages || []).forEach(function (m) {
+        if (m && m.serviceName === serviceName && m.serviceMessageId && messageTime(m) > 0 &&
+                (!oldest || messageTime(m) < messageTime(oldest))) {
+            oldest = m;
+        }
+    });
+    return oldest;
+}
+
+/**
+ * Ask the service for the messages of chat before message, the oldest the chat has that it knows
+ * by its id (oldestKnown): by that id, its time and whether we sent it. They come as old messages,
+ * read and without a banner; those the chat has already are not stored again.
+ */
+function loadHistoryCommand(kind, account, chat, message) {
+    if (!chat || !message || !message.serviceMessageId || !canLoadHistory(message.serviceName) || !messageTime(message)) {
+        return null;
+    }
+    return command(kind, "loadHistory", message.serviceName, account, chat, {
+        messageId: message.serviceMessageId,
+        timestamp: messageTime(message),
+        outgoing: message.folder === "outbox"
+    });
+}
+
 function pollVoteCommand(kind, account, chat, message, selected) {
     if (!chat || !message || !message.serviceMessageId) {
         return null;
@@ -299,7 +351,8 @@ function isOwnAddress(address, account, serviceName) {
  * A channel's chat that is a group one can add people to and leave, as a WhatsApp group is. The
  * transport keeps these as channels, as it does a server's channels, so the server tells them
  * apart: every Telegram chat with a channel is a group (imlibpurpleservice files them all under
- * one "Telegram" server), and on Discord a group DM is, which purple-discord keeps in its own
+ * one "Telegram" server), so is every Facebook one (purple-combined puts only its group threads
+ * in the buddy list, under "Facebook"), and on Discord a group DM is, which purple-discord keeps in its own
  * buddy-list group "Discord" - its server's name - where a server's channels sit under
  * "<server>: <category>". serverName: the name of the thread's imserver, when known.
  */
@@ -307,7 +360,7 @@ function isChannelGroup(thread, serverName) {
     if (!thread || !thread.channelId) {
         return false;
     }
-    if (thread.replyService === "type_telegram") {
+    if (thread.replyService === "type_telegram" || thread.replyService === "type_gometa") {
         return true;
     }
     return thread.replyService === "type_discord" && serverName === "Discord";
@@ -582,6 +635,9 @@ module.exports = {
     reactionCommand: reactionCommand,
     pollVoteCommand: pollVoteCommand,
     downloadFileCommand: downloadFileCommand,
+    canLoadHistory: canLoadHistory,
+    oldestKnown: oldestKnown,
+    loadHistoryCommand: loadHistoryCommand,
     editCommand: editCommand,
     deleteCommand: deleteCommand,
     memberAddress: memberAddress,

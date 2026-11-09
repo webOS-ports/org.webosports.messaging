@@ -22,6 +22,7 @@ var kind = require('enyo/kind'),
     composerEcho = require('../util/composerEcho'),
     attachments = require('../util/attachments'),
     fileCarrier = require('../util/fileCarrier'),
+    mms = require('../util/mms'),
     enyoUtils = require('enyo/utils'),
     $L = require('enyo/i18n').$L;
 
@@ -280,8 +281,8 @@ module.exports = kind({
         }
 
         var serviceName = this.serviceNameForRecipient();
-        // No MMS sender yet (util/fileCarrier): an SMS cannot carry the file, so say so rather
-        // than drop it.
+        // Files for a phone number go as an MMS, but only while telephonyd can send one
+        // (util/fileCarrier); otherwise say so rather than drop them.
         if (fileCarrier.wouldDrop(this.files, serviceName)) {
             this.showNotice($L("Attachments"),
                 $L("Attachments can't be sent by SMS. Pick an IM service to send a file."));
@@ -398,18 +399,26 @@ module.exports = kind({
             base.from = { name: account.alias, addr: account.username };
             base.username = account.username;
         }
-        // One message per forwarded file, the text on the first, a millisecond apart to keep the
-        // order (util/attachments). An SMS carries none: sendTapped refuses that before here.
-        var objects = attachments.messages(this.pendingMessageText, this.pendingFiles,
-            fileCarrier.canCarry(serviceName)).map(function (part, i) {
-            var m = enyoUtils.clone(base);
-            m.messageText = part.text;
-            m.localTimestamp = base.localTimestamp + i;
-            if (part.file) {
-                m.filePath = part.file.path;
-            }
-            return m;
-        });
+        // Text and files for a phone number go together as one MMS (util/mms). Otherwise one
+        // message per forwarded file, the text on the first, a millisecond apart to keep the order
+        // (util/attachments); an SMS carries none, and sendTapped refused files it could not send.
+        var objects;
+        if (fileCarrier.sendsAsMms(this.pendingFiles, serviceName)) {
+            objects = [mms.record(base, this.pendingMessageText, this.pendingFiles)];
+        } else {
+            var carries = !messagingUtils.utils.isTextMessage(serviceName) &&
+                fileCarrier.canCarry(serviceName);
+            objects = attachments.messages(this.pendingMessageText, this.pendingFiles, carries)
+                .map(function (part, i) {
+                    var m = enyoUtils.clone(base);
+                    m.messageText = part.text;
+                    m.localTimestamp = base.localTimestamp + i;
+                    if (part.file) {
+                        m.filePath = part.file.path;
+                    }
+                    return m;
+                });
+        }
 
         if (objects.length && mockDb.enabled) {
             mockDb.merge(objects);

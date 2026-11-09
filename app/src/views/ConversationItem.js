@@ -18,7 +18,9 @@ var kind = require('enyo/kind'),
     launchTargets = require('../util/launchTargets'),
     mentionMarkup = require('../util/mentionMarkup'),
     fileOffer = require('../util/fileOffer'),
+    forwarded = require('../util/forwarded'),
     sentExtras = require('../util/sentExtras'),
+    mms = require('../util/mms'),
     receivedLocation = require('../util/receivedLocation'),
     moment = require('moment'),
     $L = require('enyo/i18n').$L;
@@ -122,7 +124,7 @@ module.exports = kind({
         this.updateContactImage(m.personImage);
         this.updateSentReceived(m.folder);
         this.updateTime(m);
-        this.updateMessageStatus(m.status, m.errorCategory);
+        this.updateMessageStatus(m);
         this.updateDeliveryStatus(m.deliveryStatus, m.folder);
         this.updateInvite(m);
         this.updatePriority(m);
@@ -141,15 +143,13 @@ module.exports = kind({
             !!(message.priority && (message.priority === 2 || message.priority === 3)));
     },
 
-    updateMessageStatus: function (inStatus, errorCategory) {
-        if (inStatus !== "successful") {
+    updateMessageStatus: function (inMessage) {
+        if (inMessage.status !== "successful") {
             this.$.message.setClasses("chat-balloon-error");
         }
         // Show/hide only — never toggle showing via re-creation. On a recycled row an ungenerated
         // node means a later show() renders nothing, and tapping the "!" would stop working.
-        var failed = inStatus === messagingUtils.message.MESSAGE_STATUS.FAILED ||
-            inStatus === messagingUtils.message.MESSAGE_STATUS.UNDELIVERABLE;
-        this.$.errorIcon.setShowing(!!(errorCategory && failed));
+        this.$.errorIcon.setShowing(messagingUtils.message.showsFailure(inMessage));
     },
 
     /**
@@ -229,7 +229,9 @@ module.exports = kind({
         this.$.messageText.addRemoveClass("system-line", messageState.isSystemLine(inMessage));
         var inText = raw;
 
-        if (messagingUtils.message.isMMSMessage(inMessage)) {
+        // An MMS LuneOS received or sent holds its text and files (util/mms); one without them is
+        // the TouchPad's note that the phone got an MMS.
+        if (messagingUtils.message.isMMSMessage(inMessage) && !mms.hasContent(inMessage)) {
             this.$.messageText.setContent(messagingUtils.message.getMMSDisplayMessage());
             return;
         }
@@ -239,7 +241,20 @@ module.exports = kind({
             return;
         }
 
-        if (inMessage.folder === FOLDERS.INBOX) {
+        // Forwarded: the transport's line saying from whom (util/forwarded) becomes a label at the
+        // top, and the rest is drawn as the message would be without it.
+        var forward = forwarded.find(raw);
+        var forwardHtml = forward ? this.buildForwarded(forward) : "";
+        if (forward) {
+            raw = forwarded.strip(raw);
+            inText = raw;
+        }
+
+        if (inMessage.folder === FOLDERS.INBOX && mms.isPlainTextKind(inMessage)) {
+            // An SMS or MMS is stored as the network sent it, plain text: escape it whole, or a
+            // text with "<img onerror=...>" in it would be drawn as HTML.
+            inText = launchTargets.outgoingHtml(inText, messagingUtils.message.escapeHtml);
+        } else if (inMessage.folder === FOLDERS.INBOX) {
             // purple's strdup_withhtml stores each newline as "<br />\n" — the tag AND the literal
             // newline. Drop the newline that directly follows a break tag first, or the pass below
             // turns it into a SECOND <br> and doubles every line break.
@@ -303,23 +318,27 @@ module.exports = kind({
 
         // An outgoing message can carry a local file path (the file just sent). Images preview
         // inline, mirroring received images; other files show as a chip.
+        // An MMS has its further files in attachments, drawn after the first one the same way.
         var localAttachmentHtml = "";
         if (inMessage.filePath) {
-            if (this.isImagePath(inMessage.filePath)) {
-                localAttachmentHtml = this.buildLocalImageHtml(inMessage.filePath);
-            } else {
-                localAttachmentHtml = this.buildAttachmentChip({
-                    url: inMessage.filePath,
-                    kind: this.mediaKind(inMessage.filePath),
-                    name: this.mediaName(inMessage.filePath)
-                });
+            localAttachmentHtml = this.buildLocalFileHtml(inMessage.filePath);
+        }
+        if (messagingUtils.message.isMMSMessage(inMessage)) {
+            var more = mms.moreFiles(inMessage);
+            for (var mi = 0; mi < more.length; mi++) {
+                localAttachmentHtml += this.buildLocalFileHtml(more[mi].path);
             }
         }
 
         // Pure-media message (the body was only media URLs): show just the media, no text line.
         if (media.length > 0 && this.isOnlyMedia(raw)) {
-            this.$.messageText.setContent(this.buildQuote(inMessage) + imagesHtml + chipsHtml +
-                localAttachmentHtml + this.buildReactions(inMessage));
+            var onlyMedia = imagesHtml + chipsHtml + localAttachmentHtml;
+            // Right under the label, as a caption sits right under its picture: no break first.
+            if (forwardHtml) {
+                onlyMedia = onlyMedia.replace(/^(?:<br\s*\/?>)+/i, "");
+            }
+            this.$.messageText.setContent(forwardHtml + this.buildQuote(inMessage) + onlyMedia +
+                this.buildReactions(inMessage));
             return;
         }
 
@@ -345,8 +364,27 @@ module.exports = kind({
         }
 
         // Emoji last, so it operates on the final HTML after linkification.
-        this.$.messageText.setContent(this.buildQuote(inMessage) +
+        this.$.messageText.setContent(forwardHtml + this.buildQuote(inMessage) +
             messagingUtils.message.emojify(inText) + this.buildReactions(inMessage));
+    },
+
+    /** The label of a forwarded message (util/forwarded): "Forwarded from <name>", above it all. */
+    buildForwarded: function (forward) {
+        return '<div class="msg-forwarded">' +
+            messagingUtils.message.emojify(forwarded.labelHtml(forward, $L, messagingUtils.message.escapeHtml)) +
+            '</div>';
+    },
+
+    /** A local file: an image inline, anything else as a chip. */
+    buildLocalFileHtml: function (path) {
+        if (this.isImagePath(path)) {
+            return this.buildLocalImageHtml(path);
+        }
+        return this.buildAttachmentChip({
+            url: path,
+            kind: this.mediaKind(path),
+            name: this.mediaName(path)
+        });
     },
 
     /**
