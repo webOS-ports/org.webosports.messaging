@@ -1788,7 +1788,7 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
 
     // A message we sent from the phone's WhatsApp comes back as HTML with a mention as
     // "<b>@Name</b>", in the outbox, whose text is drawn as plain: the mention is bold, not tags,
-    // and any other tag stays text.
+    // and any other tag stays text. So in the chat list's preview of it.
     it('bolds a mention in a message we sent from another device', async function () {
         /* global require */
         var page = async function () {
@@ -1817,14 +1817,34 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
                 })(c.$ && (c.$.item || c));
             });
             if (!node) { return JSON.stringify(null); }
-            return JSON.stringify({ bold: Array.prototype.map.call(node.querySelectorAll('b'), function (b) { return b.textContent; }),
-                italic: node.querySelectorAll('i').length, text: node.textContent });
+            var out = { bold: Array.prototype.map.call(node.querySelectorAll('b'), function (b) { return b.textContent; }),
+                italic: node.querySelectorAll('i').length, text: node.textContent };
+            // The chat list's preview of it, as the thread's summary has it.
+            $.app_mainView_messaging_threadList.collection.forEach(function (m) {
+                if (m.attributes._id === 'thread-family') {
+                    m.set({ summary: 'hi <b>@Anna K</b> &amp; <i>x</i>', flags: Object.assign({}, thread.flags, { outgoing: true }) });
+                }
+            });
+            var preview = null;
+            for (var t = 0; t < 20 && !preview; t++) {
+                await wait(100);
+                Array.prototype.forEach.call(document.querySelectorAll('[id$=_threadList] .message-preview'), function (n) {
+                    if (n.textContent.indexOf('Anna K') !== -1) { preview = n; }
+                });
+            }
+            out.preview = preview && { bold: Array.prototype.map.call(preview.querySelectorAll('b'), function (b) { return b.textContent; }),
+                italic: preview.querySelectorAll('i').length, text: preview.textContent };
+            return JSON.stringify(out);
         };
         var r = JSON.parse(await session.evaluate('(' + page.toString() + ')()'));
         assert.ok(r, 'the message is drawn');
         assert.deepEqual(r.bold, ['@Anna K']);
         assert.equal(r.italic, 0);
         assert.ok(/<i>x<\/i>/.test(r.text) && r.text.indexOf('<b>') === -1, r.text);
+        assert.ok(r.preview, 'the chat list shows the message');
+        assert.deepEqual(r.preview.bold, ['@Anna K']);
+        assert.equal(r.preview.italic, 0);
+        assert.ok(/<i>x<\/i>/.test(r.preview.text) && r.preview.text.indexOf('<b>') === -1, r.preview.text);
     });
 
     // The keyboard New Conversation's "To" field brings up resizes the window; a resize on a phone

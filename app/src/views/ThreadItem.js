@@ -10,6 +10,7 @@ var kind = require('enyo/kind'),
     messagingUtils = require('../util/messagingUtils'),
     appState = require('../util/appState'),
     chatFlags = require('../util/chatFlags'),
+    mentionMarkup = require('../util/mentionMarkup'),
     $L = require('enyo/i18n').$L;
 
 module.exports = kind({
@@ -151,7 +152,9 @@ module.exports = kind({
         } else if (inThread.summary) {
             if (inThread.flags && inThread.flags.outgoing) {
                 // Only outgoing messages need escaping; incoming ones are sanitized on the way in.
-                summary = messagingUtils.message.escapeHtml(inThread.summary);
+                // One we sent from another device has a mention as "<b>@Name</b>": bold, as in the
+                // chat, not tags.
+                summary = mentionMarkup.keepBold(messagingUtils.message.escapeHtml(inThread.summary));
             } else {
                 summary = inThread.summary;
             }
