@@ -3181,7 +3181,8 @@ module.exports = kind({
 
     renderStickers: function () {
         var messages = this.collection.map(function (m) { return m.attributes; });
-        var list = stickers.merge([stickers.fromMessages(messages), this._stickersFromIndex || []]);
+        var list = stickers.withDefaults(stickers.merge([stickers.fromMessages(messages), this._stickersFromIndex || []]),
+            stickers.defaults(window.location.href));
         var grid = this.$.stickerGrid;
         grid.destroyClientControls();
         for (var i = 0; i < list.length; i++) {

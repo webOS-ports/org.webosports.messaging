@@ -135,3 +135,47 @@ describe('stickers.src and asAttachment', function () {
             { path: '/media/internal/s/cat.webp', name: 'cat.webp', type: 'image' });
     });
 });
+
+describe('the default stickers', function () {
+    var fs = require('fs'), path = require('path');
+    var dir = path.join(__dirname, '..', '..', 'app', 'assets', 'stickers');
+
+    it('are the files the app brings, each a 512x512 WebP WhatsApp takes as a sticker', function () {
+        var files = fs.readdirSync(dir).filter(function (f) { return /\.webp$/.test(f); }).sort();
+        assert.deepEqual(st.DEFAULTS.slice().sort(), files);
+        assert.equal(files.length, 24);
+        files.forEach(function (f) {
+            var b = fs.readFileSync(path.join(dir, f));
+            assert.equal(b.toString('latin1', 0, 4) + b.toString('latin1', 8, 12), 'RIFFWEBP', f);
+            assert.ok(b.length <= 100 * 1024, f + ' is ' + b.length + ' bytes');
+            // VP8X: the canvas size, less one, in 24 bits at 24 and 27.
+            assert.equal(b.toString('latin1', 12, 16), 'VP8X', f + ': an extended WebP, for its alpha');
+            assert.equal(b.readUIntLE(24, 3) + 1, 512, f);
+            assert.equal(b.readUIntLE(27, 3) + 1, 512, f);
+        });
+        assert.ok(fs.existsSync(path.join(dir, 'NOTICE')), 'with the notice their licence asks for');
+    });
+
+    it('are found beside the app\'s page, as files the plugin can send', function () {
+        var d = st.defaults('file:///usr/palm/applications/org.webosports.app.messaging/index.html?x=1#y');
+        assert.equal(d.length, 24);
+        assert.deepEqual(d[0], { path: '/usr/palm/applications/org.webosports.app.messaging/assets/stickers/01-emoji-u1f602.webp', time: 0 });
+        assert.ok(d.every(function (s) { return st.isStickerPath(s.path); }));
+        assert.equal(st.defaults('file:///home/me/my%20pack/index.html')[0].path,
+            '/home/me/my pack/assets/stickers/01-emoji-u1f602.webp');
+        ['http://localhost:8080/index.html', '', null, 'file://', 'file:///a%E0%A4%A/index.html'].forEach(function (u) {
+            assert.deepEqual(st.defaults(u), [], String(u));
+        });
+    });
+
+    it('come after one\'s own, each once', function () {
+        var own = [{ path: '/media/internal/s/cat.webp', time: 5 },
+            { path: '/usr/palm/applications/m/assets/stickers/02-emoji-u1f923.webp', time: 4 }];
+        var all = st.withDefaults(own, st.defaults('file:///usr/palm/applications/m/index.html'));
+        assert.equal(all.length, 25);
+        assert.deepEqual(all.slice(0, 3).map(function (s) { return s.path.replace(/.*\//, ''); }),
+            ['cat.webp', '02-emoji-u1f923.webp', '01-emoji-u1f602.webp']);
+        assert.deepEqual(st.withDefaults(own, []), own);
+        assert.deepEqual(st.withDefaults(null, null), []);
+    });
+});

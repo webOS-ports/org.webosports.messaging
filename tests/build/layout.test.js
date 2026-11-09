@@ -2014,7 +2014,7 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             await open('thread-family');
             out.whatsapp = offers();
 
-            // Nothing in the index nor the chat: said so, once the index has answered.
+            // Nothing in the index nor the chat: the app's own stickers, and no "none yet".
             mockDb.store['com.palm.media.image.file:1'] = [];
             chat.openStickerPicker();
             out.none = { asking: chat.$.stickerEmpty.getShowing() };
@@ -2062,6 +2062,17 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             });
             out.after = { open: chat.$.stickerPicker.getShowing(), composer: chat.$.richText.get('value') };
 
+            // One the app brings goes as its file beside the page, as one's own does.
+            chat.openStickerPicker(); await wait(300);
+            var laugh = chat.$.stickerGrid.getClientControls().filter(function (c) {
+                return name(c.stickerPath) === '01-emoji-u1f602.webp'; })[0];
+            count = mockDb.store['com.palm.message:1'].length;
+            chat.stickerPicked(laugh); await wait(300);
+            var page = decodeURI(location.href.replace(/[?#].*$/, '').replace(/^file:\/\//, ''));
+            out.defaultSent = mockDb.store['com.palm.message:1'].slice(count).map(function (m) {
+                return m.filePath === page.slice(0, page.lastIndexOf('/') + 1) + 'assets/stickers/01-emoji-u1f602.webp';
+            });
+
             // Back closes the picker, not the chat.
             chat.openStickerPicker(); await wait(100);
             var pane = main.$.slidingGroup.getIndex();
@@ -2084,13 +2095,18 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
             fs.copyFileSync(path.join(__dirname, '..', '..', 'app', 'mock', 'stickers', f), path.join(dir, f));
         });
         var r = await session.evaluate('(' + page.toString() + ')(' + JSON.stringify(dir) + ')');
+        // The app's own, after one's own (app/assets/stickers).
+        var DEFAULTS = fs.readdirSync(path.join(__dirname, '..', '..', 'app', 'assets', 'stickers'))
+            .filter(function (f) { return /\.webp$/.test(f); }).sort();
+        assert.equal(DEFAULTS.length, 24);
         assert.deepEqual(r, {
-            telegram: false, whatsapp: true, none: { asking: false, answered: true, cells: 0 },
-            listed: ['heart.webp', 'gone.webp', 'star.webp'],
-            shown: ['heart.webp', 'star.webp'],
+            telegram: false, whatsapp: true, none: { asking: false, answered: false, cells: DEFAULTS.length },
+            listed: ['heart.webp', 'gone.webp', 'star.webp'].concat(DEFAULTS),
+            shown: ['heart.webp', 'star.webp'].concat(DEFAULTS),
             fits: true, grid: true, light: true, empty: false,
             sent: [{ filePath: true, text: '', service: 'type_whatsapp', folder: 'outbox', to: '120363041234567890@g.us' }],
             after: { open: false, composer: 'typed, not sent' },
+            defaultSent: [true],
             back: { open: false, stays: true }
         });
     });

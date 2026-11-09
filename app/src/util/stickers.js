@@ -30,8 +30,22 @@
 var IMAGE_KIND = "com.palm.media.image.file:1";
 /** db8 answers at most 500 records a page; the newest that many pictures are looked through. */
 var INDEX_LIMIT = 500;
-/** As many as the grid shows. */
+/** As many of one's own as the grid shows; the defaults come after them. */
 var MAX = 60;
+
+/**
+ * The stickers the app brings (app/assets/stickers, made by tools/make-default-stickers.py from
+ * Noto Emoji, Apache-2.0): offered after one's own, so that there are always some to send.
+ */
+var DEFAULTS_DIR = "assets/stickers/";
+var DEFAULTS = [
+    "01-emoji-u1f602.webp", "02-emoji-u1f923.webp", "03-emoji-u1f60a.webp", "04-emoji-u1f60d.webp",
+    "05-emoji-u1f618.webp", "06-emoji-u1f609.webp", "07-emoji-u1f60e.webp", "08-emoji-u1f914.webp",
+    "09-emoji-u1f605.webp", "10-emoji-u1f62d.webp", "11-emoji-u1f621.webp", "12-emoji-u1f631.webp",
+    "13-emoji-u1f973.webp", "14-emoji-u1f634.webp", "15-emoji-u1f644.webp", "16-emoji-u1f917.webp",
+    "17-emoji-u1f44d.webp", "18-emoji-u1f44f.webp", "19-emoji-u1f64f.webp", "20-emoji-u1f4aa.webp",
+    "21-emoji-u1f44b.webp", "22-emoji-u2764.webp", "23-emoji-u1f525.webp", "24-emoji-u1f389.webp"
+];
 
 var WEBP = /\.webp$/i;
 var HASH_NAME = /^[0-9a-f]{32,}\.webp$/i;
@@ -135,6 +149,35 @@ function merge(lists, max) {
     return out;
 }
 
+/**
+ * The app's own stickers as files, from the address of its page (a file:// URL on the device):
+ * the plugin sends a file, so a sticker needs a path. None for a page served otherwise.
+ */
+function defaults(pageUrl) {
+    var page = String(pageUrl || "").replace(/[?#].*$/, "");
+    if (!/^file:\/\/\//i.test(page)) {
+        return [];
+    }
+    var dir = pathOfUrl(page.slice(0, page.lastIndexOf("/") + 1));
+    if (!dir) {
+        return [];
+    }
+    return DEFAULTS.map(function (name) { return { path: dir + DEFAULTS_DIR + name, time: 0 }; });
+}
+
+/** One's own stickers (merge()), then the defaults not among them. */
+function withDefaults(own, bundled) {
+    var seen = {}, out = (own || []).slice();
+    out.forEach(function (s) { seen[keyOf(s.path)] = true; });
+    (bundled || []).forEach(function (s) {
+        if (!Object.prototype.hasOwnProperty.call(seen, keyOf(s.path))) {
+            seen[keyOf(s.path)] = true;
+            out.push(s);
+        }
+    });
+    return out;
+}
+
 /** The URL to draw a sticker's file with. */
 function src(path) {
     return "file://" + encodeURI(path);
@@ -153,6 +196,10 @@ module.exports = {
     fromIndex: fromIndex,
     fromMessages: fromMessages,
     merge: merge,
+    DEFAULTS: DEFAULTS,
+    DEFAULTS_DIR: DEFAULTS_DIR,
+    defaults: defaults,
+    withDefaults: withDefaults,
     src: src,
     asAttachment: asAttachment
 };
