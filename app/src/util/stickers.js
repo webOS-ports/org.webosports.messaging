@@ -18,8 +18,9 @@
  *     file:// URL in the text. The plugins' download folders (/media/internal/.im-attachments)
  *     are hidden, so the index has none of those.
  *
- * A received WhatsApp sticker is not among them: the plugin turns it into a PNG on download,
- * because the old WebKit could not draw WebP, and a PNG goes out as a picture, not a sticker.
+ * A received WhatsApp sticker is among them from purple-combined patch 0061 on, which keeps it as
+ * the .webp it came as. Before, the plugin turned it into a PNG on download, because the old
+ * WebKit could not draw WebP, and a PNG goes out as a picture, not a sticker: those stay out.
  *
  * The same sticker can be in more than one place, and the plugins name a download by its
  * content hash, so a file named by a hash counts once wherever it is; any other file once by
