@@ -296,10 +296,12 @@ module.exports = kind({
         // Title and message apart, as the layers of the Mojo dashboard were: the banner joins them
         // itself, and a toast sent without a title shows its message on both of the notification's
         // lines.
+        var group = messagingUtils.message.getNotificationGroup(message);
         var request = this.$.createToast.send(withSound({
             sourceId: APP_ID,
             title: messagingUtils.message.stripEmojiForPlainText(sender),
             message: messagingUtils.message.getNotificationText(message) || $L("New message"),
+            groupId: group,
             iconUrl: "/usr/palm/applications/" + APP_ID + "/assets/notification-large-messaging.png",
             onclick: {
                 appId: APP_ID,
@@ -378,6 +380,7 @@ module.exports = kind({
                 sourceId: APP_ID,
                 title: messagingUtils.message.stripEmojiForPlainText(from),
                 message: $L("wants to add you as a buddy"),
+                groupId: messagingUtils.message.getNotificationGroup(invite),
                 iconUrl: "/usr/palm/applications/" + APP_ID + "/assets/notification-large-messaging.png",
                 onclick: {
                     appId: APP_ID,
@@ -402,6 +405,8 @@ module.exports = kind({
             sourceId: APP_ID,
             message: messagingUtils.message.getMessageErrorFromCode(
                 messagingUtils.message.failureCode(message), message),
+            // Apart from the messages, as legacy's failed-send dashboard was, with its own icon.
+            groupId: "failed",
             iconUrl: "/usr/palm/applications/" + APP_ID + "/assets/notification-large-failed.png",
             onclick: {
                 appId: APP_ID,

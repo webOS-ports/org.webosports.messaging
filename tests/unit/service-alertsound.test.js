@@ -269,6 +269,18 @@ describe('the app\'s alerts for a batch', function () {
         assert.equal(dm.$.createToast.sent.length, 0);
     });
 
+    it('stacks each protocol apart, and a failed send apart from the messages', function () {
+        var out = deliver([msg('m1', 't1', { serviceName: 'sms' }), msg('m2', 't2', { serviceName: 'type_telegram' }),
+            msg('m3', 't3', { serviceName: 'mms' })]);
+        assert.deepEqual(out.toasts.map(function (x) { return x.groupId; }), ['sms', 'type_telegram', 'sms']);
+        dm.gotInvites(null, { results: [] });
+        dm.gotInvites(null, { results: [{ _id: 'i1', accepted: 'pending', from: { addr: 'bob' }, serviceName: 'type_whatsapp' }] });
+        dm.notifyFailedMessage({ _id: 'm9', conversations: ['t1'], serviceName: 'sms', errorCategory: 'x' });
+        var sent = dm.$.createToast.sent;
+        assert.equal(sent[sent.length - 2].groupId, 'type_whatsapp');
+        assert.equal(sent[sent.length - 1].groupId, 'failed');
+    });
+
     it('raises a failed send silently, as legacy did', function () {
         dm.notifyFailedMessage({ _id: 'm1', conversations: ['t1'], errorCategory: 'x' });
         assert.deepEqual(soundOf(dm.$.createToast.sent[0]), {});

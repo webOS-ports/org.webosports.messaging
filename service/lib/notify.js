@@ -68,6 +68,7 @@ function createNotifier({ db, call, log = console, now = () => Date.now() }) {
 					sourceId: APP_ID,
 					title,
 					message: body,
+					groupId: toasttext.group(msg),
 					iconUrl: "/usr/palm/applications/" + APP_ID + "/assets/notification-large-messaging.png",
 					onclick: { appId: APP_ID, params: { threadId } },
 				}, sound));

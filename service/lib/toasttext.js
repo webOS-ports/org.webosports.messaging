@@ -11,6 +11,7 @@
 "use strict";
 
 const message = require("./message.js");
+const address = require("./address.js");
 
 const MMS_KIND = "com.palm.mmsmessage:1";
 const MMS_TEXT = "New MMS on your phone";
@@ -93,4 +94,13 @@ function notificationText(msg) {
 	return tidy(plain(summarizeMedia(unescapeText(text))).replace(/\r|\n|\\r|\\n/g, " "));
 }
 
-module.exports = { notificationText, plain };
+// The groupId of a message's toast: its protocol, SMS and MMS being one (address.isTextMessage),
+// so that the shell stacks SMS, Telegram and WhatsApp apart. messagingUtils.message
+// .getNotificationGroup in the app.
+function group(msg) {
+	const serviceName = msg && msg.serviceName;
+	if (address.isTextMessage(serviceName) || typeof serviceName !== "string") { return "sms"; }
+	return serviceName;
+}
+
+module.exports = { notificationText, plain, group };
