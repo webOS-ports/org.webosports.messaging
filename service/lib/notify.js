@@ -15,6 +15,7 @@
 
 const toasttext = require("./toasttext.js");
 const alertsound = require("./alertsound.js");
+const toasticon = require("./toasticon.js");
 
 const APP_ID = "org.webosports.app.messaging";
 const PREFS_KIND = "com.palm.app.messagingprefs:1";
@@ -29,7 +30,9 @@ async function keepToastIds(db, log, kept) {
 	catch (e) { log.error("notify: could not keep " + kept.length + " toast ids: " + ((e && e.message) || e)); }
 }
 
-function createNotifier({ db, call, log = console, now = () => Date.now() }) {
+// templateDirs: where the account templates are that give each protocol's icon (toasticon.js);
+// read once a batch, so that an account installed since has its icon.
+function createNotifier({ db, call, log = console, now = () => Date.now(), templateDirs = toasticon.TEMPLATE_DIRS }) {
 	async function appRunning() {
 		try {
 			const r = await call("luna://com.webos.service.applicationmanager/running", {});
@@ -57,6 +60,7 @@ function createNotifier({ db, call, log = console, now = () => Date.now() }) {
 		if (!due.length || await appRunning()) { return 0; }
 		let sent = 0;
 		let sound = alertsound.toastSound(p);
+		const icons = toasticon.readIcons(templateDirs, log);
 		const kept = [];
 		for (const [threadId, msg] of due) {
 			const thread = threads.get(threadId) || {};
@@ -68,7 +72,8 @@ function createNotifier({ db, call, log = console, now = () => Date.now() }) {
 					sourceId: APP_ID,
 					title,
 					message: body,
-					iconUrl: "/usr/palm/applications/" + APP_ID + "/assets/notification-large-messaging.png",
+					groupId: toasttext.group(msg),
+					iconUrl: toasticon.iconFor(icons, toasttext.group(msg)),
 					onclick: { appId: APP_ID, params: { threadId } },
 				}, sound));
 				sent++;

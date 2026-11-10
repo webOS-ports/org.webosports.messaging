@@ -1,0 +1,24 @@
+[
+    {
+        "templateId": "com.palm.telegram",
+        "capabilityProviders": [
+            {
+                "capability": "CONTACTS",
+                "id": "com.palm.telegram.contacts",
+                "icon": {
+                    "loc_48x48": "images/nothere.png"
+                }
+            },
+            {
+                "capability": "MESSAGING",
+                "capabilitySubtype": "IM",
+                "id": "com.palm.telegram.im",
+                "serviceName": "type_telegram",
+                "icon": {
+                    "loc_32x32": "images/telegram-32x32.png",
+                    "loc_48x48": "images/telegram-48x48.png"
+                }
+            }
+        ]
+    }
+]

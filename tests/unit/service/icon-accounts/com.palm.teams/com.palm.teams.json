@@ -1,0 +1,16 @@
+[
+    {
+        "templateId": "com.palm.teams",
+        "capabilityProviders": [
+            {
+                "capability": "MESSAGING",
+                "capabilitySubtype": "IM",
+                "id": "com.palm.teams.im",
+                "serviceName": "type_teams",
+                "icon": {
+                    "loc_48x48": "images/teams-48x48.png"
+                }
+            }
+        ]
+    }
+]

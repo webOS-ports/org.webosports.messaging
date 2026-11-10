@@ -546,6 +546,21 @@ var messaging = module.exports = {
                 .replace(/^\s+|\s+$/g, "");
         },
 
+        /**
+         * The groupId of a message's toast: its protocol. The shell shows an application's toasts
+         * with one groupId as one stack, as webOS showed one dashboard per thing an application
+         * chose, so SMS, Telegram and WhatsApp are each a stack of their own rather than one pile.
+         * SMS and MMS are one, as they are one conversation in the app (utils.isTextMessage).
+         * service/lib/toasttext.js does the same for the service; the tests hold them together.
+         */
+        getNotificationGroup: function (rawMessage) {
+            var serviceName = rawMessage && rawMessage.serviceName;
+            if (messaging.utils.isTextMessage(serviceName) || typeof serviceName !== "string") {
+                return "sms";
+            }
+            return serviceName;
+        },
+
         // --- Inline media player helpers -----------------------------------------------------
         audioFmt: function (s) {
             s = (s && isFinite(s)) ? Math.floor(s) : 0;

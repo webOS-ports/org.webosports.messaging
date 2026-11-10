@@ -127,4 +127,41 @@ describe('the notifier', function () {
         var toast = await send({ messageText: SOB }, { displayName: 'Alice' });
         assert.equal(toast.message, 'New message');
     });
+
+    it('names the protocol as the toast\'s group', async function () {
+        var toast = await send({ serviceName: 'type_telegram', messageText: 'hi' }, { displayName: 'Alice' });
+        assert.equal(toast.groupId, 'type_telegram');
+        toast = await send({ serviceName: 'mms', messageText: 'hi' }, { displayName: 'Alice' });
+        assert.equal(toast.groupId, 'sms');
+    });
+});
+
+// --- which stack a toast goes in -------------------------------------------------------------
+
+/*
+ * The shell stacks an application's toasts by groupId, as webOS showed one dashboard per thing an
+ * application chose. Without one, every message - SMS, Telegram, WhatsApp - went on one pile.
+ */
+var GROUPS = [
+    ['an SMS', { serviceName: 'sms' }, 'sms'],
+    ['an MMS goes with the SMS, as in the app', { serviceName: 'mms' }, 'sms'],
+    ['a message to a phone-type address', { serviceName: 'type_mobile' }, 'sms'],
+    ['a message with no serviceName, as an old SMS record', {}, 'sms'],
+    ['an empty serviceName', { serviceName: '' }, 'sms'],
+    ['a serviceName that is not a string', { serviceName: 7 }, 'sms'],
+    ['Telegram', { serviceName: 'type_telegram' }, 'type_telegram'],
+    ['WhatsApp', { serviceName: 'type_whatsapp' }, 'type_whatsapp'],
+    ['Teams, whichever account', { serviceName: 'type_teams', accountId: 'acc-teams-2' }, 'type_teams'],
+    ['nothing at all', undefined, 'sms']
+];
+
+describe('the group of a message\'s toast', function () {
+    GROUPS.forEach(function (c) {
+        it(c[0] + ', in the app', function () {
+            assert.equal(utils.message.getNotificationGroup(c[1]), c[2]);
+        });
+        it(c[0] + ', in the service', function () {
+            assert.equal(toasttext.group(c[1]), c[2]);
+        });
+    });
 });
