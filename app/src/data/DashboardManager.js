@@ -31,11 +31,24 @@ var AUDIO_SERVICE = 'luna://com.palm.audio';
 var APP_ID = 'org.webosports.app.messaging';
 // Every toast names its sourceId. Left out, notificationmgr takes the caller's bus name, which for
 // a web app is the app id plus WAM's pid (org.webosports.app.messaging-968); that matches no app,
-// so the toast got notificationmgr's generic icon instead of the app's. For an application
-// notificationmgr ignores iconUrl and shows the icon of the sourceId's app.
+// so the toast got notificationmgr's generic icon instead of the app's. notificationmgr takes
+// iconUrl from a caller of its privileged prefixes (org.webosports. among them), so a message's
+// toast shows its protocol's icon (protocolIcon).
 
 /** Minimum gap between toasts for the same thread, so a burst does not produce a stream. */
 var THROTTLE_MS = 10000;
+
+var MESSAGING_ICON = "/usr/palm/applications/" + APP_ID + "/assets/notification-large-messaging.png";
+
+/**
+ * The icon of a toast in the group (messagingUtils.message.getNotificationGroup): the one its
+ * account template gives the protocol, as the service's toasticon.js finds it, else Messaging's.
+ */
+function protocolIcon(group) {
+    var accounts = appState.accountService;
+    var icon = accounts && typeof accounts.getIconPath === "function" ? accounts.getIconPath(group) : null;
+    return (typeof icon === "string" && icon) ? icon : MESSAGING_ICON;
+}
 
 /** The toast with the soundClass/soundFile fields from messageAlerts added; {} adds none. */
 function withSound(toast, sound) {
@@ -302,7 +315,7 @@ module.exports = kind({
             title: messagingUtils.message.stripEmojiForPlainText(sender),
             message: messagingUtils.message.getNotificationText(message) || $L("New message"),
             groupId: group,
-            iconUrl: "/usr/palm/applications/" + APP_ID + "/assets/notification-large-messaging.png",
+            iconUrl: protocolIcon(group),
             onclick: {
                 appId: APP_ID,
                 params: { threadId: threadId }
@@ -381,7 +394,7 @@ module.exports = kind({
                 title: messagingUtils.message.stripEmojiForPlainText(from),
                 message: $L("wants to add you as a buddy"),
                 groupId: messagingUtils.message.getNotificationGroup(invite),
-                iconUrl: "/usr/palm/applications/" + APP_ID + "/assets/notification-large-messaging.png",
+                iconUrl: protocolIcon(messagingUtils.message.getNotificationGroup(invite)),
                 onclick: {
                     appId: APP_ID,
                     params: { threadId: invite.conversations && invite.conversations[0] }

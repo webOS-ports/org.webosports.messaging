@@ -1,0 +1,20 @@
+{
+    "templateId": "com.palm.palmprofile",
+    "capabilityProviders": [
+        {
+            "capability": "PHONE",
+            "id": "com.palm.palmprofile.phone",
+            "icon": {
+                "loc_48x48": "images/mypalm-48x48.png"
+            }
+        },
+        {
+            "capability": "MESSAGING",
+            "capabilitySubtype": "SMS",
+            "id": "com.palm.palmprofile.sms",
+            "icon": {
+                "loc_48x48": "images/sms-48x48.png"
+            }
+        }
+    ]
+}

@@ -1,0 +1,16 @@
+[
+    {
+        "templateId": "com.palm.whatsapp",
+        "capabilityProviders": [
+            {
+                "capability": "MESSAGING",
+                "capabilitySubtype": "IM",
+                "id": "com.palm.whatsapp.im",
+                "serviceName": "type_whatsapp",
+                "icon": {
+                    "loc_32x32": "images/whatsapp-32x32.png"
+                }
+            }
+        ]
+    }
+]
