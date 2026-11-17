@@ -2567,4 +2567,43 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.deepEqual(r.sent, ['/media/internal/DCIM/2026-11-08-10-00-05.jpg']);
         assert.equal(r.again, 0);
     });
+
+    // The arrow is a 32px icon; its ::after reaches to the toolbar's edges so a thumb does not
+    // have to land on the icon itself, but stops short of the message field beside it.
+    it('takes a tap around the send arrow, and leaves the field beside it alone', async function () {
+        var page = async function () {
+            var $ = require('enyo/dispatcher').$;
+            var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+            var main = $.app_mainView, chat = $.app_mainView_chatView_conversationList;
+            var thread = $.app_mainView_messaging_threadList.collection.models.filter(function (m) {
+                return m.attributes._id === 'thread-family'; })[0].attributes;
+            main.selectThread(null, thread); await wait(400);
+            var send = chat.$.sendButton.hasNode(), icon = send.getBoundingClientRect();
+            var bar = chat.$.footer.hasNode().getBoundingClientRect();
+            var field = chat.$.richText.hasNode();
+            var hits = function (x, y) {
+                var n = document.elementFromPoint(x, y);
+                return n === send ? 'send' : (n && field.parentNode.contains(n) ? 'field' : (n && n.className) || null);
+            };
+            var cy = (icon.top + icon.bottom) / 2, cx = (icon.left + icon.right) / 2;
+            return {
+                icon: { w: Math.round(icon.width), h: Math.round(icon.height) },
+                centre: hits(cx, cy),
+                rightEdge: hits(bar.right - 2, cy),
+                bottomEdge: hits(cx, bar.bottom - 2),
+                above: hits(cx, icon.top - 10),
+                leftOfIcon: hits(icon.left - 4, cy),
+                field: hits(icon.left - 12, cy)
+            };
+        };
+        var r = await session.evaluate('(' + page.toString() + ')()');
+        assert.deepEqual(r.icon, { w: 32, h: 32 }, 'the icon itself is drawn as before');
+        assert.equal(r.centre, 'send');
+        assert.equal(r.rightEdge, 'send', 'out to the right edge of the screen');
+        assert.equal(r.bottomEdge, 'send', 'down to the bottom edge of the toolbar');
+        assert.equal(r.above, 'send', 'above the icon');
+        assert.equal(r.leftOfIcon, 'send', 'a little to its left');
+        assert.equal(r.field, 'field', 'but not over the message field');
+    });
+
 });
