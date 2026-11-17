@@ -2606,4 +2606,54 @@ describe('the packed page laid out at phone size', { skip: skip }, function () {
         assert.equal(r.field, 'field', 'but not over the message field');
     });
 
+    // Mojo's composer took typing on a conversation without a tap on the field first.
+    it('types into the message field from a hardware keyboard when nothing has focus', async function () {
+        var key = async function (k, extra) {
+            var text = k.length === 1 ? k : undefined;
+            var ev = Object.assign({ key: k, text: text, unmodifiedText: text }, extra || {});
+            await session.send('Input.dispatchKeyEvent', Object.assign({ type: text ? 'keyDown' : 'rawKeyDown' }, ev));
+            await session.send('Input.dispatchKeyEvent', Object.assign({ type: 'keyUp' }, ev));
+        };
+        var state = function () {
+            return session.evaluate('(function () { var f = require("enyo/dispatcher").$' +
+                '.app_mainView_chatView_conversationList.$.richText.hasNode();' +
+                'return { focused: document.activeElement === f, value: f.value }; })()');
+        };
+        var setup = function (body) { return session.evaluate('(async function () {' +
+            'var $ = require("enyo/dispatcher").$, Signals = require("enyo/Signals");' +
+            'var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };' +
+            'var main = $.app_mainView, chat = $.app_mainView_chatView_conversationList;' +
+            body + '})()'); };
+        var open = 'var t = $.app_mainView_messaging_threadList.collection.models.filter(function (m) {' +
+            ' return m.attributes._id === "thread-family"; })[0].attributes;' +
+            'main.selectThread(null, t); await wait(400);' +
+            'chat.$.richText.set("value", ""); chat.$.richText.hasNode().value = "";' +
+            'if (document.activeElement) { document.activeElement.blur(); } return true;';
+
+        await setup(open);
+        await key('H'); await key('i');
+        var typed = await state();
+
+        await setup('chat.$.richText.hasNode().blur(); return true;');
+        await key('Enter'); await key('c', { modifiers: 2 });
+        var named = await state();
+
+        await setup('Signals.send("onmenubutton", {}); await wait(300); return main.$.appMenu.showing;');
+        await key('x');
+        var underMenu = await state();
+        await setup('main.$.appMenu.hide(); await wait(200); return true;');
+
+        // On a phone, back to the thread list: the conversation is off screen.
+        await setup('Signals.send("onbackgesture", {}); await wait(600); return true;');
+        await key('y');
+        var offScreen = await state();
+        await setup('chat.$.richText.set("value", ""); chat.$.richText.hasNode().value = ""; return true;');
+
+        assert.deepEqual(typed, { focused: true, value: 'Hi' }, 'the first letter lands in the field too');
+        assert.deepEqual(named, { focused: false, value: 'Hi' }, 'Enter and Ctrl+C do not move focus');
+        assert.deepEqual(underMenu, { focused: false, value: 'Hi' }, 'not while a menu is open');
+        // Leaving the chat takes the unsent text with it as a draft, so only the 'y' is looked for.
+        assert.equal(offScreen.focused, false, 'not into a conversation off screen');
+        assert.equal(offScreen.value.indexOf('y'), -1, 'not into a conversation off screen');
+    });
 });
