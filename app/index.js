@@ -1,5 +1,10 @@
 /** Lauch point for LuneOS Messaging */
 
+// First, before anything that can load enyo/touch: that module binds Enyo's document touch
+// listeners as it loads, and they have to be non-passive for Enyo's preventDefault() to take
+// (util/touchListeners).
+require('./src/util/touchListeners').install();
+
 // Required for its side effects, not for an export, and it has to be the package itself rather
 // than one of its modules. webos-lib/index.js is what installs the LuneOS event plumbing: the
 // keyup -> `backgesture` emulation and the document -> Signals forwarding behind MainView's
