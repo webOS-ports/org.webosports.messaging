@@ -11,6 +11,7 @@ var kind = require('enyo/kind'),
     CardArranger = require('layout/CardArranger'),
     Signals = require('enyo/Signals'),
     Popup = require('onyx/Popup'),
+    EnyoPopup = require('enyo/Popup'),
     Button = require('onyx/Button'),
     Menu = require('onyx/Menu'),
     MenuItem = require('onyx/MenuItem'),
@@ -25,6 +26,7 @@ var kind = require('enyo/kind'),
     appState = require('../util/appState'),
     urlTarget = require('../util/urlTarget'),
     imageViewer = require('../util/imageViewer'),
+    typeToCompose = require('../util/typeToCompose'),
     formFactor = require('../util/formFactor'),
     firstUse = require('../util/firstUse'),
     mockDb = require('../data/mockDb'),
@@ -328,15 +330,59 @@ module.exports = kind({
         if (appState.accountService) {
             appState.accountService.unregister(this);
         }
+        if (this._typeToComposeListener) {
+            document.removeEventListener("keydown", this._typeToComposeListener);
+            this._typeToComposeListener = null;
+        }
         this.inherited(arguments);
     },
 
     rendered: function () {
         this.inherited(arguments);
+        if (!this._typeToComposeListener) {
+            this._typeToComposeListener = this.bindSafely("keyToComposer");
+            document.addEventListener("keydown", this._typeToComposeListener);
+        }
         // Again here, not only in create(): FittableLayout reflows this control as it renders,
         // and the class has to be on the node the stylesheet will match against.
         formFactor.apply(this);
         this.handleLaunchParam();
+    },
+
+    // --- hardware keyboard ------------------------------------------------------------------
+
+    /**
+     * Typing on a hardware keyboard with nothing focused goes to the message field of the
+     * conversation (or New Conversation) on screen, as Mojo's did. Focus moves on the keydown,
+     * so the key's own character then lands in the field: nothing is prevented or re-typed.
+     */
+    keyToComposer: function (event) {
+        if (!typeToCompose(event, event.target)) {
+            return;
+        }
+        var field = this.composerOnScreen();
+        if (field) {
+            field.focus();
+        }
+    },
+
+    /** The message field the user is looking at, or null when there is none to type into. */
+    composerOnScreen: function () {
+        // Preferences / first launch, or a menu, dialog or picture over the conversation.
+        if (this.$.views.getIndex() !== 0 || EnyoPopup.count > 0 || imageViewer.isOpen()) {
+            return null;
+        }
+        // On a phone the thread list and the conversation take turns at the screen.
+        if (Panels.isScreenNarrow() && this.$.slidingGroup.getIndex() !== 1) {
+            return null;
+        }
+        var chatView = this.$.chatView;
+        var name = chatView.getViewName();
+        var view = (name === "composeView" || name === "conversationList") && chatView.$[name];
+        var field = view && view.$.richText;
+        var node = field && !field.disabled && field.hasNode();
+        // offsetParent is null while the composer is hidden: selecting messages swaps it out.
+        return node && node.offsetParent !== null ? field : null;
     },
 
     // --- preferences -----------------------------------------------------------------------
