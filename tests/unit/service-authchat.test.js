@@ -71,6 +71,20 @@ describe('the login chat', function () {
         env.service.bus.stop();
     });
 
+    it('takes the notification of its code prompt with it', async function () {
+        var env = boot();
+        await seed.putAll(env.db, [seed.imIn("telegram", "Enter authentication code", { service: "type_telegram", account: ME, at: Date.now() - 1000 })]);
+        await ask(env.handle, "assignMessages", { lastCheckedRev: 0 });
+        var prompt = env.db.all(MESSAGE)[0];
+        assert.equal(env.toasts.length, 1);
+        assert.ok(prompt.toastId, 'the toast id kept on the prompt');
+        await seed.putAll(env.db, [login("type_telegram", "retrieving-buddies")]);
+        var r = await ask(env.handle, "loginsChanged", { lastLoginRev: 0 });
+        assert.equal(r.threads, 1);
+        assert.deepEqual(env.closed, [{ toastId: prompt.toastId }]);
+        env.service.bus.stop();
+    });
+
     it('stays while the account is still signing in', async function () {
         var env = boot();
         await telegramLogin(env);
@@ -106,7 +120,7 @@ describe('the login chat', function () {
     it('is left alone when no template can be read', async function () {
         var env = boot({ templateDirs: [path.join(TEMPLATES, 'missing')] });
         await telegramLogin(env);
-        await seed.putAll(env.db, [login("type_telegram", "online")]);
+        await seed.putAll(env.db, [login("type_telegram", "retrieving-buddies")]);
         assert.equal((await ask(env.handle, "loginsChanged", { lastLoginRev: 0 })).threads, 0);
         assert.equal(env.db.all(THREAD).length, 2);
         env.service.bus.stop();

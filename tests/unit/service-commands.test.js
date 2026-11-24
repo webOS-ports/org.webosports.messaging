@@ -265,6 +265,69 @@ describe('a notification of a message its sender deleted', function () {
     });
 });
 
+describe('a notification of a message that was read', function () {
+    // Two messages in from different chats, each with the toast the service raised for it.
+    async function toasted(opts) {
+        var env = boot(opts || {});
+        await seed.putAll(env.db, [seed.imIn("a", "the code is in here", { at: Date.now() - 1000 }),
+            seed.imIn("b", "still unread", { at: Date.now() - 1000 })]);
+        var r0 = await ask(env.handle, "readChanges", { lastReadRev: 0 });
+        await ask(env.handle, "assignMessages", { lastCheckedRev: 0 });
+        var msgs = env.db.all(MESSAGE);
+        assert.equal(env.toasts.length, 2);
+        assert.ok(msgs.every(function (m) { return typeof m.toastId === "string" && m.toastId; }), 'toast ids kept');
+        return { env: env, read: msgs[0], unread: msgs[1], rev: r0.rev };
+    }
+
+    it('is closed once the message is read, and closed once', async function () {
+        var t = await toasted();
+        await t.env.db.merge([{ _id: t.read._id, flags: { read: true } }]);
+        var r = await ask(t.env.handle, "readChanges", { lastReadRev: t.rev, $activity: { activityId: 5 } });
+        assert.equal(r.closed, 1);
+        assert.deepEqual(t.env.closed, [{ toastId: t.read.toastId }]);
+        var byId = {};
+        t.env.db.all(MESSAGE).forEach(function (m) { byId[m._id] = m; });
+        assert.equal(byId[t.read._id].toastId, null, 'and cleared');
+        assert.equal(byId[t.unread._id].toastId, t.unread.toastId, 'the unread message keeps its toast');
+        var complete = t.env.am.find(function (c) { return c.method === "complete"; });
+        assert.equal(complete.args.callback.params.lastReadRev, r.rev);
+        // Read again from the start: the id is gone, so nothing is closed twice.
+        var again = await ask(t.env.handle, "readChanges", { lastReadRev: 0 });
+        assert.equal(again.closed, 0);
+        assert.equal(t.env.closed.length, 1);
+        t.env.service.bus.stop();
+    });
+
+    it('stays when a message is marked unread', async function () {
+        var t = await toasted();
+        await t.env.db.merge([{ _id: t.read._id, flags: { read: false } }]);
+        var r = await ask(t.env.handle, "readChanges", { lastReadRev: t.rev });
+        assert.equal(r.closed, 0);
+        assert.deepEqual(t.env.closed, []);
+        t.env.service.bus.stop();
+    });
+
+    it('lets the id go when the toast is gone already', async function () {
+        var t = await toasted({ closeFails: true });
+        await t.env.db.merge([{ _id: t.read._id, flags: { read: true } }]);
+        var r = await ask(t.env.handle, "readChanges", { lastReadRev: t.rev });
+        assert.equal(r.closed, 0);
+        assert.equal(t.env.closed.length, 1, 'it was asked to close');
+        assert.equal(t.env.db.all(MESSAGE).filter(function (m) { return m._id === t.read._id; })[0].toastId, null);
+        t.env.service.bus.stop();
+    });
+
+    it('is closed when its chat is deleted', async function () {
+        var t = await toasted();
+        var thread = t.read.conversations[0];
+        var r = await ask(t.env.handle, "deleteChatthread", { threadId: thread });
+        assert.equal(r.deleted, 1);
+        assert.equal(r.closed, 1);
+        assert.deepEqual(t.env.closed, [{ toastId: t.read.toastId }]);
+        t.env.service.bus.stop();
+    });
+});
+
 describe('savePicture on the bus', function () {
     it('copies a chat\'s picture into the folder Photos sees, and says why it will not', async function () {
         var os = require('node:os');

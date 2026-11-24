@@ -327,9 +327,9 @@ module.exports = kind({
     },
 
     /**
-     * Keep the toast's id on the message it is for: if the sender deletes the message, the
-     * messaging service closes the toast by it (its messagesRetracted), so that the notification
-     * no longer shows what was taken back. The service does the same for the toasts it raises.
+     * Keep the toast's id on the message it is for: the messaging service closes the toast by it
+     * once the message is read, deleted with its chat, or deleted by its sender (its readChanges,
+     * deleteChatthread, messagesRetracted). The service does the same for the toasts it raises.
      * A failed-send toast has no message id on its request, so nothing is kept for it.
      */
     toastCreated: function (inSender, inResponse) {
