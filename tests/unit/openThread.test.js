@@ -42,3 +42,19 @@ describe('openThread.gone', function () {
         assert.equal(openThread.gone({ returnValue: true, results: [{ _id: 't1', flags: { visible: false } }] }), false);
     });
 });
+
+describe('openThread.backToList', function () {
+    var open = { _id: 't1' };
+
+    it('is true when the chat deleted is the one open over the list on a narrow screen', function () {
+        assert.equal(openThread.backToList({ _id: 't1' }, open, true, 1), true);
+    });
+
+    it('is false on a wide screen, with the list on screen, or for another chat', function () {
+        assert.equal(openThread.backToList({ _id: 't1' }, open, false, 1), false, 'wide: the list is beside it');
+        assert.equal(openThread.backToList({ _id: 't1' }, open, true, 0), false, 'the list is showing (a swipe delete)');
+        assert.equal(openThread.backToList({ _id: 't2' }, open, true, 1), false);
+        assert.equal(openThread.backToList({ _id: 't1' }, null, true, 1), false);
+        assert.equal(openThread.backToList(null, open, true, 1), false);
+    });
+});
