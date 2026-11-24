@@ -22,8 +22,8 @@ const PREFS_KIND = "com.palm.app.messagingprefs:1";
 const DEFAULT_MAX_AGE_MINUTES = 60;
 
 // The toasts' ids, kept on their messages in one merge for the batch, so that a notification can
-// be closed if its sender deletes the message (commands.js, messagesRetracted). Not keeping them
-// costs only that.
+// be closed once its message is read, deleted with its chat or deleted by its sender (commands.js:
+// readChanges, deleteThread, messagesRetracted). Not keeping them costs only that.
 async function keepToastIds(db, log, kept) {
 	if (!kept.length) { return; }
 	try { await db.merge(kept); }

@@ -1,7 +1,8 @@
 /* commands.js - the service's methods.
  *
  *   assignMessages   {lastCheckedRev}   thread new messages (the message watch)
- *   readChanges      {lastReadRev}      recount threads whose messages were read (read watch)
+ *   readChanges      {lastReadRev}      recount threads whose messages were read, and close the
+ *                                       notifications of those messages (read watch)
  *   messagesDeleted  {lastDeletedRev}   update threads that lost messages (delete watch)
  *   messagesRetracted {lastRetractedRev}
  *                                       close the notification of a message its sender deleted
@@ -10,7 +11,8 @@
  *                                       (login watch, see authchat.js)
  *   putMessage       {message}          thread a message and store it -> {threadids}
  *   deleteChatthread {threadId}         delete a thread; its messages go too, unless they are
- *                                       also in another thread, which keeps them
+ *                                       also in another thread, which keeps them, and so do the
+ *                                       notifications of the ones that go
  *   updateThreadValues {threadId}       recount a thread from its messages
  *   newBuddies       {}                 link buddies with no displayName yet to their person
  *                                       (buddy watch, see buddies.js)
@@ -73,7 +75,28 @@ function createCommands({ db, tempdb, call, notifier, state, serial, log = conso
 			rev = Math.max(rev, Number(m[revProp]) || 0);
 			ids.push(...(m.conversations || []));
 		}
-		return { ids, rev, count: found.length };
+		return { ids, rev, count: found.length, found };
+	}
+
+	// Close the notifications raised for these messages. Whoever raised one kept its id on the
+	// message as toastId (notify.js, the app's DashboardManager). Returns the merges that clear
+	// those ids, so that each is closed once. A toast that is gone already (dismissed, or
+	// notificationmgr restarted) only has its id let go.
+	async function closeToasts(msgs, why) {
+		let closed = 0, gone = 0;
+		const cleared = [];
+		for (const m of msgs) {
+			if (typeof m.toastId !== "string" || !m.toastId) { continue; }
+			try {
+				await call("luna://com.webos.notification/closeToast", { toastId: m.toastId });
+				closed++;
+			} catch (e) {
+				gone++;
+			}
+			cleared.push({ _id: m._id, toastId: null });
+		}
+		if (gone) { log.log("commands: " + gone + " notifications of " + why + " messages were gone already"); }
+		return { closed, cleared };
 	}
 
 	// Once per migration version, recorded in the state file; without a state file (a test that
@@ -99,16 +122,22 @@ function createCommands({ db, tempdb, call, notifier, state, serial, log = conso
 		return { rev: r.rev, threaded: r.threaded, parked: r.parked, notified: r.notified };
 	}
 
+	// A message read here or on another device has its notification closed too, as webOS closed
+	// a thread's dashboard once the thread was looked at: left open, it went on announcing what
+	// had been read (the code a login chat asked for, long after the account signed in).
 	async function readChanges(params) {
 		const from = startRev(params, "lastReadRev");
 		const r = await serial.run(async () => {
 			await migrateOnce();
-			const t = await touched([{ prop: "readRevSet", op: ">", val: from }], "readRevSet", ["conversations", "readRevSet"]);
+			const t = await touched([{ prop: "readRevSet", op: ">", val: from }], "readRevSet",
+				["_id", "conversations", "readRevSet", "flags", "toastId"]);
 			const threads = await recountThreads(db, t.ids);
-			return { rev: Math.max(from, t.rev), threads: threads.length };
+			return { rev: Math.max(from, t.rev), threads: threads.length, read: t.found.filter((m) => m.flags && m.flags.read) };
 		});
+		const { closed, cleared } = await closeToasts(r.read, "read");
+		if (cleared.length) { await db.merge(cleared); }
 		await finish("readChanges", "lastReadRev", r.rev, params);
-		return r;
+		return { rev: r.rev, threads: r.threads, closed };
 	}
 
 	async function messagesDeleted(params) {
@@ -123,28 +152,15 @@ function createCommands({ db, tempdb, call, notifier, state, serial, log = conso
 		return r;
 	}
 
-	// Whoever raised a message's notification kept its id on the message as toastId (notify.js,
-	// the app's DashboardManager). Close it, so the notification no longer shows what was taken
-	// back, and clear the id, so it is closed once.
+	// Close the notification of a message its sender deleted, so that it no longer shows what was
+	// taken back.
 	async function messagesRetracted(params) {
 		const from = startRev(params, "lastRetractedRev");
 		const found = await db.find({ from: MESSAGE_KIND, select: ["_id", "_rev", "toastId"],
 			where: [{ prop: "deleted", op: "=", val: true }, { prop: "_rev", op: ">", val: from }] });
-		let rev = from, closed = 0;
-		const cleared = [];
-		for (const m of found) {
-			rev = Math.max(rev, Number(m._rev) || 0);
-			if (typeof m.toastId !== "string" || !m.toastId) { continue; }
-			try {
-				await call("luna://com.webos.notification/closeToast", { toastId: m.toastId });
-				closed++;
-			} catch (e) {
-				// Gone already (dismissed, or notificationmgr restarted): nothing more to do for it.
-				log.error("commands: closing the notification of deleted message " + m._id + " failed: " +
-					((e && e.message) || e));
-			}
-			cleared.push({ _id: m._id, toastId: null });
-		}
+		let rev = from;
+		for (const m of found) { rev = Math.max(rev, Number(m._rev) || 0); }
+		const { closed, cleared } = await closeToasts(found, "deleted");
 		if (cleared.length) { await db.merge(cleared); }
 		await finish("messagesRetracted", "lastRetractedRev", rev, params);
 		return { rev, closed };
@@ -167,10 +183,12 @@ function createCommands({ db, tempdb, call, notifier, state, serial, log = conso
 		});
 	}
 
-	// Delete a thread and the messages only it has; run inside the serial queue. purge leaves no
-	// _del records behind, so nothing of them is kept, at the cost of the delete watch not seeing them.
+	// Delete a thread and the messages only it has, and close those messages' notifications; run
+	// inside the serial queue. purge leaves no _del records behind, so nothing of them is kept, at
+	// the cost of the delete watch not seeing them.
 	async function deleteThread(threadId, { purge = false } = {}) {
 		let deleted = 0, kept = 0;
+		const gone = [];
 		// Each pass changes the set it reads, so read the first page again until it is empty.
 		// Every pass removes the thread from all it read, so a thread of n messages takes
 		// n / PAGE passes; the bound only stops a db that does not apply our writes.
@@ -183,7 +201,7 @@ function createCommands({ db, tempdb, call, notifier, state, serial, log = conso
 			for (const m of msgs) {
 				const rest = (m.conversations || []).filter((id) => id !== threadId);
 				if (rest.length) { merges.push({ _id: m._id, conversations: rest }); }
-				else { dels.push(m._id); }
+				else { dels.push(m._id); gone.push(m); }
 			}
 			if (merges.length) { await db.merge(merges); kept += merges.length; }
 			if (dels.length) { await db.del(dels, { purge }); deleted += dels.length; }
@@ -195,7 +213,9 @@ function createCommands({ db, tempdb, call, notifier, state, serial, log = conso
 				log.error("deleteChatthread: could not unlink its channel: " + ((e && e.message) || e)));
 		}
 		await db.del([threadId], { purge });
-		return { deleted, kept };
+		// Their records are gone, so there is no id to clear.
+		const { closed } = await closeToasts(gone, "deleted");
+		return { deleted, kept, closed };
 	}
 
 	async function deleteChatthread(params) {
@@ -214,7 +234,7 @@ function createCommands({ db, tempdb, call, notifier, state, serial, log = conso
 				// Purged: a _del record would still hold the password, and so would the thread's summary.
 				const d = await deleteThread(t._id, { purge: true });
 				deleted += d.deleted;
-				log.log("commands: deleted login chat " + t._id + " (" + t.replyService + ", " + d.deleted + " messages)");
+				log.log("commands: deleted login chat " + t._id + " (" + t.replyService + ", " + d.deleted + " messages, " + d.closed + " notifications closed)");
 			}
 			return { rev: Math.max(from, rev), threads: threads.length, deleted };
 		});
