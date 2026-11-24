@@ -24,6 +24,7 @@ var kind = require('enyo/kind'),
     GroupDialog = require('./GroupDialog'),
     messagingUtils = require('../util/messagingUtils'),
     appState = require('../util/appState'),
+    openThread = require('../util/openThread'),
     urlTarget = require('../util/urlTarget'),
     imageViewer = require('../util/imageViewer'),
     typeToCompose = require('../util/typeToCompose'),
@@ -500,8 +501,12 @@ module.exports = kind({
 
     deleteThread: function (inSender, inEvent) {
         var thread = inEvent && inEvent.thread;
+        var backToList = openThread.backToList(thread, appState.selectedThread, Panels.isScreenNarrow(),
+            this.$.slidingGroup.getIndex());
         this.$.chatView.setDeletedChatThread(thread);
-        if (appState.selectedThread && thread && appState.selectedThread._id === thread._id) {
+        if (backToList) {
+            this.leaveThread();   // clears the selection too
+        } else if (appState.selectedThread && thread && appState.selectedThread._id === thread._id) {
             appState.setSelectedThread(null);
         }
         return true;
