@@ -23,6 +23,7 @@ var kind = require('enyo/kind'),
     prependedCount = require('../util/prependedCount'),
     senderImages = require('../util/senderImages'),
     sendAccount = require('../util/sendAccount'),
+    deliveryReport = require('../util/deliveryReport'),
     showInFiles = require('../util/showInFiles').showInFiles,
     cameraCapture = require('../util/cameraCapture'),
     Toolbar = require('onyx/Toolbar'),
@@ -2014,7 +2015,11 @@ module.exports = kind({
             folder: FOLDERS.OUTBOX,
             status: "pending",
             conversations: [this.chatThread._id],
-            flags: { read: true, visible: true, deliveryReport: false },
+            flags: {
+                read: true, visible: true,
+                deliveryReport: deliveryReport.wanted(selectedTransport.serviceName,
+                    appState.prefsHandler && appState.prefsHandler.getPrefs())
+            },
             to: [recipient],
             messageText: extra ? extra.text : this.$.richText.get('value'),
             serviceName: selectedTransport.serviceName

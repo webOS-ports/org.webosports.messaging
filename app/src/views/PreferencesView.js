@@ -118,6 +118,17 @@ module.exports = kind({
                             ]
                         },
 
+                        { classes: "prefs-group-caption", content: $L("Text Messages") },
+                        {
+                            classes: "prefs-row flex-row", components: [
+                                { content: $L("Delivery Reports"), classes: "flex-one" },
+                                {
+                                    name: "deliveryReports", kind: ToggleButton,
+                                    onChange: "deliveryReportsChange"
+                                }
+                            ]
+                        },
+
                         { classes: "prefs-group-caption", content: $L("Accounts") },
                         {
                             name: "accountsList", kind: Repeater, onSetupItem: "setupAccountRow",
@@ -203,6 +214,7 @@ module.exports = kind({
         this.prefs = prefs;
         this.$.showNotification.set('value', !!prefs.enableNotification);
         this.$.showOffline.set('value', !prefs.showOnlineBuddiesOnly);
+        this.$.deliveryReports.set('value', prefs.smsDeliveryReports === true);
         // "alert" is what the legacy app stored for System Sound; both play the same.
         this.selectPickerValue(this.$.alertPicker,
             prefs.notificationSound === "alert" ? "system" : prefs.notificationSound);
@@ -241,6 +253,14 @@ module.exports = kind({
     showOfflineChange: function (inSender) {
         if (!this.prefs) { return true; }
         this.prefs.showOnlineBuddiesOnly = !inSender.get('value');
+        this.savePrefs();
+        return true;
+    },
+
+    /** An SMS sent from now on asks for a delivery report (util/deliveryReport). */
+    deliveryReportsChange: function (inSender) {
+        if (!this.prefs) { return true; }
+        this.prefs.smsDeliveryReports = !!inSender.get('value');
         this.savePrefs();
         return true;
     },

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="23" height="23" viewBox="0 0 23 23">
+<!-- Not delivered: an SMS the network reported it could not deliver. A cross with the delivery
+     tick's dark keyline, round caps and stroke widths, in red instead of the tick's blue, so the
+     two read as one family at the 13px the receipt is shown. -->
+<defs>
+  <linearGradient id="a" gradientUnits="userSpaceOnUse" x1="4.5" y1="4.5" x2="18.5" y2="18.5">
+    <stop offset="0" stop-color="#f4a49a"/><stop offset="0.24" stop-color="#e5604f"/>
+    <stop offset="0.75" stop-color="#d9493a"/><stop offset="1" stop-color="#9e2a1f"/>
+  </linearGradient>
+</defs>
+  <g fill="none" stroke-linecap="round">
+    <path d="M5,5 L18,18 M18,5 L5,18" stroke="#3b0700" stroke-opacity="0.95" stroke-width="6.12"/>
+    <path d="M5,5 L18,18 M18,5 L5,18" stroke="url(#a)" stroke-width="4.29"/>
+  </g>
+</svg>
