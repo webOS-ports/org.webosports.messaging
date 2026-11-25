@@ -106,6 +106,8 @@ module.exports = kind({
             "isHistoryViewSelected": true,
             "showOnlineBuddiesOnly": true,
             "useImmediateMmsRetrieval": true,
+            // An SMS asks the network for a delivery report (util/deliveryReport)
+            "smsDeliveryReports": false,
             "firstUseMode": true
         };
     },

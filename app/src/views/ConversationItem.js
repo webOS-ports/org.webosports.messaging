@@ -20,6 +20,7 @@ var kind = require('enyo/kind'),
     fileOffer = require('../util/fileOffer'),
     forwarded = require('../util/forwarded'),
     sentExtras = require('../util/sentExtras'),
+    deliveryReport = require('../util/deliveryReport'),
     mms = require('../util/mms'),
     receivedLocation = require('../util/receivedLocation'),
     moment = require('moment'),
@@ -197,15 +198,15 @@ module.exports = kind({
     },
 
     /**
-     * Delivery/read receipt tick. Only outgoing messages get one: "delivered" shows a single check,
-     * "read" a double check. The transport's receipt handler stamps deliveryStatus on the outbox
-     * row. Rows are recycled, so this resets both ways.
+     * Delivery/read receipt. Only outgoing messages get one: "delivered" shows a single check,
+     * "read" a double check, and "undelivered" (an SMS status report saying the network gave up)
+     * a cross. The transport's receipt handler, or the telephony service for SMS, stamps
+     * deliveryStatus on the outbox row. Rows are recycled, so this resets both ways.
      */
     updateDeliveryStatus: function (status, folder) {
-        var isOutgoing = folder === FOLDERS.OUTBOX;
-        if (isOutgoing && (status === "read" || status === "delivered")) {
-            this.$.receiptIcon.setSrc(status === "read" ?
-                "assets/msg-read.svg" : "assets/msg-delivered.svg");
+        var icon = deliveryReport.receiptIcon(status, folder === FOLDERS.OUTBOX);
+        if (icon) {
+            this.$.receiptIcon.setSrc(icon);
             this.$.receiptIcon.show();
         } else {
             this.$.receiptIcon.hide();
