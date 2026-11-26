@@ -13,9 +13,19 @@
  *                               buddies whose availability changed   -> changedAvailability (tempdb)
  *
  * The files in configuration/activities create them at boot (tests/unit/service-commands.test.js
- * holds them to the specs here). After a callback has done its work, the activity is completed
+ * holds them to bootSpec here). After a callback has done its work, the activity is completed
  * with restart:true and a trigger moved on to the new revision, so it fires again only for what
- * is new. The trigger is luna://com.palm.db/watch: activitymanager checks that the creator may
+ * is new.
+ *
+ * The boot copies cannot be completed by us: activitymanager lets only the creator of an activity,
+ * or its parent, complete it, and their creator is the configurator. The first callback of each
+ * therefore creates the service's own copy (rearm), and the boot copy stays expired. It takes no
+ * power lock: one taken by it would never be ended and would keep the phone awake for
+ * activitymanager's 15-minute cap.
+ *
+ * Of the service's own copies, those that only sort buddies (newBuddies, changedAvailability) take
+ * no power lock either. Buddy availability changes with every presence update a transport
+ * receives, and each run would keep the phone awake for the 12 s powerDebounce holds the lock on. The trigger is luna://com.palm.db/watch: activitymanager checks that the creator may
  * call the trigger method, and db8's ACG groups name only com.palm.db (and com.palm.tempdb).
  *
  * The buddy watches are on tempdb, which starts empty at every boot and counts its revisions
@@ -85,6 +95,7 @@ const WATCHES = {
 		description: "Links new IM buddies to their contacts",
 		db: TEMPDB,
 		persist: false,
+		power: false,
 		query: () => ({ from: BUDDY_KIND, where: [{ prop: "displayName", op: "=", val: "" }] }),
 	},
 	changedAvailability: {
@@ -92,6 +103,7 @@ const WATCHES = {
 		description: "Sorts the buddy list again when a buddy's availability changes",
 		db: TEMPDB,
 		persist: false,
+		power: false,
 		revParam: "lastAvailabilityRev",
 		query: (rev) => ({ from: BUDDY_KIND, where: [{ prop: "availabilityRevSet", op: ">", val: rev }] }),
 	},
@@ -106,20 +118,28 @@ function callback(method, rev) {
 	return { method: SERVICE + "/" + method, params: w.revParam ? { [w.revParam]: rev } : {} };
 }
 
-// The whole activity, as configuration/activities holds it (rev 0) and as it is re-created.
-function activitySpec(method, rev = 0) {
+// The whole activity, as it is re-created. `power` false leaves out the power lock.
+function activitySpec(method, rev = 0, { power = WATCHES[method].power !== false } = {}) {
 	const w = WATCHES[method];
+	const type = { immediate: true, priority: "normal", persist: w.persist !== false, explicit: true };
+	if (power) { Object.assign(type, { power: true, powerDebounce: true }); }
 	return {
 		activity: {
 			name: w.name,
 			description: w.description,
-			type: { immediate: true, priority: "normal", persist: w.persist !== false, explicit: true, power: true, powerDebounce: true },
+			type,
 			trigger: trigger(method, rev),
 			callback: callback(method, rev),
 		},
 		start: true,
 		replace: true,
 	};
+}
+
+// The activity as configuration/activities holds it: from rev 0 and without a power lock (see the
+// top of this file).
+function bootSpec(method) {
+	return activitySpec(method, 0, { power: false });
 }
 
 // Arm the watch again from `rev` once a callback is done. Complete the activity that called us
@@ -140,4 +160,4 @@ async function rearm({ call, log = console }, method, rev, $activity) {
 	return "created";
 }
 
-module.exports = { WATCHES, activitySpec, trigger, callback, rearm };
+module.exports = { WATCHES, activitySpec, bootSpec, trigger, callback, rearm };

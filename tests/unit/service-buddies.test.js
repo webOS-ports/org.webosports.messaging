@@ -237,6 +237,19 @@ describe('the buddy activities', function () {
         });
         assert.equal(activitySpec("assignMessages").activity.type.persist, true);
     });
+
+    // Availability changes with every presence update; a lock for each run would keep the phone
+    // awake. A new message still takes one.
+    it('take no power lock, and the message watch does', function () {
+        ["newBuddies", "changedAvailability"].forEach(function (m) {
+            var type = activitySpec(m).activity.type;
+            assert.equal(type.power, undefined, m);
+            assert.equal(type.powerDebounce, undefined, m);
+        });
+        var t = activitySpec("assignMessages").activity.type;
+        assert.equal(t.power, true);
+        assert.equal(t.powerDebounce, true);
+    });
 });
 
 describe('availabilityMerges', function () {
