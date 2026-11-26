@@ -6,9 +6,7 @@
 			"immediate": true,
 			"priority": "normal",
 			"persist": false,
-			"explicit": true,
-			"power": true,
-			"powerDebounce": true
+			"explicit": true
 		},
 		"trigger": {
 			"key": "fired",

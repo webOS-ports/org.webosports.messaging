@@ -19,7 +19,7 @@ var { ask } = require('./service/palmbus');
 var { boot, SERVICE } = require('./service/boot');
 var seed = require('./service/seed');
 
-var { activitySpec, WATCHES } = require(path.join(SERVICE, 'lib', 'activity.js'));
+var { activitySpec, bootSpec, WATCHES } = require(path.join(SERVICE, 'lib', 'activity.js'));
 
 var MESSAGE = "com.palm.message:1";
 var THREAD = "com.palm.chatthread:1";
@@ -362,7 +362,17 @@ describe('the activity files', function () {
         }));
         files.forEach(function (f) {
             var method = f.split('.').slice(-2)[0];
-            assert.deepEqual(JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')), activitySpec(method, 0), f);
+            assert.deepEqual(JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')), bootSpec(method), f);
+        });
+    });
+
+    // The service may not complete them (their creator is the configurator), so a power lock
+    // one of them took would be held for activitymanager's 15 minutes.
+    it('take no power lock', function () {
+        Object.keys(WATCHES).forEach(function (m) {
+            var type = bootSpec(m).activity.type;
+            assert.equal(type.power, undefined, m);
+            assert.equal(type.powerDebounce, undefined, m);
         });
     });
 });
