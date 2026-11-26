@@ -56,6 +56,7 @@ var kind = require('enyo/kind'),
     messageState = require('../util/messageState'),
     selection = require('../util/selection'),
     composerEcho = require('../util/composerEcho'),
+    composerFocus = require('../util/composerFocus'),
     callRequest = require('../util/callRequest'),
     chatPresence = require('../util/chatPresence'),
     chatFlags = require('../util/chatFlags'),
@@ -299,7 +300,8 @@ module.exports = kind({
                 },
                 {
                     name: "sendButton", kind: IconButton, src: "assets/menu-icon-send.svg",
-                    classes: "conversation-send-btn", ontap: "sendButtonTapped"
+                    classes: "conversation-send-btn", ontap: "sendButtonTapped",
+                    ondown: "keepComposerFocus"
                 }
             ]
         },
@@ -1949,7 +1951,14 @@ module.exports = kind({
         }
     },
 
+    /** Send's press leaves the focus in the message field (util/composerFocus). */
+    keepComposerFocus: function (inSender, inEvent) {
+        composerFocus.keepFocus(inSender, inEvent);
+    },
+
     sendButtonTapped: function () {
+        // The keyboard's word being typed goes into the field before it is read and emptied.
+        composerFocus.finishWord(this.$.richText);
         var messageText = this.$.richText.get('value');
         if (messageText || this.outboundAttachments.length) {
             this.sendMessage();
