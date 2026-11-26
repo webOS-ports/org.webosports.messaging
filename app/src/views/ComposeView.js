@@ -20,6 +20,7 @@ var kind = require('enyo/kind'),
     appState = require('../util/appState'),
     mockDb = require('../data/mockDb'),
     composerEcho = require('../util/composerEcho'),
+    composerFocus = require('../util/composerFocus'),
     attachments = require('../util/attachments'),
     fileCarrier = require('../util/fileCarrier'),
     mms = require('../util/mms'),
@@ -86,7 +87,8 @@ module.exports = kind({
                 },
                 {
                     name: "sendButton", kind: IconButton, src: "assets/menu-icon-send.svg",
-                    classes: "conversation-send-btn", ontap: "sendTapped"
+                    classes: "conversation-send-btn", ontap: "sendTapped",
+                    ondown: "keepComposerFocus"
                 }
             ]
         },
@@ -268,7 +270,14 @@ module.exports = kind({
         }
     },
 
+    /** Send's press leaves the focus in the message field (util/composerFocus). */
+    keepComposerFocus: function (inSender, inEvent) {
+        composerFocus.keepFocus(inSender, inEvent);
+    },
+
     sendTapped: function () {
+        // The keyboard's word being typed goes into the field before it is read and emptied.
+        composerFocus.finishWord(this.$.richText);
         var text = this.$.richText.get('value');
 
         if (!this.recipient) {
